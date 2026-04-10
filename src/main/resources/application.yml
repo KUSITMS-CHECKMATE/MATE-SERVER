@@ -20,7 +20,6 @@ springdoc:
 
 toss:
   api:
-    enabled: ${TOSS_API_ENABLED:true}
     base-url: https://apps-in-toss-api.toss.im
     timeout:
       connect: 5s
