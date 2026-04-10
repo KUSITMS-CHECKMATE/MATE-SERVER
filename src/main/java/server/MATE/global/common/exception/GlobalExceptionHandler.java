@@ -1,6 +1,8 @@
 package server.MATE.global.common.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,15 +13,22 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import server.MATE.global.common.response.ErrorResponse;
+import server.MATE.global.notification.DiscordWebhookNotifier;
 
 @Slf4j
+@RequiredArgsConstructor
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private final DiscordWebhookNotifier discordWebhookNotifier;
+
     @ExceptionHandler(BaseException.class)
-    public ResponseEntity<ErrorResponse> handleBaseException(BaseException e) {
-        log.warn("BaseException: {}", e.getMessage());
+    public ResponseEntity<ErrorResponse> handleBaseException(BaseException e, HttpServletRequest request) {
         ErrorCode errorCode = e.getErrorCode();
+        if (errorCode.getHttpStatus().is5xxServerError()) {
+            discordWebhookNotifier.notifyError(errorCode, errorCode.getHttpStatus(), e, request);
+        }
+        log.warn("BaseException: {}", e.getMessage());
         return ResponseEntity
                 .status(errorCode.getHttpStatus())
                 .body(ErrorResponse.of(errorCode, e.getMessage()));
@@ -76,8 +85,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleException(Exception e) {
+    public ResponseEntity<ErrorResponse> handleException(Exception e, HttpServletRequest request) {
         log.error("UnhandledException: {}", e.getMessage(), e);
+        discordWebhookNotifier.notifyError(ErrorCode.COMMON_999, HttpStatus.INTERNAL_SERVER_ERROR, e, request);
         return ResponseEntity
                 .status(ErrorCode.COMMON_999.getHttpStatus())
                 .body(ErrorResponse.of(ErrorCode.COMMON_999));
