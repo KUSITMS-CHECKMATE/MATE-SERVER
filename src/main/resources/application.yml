@@ -3,19 +3,14 @@ spring:
     name: MATE
   profiles:
     default: local
-
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     show-sql: false
     open-in-view: false
-
-deploy:
-  env: ${DEPLOY_ENV:local}
 
 springdoc:
   swagger-ui:
@@ -23,5 +18,10 @@ springdoc:
   api-docs:
     path: /api-docs
 
-discord:
-  webhook-url: ${DISCORD_WEBHOOK_URL:}
+toss:
+  api:
+    enabled: ${TOSS_API_ENABLED:true}
+    base-url: https://apps-in-toss-api.toss.im
+    timeout:
+      connect: 5s
+      read: 5s

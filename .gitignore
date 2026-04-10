@@ -61,5 +61,15 @@ out/
 hs_err_pid*
 replay_pid*
 
-# Local configuration
-**/application-local.yml
+# Spring profile and local environment
+.env
+.env.*
+application-local.yml
+
+# Local secrets and certificates
+secrets/
+certs/
+*.pem
+*.key
+*.p12
+*.pfx
