@@ -1,4 +1,4 @@
-package server.MATE.global.notification;
+package server.MATE.global.discord;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
