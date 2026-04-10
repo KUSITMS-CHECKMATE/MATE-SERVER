@@ -17,5 +17,9 @@ spring:
 deploy:
   env: ${DEPLOY_ENV:prod}
 
+toss:
+  api:
+    enabled: ${TOSS_API_ENABLED:true}
+
 discord:
   webhook-url: ${DISCORD_WEBHOOK_URL:}
