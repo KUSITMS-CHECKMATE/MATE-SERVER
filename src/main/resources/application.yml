@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: MATE
+  profiles:
+    default: local
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+    open-in-view: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /api-docs
+
+toss:
+  api:
+    base-url: https://apps-in-toss-api.toss.im
+    timeout:
+      connect: 5s
+      read: 5s
