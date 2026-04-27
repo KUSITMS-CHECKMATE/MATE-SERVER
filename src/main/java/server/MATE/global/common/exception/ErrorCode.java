@@ -19,7 +19,9 @@ public enum ErrorCode {
     COMMON_007(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "COMMON_007", "지원하지 않는 Content-Type 입니다."),
     COMMON_008(HttpStatus.UNAUTHORIZED, "COMMON_008", "인증이 필요합니다."),
     COMMON_009(HttpStatus.FORBIDDEN, "COMMON_009", "접근 권한이 없습니다."),
-    COMMON_999(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_999", "서버 내부 오류가 발생했습니다.");
+    COMMON_999(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_10", "서버 내부 오류가 발생했습니다."),
+
+    TEST_001(HttpStatus.NOT_FOUND, "TEST_001", "존재하지 않는 테스트입니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
