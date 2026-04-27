@@ -61,13 +61,7 @@ out/
 hs_err_pid*
 replay_pid*
 
-<<<<<<< HEAD
 
-### Secrets & local-only Spring config ###
-secrets/
-src/main/resources/application-local.yml
-src/main/resources/application-prod.yml
-=======
 # Spring profile and local environment
 .env
 .env.*
@@ -80,4 +74,3 @@ certs/
 *.key
 *.p12
 *.pfx
->>>>>>> 2742cd68b62ce65b16f3d3b74800b93f5b5ba6e1
