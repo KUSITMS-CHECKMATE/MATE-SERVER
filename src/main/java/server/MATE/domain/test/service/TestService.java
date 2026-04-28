@@ -42,7 +42,14 @@ public class TestService {
                 .build();
 
         test.addCategories(request.categories());
-        testRepository.save(test);
+        try {
+            testRepository.save(test);
+        } catch (Exception e) {
+            if (!imageKeys.isEmpty()) {
+                imageService.deleteFiles(imageKeys);
+            }
+            throw e;
+        }
 
         return TestCreateResponse.from(test);
     }
