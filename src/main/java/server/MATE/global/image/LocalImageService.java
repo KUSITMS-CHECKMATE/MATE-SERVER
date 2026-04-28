@@ -19,4 +19,9 @@ public class LocalImageService implements ImageService {
         log.info("LocalImageService: 로컬 환경에서는 이미지 업로드를 건너뜁니다. ({}개)", files.size());
         return List.of();
     }
+
+    @Override
+    public void deleteFiles(List<String> keys) {
+        log.info("LocalImageService: 로컬 환경에서는 이미지 삭제를 건너뜁니다.");
+    }
 }

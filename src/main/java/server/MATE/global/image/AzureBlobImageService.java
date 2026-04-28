@@ -46,6 +46,11 @@ public class AzureBlobImageService implements ImageService {
         return keys;
     }
 
+    @Override
+    public void deleteFiles(List<String> keys) {
+        keys.forEach(key -> containerClient.getBlobClient(key).deleteIfExists());
+    }
+
     private String upload(MultipartFile file) {
         String originalFilename = file.getOriginalFilename();
         String extension = (originalFilename != null && originalFilename.contains("."))
