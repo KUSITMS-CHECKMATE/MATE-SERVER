@@ -9,6 +9,8 @@ public record SubjectiveQuestionCreateRequest(
         String title,
 
         @Size(max = 55, message = "질문 설명은 최대 55자까지 입력 가능합니다.")
-        String description
+        String description,
+
+        String imageKey
 ) {
 }
