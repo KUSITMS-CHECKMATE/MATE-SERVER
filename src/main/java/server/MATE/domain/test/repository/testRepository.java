@@ -1,7 +1,7 @@
-package server.MATE.test.repository;
+package server.MATE.domain.test.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import server.MATE.test.entity.Test;
+import server.MATE.domain.test.entity.Test;
 
 public interface testRepository extends JpaRepository<Test, Long> {
 }

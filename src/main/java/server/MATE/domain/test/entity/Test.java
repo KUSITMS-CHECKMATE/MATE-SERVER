@@ -1,8 +1,8 @@
-package server.MATE.test.entity;
+package server.MATE.domain.test.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
-import server.MATE.test.enums.TestStatus;
+import server.MATE.domain.test.enums.TestStatus;
 
 import java.time.LocalDateTime;
 
@@ -21,13 +21,9 @@ public class Test {
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Column(name = "description")
+
     private String description;
-
-    @Column(name = "service_name")
     private String serviceName;
-
-    @Column(name = "service_description")
     private String serviceDescription;
 
     @Column(name = "image_key", nullable = false)
@@ -40,6 +36,5 @@ public class Test {
     @Column(name = "ppl_count", nullable = false)
     private Long pplCount = 0L;
 
-    @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 }

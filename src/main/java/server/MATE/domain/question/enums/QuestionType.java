@@ -1,4 +1,4 @@
-package server.MATE.question.enums;
+package server.MATE.domain.question.enums;
 
 public enum QuestionType {
     MULTIPLE_CHOICE,

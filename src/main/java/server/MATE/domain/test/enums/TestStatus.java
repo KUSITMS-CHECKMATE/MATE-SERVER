@@ -1,4 +1,4 @@
-package server.MATE.test.enums;
+package server.MATE.domain.test.enums;
 
 public enum TestStatus {
     IN_PROGRESS,

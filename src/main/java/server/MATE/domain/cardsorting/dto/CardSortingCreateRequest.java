@@ -1,13 +1,12 @@
-package server.MATE.question.dto;
+package server.MATE.domain.cardsorting.dto;
 
-
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
-public record cardCategoryCreateRequest(
+public record CardSortingCreateRequest(
         @NotNull(message = "testId는 필수입니다.")
         Long testId,
         String title,
