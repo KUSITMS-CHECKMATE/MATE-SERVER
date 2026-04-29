@@ -3,9 +3,6 @@ package server.MATE.toss.config;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.JdkSslContext;
-import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.handler.timeout.WriteTimeoutHandler;
-import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -32,10 +29,7 @@ public class TossClientConfig {
     ) {
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(properties.timeout().connect().toMillis()))
-                .responseTimeout(properties.timeout().read())
-                .doOnConnected(connection -> connection
-                        .addHandlerLast(new ReadTimeoutHandler(properties.timeout().read().toMillis(), TimeUnit.MILLISECONDS))
-                        .addHandlerLast(new WriteTimeoutHandler(properties.timeout().read().toMillis(), TimeUnit.MILLISECONDS)));
+                .responseTimeout(properties.timeout().read());
 
         if (properties.ssl().enabled()) {
             JdkSslContext sslContext = new JdkSslContext(
