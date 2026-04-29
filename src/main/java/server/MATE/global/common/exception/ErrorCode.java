@@ -21,7 +21,8 @@ public enum ErrorCode {
     COMMON_009(HttpStatus.FORBIDDEN, "COMMON_009", "접근 권한이 없습니다."),
     COMMON_999(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_10", "서버 내부 오류가 발생했습니다."),
 
-    TEST_001(HttpStatus.NOT_FOUND, "TEST_001", "존재하지 않는 테스트입니다.");
+    TEST_001(HttpStatus.NOT_FOUND, "TEST_001", "존재하지 않는 테스트입니다."),
+    QUESTION_001(HttpStatus.NOT_FOUND, "QUESTION_001", "존재하지 않는 질문입니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
