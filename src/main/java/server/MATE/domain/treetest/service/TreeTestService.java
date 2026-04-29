@@ -5,8 +5,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.repository.QuestionRepository;
-import server.MATE.domain.test.entity.Test;
-import server.MATE.domain.test.repository.testRepository;
 import server.MATE.domain.treetest.dto.TreeTestCreateRequest;
 import server.MATE.domain.treetest.entity.TreeTest;
 import server.MATE.domain.treetest.repository.TreeTestRepository;
@@ -14,26 +12,18 @@ import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.exception.ErrorCode;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
 public class TreeTestService {
 
     private final QuestionRepository questionRepository;
-    private final testRepository testRepository;
     private final TreeTestRepository treeTestRepository;
 
     @Transactional
-    public void createTreeTest(TreeTestCreateRequest request) {
-        Long testId = Objects.requireNonNull(request.testId());
-        Test test = testRepository.findById(testId)
-                .orElseThrow(() -> new BaseException(ErrorCode.TEST_001));
-
-        Question question = Question.createTreeTestQuestion(
-                test, request.title(), request.description(), request.sequence()
-        );
-        questionRepository.save(question);
+    public void createTreeTest(Long questionId, TreeTestCreateRequest request) {
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new BaseException(ErrorCode.QUESTION_001));
 
         for (int i = 0; i < request.features().size(); i++) {
             TreeTestCreateRequest.Feature feature = request.features().get(i);
