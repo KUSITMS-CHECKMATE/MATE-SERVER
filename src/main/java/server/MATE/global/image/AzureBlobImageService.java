@@ -6,7 +6,6 @@ import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import server.MATE.global.common.exception.BaseException;
@@ -19,7 +18,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-@Profile("prod")
 @RequiredArgsConstructor
 public class AzureBlobImageService implements ImageService {
 
