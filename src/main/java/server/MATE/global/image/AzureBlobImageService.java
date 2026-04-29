@@ -30,9 +30,7 @@ public class AzureBlobImageService implements ImageService {
                 .connectionString(properties.getConnectionString())
                 .buildClient();
         containerClient = serviceClient.getBlobContainerClient(properties.getContainerName());
-        if (!containerClient.exists()) {
-            containerClient.create();
-        }
+        containerClient.createIfNotExists();
     }
 
     @Override
