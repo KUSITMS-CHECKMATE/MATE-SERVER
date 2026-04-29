@@ -1,12 +1,12 @@
-package server.MATE.question.entity;
+package server.MATE.domain.question.entity;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import server.MATE.question.enums.QuestionType;
-import server.MATE.test.entity.Test;
+import server.MATE.domain.cardsorting.entity.CardSorting;
+import server.MATE.domain.question.enums.QuestionType;
+import server.MATE.domain.test.entity.Test;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,9 +43,6 @@ public class Question {
     @OneToOne(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private CardSorting cardSortingDetail;
 
-    @OneToOne(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private TreeTest treeTestDetail;
-
     private Question(Test test, QuestionType questionType, String title, String description, Long sequence) {
         this.test = test;
         this.questionType = questionType;
@@ -61,11 +58,7 @@ public class Question {
         return question;
     }
 
-    public static Question createTreeTestQuestion(Test test, String title, String description, Long sequence,
-                                                  JsonNode branch) {
-        Question question = new Question(test, QuestionType.TREE_TEST, title, description, sequence);
-        question.treeTestDetail = TreeTest.create(question, branch);
-        return question;
+    public static Question createTreeTestQuestion(Test test, String title, String description, Long sequence) {
+        return new Question(test, QuestionType.TREE_TEST, title, description, sequence);
     }
-
 }
