@@ -33,7 +33,7 @@ public class DiscordWebhookNotifier {
     }
 
     public void notifyError(ErrorCode errorCode, HttpStatus status, Exception exception, HttpServletRequest request) {
-        if (webhookUrl == null || webhookUrl.isBlank()) {
+        if (webhookUrl == null || webhookUrl.isBlank() || "local".equals(deployEnv)) {
             return;
         }
 
