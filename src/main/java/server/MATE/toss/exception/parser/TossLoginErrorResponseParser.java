@@ -3,6 +3,7 @@ package server.MATE.toss.exception.parser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatusCode;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
 import server.MATE.toss.exception.TossErrorCode;
 import server.MATE.toss.response.TossErrorResponse;
 
+@Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @Component
 @RequiredArgsConstructor
@@ -33,15 +35,15 @@ public class TossLoginErrorResponseParser implements TossErrorResponseParser {
     @Override
     public TossErrorContext parse(HttpStatusCode statusCode, String path, String responseBody) {
         if (GENERATE_TOKEN_PATH.equals(path)) {
-            return parseGenerateTokenError(responseBody);
+            return parseGenerateTokenError(statusCode, path, responseBody);
         }
         if (REFRESH_TOKEN_PATH.equals(path)) {
-            return parseRefreshTokenError(responseBody);
+            return parseRefreshTokenError(statusCode, path, responseBody);
         }
-        return parseDefaultLoginError(responseBody);
+        return parseDefaultLoginError(statusCode, path, responseBody);
     }
 
-    private TossErrorContext parseGenerateTokenError(String responseBody) {
+    private TossErrorContext parseGenerateTokenError(HttpStatusCode statusCode, String path, String responseBody) {
         try {
             JsonNode root = objectMapper.readTree(responseBody);
 
@@ -68,7 +70,8 @@ public class TossLoginErrorResponseParser implements TossErrorResponseParser {
                 );
                 return result(TossErrorCode.from(errorResponse.errorCode()), errorResponse);
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("토스 로그인 generate-token 에러 응답 파싱 실패: path={}, status={}", path, statusCode.value(), e);
         }
 
         return result(TossErrorCode.TOSS_001, new TossErrorResponse(
@@ -77,7 +80,7 @@ public class TossLoginErrorResponseParser implements TossErrorResponseParser {
         ));
     }
 
-    private TossErrorContext parseRefreshTokenError(String responseBody) {
+    private TossErrorContext parseRefreshTokenError(HttpStatusCode statusCode, String path, String responseBody) {
         try {
             JsonNode root = objectMapper.readTree(responseBody);
 
@@ -104,7 +107,8 @@ public class TossLoginErrorResponseParser implements TossErrorResponseParser {
                 );
                 return result(TossErrorCode.from(errorResponse.errorCode()), errorResponse);
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("토스 로그인 refresh-token 에러 응답 파싱 실패: path={}, status={}", path, statusCode.value(), e);
         }
 
         return result(TossErrorCode.TOSS_001, new TossErrorResponse(
@@ -113,7 +117,7 @@ public class TossLoginErrorResponseParser implements TossErrorResponseParser {
         ));
     }
 
-    private TossErrorContext parseDefaultLoginError(String responseBody) {
+    private TossErrorContext parseDefaultLoginError(HttpStatusCode statusCode, String path, String responseBody) {
         try {
             JsonNode root = objectMapper.readTree(responseBody);
 
@@ -134,7 +138,8 @@ public class TossLoginErrorResponseParser implements TossErrorResponseParser {
                 );
                 return result(TossErrorCode.from(errorResponse.errorCode()), errorResponse);
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("토스 로그인 에러 응답 파싱 실패: path={}, status={}", path, statusCode.value(), e);
         }
 
         return result(TossErrorCode.TOSS_001, new TossErrorResponse(
