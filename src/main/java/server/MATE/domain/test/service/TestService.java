@@ -1,13 +1,14 @@
 package server.MATE.domain.test.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
-import server.MATE.global.image.ImageService;
+import server.MATE.global.image.event.ImageCleanupEvent;
 
 import java.util.List;
 
@@ -17,7 +18,7 @@ import java.util.List;
 public class TestService {
 
     private final TestRepository testRepository;
-    private final ImageService imageService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public TestCreateResponse createTest(TestCreateRequest request, Long makerId) {
         List<String> imageKeys = request.imageKeys() != null ? request.imageKeys() : List.of();
@@ -32,14 +33,8 @@ public class TestService {
                 .build();
 
         test.addCategories(request.categories());
-        try {
-            testRepository.save(test);
-        } catch (Exception e) {
-            if (!imageKeys.isEmpty()) {
-                imageService.deleteFiles(imageKeys);
-            }
-            throw e;
-        }
+        eventPublisher.publishEvent(new ImageCleanupEvent(imageKeys));
+        testRepository.save(test);
 
         return TestCreateResponse.from(test);
     }

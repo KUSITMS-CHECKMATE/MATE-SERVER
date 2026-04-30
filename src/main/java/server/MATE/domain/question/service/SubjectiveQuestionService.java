@@ -1,6 +1,7 @@
 package server.MATE.domain.question.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.question.dto.request.SubjectiveQuestionCreateRequest;
@@ -13,7 +14,7 @@ import server.MATE.domain.question.repository.SubjectiveRepository;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.exception.ErrorCode;
-import server.MATE.global.image.ImageService;
+import server.MATE.global.image.event.ImageCleanupEvent;
 
 import java.util.List;
 
@@ -25,7 +26,7 @@ public class SubjectiveQuestionService {
     private final TestRepository testRepository;
     private final QuestionRepository questionRepository;
     private final SubjectiveRepository subjectiveRepository;
-    private final ImageService imageService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public SubjectiveQuestionCreateResponse createSubjectiveQuestion(
             Long testId,
@@ -52,15 +53,11 @@ public class SubjectiveQuestionService {
                 .imageKey(request.imageKey())
                 .build();
 
-        try {
-            questionRepository.save(question);
-            subjectiveRepository.save(subjective);
-        } catch (Exception e) {
-            if (request.imageKey() != null) {
-                imageService.deleteFiles(List.of(request.imageKey()));
-            }
-            throw e;
+        if (request.imageKey() != null) {
+            eventPublisher.publishEvent(new ImageCleanupEvent(List.of(request.imageKey())));
         }
+        questionRepository.save(question);
+        subjectiveRepository.save(subjective);
 
         return SubjectiveQuestionCreateResponse.from(subjective);
     }
