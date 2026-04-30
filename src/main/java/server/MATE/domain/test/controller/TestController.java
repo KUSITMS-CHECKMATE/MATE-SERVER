@@ -12,8 +12,8 @@ import org.springframework.web.multipart.MultipartFile;
 import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
 import server.MATE.domain.test.service.TestService;
+import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.common.exception.ErrorCode;
 import server.MATE.global.common.response.ApiResponse;
 
 import java.util.List;
@@ -46,7 +46,7 @@ public class TestController {
         try {
             return objectMapper.readValue(request, TestCreateRequest.class);
         } catch (JsonProcessingException e) {
-            throw new BaseException(ErrorCode.COMMON_003);
+            throw new BaseException(BaseErrorCode.COMMON_003);
         }
     }
 
@@ -54,7 +54,7 @@ public class TestController {
         Set<ConstraintViolation<TestCreateRequest>> violations = validator.validate(request);
         if (!violations.isEmpty()) {
             String message = violations.iterator().next().getMessage();
-            throw new BaseException(ErrorCode.COMMON_002, message);
+            throw new BaseException(BaseErrorCode.COMMON_002, message);
         }
     }
 }

@@ -8,8 +8,8 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.common.exception.ErrorCode;
 import server.MATE.global.config.properties.AzureBlobProperties;
 
 import java.io.IOException;
@@ -59,7 +59,7 @@ public class AzureBlobImageService implements ImageService {
         try {
             blobClient.upload(file.getInputStream(), file.getSize(), true);
         } catch (IOException e) {
-            throw new BaseException(ErrorCode.FILE_UPLOAD_FAIL);
+            throw new BaseException(BaseErrorCode.FILE_UPLOAD_FAIL);
         }
         return key;
     }

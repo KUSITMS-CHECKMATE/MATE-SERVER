@@ -1,0 +1,28 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  ssl:
+    bundle:
+      pem:
+        toss:
+          keystore:
+            certificate: ${TOSS_MTLS_CERT_PATH:false}
+            private-key: ${TOSS_MTLS_KEY_PATH:false}
+
+deploy:
+  env: ${DEPLOY_ENV:prod}
+
+toss:
+  api:
+    enabled: ${TOSS_API_ENABLED:true}
+    ssl:
+      enabled: ${TOSS_API_SSL_ENABLED:true}
+      bundle: toss
+
+discord:
+  webhook-url: ${DISCORD_WEBHOOK_URL:}

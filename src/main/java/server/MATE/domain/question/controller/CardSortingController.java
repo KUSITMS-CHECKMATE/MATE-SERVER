@@ -26,7 +26,7 @@ public class CardSortingController {
     public ResponseEntity<ApiResponse<CardSortingCreateResponse>> createCardSorting(
             @PathVariable Long testId,
             @RequestBody @Valid CardSortingCreateRequest request,
-            // TODO: 인증 구현 후 @AuthenticationPrincipal 등으로 대체
+            // TODO: 나중에 대체
             @RequestHeader("X-User-Id") Long makerId
     ) {
         CardSortingCreateResponse response = cardSortingService.createCardSorting(testId, request);

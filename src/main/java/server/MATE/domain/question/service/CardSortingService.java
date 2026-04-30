@@ -13,8 +13,8 @@ import server.MATE.domain.question.repository.CardSortingRepository;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
+import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.common.exception.ErrorCode;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class CardSortingService {
     @Transactional
     public CardSortingCreateResponse createCardSorting(Long testId, CardSortingCreateRequest request) {
         Test test = testRepository.findById(testId)
-                .orElseThrow(() -> new BaseException(ErrorCode.TEST_004));
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         Question question = Question.create(test, QuestionType.CARD_SORTING, request.title(), request.description(), null);
         questionRepository.save(question);
