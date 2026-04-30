@@ -1,12 +1,12 @@
-package server.MATE.domain.cardsorting.controller;
+package server.MATE.domain.question.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import server.MATE.domain.cardsorting.dto.CardSortingCreateRequest;
-import server.MATE.domain.cardsorting.service.CardSortingService;
+import server.MATE.domain.question.dto.CardSortingCreateRequest;
+import server.MATE.domain.question.service.CardSortingService;
 import server.MATE.global.common.response.ApiResponse;
 
 @Tag(name = "CardSorting", description = "카드소팅 API")

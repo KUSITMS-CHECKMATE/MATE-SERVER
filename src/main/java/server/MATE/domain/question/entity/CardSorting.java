@@ -1,4 +1,4 @@
-package server.MATE.domain.cardsorting.entity;
+package server.MATE.domain.question.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import server.MATE.domain.question.entity.Question;
 
 import java.util.ArrayList;
 import java.util.List;
