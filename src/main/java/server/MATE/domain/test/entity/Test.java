@@ -1,40 +1,87 @@
 package server.MATE.domain.test.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
-import server.MATE.domain.test.enums.TestStatus;
+import lombok.NoArgsConstructor;
+import server.MATE.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Entity
 @Table(name = "test")
-public class Test {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Test extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "maker_id", nullable = false)
+    @Column(nullable = false)
     private Long makerId;
 
-    @Column(name = "title", nullable = false)
+    @Column(nullable = false, length = 17)
     private String title;
 
-
+    @Column(length = 60)
     private String description;
+
+    @Column(length = 17)
     private String serviceName;
+
+    @Column(length = 70)
     private String serviceDescription;
 
-    @Column(name = "image_key", nullable = false)
-    private String imageKey;
+    @ElementCollection
+    @CollectionTable(name = "test_image", joinColumns = @JoinColumn(name = "test_id"))
+    @Column(name = "image_key")
+    private List<String> imageKeys = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
-    private TestStatus status = TestStatus.IN_PROGRESS;
+    @Column(nullable = false)
+    private TestStatus status;
 
-    @Column(name = "ppl_count", nullable = false)
-    private Long pplCount = 0L;
+    @Column(nullable = false)
+    private Integer goalPpl;
+
+    @Column(nullable = false)
+    private Integer reward;
+
+    @Column(nullable = false)
+    private Long pplCount;
 
     private LocalDateTime deletedAt;
+
+    @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TestCategory> categories = new ArrayList<>();
+
+    public void addCategories(List<Category> categories) {
+        categories.forEach(category -> {
+            TestCategory testCategory = TestCategory.builder()
+                    .test(this)
+                    .category(category)
+                    .build();
+            this.categories.add(testCategory);
+        });
+    }
+
+    @Builder
+    public Test(Long makerId, String title, String description, String serviceName,
+                String serviceDescription, List<String> imageKeys) {
+        this.makerId = makerId;
+        this.title = title;
+        this.description = description;
+        this.serviceName = serviceName;
+        this.serviceDescription = serviceDescription;
+        if (imageKeys != null) {
+            this.imageKeys.addAll(imageKeys);
+        }
+        this.status = TestStatus.IN_PROGRESS;
+        this.goalPpl = 100;
+        this.reward = 300;
+        this.pplCount = 0L;
+    }
 }
