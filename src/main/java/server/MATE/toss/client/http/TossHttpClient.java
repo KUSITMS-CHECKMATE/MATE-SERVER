@@ -6,7 +6,6 @@ import java.util.function.Consumer;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.HttpHeaders;
@@ -23,13 +22,21 @@ import server.MATE.toss.response.TossApiResponse;
 
 @Component
 @ConditionalOnBean(name = "tossWebClient")
-@RequiredArgsConstructor
 public class TossHttpClient {
 
-    @Qualifier("tossWebClient")
     private final WebClient tossWebClient;
     private final ObjectMapper objectMapper;
     private final List<TossErrorResponseParser> errorResponseParsers;
+
+    public TossHttpClient(
+            @Qualifier("tossWebClient") WebClient tossWebClient,
+            ObjectMapper objectMapper,
+            List<TossErrorResponseParser> errorResponseParsers
+    ) {
+        this.tossWebClient = tossWebClient;
+        this.objectMapper = objectMapper;
+        this.errorResponseParsers = errorResponseParsers;
+    }
 
     public <T> T get(String path, Class<T> responseType) {
         return get(path, headers -> {}, responseType);
