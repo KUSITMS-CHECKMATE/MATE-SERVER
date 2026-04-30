@@ -1,12 +1,12 @@
-package server.MATE.domain.treetest.controller;
+package server.MATE.domain.question.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import server.MATE.domain.treetest.dto.TreeTestCreateRequest;
-import server.MATE.domain.treetest.service.TreeTestService;
+import server.MATE.domain.question.dto.TreeTestCreateRequest;
+import server.MATE.domain.question.service.TreeTestService;
 import server.MATE.global.common.response.ApiResponse;
 
 @Tag(name = "TreeTest", description = "트리테스트 API")

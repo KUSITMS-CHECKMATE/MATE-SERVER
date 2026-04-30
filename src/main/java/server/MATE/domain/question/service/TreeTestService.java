@@ -1,13 +1,13 @@
-package server.MATE.domain.treetest.service;
+package server.MATE.domain.question.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.repository.QuestionRepository;
-import server.MATE.domain.treetest.dto.TreeTestCreateRequest;
-import server.MATE.domain.treetest.entity.TreeTest;
-import server.MATE.domain.treetest.repository.TreeTestRepository;
+import server.MATE.domain.question.dto.TreeTestCreateRequest;
+import server.MATE.domain.question.entity.TreeTest;
+import server.MATE.domain.question.repository.TreeTestRepository;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.exception.ErrorCode;
 

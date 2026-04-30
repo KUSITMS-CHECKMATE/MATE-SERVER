@@ -1,4 +1,4 @@
-package server.MATE.domain.cardsorting.dto;
+package server.MATE.domain.question.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

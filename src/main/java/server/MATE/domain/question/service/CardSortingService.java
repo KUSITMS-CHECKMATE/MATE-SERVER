@@ -1,11 +1,11 @@
-package server.MATE.domain.cardsorting.service;
+package server.MATE.domain.question.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import server.MATE.domain.cardsorting.dto.CardSortingCreateRequest;
-import server.MATE.domain.cardsorting.entity.CardSorting;
-import server.MATE.domain.cardsorting.repository.CardSortingRepository;
+import server.MATE.domain.question.dto.CardSortingCreateRequest;
+import server.MATE.domain.question.entity.CardSorting;
+import server.MATE.domain.question.repository.CardSortingRepository;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.global.common.exception.BaseException;

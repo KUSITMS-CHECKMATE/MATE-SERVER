@@ -1,4 +1,4 @@
-package server.MATE.domain.treetest.dto;
+package server.MATE.domain.question.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
