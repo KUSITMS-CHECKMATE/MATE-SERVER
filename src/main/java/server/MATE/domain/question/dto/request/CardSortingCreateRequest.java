@@ -1,4 +1,4 @@
-package server.MATE.domain.question.dto;
+package server.MATE.domain.question.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

@@ -19,12 +19,6 @@ public enum ErrorCode {
     COMMON_007(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "COMMON_007", "지원하지 않는 Content-Type 입니다."),
     COMMON_008(HttpStatus.UNAUTHORIZED, "COMMON_008", "인증이 필요합니다."),
     COMMON_009(HttpStatus.FORBIDDEN, "COMMON_009", "접근 권한이 없습니다."),
-<<<<<<< HEAD
-    COMMON_999(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_10", "서버 내부 오류가 발생했습니다."),
-
-    TEST_001(HttpStatus.NOT_FOUND, "TEST_001", "존재하지 않는 테스트입니다."),
-    QUESTION_001(HttpStatus.NOT_FOUND, "QUESTION_001", "존재하지 않는 질문입니다.");
-=======
     COMMON_999(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_999", "서버 내부 오류가 발생했습니다."),
 
     // Test
@@ -34,8 +28,6 @@ public enum ErrorCode {
 
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다.");
->>>>>>> dev
-
     private final HttpStatus httpStatus;
     private final String code;
     private final String message;
