@@ -25,6 +25,10 @@ public enum ErrorCode {
     TEST_001(HttpStatus.BAD_REQUEST, "TEST_001", "카테고리는 1개 이상 3개 이하로 선택해야 합니다."),
     TEST_002(HttpStatus.BAD_REQUEST, "TEST_002", "이미지는 최대 10개까지 업로드할 수 있습니다."),
     TEST_003(HttpStatus.BAD_REQUEST, "TEST_003", "지원하지 않는 이미지 형식입니다. JPG, PNG만 허용됩니다."),
+    TEST_004(HttpStatus.NOT_FOUND, "TEST_004", "테스트를 찾을 수 없습니다."),
+
+    // Question
+    QUESTION_001(HttpStatus.NOT_FOUND, "QUESTION_001", "질문을 찾을 수 없습니다."),
 
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다.");
