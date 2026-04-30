@@ -12,6 +12,7 @@ import server.MATE.domain.question.entity.Subjective;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.question.repository.SubjectiveRepository;
 import server.MATE.domain.test.repository.TestRepository;
+import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.exception.ErrorCode;
 import server.MATE.global.image.event.ImageCleanupEvent;
@@ -33,7 +34,7 @@ public class SubjectiveQuestionService {
             SubjectiveQuestionCreateRequest request
     ) {
         if (!testRepository.existsById(testId)) {
-            throw new BaseException(ErrorCode.TEST_004);
+            throw new BaseException(BaseErrorCode.TEST_004);
         }
 
         // TODO: 동시성 이슈 - 현재 MAX(sequence)+1 방식은 동시 요청 시 중복 순서값 발생 가능.

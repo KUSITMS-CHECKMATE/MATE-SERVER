@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.exception.ErrorCode;
 import server.MATE.global.common.response.ApiResponse;
@@ -32,7 +33,7 @@ public class ImageController {
             @RequestParam String extension
     ) {
         if (!ALLOWED_EXTENSIONS.contains(extension.toLowerCase())) {
-            throw new BaseException(ErrorCode.TEST_003);
+            throw new BaseException(BaseErrorCode.TEST_003);
         }
         String imageKey = UUID.randomUUID() + "." + extension.toLowerCase();
         String presignedUrl = imageService.generatePresignedUrl(imageKey);

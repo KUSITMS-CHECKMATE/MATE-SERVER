@@ -11,8 +11,8 @@ spring:
       pem:
         toss:
           keystore:
-            certificate: ${TOSS_MTLS_CERT_PATH:}
-            private-key: ${TOSS_MTLS_KEY_PATH:}
+            certificate: ${TOSS_MTLS_CERT_PATH:false}
+            private-key: ${TOSS_MTLS_KEY_PATH:false}
 
 deploy:
   env: ${DEPLOY_ENV:prod}
@@ -20,6 +20,9 @@ deploy:
 toss:
   api:
     enabled: ${TOSS_API_ENABLED:true}
+    ssl:
+      enabled: ${TOSS_API_SSL_ENABLED:true}
+      bundle: toss
 
 discord:
   webhook-url: ${DISCORD_WEBHOOK_URL:}
