@@ -9,8 +9,8 @@ import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
+import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.common.exception.ErrorCode;
 import server.MATE.global.image.ImageService;
 
 import java.util.List;
@@ -59,11 +59,11 @@ public class TestService {
             return;
         }
         if (images.size() > MAX_IMAGE_COUNT) {
-            throw new BaseException(ErrorCode.TEST_002);
+            throw new BaseException(BaseErrorCode.TEST_002);
         }
         for (MultipartFile image : images) {
             if (!ALLOWED_CONTENT_TYPES.contains(image.getContentType())) {
-                throw new BaseException(ErrorCode.TEST_003);
+                throw new BaseException(BaseErrorCode.TEST_003);
             }
         }
     }
