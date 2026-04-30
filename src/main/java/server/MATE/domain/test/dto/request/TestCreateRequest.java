@@ -24,6 +24,9 @@ public record TestCreateRequest(
         String serviceName,
 
         @Size(max = 70, message = "서비스 소개는 최대 70자까지 입력 가능합니다.")
-        String serviceDescription
+        String serviceDescription,
+
+        @Size(max = 10, message = "이미지는 최대 10개까지 등록 가능합니다.")
+        List<@NotBlank String> imageKeys
 ) {
 }
