@@ -37,8 +37,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleNoResourceFoundException(NoResourceFoundException e) {
         return ResponseEntity
-                .status(ErrorCode.COMMON_001.getHttpStatus())
-                .body(ErrorResponse.of(ErrorCode.COMMON_001));
+                .status(BaseErrorCode.COMMON_001.getHttpStatus())
+                .body(ErrorResponse.of(BaseErrorCode.COMMON_001));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -46,11 +46,11 @@ public class GlobalExceptionHandler {
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getDefaultMessage())
                 .findFirst()
-                .orElse(ErrorCode.COMMON_002.getMessage());
+                .orElse(BaseErrorCode.COMMON_002.getMessage());
         log.warn("ValidationException: {}", message);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.of(ErrorCode.COMMON_002, message));
+                .body(ErrorResponse.of(BaseErrorCode.COMMON_002, message));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -58,11 +58,11 @@ public class GlobalExceptionHandler {
         String message = e.getConstraintViolations().stream()
                 .map(violation -> violation.getMessage())
                 .findFirst()
-                .orElse(ErrorCode.COMMON_002.getMessage());
+                .orElse(BaseErrorCode.COMMON_002.getMessage());
         log.warn("ConstraintViolationException: {}", message);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.of(ErrorCode.COMMON_002, message));
+                .body(ErrorResponse.of(BaseErrorCode.COMMON_002, message));
     }
 
     @ExceptionHandler(HandlerMethodValidationException.class)
@@ -70,26 +70,26 @@ public class GlobalExceptionHandler {
         String message = e.getAllErrors().stream()
                 .map(error -> error.getDefaultMessage())
                 .findFirst()
-                .orElse(ErrorCode.COMMON_002.getMessage());
+                .orElse(BaseErrorCode.COMMON_002.getMessage());
         log.warn("HandlerMethodValidationException: {}", message);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.of(ErrorCode.COMMON_002, message));
+                .body(ErrorResponse.of(BaseErrorCode.COMMON_002, message));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleMethodNotSupportedException(HttpRequestMethodNotSupportedException e) {
         return ResponseEntity
-                .status(ErrorCode.COMMON_006.getHttpStatus())
-                .body(ErrorResponse.of(ErrorCode.COMMON_006));
+                .status(BaseErrorCode.COMMON_006.getHttpStatus())
+                .body(ErrorResponse.of(BaseErrorCode.COMMON_006));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e, HttpServletRequest request) {
         log.error("UnhandledException: {}", e.getMessage(), e);
-        discordWebhookNotifier.notifyError(ErrorCode.COMMON_999, HttpStatus.INTERNAL_SERVER_ERROR, e, request);
+        discordWebhookNotifier.notifyError(BaseErrorCode.COMMON_999, HttpStatus.INTERNAL_SERVER_ERROR, e, request);
         return ResponseEntity
-                .status(ErrorCode.COMMON_999.getHttpStatus())
-                .body(ErrorResponse.of(ErrorCode.COMMON_999));
+                .status(BaseErrorCode.COMMON_999.getHttpStatus())
+                .body(ErrorResponse.of(BaseErrorCode.COMMON_999));
     }
 }
