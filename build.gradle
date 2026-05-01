@@ -47,8 +47,8 @@ dependencies {
 	testCompileOnly 'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'
   
-  // azure SDK
-  implementation 'com.azure:azure-storage-blob:12.29.1'
+    // azure SDK
+    implementation 'com.azure:azure-storage-blob:12.29.1'
   
 	// test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

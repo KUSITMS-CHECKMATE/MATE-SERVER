@@ -8,10 +8,9 @@ import server.MATE.domain.question.dto.request.CardSortingCreateRequest;
 import server.MATE.domain.question.dto.response.CardSortingCreateResponse;
 import server.MATE.domain.question.entity.CardSorting;
 import server.MATE.domain.question.entity.Question;
-import server.MATE.domain.question.enums.QuestionType;
+import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.CardSortingRepository;
 import server.MATE.domain.question.repository.QuestionRepository;
-import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
@@ -26,10 +25,18 @@ public class CardSortingService {
 
     @Transactional
     public CardSortingCreateResponse createCardSorting(Long testId, CardSortingCreateRequest request) {
-        Test test = testRepository.findById(testId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+        if (!testRepository.existsById(testId)) {
+            throw new BaseException(BaseErrorCode.TEST_004);
+        }
 
-        Question question = Question.create(test, QuestionType.CARD_SORTING, request.title(), request.description(), null);
+        // TODO: sequence 로직은 merge 후 수정 예정
+        Question question = Question.builder()
+                .testId(testId)
+                .questionType(QuestionType.CARD_SORTING)
+                .title(request.title())
+                .description(request.description())
+                .sequence(null)
+                .build();
         questionRepository.save(question);
 
         CardSorting cardSorting = CardSorting.create(question, request.categories());
