@@ -27,6 +27,9 @@ public enum BaseErrorCode implements ErrorCode {
     TEST_003(HttpStatus.BAD_REQUEST, "TEST_003", "지원하지 않는 이미지 형식입니다. JPG, PNG만 허용됩니다."),
     TEST_004(HttpStatus.NOT_FOUND, "TEST_004", "테스트를 찾을 수 없습니다."),
 
+    // Question
+    QUESTION_001(HttpStatus.NOT_FOUND, "QUESTION_001", "존재하지 않는 질문입니다."),
+
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
 
