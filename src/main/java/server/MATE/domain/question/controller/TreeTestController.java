@@ -29,7 +29,7 @@ public class TreeTestController {
             // TODO: 나중에 대체
             @RequestHeader("X-User-Id") Long makerId
     ) {
-        TreeTestCreateResponse response = treeTestService.createTreeTest(testId, questionId, request);
+        TreeTestCreateResponse response = treeTestService.createTreeTest(testId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("트리테스트가 저장되었습니다.", response));
     }
