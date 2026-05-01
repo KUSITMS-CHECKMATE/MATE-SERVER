@@ -4,18 +4,15 @@ import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.blob.sas.BlobSasPermission;
+import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import server.MATE.global.common.exception.BaseErrorCode;
-import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.config.properties.AzureBlobProperties;
 
-import java.io.IOException;
-import java.util.ArrayList;
+import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,37 +27,23 @@ public class AzureBlobImageService implements ImageService {
                 .connectionString(properties.getConnectionString())
                 .buildClient();
         containerClient = serviceClient.getBlobContainerClient(properties.getContainerName());
-        if (!containerClient.exists()) {
-            containerClient.create();
-        }
+        containerClient.createIfNotExists();
     }
 
     @Override
-    public List<String> uploadFiles(List<MultipartFile> files) {
-        List<String> keys = new ArrayList<>();
-        for (MultipartFile file : files) {
-            keys.add(upload(file));
-        }
-        return keys;
+    public String generatePresignedUrl(String imageKey) {
+        BlobClient blobClient = containerClient.getBlobClient(imageKey);
+        BlobSasPermission permission = new BlobSasPermission()
+                .setCreatePermission(true)
+                .setWritePermission(true)
+                .setAddPermission(true);
+        BlobServiceSasSignatureValues values = new BlobServiceSasSignatureValues(
+                OffsetDateTime.now().plusMinutes(10), permission);
+        return blobClient.getBlobUrl() + "?" + blobClient.generateSas(values);
     }
 
     @Override
     public void deleteFiles(List<String> keys) {
         keys.forEach(key -> containerClient.getBlobClient(key).deleteIfExists());
-    }
-
-    private String upload(MultipartFile file) {
-        String originalFilename = file.getOriginalFilename();
-        String extension = (originalFilename != null && originalFilename.contains("."))
-                ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                : "";
-        String key = UUID.randomUUID() + extension;
-        BlobClient blobClient = containerClient.getBlobClient(key);
-        try {
-            blobClient.upload(file.getInputStream(), file.getSize(), true);
-        } catch (IOException e) {
-            throw new BaseException(BaseErrorCode.FILE_UPLOAD_FAIL);
-        }
-        return key;
     }
 }
