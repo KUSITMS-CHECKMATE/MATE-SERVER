@@ -2,51 +2,50 @@ package server.MATE.domain.question.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import server.MATE.domain.question.enums.QuestionType;
-import server.MATE.domain.test.entity.Test;
+import server.MATE.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Entity
+@Table(
+        name = "question",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"test_id", "sequence"})
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Question {
+public class Question extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "test_id", nullable = false)
-    private Test test;
+    @Column(nullable = false)
+    private Long testId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "question_type", nullable = false, length = 30)
+    @Column(nullable = false)
     private QuestionType questionType;
 
-    @Column(name = "title", nullable = false)
+    @Column(nullable = false, length = 34)
     private String title;
 
-    @Column(name = "description")
+    @Column(length = 55)
     private String description;
 
-    @Column(name = "sequence", nullable = false)
-    private Long sequence = 0L;
+    @Column(nullable = false)
+    private Long sequence;
 
-    @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    private Question(Test test, QuestionType questionType, String title, String description, Long sequence) {
-        this.test = test;
+    @Builder
+    public Question(Long testId, QuestionType questionType, String title, String description, Long sequence) {
+        this.testId = testId;
         this.questionType = questionType;
         this.title = title;
         this.description = description;
         this.sequence = sequence == null ? 0L : sequence;
-    }
-
-    public static Question create(Test test, QuestionType questionType, String title, String description, Long sequence) {
-        return new Question(test, questionType, title, description, sequence);
     }
 }
