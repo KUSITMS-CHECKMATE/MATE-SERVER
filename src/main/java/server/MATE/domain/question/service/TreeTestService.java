@@ -15,7 +15,6 @@ import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -32,7 +31,7 @@ public class TreeTestService {
             throw new BaseException(BaseErrorCode.TEST_004);
         }
 
-        // TODO: sequence 로직은 merge 후 수정 예정
+        // TODO: sequence 로직 변경 예정
         Question question = Question.builder()
                 .testId(testId)
                 .questionType(QuestionType.TREE_TEST)
@@ -42,15 +41,13 @@ public class TreeTestService {
                 .build();
         questionRepository.save(question);
 
-        List<TreeTest> roots = new ArrayList<>();
         for (int i = 0; i < request.features().size(); i++) {
             TreeTestCreateRequest.Feature feature = request.features().get(i);
             TreeTest root = TreeTest.create(question, null, feature.label(), i + 1);
             buildChildren(root, feature.children(), question);
             treeTestRepository.save(root);
-            roots.add(root);
         }
-        return TreeTestCreateResponse.from(question, roots);
+        return TreeTestCreateResponse.from(question, request);
     }
 
     private void buildChildren(TreeTest parent, List<TreeTestCreateRequest.TreeNode> children, Question question) {

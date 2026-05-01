@@ -1,18 +1,41 @@
 package server.MATE.domain.question.dto.response;
 
+import server.MATE.domain.question.dto.request.TreeTestCreateRequest;
 import server.MATE.domain.question.entity.Question;
-import server.MATE.domain.question.entity.TreeTest;
 
 import java.util.List;
 
 public record TreeTestCreateResponse(
         Long questionId,
-        List<Long> rootIds
+        List<Feature> features
 ) {
-    public static TreeTestCreateResponse from(Question question, List<TreeTest> roots) {
+    public record Feature(
+            String label,
+            List<TreeNode> children
+    ) {}
+
+    public record TreeNode(
+            String label,
+            List<TreeNode> children
+    ) {}
+
+    public static TreeTestCreateResponse from(Question question, TreeTestCreateRequest request) {
         return new TreeTestCreateResponse(
                 question.getId(),
-                roots.stream().map(TreeTest::getId).toList()
+                request.features().stream().map(TreeTestCreateResponse::toFeature).toList()
         );
+    }
+
+    private static Feature toFeature(TreeTestCreateRequest.Feature f) {
+        return new Feature(f.label(), toTreeNodes(f.children()));
+    }
+
+    private static List<TreeNode> toTreeNodes(List<TreeTestCreateRequest.TreeNode> nodes) {
+        if (nodes == null || nodes.isEmpty()) {
+            return List.of();
+        }
+        return nodes.stream()
+                .map(n -> new TreeNode(n.label(), toTreeNodes(n.children())))
+                .toList();
     }
 }
