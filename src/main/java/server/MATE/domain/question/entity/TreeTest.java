@@ -1,10 +1,9 @@
-package server.MATE.domain.treetest.entity;
+package server.MATE.domain.question.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import server.MATE.domain.question.entity.Question;
 
 import java.util.ArrayList;
 import java.util.List;
