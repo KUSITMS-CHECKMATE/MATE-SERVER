@@ -31,5 +31,4 @@ public class TestController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("테스트가 등록되었습니다.", response));
     }
-
 }
