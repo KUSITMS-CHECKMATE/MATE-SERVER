@@ -1,5 +1,6 @@
 package server.MATE.global.security.filter;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -43,12 +44,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             String token = bearer.substring(JwtConstants.TOKEN_PREFIX.length());
-            TokenType tokenType = jwtProvider.extractTokenType(token);
+            Claims claims = jwtProvider.parseClaims(token);
+            TokenType tokenType = TokenType.valueOf(claims.get("tokenType", String.class));
             if (tokenType != TokenType.ACCESS) {
                 throw new JwtAuthenticationException(BaseErrorCode.AUTH_003);
             }
 
-            Long userId = jwtProvider.extractUserId(token);
+            Long userId = Long.valueOf(claims.getSubject());
             Users user = usersRepository.findById(userId)
                     .orElseThrow(() -> new JwtAuthenticationException(BaseErrorCode.AUTH_004));
 
