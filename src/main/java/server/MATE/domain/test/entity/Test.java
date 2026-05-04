@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Where;
 import server.MATE.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ import java.util.List;
 @Getter
 @Entity
 @Table(name = "test")
+@Where(clause = "deleted_at is null")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Test extends BaseEntity {
 
