@@ -1,6 +1,7 @@
 package server.MATE.domain.question.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import server.MATE.global.common.response.ApiResponse;
 @Tag(name = "[QUESTION] 문항 API", description = "문항 등록 관련 API")
 @RestController
 @RequestMapping("/api/v1/tests/{testId}/questions")
+@SecurityRequirement(name = "JWT")
 @RequiredArgsConstructor
 public class QuestionController {
 
