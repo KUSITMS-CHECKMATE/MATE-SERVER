@@ -33,7 +33,7 @@ public class QuestionController {
             // TODO: 인증 구현 후 @AuthenticationPrincipal 등으로 대체
             @RequestHeader("X-User-Id") Long makerId
     ) {
-        AbTestCreateResponse response = abTestService.createAbTest(testId, request);
+        AbTestCreateResponse response = abTestService.createAbTest(testId, makerId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("A/B 테스트 질문이 등록되었습니다.", response));
     }
