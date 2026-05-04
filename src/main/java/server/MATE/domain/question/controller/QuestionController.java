@@ -29,9 +29,7 @@ public class QuestionController {
     @PostMapping("/abtest")
     public ResponseEntity<ApiResponse<AbTestCreateResponse>> createAbTest(
             @PathVariable Long testId,
-            @RequestBody @Valid AbTestCreateRequest request,
-            // TODO: 인증 구현 후 @AuthenticationPrincipal 등으로 대체
-            @RequestHeader("X-User-Id") Long makerId
+            @RequestBody @Valid AbTestCreateRequest request
     ) {
         AbTestCreateResponse response = abTestService.createAbTest(testId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
