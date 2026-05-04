@@ -1,6 +1,7 @@
 package server.MATE.domain.test.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import server.MATE.global.security.principal.AuthenticatedUser;
 @Tag(name = "[TEST] 테스트 API", description = "테스트 등록 관련 API")
 @RestController
 @RequestMapping("/api/v1/tests")
+@SecurityRequirement(name = "JWT")
 @RequiredArgsConstructor
 public class TestController {
 

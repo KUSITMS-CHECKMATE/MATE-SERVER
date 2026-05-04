@@ -1,6 +1,7 @@
 package server.MATE.domain.users.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import server.MATE.global.security.principal.AuthenticatedUser;
 @Tag(name = "[USERS] 사용자 API", description = "사용자 정보 관련 API")
 @RestController
 @RequestMapping("/api/v1/users")
+@SecurityRequirement(name = "JWT")
 @RequiredArgsConstructor
 public class UsersController {
 
