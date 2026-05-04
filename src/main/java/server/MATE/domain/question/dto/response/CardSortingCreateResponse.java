@@ -7,13 +7,17 @@ import java.util.List;
 public record CardSortingCreateResponse(
         Long questionId,
         Long cardSortingId,
-        List<String> cards
+        List<String> cards,
+        List<CardSortingCategoryResponse> categories
 ) {
-    public static CardSortingCreateResponse from(CardSorting cardSorting) {
+    public static CardSortingCreateResponse from(CardSorting entity) {
         return new CardSortingCreateResponse(
-                cardSorting.getQuestion().getId(),
-                cardSorting.getId(),
-                cardSorting.getCards()
+                entity.getQuestion().getId(),
+                entity.getId(),
+                entity.getCards(),
+                entity.getCategory().stream()
+                        .map(c -> new CardSortingCategoryResponse(c.getName()))
+                        .toList()
         );
     }
 }

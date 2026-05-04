@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import server.MATE.domain.question.dto.request.CardSortingCreateRequest;
 import server.MATE.domain.question.dto.response.CardSortingCreateResponse;
 import server.MATE.domain.question.service.CardSortingService;
@@ -21,7 +20,10 @@ public class CardSortingController {
 
     private final CardSortingService cardSortingService;
 
-    @Operation(summary = "카드소팅 문항 등록", description = "카드소팅 문항을 등록합니다.")
+    @Operation(
+            summary = "카드소팅 문항 등록",
+            description = "카드 4~12개는 cards 컬럼, 소팅용 카테고리 1~3개는 category 컬럼(JSON)에 저장합니다."
+    )
     @PostMapping
     public ResponseEntity<ApiResponse<CardSortingCreateResponse>> createCardSorting(
             @PathVariable Long testId,

@@ -14,7 +14,6 @@ import server.MATE.domain.question.repository.SubjectiveRepository;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.common.exception.ErrorCode;
 import server.MATE.global.image.event.ImageCleanupEvent;
 
 import java.util.List;
