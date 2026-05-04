@@ -85,4 +85,20 @@ public class TestService {
         testRepository.saveAndFlush(test);
         return TestUpdateResponse.from(test);
     }
+
+    public void deleteTest(Long testId, Long makerId) {
+        Test test = testRepository.findById(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        if (!test.getMakerId().equals(makerId)) {
+            throw new BaseException(BaseErrorCode.TEST_005);
+        }
+
+        List<String> imageKeys = List.copyOf(test.getImageKeys());
+        if (!imageKeys.isEmpty()) {
+            eventPublisher.publishEvent(new ImageDeleteEvent(imageKeys));
+        }
+
+        test.delete();
+    }
 }
