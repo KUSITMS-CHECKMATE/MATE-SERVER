@@ -85,6 +85,10 @@ public class Test extends BaseEntity {
         }
     }
 
+    public void delete() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
     @Builder
     public Test(Long makerId, String title, String description, String serviceName,
                 String serviceDescription, List<String> imageKeys) {
