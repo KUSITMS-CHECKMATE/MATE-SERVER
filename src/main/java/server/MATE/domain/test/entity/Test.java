@@ -69,6 +69,22 @@ public class Test extends BaseEntity {
         });
     }
 
+    public void update(String title, String description, List<Category> categories,
+                       String serviceName, String serviceDescription, List<String> imageKeys) {
+        if (title != null) this.title = title;
+        if (description != null) this.description = description;
+        if (categories != null) {
+            this.categories.clear();
+            addCategories(categories);
+        }
+        if (serviceName != null) this.serviceName = serviceName;
+        if (serviceDescription != null) this.serviceDescription = serviceDescription;
+        if (imageKeys != null) {
+            this.imageKeys.clear();
+            this.imageKeys.addAll(imageKeys);
+        }
+    }
+
     @Builder
     public Test(Long makerId, String title, String description, String serviceName,
                 String serviceDescription, List<String> imageKeys) {
