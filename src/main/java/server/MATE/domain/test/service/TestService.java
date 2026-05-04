@@ -16,6 +16,7 @@ import server.MATE.global.image.event.ImageCleanupEvent;
 import server.MATE.global.image.event.ImageDeleteEvent;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -54,13 +55,14 @@ public class TestService {
 
         List<String> newImageKeys = request.imageKeys();
         if (newImageKeys != null) {
-            List<String> oldImageKeys = List.copyOf(test.getImageKeys());
+            Set<String> oldKeySet = Set.copyOf(test.getImageKeys());
+            Set<String> newKeySet = Set.copyOf(newImageKeys);
 
-            List<String> addedKeys = newImageKeys.stream()
-                    .filter(key -> !oldImageKeys.contains(key))
+            List<String> addedKeys = newKeySet.stream()
+                    .filter(key -> !oldKeySet.contains(key))
                     .toList();
-            List<String> removedKeys = oldImageKeys.stream()
-                    .filter(key -> !newImageKeys.contains(key))
+            List<String> removedKeys = oldKeySet.stream()
+                    .filter(key -> !newKeySet.contains(key))
                     .toList();
 
             if (!addedKeys.isEmpty()) {
@@ -80,6 +82,7 @@ public class TestService {
                 newImageKeys
         );
 
+        testRepository.saveAndFlush(test);
         return TestUpdateResponse.from(test);
     }
 }
