@@ -6,6 +6,7 @@ import server.MATE.domain.test.entity.TestCategory;
 import server.MATE.domain.test.entity.TestStatus;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public record TestUpdateResponse(
@@ -34,7 +35,7 @@ public record TestUpdateResponse(
                         .toList(),
                 test.getServiceName(),
                 test.getServiceDescription(),
-                test.getImageKeys(),
+                new ArrayList<>(test.getImageKeys()),
                 test.getStatus(),
                 test.getGoalPpl(),
                 test.getReward(),
