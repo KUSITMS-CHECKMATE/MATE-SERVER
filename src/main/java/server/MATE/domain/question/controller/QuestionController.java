@@ -33,7 +33,7 @@ public class QuestionController {
             @PathVariable Long testId,
             @RequestBody @Valid AbTestCreateRequest request
     ) {
-        AbTestCreateResponse response = abTestService.createAbTest(testId, request);
+        AbTestCreateResponse response = abTestService.createAbTest(testId, makerId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("A/B 테스트 질문이 등록되었습니다.", response));
     }
