@@ -1,7 +1,9 @@
 package server.MATE.global.security.filter;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +35,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -86,8 +87,7 @@ class JwtAuthenticationFilterTest {
                 .build();
         ReflectionTestUtils.setField(user, "id", 1L);
 
-        when(jwtProvider.extractTokenType("valid-token")).thenReturn(TokenType.ACCESS);
-        when(jwtProvider.extractUserId("valid-token")).thenReturn(1L);
+        when(jwtProvider.parseClaims("valid-token")).thenReturn(claims(1L, TokenType.ACCESS));
         when(usersRepository.findById(1L)).thenReturn(Optional.of(user));
 
         jwtAuthenticationFilter.doFilter(request, response, filterChain);
@@ -106,7 +106,7 @@ class JwtAuthenticationFilterTest {
         MockHttpServletRequest request = bearerRequest("invalid-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        when(jwtProvider.extractTokenType("invalid-token")).thenReturn(TokenType.REFRESH);
+        when(jwtProvider.parseClaims("invalid-token")).thenReturn(claims(1L, TokenType.REFRESH));
 
         jwtAuthenticationFilter.doFilter(request, response, filterChain);
 
@@ -123,8 +123,7 @@ class JwtAuthenticationFilterTest {
         MockHttpServletRequest request = bearerRequest("missing-user-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        when(jwtProvider.extractTokenType("missing-user-token")).thenReturn(TokenType.ACCESS);
-        when(jwtProvider.extractUserId("missing-user-token")).thenReturn(99L);
+        when(jwtProvider.parseClaims("missing-user-token")).thenReturn(claims(99L, TokenType.ACCESS));
         when(usersRepository.findById(99L)).thenReturn(Optional.empty());
 
         jwtAuthenticationFilter.doFilter(request, response, filterChain);
@@ -141,7 +140,7 @@ class JwtAuthenticationFilterTest {
         MockHttpServletRequest request = bearerRequest("expired-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        when(jwtProvider.extractTokenType("expired-token")).thenThrow(new ExpiredJwtException(null, null, "expired"));
+        when(jwtProvider.parseClaims("expired-token")).thenThrow(new ExpiredJwtException(null, null, "expired"));
 
         jwtAuthenticationFilter.doFilter(request, response, filterChain);
 
@@ -157,7 +156,7 @@ class JwtAuthenticationFilterTest {
         MockHttpServletRequest request = bearerRequest("malformed-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        when(jwtProvider.extractTokenType("malformed-token")).thenThrow(new JwtException("invalid"));
+        when(jwtProvider.parseClaims("malformed-token")).thenThrow(new JwtException("invalid"));
 
         jwtAuthenticationFilter.doFilter(request, response, filterChain);
 
@@ -171,5 +170,12 @@ class JwtAuthenticationFilterTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader(JwtConstants.AUTH_HEADER, JwtConstants.TOKEN_PREFIX + token);
         return request;
+    }
+
+    private Claims claims(Long userId, TokenType tokenType) {
+        Claims claims = Jwts.claims();
+        claims.setSubject(String.valueOf(userId));
+        claims.put("tokenType", tokenType.name());
+        return claims;
     }
 }
