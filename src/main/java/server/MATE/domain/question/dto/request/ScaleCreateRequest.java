@@ -9,7 +9,7 @@ public record ScaleCreateRequest(
         @Size(max = 34, message = "질문 제목은 최대 34자까지 입력 가능합니다.")
         String title,
 
-        @Size(max = 50, message = "질문 설명은 최대 55자까지 입력 가능합니다.")
+        @Size(max = 50, message = "질문 설명은 최대 50자까지 입력 가능합니다.")
         String description,
 
         String imageKey,
