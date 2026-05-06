@@ -11,10 +11,10 @@ import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Subjective;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.question.repository.SubjectiveRepository;
+import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.common.exception.ErrorCode;
 import server.MATE.global.image.event.ImageCleanupEvent;
 
 import java.util.List;
@@ -31,10 +31,15 @@ public class SubjectiveService {
 
     public SubjectiveCreateResponse createSubjective(
             Long testId,
+            Long makerId,
             SubjectiveCreateRequest request
     ) {
-        if (!testRepository.existsById(testId)) {
-            throw new BaseException(BaseErrorCode.TEST_004);
+        Test test = testRepository.findById(testId)
+                .filter(t -> t.getDeletedAt() == null)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        if (!test.getMakerId().equals(makerId)) {
+            throw new BaseException(BaseErrorCode.TEST_005);
         }
 
         // TODO: 동시성 이슈 - 현재 MAX(sequence)+1 방식은 동시 요청 시 중복 순서값 발생 가능.

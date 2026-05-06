@@ -52,7 +52,7 @@ public class ObjectiveController {
             @Parameter(description = "테스트 제작자 ID (인증 구현 전 임시 헤더)")
             @RequestHeader("X-User-Id") Long makerId
     ) {
-        ObjectiveCreateResponse response = objectiveService.createObjective(testId, request);
+        ObjectiveCreateResponse response = objectiveService.createObjective(testId, makerId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("객관식 문항이 등록되었습니다.", response));
     }

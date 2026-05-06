@@ -13,6 +13,7 @@ import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.ObjectiveRepository;
 import server.MATE.domain.question.repository.QuestionRepository;
+import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
@@ -32,10 +33,15 @@ public class ObjectiveService {
 
     public ObjectiveCreateResponse createObjective(
             Long testId,
+            Long makerId,
             ObjectiveCreateRequest request
     ) {
-        if (!testRepository.existsById(testId)) {
-            throw new BaseException(BaseErrorCode.TEST_004);
+        Test test = testRepository.findById(testId)
+                .filter(t -> t.getDeletedAt() == null)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        if (!test.getMakerId().equals(makerId)) {
+            throw new BaseException(BaseErrorCode.TEST_005);
         }
 
         validateSelectRange(request);
