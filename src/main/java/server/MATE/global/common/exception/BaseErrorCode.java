@@ -21,11 +21,22 @@ public enum BaseErrorCode implements ErrorCode {
     COMMON_009(HttpStatus.FORBIDDEN, "COMMON_009", "접근 권한이 없습니다."),
     COMMON_999(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_999", "서버 내부 오류가 발생했습니다."),
 
+    // Auth
+    AUTH_001(HttpStatus.UNAUTHORIZED, "AUTH_001", "유효하지 않은 액세스 토큰입니다."),
+    AUTH_002(HttpStatus.UNAUTHORIZED, "AUTH_002", "만료된 토큰입니다."),
+    AUTH_003(HttpStatus.UNAUTHORIZED, "AUTH_003", "허용되지 않은 토큰 타입입니다."),
+    AUTH_004(HttpStatus.UNAUTHORIZED, "AUTH_004", "사용자를 찾을 수 없습니다."),
+    AUTH_005(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH_005", "JWT 설정 정보를 찾을 수 없습니다."),
+
     // Test
     TEST_001(HttpStatus.BAD_REQUEST, "TEST_001", "카테고리는 1개 이상 3개 이하로 선택해야 합니다."),
     TEST_002(HttpStatus.BAD_REQUEST, "TEST_002", "이미지는 최대 10개까지 업로드할 수 있습니다."),
     TEST_003(HttpStatus.BAD_REQUEST, "TEST_003", "지원하지 않는 이미지 형식입니다. JPG, PNG만 허용됩니다."),
     TEST_004(HttpStatus.NOT_FOUND, "TEST_004", "테스트를 찾을 수 없습니다."),
+    TEST_005(HttpStatus.FORBIDDEN, "TEST_005", "해당 테스트에 대한 권한이 없습니다."),
+
+    // Question
+    QUESTION_001(HttpStatus.NOT_FOUND, "QUESTION_001", "존재하지 않는 질문입니다."),
 
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
