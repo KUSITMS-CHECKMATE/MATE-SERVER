@@ -26,3 +26,16 @@ toss:
 
 discord:
   webhook-url: ${DISCORD_WEBHOOK_URL:}
+
+azure:
+  storage:
+    connection-string: ${AZURE_CONNECTION:}
+    container-name: ${AZURE_CONTAINER_NAME:}
+
+jwt:
+  secret: ${JWT_SECRET:}
+  tokens:
+    ACCESS:
+      expiration: 3600000
+    REFRESH:
+      expiration: 1209600000
