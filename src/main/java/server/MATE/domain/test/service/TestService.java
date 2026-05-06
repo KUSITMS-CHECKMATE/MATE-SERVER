@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
+import server.MATE.domain.test.dto.response.TestDetailResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestUpdateResponse;
 import server.MATE.domain.test.entity.Test;
@@ -37,6 +38,14 @@ public class TestService {
         return testRepository.findAll(newestFirst).stream()
                 .map(TestSummaryResponse::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TestDetailResponse getTest(Long testId) {
+        Test test = testRepository.findById(testId)
+                .filter(t -> t.getDeletedAt() == null)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+        return TestDetailResponse.from(test);
     }
 
     public TestCreateResponse createTest(TestCreateRequest request, Long makerId) {
