@@ -22,7 +22,13 @@ public class TestController {
 
     private final TestService testService;
 
-    @Operation(summary = "테스트 등록", description = "새로운 테스트를 등록합니다.")
+    @Operation(summary = "테스트 등록", description = """
+            새로운 테스트를 등록합니다.
+
+            **[이미지 처리]**
+            - `imageKeys`는 S3 Presigned URL로 미리 업로드한 객체 키 목록입니다.
+            - 트랜잭션 실패(롤백) 시 업로드된 이미지는 S3에서 자동 삭제됩니다.
+            """)
     @PostMapping
     public ResponseEntity<ApiResponse<TestCreateResponse>> createTest(
             @RequestBody @Valid TestCreateRequest request,
@@ -34,7 +40,14 @@ public class TestController {
                 .body(ApiResponse.created("테스트가 등록되었습니다.", response));
     }
 
-    @Operation(summary = "테스트 수정", description = "테스트 기본 정보를 수정합니다.")
+    @Operation(summary = "테스트 수정", description = """
+            테스트 기본 정보를 수정합니다.
+
+            **[이미지 처리]**
+            - `imageKeys`를 전달하면 기존 이미지 목록이 전체 교체됩니다.
+            - 기존 목록에서 제거된 이미지는 트랜잭션 커밋 후 S3에서 영구 삭제됩니다.
+            - `imageKeys`를 `null`로 보내면 이미지는 변경되지 않습니다.
+            """)
     @PatchMapping("/{testId}")
     public ResponseEntity<ApiResponse<TestUpdateResponse>> updateTest(
             @PathVariable Long testId,
