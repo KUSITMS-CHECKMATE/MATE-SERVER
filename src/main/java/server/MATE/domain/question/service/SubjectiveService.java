@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import server.MATE.domain.question.dto.request.SubjectiveQuestionCreateRequest;
-import server.MATE.domain.question.dto.response.SubjectiveQuestionCreateResponse;
+import server.MATE.domain.question.dto.request.SubjectiveCreateRequest;
+import server.MATE.domain.question.dto.response.SubjectiveCreateResponse;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Subjective;
@@ -22,16 +22,16 @@ import java.util.List;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class SubjectiveQuestionService {
+public class SubjectiveService {
 
     private final TestRepository testRepository;
     private final QuestionRepository questionRepository;
     private final SubjectiveRepository subjectiveRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    public SubjectiveQuestionCreateResponse createSubjectiveQuestion(
+    public SubjectiveCreateResponse createSubjective(
             Long testId,
-            SubjectiveQuestionCreateRequest request
+            SubjectiveCreateRequest request
     ) {
         if (!testRepository.existsById(testId)) {
             throw new BaseException(BaseErrorCode.TEST_004);
@@ -60,6 +60,6 @@ public class SubjectiveQuestionService {
         questionRepository.save(question);
         subjectiveRepository.save(subjective);
 
-        return SubjectiveQuestionCreateResponse.from(subjective);
+        return SubjectiveCreateResponse.from(subjective);
     }
 }
