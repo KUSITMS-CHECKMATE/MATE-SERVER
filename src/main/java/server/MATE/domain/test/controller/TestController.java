@@ -31,7 +31,7 @@ public class TestController {
 
             **[이미지 처리]**
             - imageKeys는 이미지 업로드 URL 발급 API로 먼저 업로드한 뒤 받은 imageKey 목록입니다.
-            - 트랜잭션 실패(롤백) 시 업로드된 이미지는 S3에서 자동 삭제됩니다.
+            - 트랜잭션 실패(롤백) 시 업로드된 이미지는 Azure Blob Storage에서 자동 삭제됩니다.
 
             **[에러 코드]**
             | 코드 | HTTP | 설명 |
