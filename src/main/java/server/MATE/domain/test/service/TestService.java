@@ -15,6 +15,8 @@ import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.image.event.ImageCleanupEvent;
 import server.MATE.global.image.event.ImageDeleteEvent;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -25,6 +27,7 @@ public class TestService {
 
     private final TestRepository testRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
     public TestCreateResponse createTest(TestCreateRequest request, Long makerId) {
         List<String> imageKeys = request.imageKeys() != null ? request.imageKeys() : List.of();
@@ -47,6 +50,7 @@ public class TestService {
 
     public TestUpdateResponse updateTest(Long testId, TestUpdateRequest request, Long makerId) {
         Test test = testRepository.findById(testId)
+                .filter(t -> t.getDeletedAt() == null)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         if (!test.getMakerId().equals(makerId)) {
@@ -88,6 +92,7 @@ public class TestService {
 
     public void deleteTest(Long testId, Long makerId) {
         Test test = testRepository.findById(testId)
+                .filter(t -> t.getDeletedAt() == null)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         if (!test.getMakerId().equals(makerId)) {
@@ -99,6 +104,6 @@ public class TestService {
             eventPublisher.publishEvent(new ImageDeleteEvent(imageKeys));
         }
 
-        test.delete();
+        test.delete(LocalDateTime.now(clock));
     }
 }
