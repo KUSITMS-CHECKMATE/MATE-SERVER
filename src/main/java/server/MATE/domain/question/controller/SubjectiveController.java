@@ -29,7 +29,7 @@ public class SubjectiveController {
             @RequestHeader("X-User-Id") Long makerId
     ) {
         SubjectiveCreateResponse response =
-                subjectiveService.createSubjective(testId, request);
+                subjectiveService.createSubjective(testId, makerId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("주관식 질문이 등록되었습니다.", response));
     }
