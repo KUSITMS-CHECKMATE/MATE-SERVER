@@ -4,17 +4,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import server.MATE.domain.question.dto.request.SubjectiveQuestionCreateRequest;
-import server.MATE.domain.question.dto.response.SubjectiveQuestionCreateResponse;
+import server.MATE.domain.question.dto.request.SubjectiveCreateRequest;
+import server.MATE.domain.question.dto.response.SubjectiveCreateResponse;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Subjective;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.question.repository.SubjectiveRepository;
+import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.common.exception.ErrorCode;
 import server.MATE.global.image.event.ImageCleanupEvent;
 
 import java.util.List;
@@ -22,19 +22,24 @@ import java.util.List;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class SubjectiveQuestionService {
+public class SubjectiveService {
 
     private final TestRepository testRepository;
     private final QuestionRepository questionRepository;
     private final SubjectiveRepository subjectiveRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    public SubjectiveQuestionCreateResponse createSubjectiveQuestion(
+    public SubjectiveCreateResponse createSubjective(
             Long testId,
-            SubjectiveQuestionCreateRequest request
+            Long makerId,
+            SubjectiveCreateRequest request
     ) {
-        if (!testRepository.existsById(testId)) {
-            throw new BaseException(BaseErrorCode.TEST_004);
+        Test test = testRepository.findById(testId)
+                .filter(t -> t.getDeletedAt() == null)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        if (!test.getMakerId().equals(makerId)) {
+            throw new BaseException(BaseErrorCode.TEST_005);
         }
 
         // TODO: 동시성 이슈 - 현재 MAX(sequence)+1 방식은 동시 요청 시 중복 순서값 발생 가능.
@@ -60,6 +65,6 @@ public class SubjectiveQuestionService {
         questionRepository.save(question);
         subjectiveRepository.save(subjective);
 
-        return SubjectiveQuestionCreateResponse.from(subjective);
+        return SubjectiveCreateResponse.from(subjective);
     }
 }
