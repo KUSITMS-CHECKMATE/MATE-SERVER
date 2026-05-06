@@ -16,9 +16,9 @@ import server.MATE.global.common.entity.BaseEntity;
 
 @Getter
 @Entity
-@Table(name = "ab_test")
+@Table(name = "scale")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class AbTest extends BaseEntity {
+public class Scale extends BaseEntity {
 
     @Id
     private Long id;
@@ -28,16 +28,24 @@ public class AbTest extends BaseEntity {
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
-    @Column(name = "a_image_key", nullable = false)
-    private String aImageKey;
+    @Column
+    private String imageKey;
 
-    @Column(name = "b_image_key", nullable = false)
-    private String bImageKey;
+    @Column(length = 100)
+    private String minLabel;
+
+    @Column(length = 100)
+    private String maxLabel;
+
+    @Column(name = "scale_range", nullable = false)
+    private Integer range;
 
     @Builder
-    public AbTest(Question question, String aImageKey, String bImageKey) {
+    public Scale(Question question, String imageKey, String minLabel, String maxLabel, Integer range) {
         this.question = question;
-        this.aImageKey = aImageKey;
-        this.bImageKey = bImageKey;
+        this.imageKey = imageKey;
+        this.minLabel = minLabel;
+        this.maxLabel = maxLabel;
+        this.range = range == null ? 5 : range;
     }
 }
