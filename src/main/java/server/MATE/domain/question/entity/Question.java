@@ -46,6 +46,6 @@ public class Question extends BaseEntity {
         this.questionType = questionType;
         this.title = title;
         this.description = description;
-        this.sequence = sequence;
+        this.sequence = sequence == null ? 0L : sequence;
     }
 }
