@@ -28,15 +28,12 @@ public class CardSortingService {
     @Transactional
     public CardSortingCreateResponse createCardSorting(Long testId, CardSortingCreateRequest request) {
         ensureTestExists(testId);
-
         Question question = persistQuestion(testId, request);
-
         CardSorting cardSorting = CardSorting.create(
                 question,
                 request.cards(),
                 mapCategoryItems(request.categories()));
         cardSortingRepository.save(cardSorting);
-
         return CardSortingCreateResponse.from(cardSorting);
     }
 
