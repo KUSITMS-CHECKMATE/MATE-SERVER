@@ -1,0 +1,59 @@
+package server.MATE.domain.question.controller;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import server.MATE.domain.question.dto.request.AbTestCreateRequest;
+import server.MATE.domain.question.dto.request.ScaleCreateRequest;
+import server.MATE.domain.question.dto.response.AbTestCreateResponse;
+import server.MATE.domain.question.dto.response.ScaleCreateResponse;
+import server.MATE.domain.question.service.AbTestService;
+import server.MATE.domain.question.service.ScaleService;
+import server.MATE.global.common.response.ApiResponse;
+import server.MATE.global.security.principal.AuthenticatedUser;
+
+@Tag(name = "[QUESTION] 문항 API", description = "문항 등록 관련 API")
+@RestController
+@RequestMapping("/api/v1/tests/{testId}/questions")
+@SecurityRequirement(name = "JWT")
+@RequiredArgsConstructor
+public class QuestionController {
+
+    private final AbTestService abTestService;
+    private final ScaleService scaleService;
+
+    @Operation(summary = "A/B 테스트 문항 등록", description = "A/B 테스트 문항을 등록합니다.")
+    @PostMapping("/abtest")
+    public ResponseEntity<ApiResponse<AbTestCreateResponse>> createAbTest(
+            @PathVariable Long testId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @RequestBody @Valid AbTestCreateRequest request
+    ) {
+        AbTestCreateResponse response = abTestService.createAbTest(testId, authenticatedUser.getId(), request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created("A/B 테스트 질문이 등록되었습니다.", response));
+    }
+
+    @Operation(summary = "척도 문항 등록", description = "척도 문항을 등록합니다.")
+    @PostMapping("/scale")
+    public ResponseEntity<ApiResponse<ScaleCreateResponse>> createScale(
+            @PathVariable Long testId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @RequestBody @Valid ScaleCreateRequest request
+    ) {
+        ScaleCreateResponse response = scaleService.createScale(testId, authenticatedUser.getId(), request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created("척도 질문이 등록되었습니다.", response));
+    }
+}
