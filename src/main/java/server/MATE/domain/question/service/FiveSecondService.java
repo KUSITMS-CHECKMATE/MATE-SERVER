@@ -95,6 +95,8 @@ public class FiveSecondService {
             throw new BaseException(BaseErrorCode.QUESTION_004);
         }
 
+        if (!Boolean.TRUE.equals(request.isDuplicate())) return;
+
         int optionCount = options.size();
         Integer min = request.minSelect();
         Integer max = request.maxSelect();
