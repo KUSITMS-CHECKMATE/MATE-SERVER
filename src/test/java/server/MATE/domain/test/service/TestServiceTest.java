@@ -8,6 +8,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+
+import java.time.Clock;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
 import server.MATE.domain.test.entity.Category;
 import server.MATE.domain.test.repository.TestRepository;
@@ -31,6 +33,9 @@ class TestServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private Clock clock;
 
     @InjectMocks
     private TestService testService;

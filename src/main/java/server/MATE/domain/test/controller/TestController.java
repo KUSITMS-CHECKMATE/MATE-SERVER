@@ -58,4 +58,15 @@ public class TestController {
         TestUpdateResponse response = testService.updateTest(testId, request, makerId);
         return ResponseEntity.ok(ApiResponse.ok("테스트가 수정되었습니다.", response));
     }
+
+    @Operation(summary = "테스트 삭제", description = "테스트를 삭제합니다.")
+    @DeleteMapping("/{testId}")
+    public ResponseEntity<ApiResponse<Void>> deleteTest(
+            @PathVariable Long testId,
+            // TODO: 인증 구현 후 @AuthenticationPrincipal 등으로 대체
+            @RequestHeader("X-User-Id") Long makerId
+    ) {
+        testService.deleteTest(testId, makerId);
+        return ResponseEntity.ok(ApiResponse.ok("테스트가 삭제되었습니다.", null));
+    }
 }
