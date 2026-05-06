@@ -1,9 +1,9 @@
 package server.MATE.domain.question.entity;
 
 public enum QuestionType {
+    OBJECTIVE,
     SUBJECTIVE,
-    MULTIPLE_CHOICE,
-    FIVE_SECOND_TEST,
+    FIVE_SECOND,
     SCALE,
     AB_TEST,
     CARD_SORTING,
