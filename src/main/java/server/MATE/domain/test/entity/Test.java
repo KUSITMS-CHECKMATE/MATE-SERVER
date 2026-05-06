@@ -85,8 +85,8 @@ public class Test extends BaseEntity {
         }
     }
 
-    public void delete() {
-        this.deletedAt = LocalDateTime.now();
+    public void delete(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     @Builder
