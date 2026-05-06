@@ -20,7 +20,7 @@ public class Subjective {
     @JoinColumn(name = "question_id")
     private Question question;
 
-    @Column(length = 255)
+    @Column
     private String imageKey;
 
     @Builder

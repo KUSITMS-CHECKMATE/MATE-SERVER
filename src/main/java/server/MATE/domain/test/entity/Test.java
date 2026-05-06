@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Where;
 import server.MATE.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
@@ -14,13 +15,13 @@ import java.util.List;
 @Getter
 @Entity
 @Table(name = "test")
+@Where(clause = "deleted_at is null")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Test extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @Column(nullable = false)
     private Long makerId;
 
@@ -67,6 +68,26 @@ public class Test extends BaseEntity {
                     .build();
             this.categories.add(testCategory);
         });
+    }
+
+    public void update(String title, String description, List<Category> categories,
+                       String serviceName, String serviceDescription, List<String> imageKeys) {
+        if (title != null) this.title = title;
+        if (description != null) this.description = description;
+        if (categories != null) {
+            this.categories.clear();
+            addCategories(categories);
+        }
+        if (serviceName != null) this.serviceName = serviceName;
+        if (serviceDescription != null) this.serviceDescription = serviceDescription;
+        if (imageKeys != null) {
+            this.imageKeys.clear();
+            this.imageKeys.addAll(imageKeys);
+        }
+    }
+
+    public void delete(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     @Builder
