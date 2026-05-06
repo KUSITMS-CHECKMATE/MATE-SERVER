@@ -1,0 +1,35 @@
+package server.MATE.domain.question.entity;
+
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@Entity
+@Table(name = "five_second_option")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class FiveSecondOption {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "five_second_id", nullable = false)
+    private FiveSecond fiveSecond;
+
+    @Column(nullable = false, length = 50)
+    private String content;
+
+    @Column(nullable = false)
+    private Integer sequence;
+
+    @Builder
+    public FiveSecondOption(FiveSecond fiveSecond, String content, Integer sequence) {
+        this.fiveSecond = fiveSecond;
+        this.content = content;
+        this.sequence = sequence;
+    }
+}
