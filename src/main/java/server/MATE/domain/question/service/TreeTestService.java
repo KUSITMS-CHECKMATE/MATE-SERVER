@@ -29,6 +29,7 @@ public class TreeTestService {
     @Transactional
     public TreeTestCreateResponse createTreeTest(Long testId, Long makerId, TreeTestCreateRequest request) {
         Test test = testRepository.findById(testId)
+                .filter(t -> t.getDeletedAt() == null)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         if (!test.getMakerId().equals(makerId)) {
             throw new BaseException(BaseErrorCode.TEST_005);
