@@ -68,8 +68,7 @@ public class TestService {
     }
 
     public TestUpdateResponse updateTest(Long testId, TestUpdateRequest request, Long makerId) {
-        Test test = testRepository.findById(testId)
-                .filter(t -> t.getDeletedAt() == null)
+        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         if (!test.getMakerId().equals(makerId)) {
@@ -110,8 +109,7 @@ public class TestService {
     }
 
     public void deleteTest(Long testId, Long makerId) {
-        Test test = testRepository.findById(testId)
-                .filter(t -> t.getDeletedAt() == null)
+        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         if (!test.getMakerId().equals(makerId)) {
