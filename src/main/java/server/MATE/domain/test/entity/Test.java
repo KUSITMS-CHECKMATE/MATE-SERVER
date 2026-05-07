@@ -5,11 +5,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-<<<<<<< HEAD
-import org.hibernate.annotations.BatchSize;
-import org.hibernate.annotations.Where;
-=======
->>>>>>> origin/dev
 import server.MATE.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
