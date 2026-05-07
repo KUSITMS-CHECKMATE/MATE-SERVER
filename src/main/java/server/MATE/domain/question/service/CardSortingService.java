@@ -38,9 +38,8 @@ public class CardSortingService {
     }
 
     private void ensureTestExists(Long testId) {
-        if (!testRepository.existsById(testId)) {
-            throw new BaseException(BaseErrorCode.TEST_004);
-        }
+        testRepository.findByIdAndDeletedAtIsNull(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
     }
 
     private Question persistQuestion(Long testId, CardSortingCreateRequest request) {

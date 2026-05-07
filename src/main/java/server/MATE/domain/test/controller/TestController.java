@@ -43,9 +43,7 @@ public class TestController {
                     """
     )
     @GetMapping
-    public ResponseEntity<ApiResponse<List<TestSummaryResponse>>> listTests(
-            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
-    ) {
+    public ResponseEntity<ApiResponse<List<TestSummaryResponse>>> listTests() {
         List<TestSummaryResponse> data = testService.listTests();
         return ResponseEntity.ok(ApiResponse.ok("테스트 목록을 조회했습니다.", data));
     }
