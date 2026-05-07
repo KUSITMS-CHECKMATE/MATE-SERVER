@@ -6,6 +6,8 @@ import server.MATE.domain.question.entity.CardSorting;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.CardSortingRepository;
+import server.MATE.global.common.exception.BaseErrorCode;
+import server.MATE.global.common.exception.BaseException;
 
 import java.util.List;
 
@@ -26,6 +28,15 @@ public class CardSortingQuestionCreateHandler extends AbstractQuestionCreateHand
 
     @Override
     protected void validateTyped(CardSortingCreateRequest item) {
+        // 카드 목록은 최소 4개, 최대 12개까지 허용함
+        if (item.cards() == null || item.cards().size() < 4 || item.cards().size() > 12) {
+            throw new BaseException(BaseErrorCode.COMMON_002);
+        }
+
+        // 카테고리 목록은 최소 1개, 최대 3개까지 허용함
+        if (item.categories() == null || item.categories().isEmpty() || item.categories().size() > 3) {
+            throw new BaseException(BaseErrorCode.COMMON_002);
+        }
     }
 
     @Override

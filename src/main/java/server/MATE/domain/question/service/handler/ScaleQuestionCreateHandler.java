@@ -28,6 +28,7 @@ public class ScaleQuestionCreateHandler extends AbstractQuestionCreateHandler<Sc
 
     @Override
     protected void validateTyped(ScaleCreateRequest item) {
+        // 척도형 범위는 5점 또는 7점만 허용함
         if (item.range() != 5 && item.range() != 7) {
             throw new BaseException(BaseErrorCode.COMMON_002);
         }

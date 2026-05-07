@@ -30,20 +30,34 @@ public class ObjectiveQuestionCreateHandler extends AbstractQuestionCreateHandle
 
     @Override
     protected void validateTyped(ObjectiveCreateRequest item) {
+        // 객관식 선택지는 최소 2개, 최대 10개까지 허용함
+        int optionCount = item.options() == null ? 0 : item.options().size();
+        if (optionCount < 2 || optionCount > 10) {
+            throw new BaseException(BaseErrorCode.COMMON_002);
+        }
+
+        // 단일 선택 객관식에는 min/max 선택 개수를 사용할 수 없음
         if (!item.isDuplicate()) {
+            if (item.minSelect() != null || item.maxSelect() != null) {
+                throw new BaseException(BaseErrorCode.QUESTION_009);
+            }
             return;
         }
 
         Integer min = item.minSelect();
         Integer max = item.maxSelect();
-        int optionCount = item.options().size();
 
+        // 최소 선택 개수는 1 이상이어야 함
         if (min != null && min < 1) {
             throw new BaseException(BaseErrorCode.QUESTION_001);
         }
+
+        // 최대 선택 개수는 최소 선택 개수보다 작을 수 없음
         if (min != null && max != null && max < min) {
             throw new BaseException(BaseErrorCode.QUESTION_002);
         }
+
+        // min/max 선택 개수는 전체 선택지 개수를 초과할 수 없음
         if (max != null && max > optionCount) {
             throw new BaseException(BaseErrorCode.QUESTION_003);
         }
