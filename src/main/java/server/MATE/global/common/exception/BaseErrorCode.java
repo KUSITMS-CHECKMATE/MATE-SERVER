@@ -40,7 +40,8 @@ public enum BaseErrorCode implements ErrorCode {
     QUESTION_002(HttpStatus.BAD_REQUEST, "QUESTION_002", "최대 선택 개수는 최소 선택 개수 이상이어야 합니다."),
     QUESTION_003(HttpStatus.BAD_REQUEST, "QUESTION_003", "최소/최대 선택 개수는 선택지 개수를 초과할 수 없습니다."),
     QUESTION_004(HttpStatus.BAD_REQUEST, "QUESTION_004", "객관식 전환 시 선택지는 최소 2개 이상이어야 합니다."),
-    QUESTION_001(HttpStatus.NOT_FOUND, "QUESTION_005", "존재하지 않는 질문입니다."),
+    QUESTION_005(HttpStatus.NOT_FOUND, "QUESTION_005", "존재하지 않는 질문입니다."),
+
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
 
