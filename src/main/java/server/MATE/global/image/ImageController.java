@@ -2,6 +2,7 @@ package server.MATE.global.image;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,8 @@ import java.util.UUID;
 
 @Tag(name = "[IMAGE] 이미지 API", description = "이미지 업로드 관련 API")
 @RestController
-@RequestMapping("/api/v1/images")
+@RequestMapping("/api/v1/uploads")
+@SecurityRequirement(name = "JWT")
 @RequiredArgsConstructor
 public class ImageController {
 
@@ -57,7 +59,7 @@ public class ImageController {
             | COMMON_004 | 400 | extension 파라미터 누락 |
             | TEST_003 | 400 | 지원하지 않는 이미지 형식 (jpg, jpeg, png만 허용) |
             """)
-    @PostMapping("/presigned-url")
+    @PostMapping("/presigned-urls")
     public ResponseEntity<ApiResponse<PresignedUrlResponse>> generatePresignedUrl(
             @Parameter(description = "이미지 확장자 (점 없이 입력, 예: jpg)", example = "jpg")
             @RequestParam String extension
