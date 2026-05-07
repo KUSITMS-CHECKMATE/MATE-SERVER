@@ -52,6 +52,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        String field = e.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField())
+                .findFirst()
+                .orElse(null);
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getDefaultMessage())
                 .findFirst()
@@ -59,11 +63,15 @@ public class GlobalExceptionHandler {
         log.warn("ValidationException: {}", message);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.of(BaseErrorCode.COMMON_002, message));
+                .body(ErrorResponse.of(BaseErrorCode.COMMON_002, message, field));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolationException(ConstraintViolationException e) {
+        String field = e.getConstraintViolations().stream()
+                .map(violation -> violation.getPropertyPath().toString())
+                .findFirst()
+                .orElse(null);
         String message = e.getConstraintViolations().stream()
                 .map(violation -> violation.getMessage())
                 .findFirst()
@@ -71,11 +79,15 @@ public class GlobalExceptionHandler {
         log.warn("ConstraintViolationException: {}", message);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.of(BaseErrorCode.COMMON_002, message));
+                .body(ErrorResponse.of(BaseErrorCode.COMMON_002, message, field));
     }
 
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ResponseEntity<ErrorResponse> handleHandlerMethodValidationException(HandlerMethodValidationException e) {
+        String field = e.getParameterValidationResults().stream()
+                .map(result -> result.getMethodParameter().getParameterName())
+                .findFirst()
+                .orElse(null);
         String message = e.getAllErrors().stream()
                 .map(error -> error.getDefaultMessage())
                 .findFirst()
@@ -83,7 +95,7 @@ public class GlobalExceptionHandler {
         log.warn("HandlerMethodValidationException: {}", message);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.of(BaseErrorCode.COMMON_002, message));
+                .body(ErrorResponse.of(BaseErrorCode.COMMON_002, message, field));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
