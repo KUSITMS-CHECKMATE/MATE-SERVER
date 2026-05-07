@@ -50,7 +50,7 @@ public class FiveSecondService {
 
         Question question = Question.builder()
                 .testId(testId)
-                .questionType(QuestionType.FIVE_SECOND_TEST)
+                .questionType(QuestionType.FIVE_SECOND)
                 .title(request.title())
                 .description(request.description())
                 .sequence(sequence)
