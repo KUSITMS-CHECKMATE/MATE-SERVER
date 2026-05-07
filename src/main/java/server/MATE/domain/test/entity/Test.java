@@ -44,7 +44,11 @@ public class Test extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TestStatus status;
+    private TestStatus testStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ApprovalStatus approvalStatus;
 
     @Column(nullable = false)
     private Integer goalPpl;
@@ -101,7 +105,8 @@ public class Test extends BaseEntity {
         if (imageKeys != null) {
             this.imageKeys.addAll(imageKeys);
         }
-        this.status = TestStatus.IN_PROGRESS;
+        this.testStatus = TestStatus.IN_PROGRESS;
+        this.approvalStatus = ApprovalStatus.WAITING;
         this.goalPpl = 100;
         this.reward = 300;
         this.pplCount = 0L;

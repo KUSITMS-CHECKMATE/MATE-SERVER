@@ -1,9 +1,6 @@
 package server.MATE.domain.test.dto.response;
 
-import server.MATE.domain.test.entity.Category;
-import server.MATE.domain.test.entity.Test;
-import server.MATE.domain.test.entity.TestCategory;
-import server.MATE.domain.test.entity.TestStatus;
+import server.MATE.domain.test.entity.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -18,7 +15,8 @@ public record TestUpdateResponse(
         String serviceName,
         String serviceDescription,
         List<String> imageKeys,
-        TestStatus status,
+        TestStatus testStatus,
+        ApprovalStatus approvalStatus,
         Integer goalPpl,
         Integer reward,
         LocalDateTime updatedAt
@@ -36,7 +34,8 @@ public record TestUpdateResponse(
                 test.getServiceName(),
                 test.getServiceDescription(),
                 new ArrayList<>(test.getImageKeys()),
-                test.getStatus(),
+                test.getTestStatus(),
+                test.getApprovalStatus(),
                 test.getGoalPpl(),
                 test.getReward(),
                 test.getUpdatedAt()
