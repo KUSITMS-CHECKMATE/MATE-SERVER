@@ -32,7 +32,7 @@ public class CardSorting {
     private List<@NotBlank(message = "카드 값은 비어 있을 수 없습니다.") String> cards = new ArrayList<>();
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "category", nullable = false, columnDefinition = "json")
+    @Column(name = "categories", nullable = false, columnDefinition = "json")
     @Size(max = 3, message = "카테고리는 최대 3개까지 저장할 수 있습니다.")
     private List<@NotBlank(message = "카테고리 값은 비어 있을 수 없습니다.") String> categories = new ArrayList<>();
 
