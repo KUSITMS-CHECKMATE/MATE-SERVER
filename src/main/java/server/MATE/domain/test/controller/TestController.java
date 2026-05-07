@@ -1,7 +1,6 @@
 package server.MATE.domain.test.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -68,10 +67,9 @@ public class TestController {
     public ResponseEntity<ApiResponse<TestUpdateResponse>> updateTest(
             @PathVariable Long testId,
             @RequestBody @Valid TestUpdateRequest request,
-            // TODO: 인증 구현 후 @AuthenticationPrincipal 등으로 대체
-            @RequestHeader("X-User-Id") Long makerId
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        TestUpdateResponse response = testService.updateTest(testId, request, makerId);
+        TestUpdateResponse response = testService.updateTest(testId, request, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트가 수정되었습니다.", response));
     }
 
@@ -79,10 +77,9 @@ public class TestController {
     @DeleteMapping("/{testId}")
     public ResponseEntity<ApiResponse<Void>> deleteTest(
             @PathVariable Long testId,
-            // TODO: 인증 구현 후 @AuthenticationPrincipal 등으로 대체
-            @RequestHeader("X-User-Id") Long makerId
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        testService.deleteTest(testId, makerId);
+        testService.deleteTest(testId, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트가 삭제되었습니다.", null));
     }
 }

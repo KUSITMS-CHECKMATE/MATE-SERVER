@@ -2,20 +2,24 @@ package server.MATE.domain.question.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import server.MATE.domain.question.dto.request.SubjectiveCreateRequest;
 import server.MATE.domain.question.dto.response.SubjectiveCreateResponse;
 import server.MATE.domain.question.service.SubjectiveService;
 import server.MATE.global.common.response.ApiResponse;
+import server.MATE.global.security.principal.AuthenticatedUser;
 
 @Tag(name = "[QUESTION] 문항 API", description = "문항 등록 관련 API")
 @RestController
 @RequestMapping("/api/v1/tests/{testId}/questions")
+@SecurityRequirement(name = "JWT")
 @RequiredArgsConstructor
 public class SubjectiveController {
 
@@ -35,16 +39,14 @@ public class SubjectiveController {
             | TEST_004 | 404 | 테스트를 찾을 수 없음 |
             """)
     @PostMapping("/subjective")
-    public ResponseEntity<ApiResponse<SubjectiveQuestionCreateResponse>> createSubjectiveQuestion(
+    public ResponseEntity<ApiResponse<SubjectiveCreateResponse>> createSubjectiveQuestion(
             @Parameter(description = "문항을 등록할 테스트 ID")
             @PathVariable Long testId,
             @RequestBody @Valid SubjectiveCreateRequest request,
-            // TODO: 인증 구현 후 @AuthenticationPrincipal 등으로 대체
-            @Parameter(description = "테스트 제작자 ID (인증 구현 전 임시 헤더)")
-            @RequestHeader("X-User-Id") Long makerId
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
         SubjectiveCreateResponse response =
-                subjectiveService.createSubjective(testId, makerId, request);
+                subjectiveService.createSubjective(testId, authenticatedUser.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("주관식 질문이 등록되었습니다.", response));
     }
