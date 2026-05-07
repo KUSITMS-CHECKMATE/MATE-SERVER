@@ -46,11 +46,9 @@ public class FiveSecondService {
         //  별도 시퀀스 관리 로직 개발 후 수정 예정.
         Long sequence = questionRepository.findMaxSequenceByTestId(testId) + 1;
 
-        eventPublisher.publishEvent(new ImageCleanupEvent(List.of(request.imageKey())));
-
         Question question = Question.builder()
                 .testId(testId)
-                .questionType(QuestionType.FIVE_SECOND_TEST)
+                .questionType(QuestionType.FIVE_SECOND)
                 .title(request.title())
                 .description(request.description())
                 .sequence(sequence)
@@ -80,6 +78,10 @@ public class FiveSecondService {
                         .build();
                 fiveSecond.addOption(option);
             }
+        }
+
+        if (request.imageKey() != null) {
+            eventPublisher.publishEvent(new ImageCleanupEvent(List.of(request.imageKey())));
         }
 
         fiveSecondRepository.save(fiveSecond);
