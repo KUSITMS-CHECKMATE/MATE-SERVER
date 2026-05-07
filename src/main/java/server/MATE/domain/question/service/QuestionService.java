@@ -1,6 +1,5 @@
 package server.MATE.domain.question.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,13 +24,22 @@ import java.util.Map;
 
 @Service
 @Transactional
-@RequiredArgsConstructor
 public class QuestionService {
 
     private final TestRepository testRepository;
     private final QuestionRepository questionRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final List<QuestionCreateHandler> handlers;
+    private final Map<QuestionType, QuestionCreateHandler> handlerMap;
+
+    public QuestionService(TestRepository testRepository,
+                           QuestionRepository questionRepository,
+                           ApplicationEventPublisher eventPublisher,
+                           List<QuestionCreateHandler> handlers) {
+        this.testRepository = testRepository;
+        this.questionRepository = questionRepository;
+        this.eventPublisher = eventPublisher;
+        this.handlerMap = buildHandlerMap(handlers);
+    }
 
     public QuestionCreateResponse createQuestions(Long testId, Long makerId, QuestionCreateRequest request) {
 
@@ -42,7 +50,6 @@ public class QuestionService {
 
         if (!test.getMakerId().equals(makerId)) throw new BaseException(BaseErrorCode.TEST_005);
 
-        Map<QuestionType, QuestionCreateHandler> handlerMap = getHandlerMap();
         Long baseSequence = questionRepository.findMaxSequenceByTestId(testId);
 
         List<String> imageKeysToCleanup = new ArrayList<>();
@@ -75,7 +82,7 @@ public class QuestionService {
         return new QuestionCreateResponse(results);
     }
 
-    private Map<QuestionType, QuestionCreateHandler> getHandlerMap() {
+    private Map<QuestionType, QuestionCreateHandler> buildHandlerMap(List<QuestionCreateHandler> handlers) {
         Map<QuestionType, QuestionCreateHandler> handlerMap = new EnumMap<>(QuestionType.class);
         for (QuestionCreateHandler handler : handlers) {
             handlerMap.put(handler.supports(), handler);
