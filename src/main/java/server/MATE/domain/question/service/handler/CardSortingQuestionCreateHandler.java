@@ -30,7 +30,7 @@ public class CardSortingQuestionCreateHandler extends AbstractQuestionCreateHand
 
     @Override
     protected void createDetailTyped(Question question, CardSortingCreateRequest item) {
-        CardSorting cardSorting = CardSorting.create(question, item.categories());
+        CardSorting cardSorting = CardSorting.create(question, item.cards(), item.categories());
         cardSortingRepository.save(cardSorting);
     }
 

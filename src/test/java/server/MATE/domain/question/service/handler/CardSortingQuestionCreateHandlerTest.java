@@ -30,7 +30,8 @@ class CardSortingQuestionCreateHandlerTest {
         CardSortingCreateRequest request = new CardSortingCreateRequest(
                 "카드소팅",
                 "설명",
-                List.of("검색", "결제", "홈", "마이페이지")
+                List.of("티셔츠", "꽃무늬가 들어간 티셔츠", "찢어진 청바지", "닥터마틴 워커"),
+                List.of("상의", "하의", "신발")
         );
         Question question = Question.builder()
                 .testId(1L)
@@ -47,7 +48,8 @@ class CardSortingQuestionCreateHandlerTest {
         CardSorting saved = captor.getValue();
 
         assertThat(saved.getQuestion()).isEqualTo(question);
-        assertThat(saved.getCards()).containsExactly("검색", "결제", "홈", "마이페이지");
+        assertThat(saved.getCards()).containsExactly("티셔츠", "꽃무늬가 들어간 티셔츠", "찢어진 청바지", "닥터마틴 워커");
+        assertThat(saved.getCategories()).containsExactly("상의", "하의", "신발");
         assertThat(handler.extractImageKeys(request)).isEmpty();
     }
 }

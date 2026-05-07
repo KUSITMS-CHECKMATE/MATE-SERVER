@@ -103,7 +103,8 @@ public class QuestionController {
                                                   "type": "CARD_SORTING",
                                                   "title": "기능 카드를 그룹으로 묶어주세요.",
                                                   "description": "비슷하다고 생각하는 항목끼리 분류해주세요.",
-                                                  "categories": ["검색", "결제", "주문내역", "프로필"]
+                                                  "cards": ["티셔츠", "꽃무늬가 들어간 티셔츠", "찢어진 청바지", "닥터마틴 워커"],
+                                                  "categories": ["상의", "하의", "신발"]
                                                 },
                                                 {
                                                   "type": "TREE_TEST",
