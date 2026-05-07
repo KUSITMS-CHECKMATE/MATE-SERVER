@@ -47,87 +47,173 @@ public class QuestionController {
                     required = true,
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "질문 문항 일괄 등록 예시",
-                                    value = """
-                                            {
-                                              "questions": [
-                                                {
-                                                  "type": "OBJECTIVE",
-                                                  "title": "가장 자주 사용하는 기능은 무엇인가요?",
-                                                  "description": "해당 서비스를 사용할 때 가장 자주 쓰는 기능을 골라주세요.",
-                                                  "isDuplicate": false,
-                                                  "isOther": true,
-                                                  "options": [
-                                                    { "content": "검색", "imageKey": null },
-                                                    { "content": "결제", "imageKey": "objective-option-image-key" }
-                                                  ]
-                                                },
-                                                {
-                                                  "type": "SUBJECTIVE",
-                                                  "title": "개선이 필요한 점은 무엇인가요?",
-                                                  "description": "자유롭게 작성해주세요.",
-                                                  "imageKey": null
-                                                },
-                                                {
-                                                  "type": "FIVE_SECOND",
-                                                  "title": "첫 화면에서 눈에 띄는 요소는 무엇인가요?",
-                                                  "description": "이미지를 5초간 본 뒤 답변해주세요.",
-                                                  "imageKey": "five-second-image-key",
-                                                  "isObjective": true,
-                                                  "isDuplicate": false,
-                                                  "minSelect": null,
-                                                  "maxSelect": null,
-                                                  "options": [
-                                                    { "content": "검색창" },
-                                                    { "content": "배너" }
-                                                  ]
-                                                },
-                                                {
-                                                  "type": "SCALE",
-                                                  "title": "전반적인 만족도를 평가해주세요.",
-                                                  "description": "5점 척도로 응답해주세요.",
-                                                  "imageKey": null,
-                                                  "minLabel": "매우 불만족",
-                                                  "maxLabel": "매우 만족",
-                                                  "range": 5
-                                                },
-                                                {
-                                                  "type": "AB_TEST",
-                                                  "title": "어느 시안이 더 마음에 드시나요?",
-                                                  "description": "두 시안을 비교하고 더 선호하는 쪽을 선택해주세요.",
-                                                  "aImageKey": "ab-test-image-a",
-                                                  "bImageKey": "ab-test-image-b"
-                                                },
-                                                {
-                                                  "type": "CARD_SORTING",
-                                                  "title": "기능 카드를 그룹으로 묶어주세요.",
-                                                  "description": "비슷하다고 생각하는 항목끼리 분류해주세요.",
-                                                  "cards": ["티셔츠", "꽃무늬가 들어간 티셔츠", "찢어진 청바지", "닥터마틴 워커"],
-                                                  "categories": ["상의", "하의", "신발"]
-                                                },
-                                                {
-                                                  "type": "TREE_TEST",
-                                                  "title": "설정 메뉴에서 알림 설정을 어디서 찾으시겠어요?",
-                                                  "description": "예상되는 경로를 따라 선택해주세요.",
-                                                  "features": [
+                            examples = {
+                                    @ExampleObject(
+                                            name = "객관식",
+                                            summary = "OBJECTIVE 예시",
+                                            value = """
                                                     {
-                                                      "label": "마이페이지",
-                                                      "children": [
+                                                      "questions": [
                                                         {
-                                                          "label": "설정",
-                                                          "children": [
-                                                            { "label": "알림 설정", "children": [] }
+                                                          "type": "OBJECTIVE",
+                                                          "title": "가장 자주 사용하는 기능은 무엇인가요?",
+                                                          "description": "해당 서비스를 사용할 때 가장 자주 쓰는 기능을 골라주세요.",
+                                                          "isDuplicate": false,
+                                                          "isOther": true,
+                                                          "options": [
+                                                            { "content": "검색", "imageKey": null },
+                                                            { "content": "결제", "imageKey": "objective-option-image-key" }
                                                           ]
                                                         }
                                                       ]
                                                     }
-                                                  ]
-                                                }
-                                              ]
-                                            }
-                                            """
-                            )
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "주관식",
+                                            summary = "SUBJECTIVE 예시",
+                                            value = """
+                                                    {
+                                                      "questions": [
+                                                        {
+                                                          "type": "SUBJECTIVE",
+                                                          "title": "개선이 필요한 점은 무엇인가요?",
+                                                          "description": "자유롭게 작성해주세요.",
+                                                          "imageKey": null
+                                                        }
+                                                      ]
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "5초 테스트 (객관식)",
+                                            summary = "FIVE_SECOND 객관식 예시",
+                                            value = """
+                                                    {
+                                                      "questions": [
+                                                        {
+                                                          "type": "FIVE_SECOND",
+                                                          "title": "첫 화면에서 눈에 띄는 요소는 무엇인가요?",
+                                                          "description": "이미지를 5초간 본 뒤 답변해주세요.",
+                                                          "imageKey": "five-second-image-key",
+                                                          "isObjective": true,
+                                                          "isDuplicate": true,
+                                                          "minSelect": 1,
+                                                          "maxSelect": 3,
+                                                          "options": [
+                                                            { "content": "검색창" },
+                                                            { "content": "메인 배너" },
+                                                            { "content": "카테고리 메뉴" },
+                                                            { "content": "하단 네비게이션" }
+                                                          ]
+                                                        }
+                                                      ]
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "5초 테스트 (주관식)",
+                                            summary = "FIVE_SECOND 주관식 예시",
+                                            value = """
+                                                    {
+                                                      "questions": [
+                                                        {
+                                                          "type": "FIVE_SECOND",
+                                                          "title": "첫 화면에서 가장 먼저 떠오른 점은 무엇인가요?",
+                                                          "description": "이미지를 5초간 본 뒤 자유롭게 작성해주세요.",
+                                                          "imageKey": "five-second-image-key",
+                                                          "isObjective": false,
+                                                          "isDuplicate": null,
+                                                          "minSelect": null,
+                                                          "maxSelect": null,
+                                                          "options": []
+                                                        }
+                                                      ]
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "척도형",
+                                            summary = "SCALE 예시",
+                                            value = """
+                                                    {
+                                                      "questions": [
+                                                        {
+                                                          "type": "SCALE",
+                                                          "title": "전반적인 만족도를 평가해주세요.",
+                                                          "description": "5점 척도로 응답해주세요.",
+                                                          "imageKey": null,
+                                                          "minLabel": "매우 불만족",
+                                                          "maxLabel": "매우 만족",
+                                                          "range": 5
+                                                        }
+                                                      ]
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "AB 테스트",
+                                            summary = "AB_TEST 예시",
+                                            value = """
+                                                    {
+                                                      "questions": [
+                                                        {
+                                                          "type": "AB_TEST",
+                                                          "title": "어느 시안이 더 마음에 드시나요?",
+                                                          "description": "두 시안을 비교하고 더 선호하는 쪽을 선택해주세요.",
+                                                          "aImageKey": "image-a.jpg",
+                                                          "bImageKey": "image-b.jpg"
+                                                        }
+                                                      ]
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "카드소팅",
+                                            summary = "CARD_SORTING 예시",
+                                            value = """
+                                                    {
+                                                      "questions": [
+                                                        {
+                                                          "type": "CARD_SORTING",
+                                                          "title": "기능 카드를 그룹으로 묶어주세요.",
+                                                          "description": "비슷하다고 생각하는 항목끼리 분류해주세요.",
+                                                          "cards": ["티셔츠", "꽃무늬가 들어간 티셔츠", "찢어진 청바지", "닥터마틴 워커"],
+                                                          "categories": ["상의", "하의", "신발"]
+                                                        }
+                                                      ]
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "트리 테스트",
+                                            summary = "TREE_TEST 예시",
+                                            value = """
+                                                    {
+                                                      "questions": [
+                                                        {
+                                                          "type": "TREE_TEST",
+                                                          "title": "설정 메뉴에서 알림 설정을 어디서 찾으시겠어요?",
+                                                          "description": "예상되는 경로를 따라 선택해주세요.",
+                                                          "features": [
+                                                            {
+                                                              "label": "마이페이지",
+                                                              "children": [
+                                                                {
+                                                                  "label": "설정",
+                                                                  "children": [
+                                                                    { "label": "알림 설정", "children": [] }
+                                                                  ]
+                                                                }
+                                                              ]
+                                                            }
+                                                          ]
+                                                        }
+                                                      ]
+                                                    }
+                                                    """
+                                    )
+                            }
                     )
             )
             @RequestBody @Valid QuestionCreateRequest request
