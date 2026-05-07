@@ -2,20 +2,24 @@ package server.MATE.domain.question.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import server.MATE.domain.question.dto.request.FiveSecondCreateRequest;
 import server.MATE.domain.question.dto.response.FiveSecondCreateResponse;
 import server.MATE.domain.question.service.FiveSecondService;
 import server.MATE.global.common.response.ApiResponse;
+import server.MATE.global.security.principal.AuthenticatedUser;
 
 @Tag(name = "[QUESTION] 문항 API", description = "문항 등록 관련 API")
 @RestController
 @RequestMapping("/api/v1/tests/{testId}/questions")
+@SecurityRequirement(name = "JWT")
 @RequiredArgsConstructor
 public class FiveSecondController {
 
@@ -51,10 +55,9 @@ public class FiveSecondController {
             @Parameter(description = "문항을 등록할 테스트 ID")
             @PathVariable Long testId,
             @RequestBody @Valid FiveSecondCreateRequest request,
-            @Parameter(description = "테스트 제작자 ID (인증 구현 전 임시 헤더)")
-            @RequestHeader("X-User-Id") Long makerId
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        FiveSecondCreateResponse response = fiveSecondService.createFiveSecond(testId, makerId, request);
+        FiveSecondCreateResponse response = fiveSecondService.createFiveSecond(testId, authenticatedUser.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("5초 테스트 문항이 등록되었습니다.", response));
     }
