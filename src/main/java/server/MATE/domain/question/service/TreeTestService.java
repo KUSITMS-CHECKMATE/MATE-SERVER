@@ -11,6 +11,7 @@ import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.TreeTest;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.question.repository.TreeTestRepository;
+import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
@@ -26,9 +27,11 @@ public class TreeTestService {
     private final TreeTestRepository treeTestRepository;
 
     @Transactional
-    public TreeTestCreateResponse createTreeTest(Long testId, TreeTestCreateRequest request) {
-        if (!testRepository.existsById(testId)) {
-            throw new BaseException(BaseErrorCode.TEST_004);
+    public TreeTestCreateResponse createTreeTest(Long testId, Long makerId, TreeTestCreateRequest request) {
+        Test test = testRepository.findById(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+        if (!test.getMakerId().equals(makerId)) {
+            throw new BaseException(BaseErrorCode.TEST_005);
         }
 
         // TODO: sequence 로직 변경 예정

@@ -11,6 +11,7 @@ import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.CardSortingRepository;
 import server.MATE.domain.question.repository.QuestionRepository;
+import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
@@ -24,9 +25,11 @@ public class CardSortingService {
     private final CardSortingRepository cardSortingRepository;
 
     @Transactional
-    public CardSortingCreateResponse createCardSorting(Long testId, CardSortingCreateRequest request) {
-        if (!testRepository.existsById(testId)) {
-            throw new BaseException(BaseErrorCode.TEST_004);
+    public CardSortingCreateResponse createCardSorting(Long testId, Long makerId, CardSortingCreateRequest request) {
+        Test test = testRepository.findById(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+        if (!test.getMakerId().equals(makerId)) {
+            throw new BaseException(BaseErrorCode.TEST_005);
         }
 
         // TODO: sequence 로직은 merge 후 수정 예정
