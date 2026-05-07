@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
+import server.MATE.domain.test.dto.response.TestDetailResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestUpdateResponse;
 import server.MATE.domain.test.service.TestService;
@@ -37,13 +38,29 @@ public class TestController {
                     - **representativeImageKey**: 업로드된 이미지 키 목록 중 첫 번째. 없으면 null입니다.
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
+                    - **categories**: 테스트에 연결된 카테고리 enum 코드 문자열 목록
                     목록은 생성일 기준 최신순입니다.
                     """
     )
     @GetMapping
-    public ResponseEntity<ApiResponse<List<TestSummaryResponse>>> listTests() {
+    public ResponseEntity<ApiResponse<List<TestSummaryResponse>>> listTests(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
         List<TestSummaryResponse> data = testService.listTests();
         return ResponseEntity.ok(ApiResponse.ok("테스트 목록을 조회했습니다.", data));
+    }
+
+    @Operation(
+            summary = "테스트 상세 조회",
+            description = """
+                    특정 테스트의 이름, 카테고리, 이미지 키 목록, 보상, 한 줄 소개를 조회합니다.
+                    삭제된 테스트는 조회되지 않습니다.
+                    """
+    )
+    @GetMapping("/{testId}")
+    public ResponseEntity<ApiResponse<TestDetailResponse>> getTest(@PathVariable Long testId) {
+        TestDetailResponse data = testService.getTest(testId);
+        return ResponseEntity.ok(ApiResponse.ok("테스트를 조회했습니다.", data));
     }
 
     @Operation(summary = "테스트 등록", description = """
