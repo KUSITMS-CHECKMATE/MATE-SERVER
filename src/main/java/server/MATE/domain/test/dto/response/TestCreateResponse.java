@@ -1,9 +1,6 @@
 package server.MATE.domain.test.dto.response;
 
-import server.MATE.domain.test.entity.Category;
-import server.MATE.domain.test.entity.Test;
-import server.MATE.domain.test.entity.TestCategory;
-import server.MATE.domain.test.entity.TestStatus;
+import server.MATE.domain.test.entity.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,7 +14,8 @@ public record TestCreateResponse(
         String serviceName,
         String serviceDescription,
         List<String> imageKeys,
-        TestStatus status,
+        TestStatus testStatus,
+        ApprovalStatus approvalStatus,
         Integer goalPpl,
         Integer reward,
         LocalDateTime createdAt
@@ -35,7 +33,8 @@ public record TestCreateResponse(
                 test.getServiceName(),
                 test.getServiceDescription(),
                 test.getImageKeys(),
-                test.getStatus(),
+                test.getTestStatus(),
+                test.getApprovalStatus(),
                 test.getGoalPpl(),
                 test.getReward(),
                 test.getCreatedAt()

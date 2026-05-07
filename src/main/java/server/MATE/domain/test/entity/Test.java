@@ -5,8 +5,11 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+<<<<<<< HEAD
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Where;
+=======
+>>>>>>> origin/dev
 import server.MATE.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
@@ -16,7 +19,6 @@ import java.util.List;
 @Getter
 @Entity
 @Table(name = "test")
-@Where(clause = "deleted_at is null")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Test extends BaseEntity {
 
@@ -45,7 +47,11 @@ public class Test extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TestStatus status;
+    private TestStatus testStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ApprovalStatus approvalStatus;
 
     @Column(nullable = false)
     private Integer goalPpl;
@@ -102,7 +108,8 @@ public class Test extends BaseEntity {
         if (imageKeys != null) {
             this.imageKeys.addAll(imageKeys);
         }
-        this.status = TestStatus.IN_PROGRESS;
+        this.testStatus = TestStatus.IN_PROGRESS;
+        this.approvalStatus = ApprovalStatus.WAITING;
         this.goalPpl = 100;
         this.reward = 300;
         this.pplCount = 0L;

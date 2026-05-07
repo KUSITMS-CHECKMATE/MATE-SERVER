@@ -64,15 +64,16 @@ public class TestController {
     }
 
     @Operation(summary = "테스트 등록", description = """
-            새로운 테스트를 등록합니다.
+            새로운 테스트를 등록합니다. MKTT_02-1 ~ MKTT_02-3 (테스트 기본 정보) 에 해당하는 api 입니다.
+            현재, `goalPpl`, `reward`는 Default 값으로 저장됩니다.
 
             **[categories]**
-            DAILY, FINANCE, HEALTH, SHOPPING, FOOD, GAME, CONTENT, COMMUNITY,
+            - DAILY, FINANCE, HEALTH, SHOPPING, FOOD, GAME, CONTENT, COMMUNITY,
             AI, EDUCATION, TRAVEL, SOCIAL, CONVENIENCE, INFORMATION, BUSINESS, TRANSPORT, PUBLIC_ADMIN
-            (1~3개 선택 필수)
+            - 최소 1개 ~ 최대 3개 선택 필수
 
             **[이미지 처리]**
-            - imageKeys는 이미지 업로드 URL 발급 API로 먼저 업로드한 뒤 받은 imageKey 목록입니다.
+            - `imageKeys`는 이미지 업로드 URL 발급 API로 먼저 업로드한 뒤 받은 imageKey 목록입니다.
             - 트랜잭션 실패(롤백) 시 업로드된 이미지는 Azure Blob Storage에서 자동 삭제됩니다.
 
             **[에러 코드]**
@@ -104,10 +105,9 @@ public class TestController {
     public ResponseEntity<ApiResponse<TestUpdateResponse>> updateTest(
             @PathVariable Long testId,
             @RequestBody @Valid TestUpdateRequest request,
-            // TODO: 인증 구현 후 @AuthenticationPrincipal 등으로 대체
-            @RequestHeader("X-User-Id") Long makerId
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        TestUpdateResponse response = testService.updateTest(testId, request, makerId);
+        TestUpdateResponse response = testService.updateTest(testId, request, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트가 수정되었습니다.", response));
     }
 
@@ -115,10 +115,9 @@ public class TestController {
     @DeleteMapping("/{testId}")
     public ResponseEntity<ApiResponse<Void>> deleteTest(
             @PathVariable Long testId,
-            // TODO: 인증 구현 후 @AuthenticationPrincipal 등으로 대체
-            @RequestHeader("X-User-Id") Long makerId
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        testService.deleteTest(testId, makerId);
+        testService.deleteTest(testId, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트가 삭제되었습니다.", null));
     }
     
