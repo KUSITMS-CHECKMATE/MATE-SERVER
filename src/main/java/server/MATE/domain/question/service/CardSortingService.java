@@ -27,6 +27,7 @@ public class CardSortingService {
     @Transactional
     public CardSortingCreateResponse createCardSorting(Long testId, Long makerId, CardSortingCreateRequest request) {
         Test test = testRepository.findById(testId)
+                .filter(t -> t.getDeletedAt() == null)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         if (!test.getMakerId().equals(makerId)) {
             throw new BaseException(BaseErrorCode.TEST_005);
