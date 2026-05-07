@@ -5,14 +5,11 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Where;
-
 import java.time.LocalDateTime;
 
 @Getter
 @Entity
 @Table(name = "test_category")
-@Where(clause = "deleted_at is null")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class TestCategory {
 
