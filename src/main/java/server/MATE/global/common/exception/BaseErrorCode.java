@@ -33,11 +33,14 @@ public enum BaseErrorCode implements ErrorCode {
     TEST_002(HttpStatus.BAD_REQUEST, "TEST_002", "이미지는 최대 10개까지 업로드할 수 있습니다."),
     TEST_003(HttpStatus.BAD_REQUEST, "TEST_003", "지원하지 않는 이미지 형식입니다. JPG, PNG만 허용됩니다."),
     TEST_004(HttpStatus.NOT_FOUND, "TEST_004", "테스트를 찾을 수 없습니다."),
-    TEST_005(HttpStatus.FORBIDDEN, "TEST_005", "해당 테스트에 대한 권한이 없습니다."),
+    TEST_005(HttpStatus.FORBIDDEN, "TEST_005", "테스트 제작자만 접근할 수 있습니다."),
 
     // Question
-    QUESTION_001(HttpStatus.NOT_FOUND, "QUESTION_001", "존재하지 않는 질문입니다."),
-
+    QUESTION_001(HttpStatus.BAD_REQUEST, "QUESTION_001", "최소 선택 개수는 1 이상이어야 합니다."),
+    QUESTION_002(HttpStatus.BAD_REQUEST, "QUESTION_002", "최대 선택 개수는 최소 선택 개수 이상이어야 합니다."),
+    QUESTION_003(HttpStatus.BAD_REQUEST, "QUESTION_003", "최소/최대 선택 개수는 선택지 개수를 초과할 수 없습니다."),
+    QUESTION_004(HttpStatus.BAD_REQUEST, "QUESTION_004", "객관식 전환 시 선택지는 최소 2개 이상이어야 합니다."),
+    QUESTION_001(HttpStatus.NOT_FOUND, "QUESTION_005", "존재하지 않는 질문입니다."),
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
 
