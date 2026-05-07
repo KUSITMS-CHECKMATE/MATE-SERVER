@@ -6,29 +6,27 @@ import server.MATE.domain.test.entity.TestCategory;
 
 import java.util.List;
 
-/** 테스트 목록·카드 노출용 요약 정보 */
-public record TestSummaryResponse(
+public record TestDetailResponse(
         Long id,
-        String representativeImageKey,
         String title,
-        String description,
+        List<String> categories,
+        List<String> imageKeys,
         Integer reward,
-        List<String> categories
+        String description
 ) {
-    public static TestSummaryResponse from(Test test) {
-        List<String> keys = test.getImageKeys();
-        String representative = keys.isEmpty() ? null : keys.getFirst();
+    public static TestDetailResponse from(Test test) {
         List<String> categoryCodes = test.getCategories().stream()
                 .map(TestCategory::getCategory)
                 .map(Category::name)
                 .toList();
-        return new TestSummaryResponse(
+        List<String> keys = List.copyOf(test.getImageKeys());
+        return new TestDetailResponse(
                 test.getId(),
-                representative,
                 test.getTitle(),
-                test.getDescription(),
+                categoryCodes,
+                keys,
                 test.getReward(),
-                categoryCodes
+                test.getDescription()
         );
     }
 }
