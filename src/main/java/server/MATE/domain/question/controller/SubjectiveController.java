@@ -35,7 +35,7 @@ public class SubjectiveController {
             | TEST_004 | 404 | 테스트를 찾을 수 없음 |
             """)
     @PostMapping("/subjective")
-    public ResponseEntity<ApiResponse<SubjectiveQuestionCreateResponse>> createSubjectiveQuestion(
+    public ResponseEntity<ApiResponse<SubjectiveCreateResponse>> createSubjectiveQuestion(
             @Parameter(description = "문항을 등록할 테스트 ID")
             @PathVariable Long testId,
             @RequestBody @Valid SubjectiveCreateRequest request,

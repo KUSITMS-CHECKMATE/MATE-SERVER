@@ -52,7 +52,7 @@ public class ObjectiveService {
 
         Question question = Question.builder()
                 .testId(testId)
-                .questionType(QuestionType.MULTIPLE_CHOICE)
+                .questionType(QuestionType.OBJECTIVE)
                 .title(request.title())
                 .description(request.description())
                 .sequence(sequence)
