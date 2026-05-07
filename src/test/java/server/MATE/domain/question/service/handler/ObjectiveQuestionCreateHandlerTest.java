@@ -97,6 +97,29 @@ class ObjectiveQuestionCreateHandlerTest {
     }
 
     @Test
+    @DisplayName("단일 선택 객관식에 min/max가 들어오면 QUESTION_009 예외가 발생한다")
+    void throwsQuestion009WhenSingleSelectObjectiveContainsMinMax() {
+        ObjectiveQuestionCreateHandler handler = new ObjectiveQuestionCreateHandler(objectiveRepository);
+        ObjectiveCreateRequest request = new ObjectiveCreateRequest(
+                "객관식",
+                "설명",
+                false,
+                2,
+                1,
+                false,
+                List.of(
+                        new ObjectiveOptionRequest("A", null),
+                        new ObjectiveOptionRequest("B", null)
+                )
+        );
+
+        assertThatThrownBy(() -> handler.validate(request))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.QUESTION_009);
+    }
+
+    @Test
     @DisplayName("객관식 상세 엔티티를 저장하고 이미지 키를 추출한다")
     void savesObjectiveDetailAndExtractsImageKeys() {
         ObjectiveQuestionCreateHandler handler = new ObjectiveQuestionCreateHandler(objectiveRepository);

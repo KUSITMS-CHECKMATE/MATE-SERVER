@@ -143,7 +143,68 @@ class QuestionControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("COMMON_002"))
-                .andExpect(jsonPath("$.message").value("선택지는 필수 입력 사항입니다."));
+                .andExpect(jsonPath("$.message").value("선택지는 필수 입력 사항입니다."))
+                .andExpect(jsonPath("$.field").value("questions[0].options"));
+    }
+
+    @Test
+    @DisplayName("통합 문항 등록 요청 본문 파싱에 실패하면 field 없이 400을 반환한다")
+    void returnsBadRequestWithoutFieldWhenRequestBodyParsingFails() throws Exception {
+        String requestBody = """
+                {
+                  "questions": [
+                    {
+                      "type": "SCALE",
+                      "title": "척도 질문",
+                      "description": "설명",
+                      "imageKey": null,
+                      "minLabel": "낮음",
+                      "maxLabel": "높음",
+                      "range": "five"
+                    }
+                  ]
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/tests/10/questions")
+                        .with(authenticationPrincipal())
+                        .contentType(APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("COMMON_003"))
+                .andExpect(jsonPath("$.message").value("요청 본문을 읽을 수 없습니다."))
+                .andExpect(jsonPath("$.field").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("통합 문항 등록 요청 JSON 형식이 깨지면 field 없이 COMMON_003을 반환한다")
+    void returnsCommon003WhenJsonSyntaxIsMalformed() throws Exception {
+        String requestBody = """
+                {
+                  "questions": [
+                    {
+                      "type": "OBJECTIVE",
+                      "title": "객관식 질문",
+                      "isDuplicate": false,
+                      "isOther": true,
+                      "options": [
+                        { "content": "A", "imageKey": null },
+                        { "content": "B", "imageKey": null }
+                      ]
+                    }
+                  ]
+                """;
+
+        mockMvc.perform(post("/api/v1/tests/10/questions")
+                        .with(authenticationPrincipal())
+                        .contentType(APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("COMMON_003"))
+                .andExpect(jsonPath("$.message").value("요청 본문을 읽을 수 없습니다."))
+                .andExpect(jsonPath("$.field").doesNotExist());
     }
 
     private UsernamePasswordAuthenticationToken authentication() {

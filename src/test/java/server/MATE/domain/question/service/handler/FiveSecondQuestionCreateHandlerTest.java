@@ -49,6 +49,48 @@ class FiveSecondQuestionCreateHandlerTest {
     }
 
     @Test
+    @DisplayName("5초 테스트가 주관식인데 선택지가 있으면 QUESTION_008 예외가 발생한다")
+    void throwsQuestion008WhenSubjectiveFiveSecondContainsOptions() {
+        FiveSecondQuestionCreateHandler handler = new FiveSecondQuestionCreateHandler(fiveSecondRepository);
+        FiveSecondCreateRequest request = new FiveSecondCreateRequest(
+                "5초",
+                "설명",
+                "image",
+                false,
+                null,
+                null,
+                null,
+                List.of(new FiveSecondOptionRequest("A"))
+        );
+
+        assertThatThrownBy(() -> handler.validate(request))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.QUESTION_008);
+    }
+
+    @Test
+    @DisplayName("5초 테스트가 주관식인데 객관식 설정값이 있으면 QUESTION_008 예외가 발생한다")
+    void throwsQuestion008WhenSubjectiveFiveSecondContainsObjectiveSettings() {
+        FiveSecondQuestionCreateHandler handler = new FiveSecondQuestionCreateHandler(fiveSecondRepository);
+        FiveSecondCreateRequest request = new FiveSecondCreateRequest(
+                "5초",
+                "설명",
+                "image",
+                false,
+                true,
+                1,
+                2,
+                List.of()
+        );
+
+        assertThatThrownBy(() -> handler.validate(request))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.QUESTION_008);
+    }
+
+    @Test
     @DisplayName("5초 테스트 중복 선택에서 min이 1보다 작으면 QUESTION_001 예외가 발생한다")
     void throwsQuestion001WhenMinSelectIsLessThanOne() {
         FiveSecondQuestionCreateHandler handler = new FiveSecondQuestionCreateHandler(fiveSecondRepository);
