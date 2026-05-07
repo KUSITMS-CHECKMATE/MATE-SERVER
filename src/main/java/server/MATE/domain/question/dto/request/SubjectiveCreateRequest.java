@@ -3,7 +3,7 @@ package server.MATE.domain.question.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record SubjectiveQuestionCreateRequest(
+public record SubjectiveCreateRequest(
         @NotBlank
         @Size(max = 34, message = "질문 제목은 최대 34자까지 입력 가능합니다.")
         String title,
