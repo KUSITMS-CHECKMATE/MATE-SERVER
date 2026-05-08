@@ -8,7 +8,7 @@ module "networking" {
   source = "../../modules/networking"
 
   resource_group_name = module.resource_group.name
-  location            = module.resource_group.location
+  location            = var.location
 
   vnet_name       = var.vnet_name
   vnet_cidr       = var.vnet_cidr
@@ -22,7 +22,7 @@ module "database" {
   source = "../../modules/database"
 
   resource_group_name = module.resource_group.name
-  location            = module.resource_group.location
+  location            = var.location
   virtual_network_id  = module.networking.vnet_id
   db_subnet_id        = module.networking.db_subnet_id
 

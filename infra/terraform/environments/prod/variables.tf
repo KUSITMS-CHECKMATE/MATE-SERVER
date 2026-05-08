@@ -3,6 +3,11 @@ variable "resource_group_name" {
   type        = string
 }
 
+variable "location" {
+  description = "Azure region used for deployable resources."
+  type        = string
+}
+
 variable "vnet_name" {
   description = "Virtual Network name."
   type        = string

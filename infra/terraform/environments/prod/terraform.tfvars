@@ -1,4 +1,5 @@
 resource_group_name = "kusitms_mate"
+location            = "eastasia"
 
 vnet_name = "mate-vnet"
 vnet_cidr = "10.20.0.0/16"
