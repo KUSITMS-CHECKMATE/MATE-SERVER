@@ -17,6 +17,7 @@ public record TestDetailResponse(
 ) {
     public static TestDetailResponse from(Test test) {
         List<String> categoryCodes = test.getCategories().stream()
+                .filter(testCategory -> testCategory.getDeletedAt() == null)
                 .map(TestCategory::getCategory)
                 .map(Category::name)
                 .toList();
