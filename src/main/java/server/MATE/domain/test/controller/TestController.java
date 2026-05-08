@@ -21,7 +21,7 @@ import server.MATE.global.security.principal.AuthenticatedUser;
 
 import java.util.List;
 
-@Tag(name = "[TEST] 테스트 API", description = "테스트 목록 조회·등록·수정·삭제 API")
+@Tag(name = "[TEST] 테스트 API", description = "테스트 등록 관련 API")
 @RestController
 @RequestMapping("/api/v1/tests")
 @SecurityRequirement(name = "JWT")
@@ -122,5 +122,4 @@ public class TestController {
         testService.deleteTest(testId, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트가 삭제되었습니다.", null));
     }
-    
 }

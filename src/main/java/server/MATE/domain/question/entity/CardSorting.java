@@ -12,7 +12,6 @@ import org.hibernate.type.SqlTypes;
 import java.util.ArrayList;
 import java.util.List;
 
-/** 카드소팅 문항의 카드 목록·그룹 라벨을 JSON 컬럼에 보관 */
 @Getter
 @Entity
 @Table(name = "card_sorting")
@@ -45,6 +44,5 @@ public class CardSorting {
 
     public static CardSorting create(Question question, List<String> cards, List<String> categories) {
         return new CardSorting(question, cards, categories);
-
     }
 }
