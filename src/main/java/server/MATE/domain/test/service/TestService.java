@@ -2,11 +2,14 @@ package server.MATE.domain.test.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
+import server.MATE.domain.test.dto.response.TestDetailResponse;
+import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestUpdateResponse;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
@@ -28,6 +31,20 @@ public class TestService {
     private final TestRepository testRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
+
+    @Transactional(readOnly = true)
+    public List<TestSummaryResponse> listTests() {
+        Sort newestFirst = Sort.by(Sort.Direction.DESC, "createdAt");
+        List<Test> tests = testRepository.findByDeletedAtIsNull(newestFirst);
+        return tests.stream().map(TestSummaryResponse::from).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TestDetailResponse getTest(Long testId) {
+        Test test = testRepository.findWithCategoriesById(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+        return TestDetailResponse.from(test);
+    }
 
     public TestCreateResponse createTest(TestCreateRequest request, Long makerId) {
         List<String> imageKeys = request.imageKeys() != null ? request.imageKeys() : List.of();

@@ -12,12 +12,16 @@ import org.springframework.web.bind.annotation.*;
 import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
+import server.MATE.domain.test.dto.response.TestDetailResponse;
+import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestUpdateResponse;
 import server.MATE.domain.test.service.TestService;
 import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
-@Tag(name = "[TEST] 테스트 API", description = "테스트 등록 관련 API")
+import java.util.List;
+
+@Tag(name = "[TEST] 테스트 API", description = "테스트 목록 조회·등록·수정·삭제 API")
 @RestController
 @RequestMapping("/api/v1/tests")
 @SecurityRequirement(name = "JWT")
@@ -25,6 +29,37 @@ import server.MATE.global.security.principal.AuthenticatedUser;
 public class TestController {
 
     private final TestService testService;
+
+    @Operation(
+            summary = "테스트 목록 조회",
+            description = """
+                    전체 테스트 요약 목록을 조회합니다. (삭제된 항목 제외)
+
+                    - **representativeImageKey**: 업로드된 이미지 키 목록 중 첫 번째. 없으면 null입니다.
+                    - **description**: 테스트 한 줄 소개
+                    - **reward**: 보상 금액(머니)
+                    - **categories**: 테스트에 연결된 카테고리 enum 코드 문자열 목록
+                    목록은 생성일 기준 최신순입니다.
+                    """
+    )
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<TestSummaryResponse>>> listTests() {
+        List<TestSummaryResponse> data = testService.listTests();
+        return ResponseEntity.ok(ApiResponse.ok("테스트 목록을 조회했습니다.", data));
+    }
+
+    @Operation(
+            summary = "테스트 상세 조회",
+            description = """
+                    특정 테스트의 이름, 카테고리, 이미지 키 목록, 보상, 한 줄 소개를 조회합니다.
+                    삭제된 테스트는 조회되지 않습니다.
+                    """
+    )
+    @GetMapping("/{testId}")
+    public ResponseEntity<ApiResponse<TestDetailResponse>> getTest(@PathVariable Long testId) {
+        TestDetailResponse data = testService.getTest(testId);
+        return ResponseEntity.ok(ApiResponse.ok("테스트를 조회했습니다.", data));
+    }
 
     @Operation(summary = "테스트 등록", description = """
             새로운 테스트를 등록합니다. MKTT_02-1 ~ MKTT_02-3 (테스트 기본 정보) 에 해당하는 api 입니다.
@@ -83,4 +118,5 @@ public class TestController {
         testService.deleteTest(testId, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트가 삭제되었습니다.", null));
     }
+    
 }
