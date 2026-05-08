@@ -2,7 +2,6 @@ package server.MATE.global.image;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +21,6 @@ import java.util.UUID;
 @Tag(name = "[IMAGE] 이미지 API", description = "이미지 업로드 관련 API")
 @RestController
 @RequestMapping("/api/v1/uploads")
-@SecurityRequirement(name = "JWT")
 @RequiredArgsConstructor
 public class ImageController {
 
