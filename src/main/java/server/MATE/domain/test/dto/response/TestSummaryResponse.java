@@ -13,17 +13,22 @@ public record TestSummaryResponse(
         String representativeImageKey,
         String title,
         String description,
-        Integer reward
+        Integer reward,
+        List<String> categories
 ) {
     public static TestSummaryResponse from(Test test) {
         List<String> keys = test.getImageKeys();
         String representative = keys.isEmpty() ? null : keys.getFirst();
+        List<String> categories = test.getCategories().stream()
+                .map(testCategory -> testCategory.getCategory().name())
+                .toList();
         return new TestSummaryResponse(
                 test.getId(),
                 representative,
                 test.getTitle(),
                 test.getDescription(),
-                test.getReward()
+                test.getReward(),
+                categories
         );
     }
 }
