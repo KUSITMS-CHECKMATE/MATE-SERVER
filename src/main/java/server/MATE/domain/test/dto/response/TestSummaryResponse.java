@@ -20,6 +20,7 @@ public record TestSummaryResponse(
         List<String> keys = test.getImageKeys();
         String representative = keys.isEmpty() ? null : keys.getFirst();
         List<String> categories = test.getCategories().stream()
+                .filter(testCategory -> testCategory.getDeletedAt() == null)
                 .map(testCategory -> testCategory.getCategory().name())
                 .toList();
         return new TestSummaryResponse(
