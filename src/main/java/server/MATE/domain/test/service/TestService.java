@@ -35,7 +35,7 @@ public class TestService {
     @Transactional(readOnly = true)
     public List<TestSummaryResponse> listTests() {
         Sort newestFirst = Sort.by(Sort.Direction.DESC, "createdAt");
-        return testRepository.findAll(newestFirst).stream()
+        return testRepository.findAllByDeletedAtIsNull(newestFirst).stream()
                 .map(TestSummaryResponse::from)
                 .toList();
     }
