@@ -37,3 +37,18 @@ output "postgres_private_dns_zone_link_id" {
   description = "PostgreSQL private DNS zone VNet link id."
   value       = module.database.postgres_private_dns_zone_link_id
 }
+
+output "postgres_server_id" {
+  description = "PostgreSQL Flexible Server id."
+  value       = module.database.postgres_server_id
+}
+
+output "postgres_server_fqdn" {
+  description = "PostgreSQL Flexible Server FQDN."
+  value       = module.database.postgres_server_fqdn
+}
+
+output "postgres_database_id" {
+  description = "PostgreSQL application database id."
+  value       = module.database.postgres_database_id
+}

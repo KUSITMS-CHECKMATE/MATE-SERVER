@@ -42,3 +42,44 @@ variable "postgres_private_dns_zone_link_name" {
   description = "VNet link name for PostgreSQL private DNS zone."
   type        = string
 }
+
+variable "postgres_server_name" {
+  description = "PostgreSQL Flexible Server name."
+  type        = string
+}
+
+variable "postgres_database_name" {
+  description = "Application database name."
+  type        = string
+}
+
+variable "postgres_admin_username" {
+  description = "PostgreSQL admin username."
+  type        = string
+}
+
+variable "postgres_admin_password" {
+  description = "PostgreSQL admin password. Provide via TF_VAR_postgres_admin_password."
+  type        = string
+  sensitive   = true
+}
+
+variable "postgres_version" {
+  description = "PostgreSQL engine version."
+  type        = string
+}
+
+variable "postgres_sku_name" {
+  description = "PostgreSQL Flexible Server SKU."
+  type        = string
+}
+
+variable "postgres_storage_mb" {
+  description = "PostgreSQL storage size in MB."
+  type        = number
+}
+
+variable "postgres_backup_retention_days" {
+  description = "PostgreSQL backup retention in days."
+  type        = number
+}
