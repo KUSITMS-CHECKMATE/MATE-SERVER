@@ -7,6 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
+import server.MATE.domain.test.dto.response.TestDetailResponse;
+import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestUpdateResponse;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
@@ -28,6 +30,21 @@ public class TestService {
     private final TestRepository testRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
+
+    @Transactional(readOnly = true)
+    public List<TestSummaryResponse> listTests() {
+        return testRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc().stream()
+                .map(TestSummaryResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TestDetailResponse getTest(Long testId) {
+        Test test = testRepository.findById(testId)
+                .filter(t -> t.getDeletedAt() == null)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+        return TestDetailResponse.from(test);
+    }
 
     public TestCreateResponse createTest(TestCreateRequest request, Long makerId) {
         List<String> imageKeys = request.imageKeys() != null ? request.imageKeys() : List.of();
