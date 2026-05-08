@@ -19,3 +19,6 @@ postgres_version               = "16"
 postgres_sku_name              = "B_Standard_B1ms"
 postgres_storage_mb            = 32768
 postgres_backup_retention_days = 7
+
+storage_account_name   = "matestoragedev"
+storage_container_name = "mate-images"

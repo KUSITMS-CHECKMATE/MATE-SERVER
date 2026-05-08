@@ -52,3 +52,18 @@ output "postgres_database_id" {
   description = "PostgreSQL application database id."
   value       = module.database.postgres_database_id
 }
+
+output "storage_account_name" {
+  description = "Referenced Storage Account name."
+  value       = module.storage.storage_account_name
+}
+
+output "storage_blob_endpoint" {
+  description = "Blob endpoint for the referenced Storage Account."
+  value       = module.storage.primary_blob_endpoint
+}
+
+output "storage_container_name" {
+  description = "Blob container name used by the application."
+  value       = module.storage.storage_container_name
+}

@@ -37,3 +37,11 @@ module "database" {
   postgres_storage_mb                 = var.postgres_storage_mb
   postgres_backup_retention_days      = var.postgres_backup_retention_days
 }
+
+module "storage" {
+  source = "../../modules/storage"
+
+  resource_group_name    = module.resource_group.name
+  storage_account_name   = var.storage_account_name
+  storage_container_name = var.storage_container_name
+}

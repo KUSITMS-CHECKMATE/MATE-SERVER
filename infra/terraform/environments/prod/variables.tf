@@ -83,3 +83,13 @@ variable "postgres_backup_retention_days" {
   description = "PostgreSQL backup retention in days."
   type        = number
 }
+
+variable "storage_account_name" {
+  description = "Existing Storage Account name to reference."
+  type        = string
+}
+
+variable "storage_container_name" {
+  description = "Blob container name used by the application."
+  type        = string
+}
