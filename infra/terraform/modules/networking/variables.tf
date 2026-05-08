@@ -1,5 +1,10 @@
 variable "resource_group_name" {
-  description = "Existing Resource Group name to reference only."
+  description = "Resource Group name where networking resources will be created."
+  type        = string
+}
+
+variable "location" {
+  description = "Azure region for networking resources."
   type        = string
 }
 
