@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 import server.MATE.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
@@ -36,6 +37,7 @@ public class Test extends BaseEntity {
     private String serviceDescription;
 
     @ElementCollection
+    @BatchSize(size = 100)
     @CollectionTable(name = "test_image", joinColumns = @JoinColumn(name = "test_id"))
     @Column(name = "image_key")
     private List<String> imageKeys = new ArrayList<>();
@@ -60,6 +62,7 @@ public class Test extends BaseEntity {
     private LocalDateTime deletedAt;
 
     @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 100)
     private List<TestCategory> categories = new ArrayList<>();
 
     public void addCategories(List<Category> categories) {

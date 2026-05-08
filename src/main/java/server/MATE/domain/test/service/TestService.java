@@ -2,7 +2,6 @@ package server.MATE.domain.test.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.test.dto.request.TestCreateRequest;
@@ -34,8 +33,7 @@ public class TestService {
 
     @Transactional(readOnly = true)
     public List<TestSummaryResponse> listTests() {
-        Sort newestFirst = Sort.by(Sort.Direction.DESC, "createdAt");
-        return testRepository.findAllByDeletedAtIsNull(newestFirst).stream()
+        return testRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc().stream()
                 .map(TestSummaryResponse::from)
                 .toList();
     }
