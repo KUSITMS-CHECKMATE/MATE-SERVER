@@ -5,9 +5,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
 import server.MATE.domain.question.dto.request.ObjectiveCreateRequest;
 import server.MATE.domain.question.dto.request.ObjectiveOptionRequest;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
@@ -54,6 +56,7 @@ class QuestionServiceTest {
     @Mock
     private QuestionCreateHandler scaleHandler;
 
+    @InjectMocks
     private QuestionService questionService;
 
     private static final Long TEST_ID = 10L;
@@ -72,11 +75,10 @@ class QuestionServiceTest {
                 .imageKeys(List.of())
                 .build();
 
+        ReflectionTestUtils.setField(questionService, "handlers", List.of(objectiveHandler, scaleHandler));
+
         lenient().when(objectiveHandler.supports()).thenReturn(QuestionType.OBJECTIVE);
         lenient().when(scaleHandler.supports()).thenReturn(QuestionType.SCALE);
-
-        questionService = new QuestionService(testRepository, questionRepository, eventPublisher,
-                List.of(objectiveHandler, scaleHandler));
         lenient().when(questionRepository.save(any(Question.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 

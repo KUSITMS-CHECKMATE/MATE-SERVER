@@ -59,7 +59,7 @@ class TestServiceTest {
 
     @Test
     void 이미지_교체_시_추가된_키는_CleanupEvent_제거된_키는_DeleteEvent_발행() {
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findById(TEST_ID)).willReturn(Optional.of(test));
 
         // old: [old-key-1, old-key-2] → new: [old-key-1, new-key-1]
         TestUpdateRequest request = new TestUpdateRequest(null, null, null, null, null,
@@ -85,7 +85,7 @@ class TestServiceTest {
 
     @Test
     void 이미지_필드_생략_시_이벤트_미발행() {
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findById(TEST_ID)).willReturn(Optional.of(test));
 
         TestUpdateRequest request = new TestUpdateRequest("새 제목", null, null, null, null, null);
         testService.updateTest(TEST_ID, request, MAKER_ID);
