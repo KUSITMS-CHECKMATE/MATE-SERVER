@@ -38,6 +38,23 @@ public class QuestionController {
             **[type]**
             - OBJECTIVE, SUBJECTIVE, FIVE_SECOND, SCALE, AB_TEST, CARD_SORTING, TREE_TEST
             - 각 문항은 `type` 필드로 유형을 구분합니다.
+
+            **[CARD_SORTING 규칙]**
+            - cards: 최소 4개, 최대 12개 (각 카드 텍스트 최대 16자)
+            - categories: 최소 1개, 최대 3개, 각 항목은 `{ "name": "..." }` 형태
+
+            **[TREE_TEST 규칙]**
+            - features(루트): 최소 1개, 최대 4개
+            - 각 노드 children: 최대 4개
+            - 트리 깊이: 루트 포함 최대 4단계 (초과 시 QUESTION_006)
+
+            **[에러 코드]**
+            | 코드 | HTTP | 설명 |
+            |------|------|------|
+            | COMMON_002 | 400 | 요청 값 검증 실패 |
+            | TEST_004 | 404 | 테스트를 찾을 수 없음 |
+            | TEST_005 | 403 | 테스트 제작자가 아님 |
+            | QUESTION_006 | 400 | 트리 테스트 깊이 초과 |
             """)
     @PostMapping
     public ResponseEntity<ApiResponse<QuestionCreateResponse>> createQuestions(
@@ -179,7 +196,11 @@ public class QuestionController {
                                                           "title": "기능 카드를 그룹으로 묶어주세요.",
                                                           "description": "비슷하다고 생각하는 항목끼리 분류해주세요.",
                                                           "cards": ["티셔츠", "꽃무늬가 들어간 티셔츠", "찢어진 청바지", "닥터마틴 워커"],
-                                                          "categories": ["상의", "하의", "신발"]
+                                                          "categories": [
+                                                            { "name": "상의" },
+                                                            { "name": "하의" },
+                                                            { "name": "신발" }
+                                                          ]
                                                         }
                                                       ]
                                                     }
