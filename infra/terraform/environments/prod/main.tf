@@ -17,3 +17,13 @@ module "networking" {
   db_subnet_name  = var.db_subnet_name
   db_subnet_cidr  = var.db_subnet_cidr
 }
+
+module "database" {
+  source = "../../modules/database"
+
+  resource_group_name = module.resource_group.name
+  virtual_network_id  = module.networking.vnet_id
+
+  postgres_private_dns_zone_name      = var.postgres_private_dns_zone_name
+  postgres_private_dns_zone_link_name = var.postgres_private_dns_zone_link_name
+}

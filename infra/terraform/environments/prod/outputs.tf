@@ -27,3 +27,13 @@ output "db_subnet_id" {
   description = "Database subnet id for PostgreSQL."
   value       = module.networking.db_subnet_id
 }
+
+output "postgres_private_dns_zone_id" {
+  description = "PostgreSQL private DNS zone id."
+  value       = module.database.postgres_private_dns_zone_id
+}
+
+output "postgres_private_dns_zone_link_id" {
+  description = "PostgreSQL private DNS zone VNet link id."
+  value       = module.database.postgres_private_dns_zone_link_id
+}

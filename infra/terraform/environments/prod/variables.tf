@@ -32,3 +32,13 @@ variable "db_subnet_cidr" {
   description = "Database subnet CIDR block."
   type        = string
 }
+
+variable "postgres_private_dns_zone_name" {
+  description = "Private DNS zone name for PostgreSQL private access."
+  type        = string
+}
+
+variable "postgres_private_dns_zone_link_name" {
+  description = "VNet link name for PostgreSQL private DNS zone."
+  type        = string
+}
