@@ -44,6 +44,7 @@ public enum BaseErrorCode implements ErrorCode {
     QUESTION_006(HttpStatus.BAD_REQUEST, "QUESTION_006", "트리 테스트 깊이는 최대 4단계까지 가능합니다."),
     QUESTION_008(HttpStatus.BAD_REQUEST, "QUESTION_008", "주관식 5초 테스트에는 객관식 설정을 입력할 수 없습니다."),
     QUESTION_009(HttpStatus.BAD_REQUEST, "QUESTION_009", "단일 선택 객관식에는 최소/최대 선택 개수를 입력할 수 없습니다."),
+
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
 
