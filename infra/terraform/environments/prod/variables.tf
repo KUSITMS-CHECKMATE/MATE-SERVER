@@ -111,7 +111,12 @@ variable "acr_sku" {
 }
 
 variable "acr_admin_enabled" {
-  description = "If true, enables admin credentials (prefer false when using AcrPull with AKS)."
+  description = "If true, enables admin credentials (prefer false when using AcrPull)."
   type        = bool
   default     = false
+}
+
+variable "key_vault_name" {
+  description = "Globally unique Key Vault name"
+  type        = string
 }

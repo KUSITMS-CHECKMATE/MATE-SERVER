@@ -27,3 +27,6 @@ storage_container_name = "mate-images"
 # ACR 이름은 Azure 전역에서 유일하도록
 acr_name = "kusitmsmateacr"
 acr_sku  = "Basic"
+
+# Key Vault 이름
+key_vault_name = "kusitms-mate-keyvault"

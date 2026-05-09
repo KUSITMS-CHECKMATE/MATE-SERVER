@@ -82,3 +82,18 @@ output "acr_login_server" {
   description = "ACR login server (image host)."
   value       = module.container_registry.login_server
 }
+
+output "key_vault_id" {
+  description = "Key Vault resource id."
+  value       = module.keyvault.id
+}
+
+output "key_vault_name" {
+  description = "Key Vault name."
+  value       = module.keyvault.name
+}
+
+output "key_vault_uri" {
+  description = "Key Vault URI."
+  value       = module.keyvault.vault_uri
+}

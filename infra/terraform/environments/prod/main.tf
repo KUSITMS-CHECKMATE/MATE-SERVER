@@ -55,3 +55,11 @@ module "container_registry" {
   acr_sku             = var.acr_sku
   admin_enabled       = var.acr_admin_enabled
 }
+
+module "keyvault" {
+  source = "../../modules/keyvault"
+
+  resource_group_name = module.resource_group.name
+  location            = var.location
+  key_vault_name      = var.key_vault_name
+}
