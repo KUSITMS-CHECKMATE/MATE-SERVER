@@ -1,8 +1,13 @@
 package server.MATE.domain.question.dto.request;
+<<<<<<< HEAD
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+=======
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.v3.oas.annotations.media.Schema;
+>>>>>>> origin/dev
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -18,7 +23,10 @@ public record CardSortingCreateRequest(
 
         @Schema(example = "비슷하다고 생각하는 항목끼리 분류해주세요.")
         String description,
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/dev
         @Schema(example = "[\"티셔츠\", \"꽃무늬가 들어간 티셔츠\", \"찢어진 청바지\", \"닥터마틴 워커\"]")
         @NotNull(message = "카드 목록은 필수입니다.")
         @Size(min = 4, max = 12, message = "카드는 최소 4개, 최대 12개까지 입력할 수 있습니다.")

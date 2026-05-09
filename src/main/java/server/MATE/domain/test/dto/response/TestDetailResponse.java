@@ -6,6 +6,10 @@ import server.MATE.domain.test.entity.TestCategory;
 
 import java.util.List;
 
+<<<<<<< HEAD
+=======
+/** 테스트 상세 */
+>>>>>>> origin/dev
 public record TestDetailResponse(
         Long id,
         String title,
@@ -16,6 +20,10 @@ public record TestDetailResponse(
 ) {
     public static TestDetailResponse from(Test test) {
         List<String> categoryCodes = test.getCategories().stream()
+<<<<<<< HEAD
+=======
+                .filter(testCategory -> testCategory.getDeletedAt() == null)
+>>>>>>> origin/dev
                 .map(TestCategory::getCategory)
                 .map(Category::name)
                 .toList();

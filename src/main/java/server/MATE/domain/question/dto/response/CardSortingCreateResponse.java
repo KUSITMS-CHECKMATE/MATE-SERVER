@@ -15,8 +15,13 @@ public record CardSortingCreateResponse(
                 entity.getQuestion().getId(),
                 entity.getId(),
                 entity.getCards(),
+<<<<<<< HEAD
                 entity.getCategory().stream()
                         .map(c -> new CardSortingCategoryResponse(c.getName()))
+=======
+                entity.getCategories().stream()
+                        .map(CardSortingCategoryResponse::new)
+>>>>>>> origin/dev
                         .toList()
         );
     }

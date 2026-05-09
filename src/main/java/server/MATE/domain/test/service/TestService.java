@@ -2,7 +2,6 @@ package server.MATE.domain.test.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.test.dto.request.TestCreateRequest;
@@ -34,6 +33,7 @@ public class TestService {
 
     @Transactional(readOnly = true)
     public List<TestSummaryResponse> listTests() {
+<<<<<<< HEAD
         Sort newestFirst = Sort.by(Sort.Direction.DESC, "createdAt");
         List<Test> tests = testRepository.findByDeletedAtIsNull(newestFirst);
         return tests.stream().map(TestSummaryResponse::from).toList();
@@ -42,6 +42,19 @@ public class TestService {
     @Transactional(readOnly = true)
     public TestDetailResponse getTest(Long testId) {
         Test test = testRepository.findWithCategoriesById(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+        return TestDetailResponse.from(test);
+=======
+        return testRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc().stream()
+                .map(TestSummaryResponse::from)
+                .toList();
+>>>>>>> origin/dev
+    }
+
+    @Transactional(readOnly = true)
+    public TestDetailResponse getTest(Long testId) {
+        Test test = testRepository.findById(testId)
+                .filter(t -> t.getDeletedAt() == null)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         return TestDetailResponse.from(test);
     }

@@ -14,6 +14,7 @@ import java.util.Optional;
 
 public interface TestRepository extends JpaRepository<Test, Long> {
 
+<<<<<<< HEAD
     @EntityGraph(attributePaths = {"categories", "imageKeys"})
     List<Test> findByDeletedAtIsNull(Sort sort);
 
@@ -21,6 +22,9 @@ public interface TestRepository extends JpaRepository<Test, Long> {
     @EntityGraph(attributePaths = {"categories", "imageKeys"})
     @Query("SELECT t FROM Test t WHERE t.id = :id AND t.deletedAt IS NULL")
     Optional<Test> findWithCategoriesById(@Param("id") Long id);
+=======
+    List<Test> findAllByDeletedAtIsNullOrderByCreatedAtDesc();
+>>>>>>> origin/dev
 
     Optional<Test> findByIdAndDeletedAtIsNull(Long id);
 

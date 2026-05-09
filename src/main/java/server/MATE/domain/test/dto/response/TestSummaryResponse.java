@@ -18,9 +18,10 @@ public record TestSummaryResponse(
     public static TestSummaryResponse from(Test test) {
         List<String> keys = test.getImageKeys();
         String representative = keys.isEmpty() ? null : keys.getFirst();
-        List<String> categoryCodes = test.getCategories().stream()
-                .map(TestCategory::getCategory)
-                .map(Category::name)
+
+        List<String> categories = test.getCategories().stream()
+                .filter(testCategory -> testCategory.getDeletedAt() == null)
+                .map(testCategory -> testCategory.getCategory().name())
                 .toList();
         return new TestSummaryResponse(
                 test.getId(),
@@ -28,7 +29,7 @@ public record TestSummaryResponse(
                 test.getTitle(),
                 test.getDescription(),
                 test.getReward(),
-                categoryCodes
+                categories
         );
     }
 }

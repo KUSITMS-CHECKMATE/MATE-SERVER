@@ -21,7 +21,7 @@ import server.MATE.global.security.principal.AuthenticatedUser;
 
 import java.util.List;
 
-@Tag(name = "[TEST] 테스트 API", description = "테스트 목록 조회·등록·수정·삭제 API")
+@Tag(name = "[TEST] 테스트 API", description = "테스트 등록 관련 API")
 @RestController
 @RequestMapping("/api/v1/tests")
 @SecurityRequirement(name = "JWT")
@@ -43,7 +43,9 @@ public class TestController {
                     """
     )
     @GetMapping
-    public ResponseEntity<ApiResponse<List<TestSummaryResponse>>> listTests() {
+    public ResponseEntity<ApiResponse<List<TestSummaryResponse>>> listTests(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
         List<TestSummaryResponse> data = testService.listTests();
         return ResponseEntity.ok(ApiResponse.ok("테스트 목록을 조회했습니다.", data));
     }
@@ -51,12 +53,23 @@ public class TestController {
     @Operation(
             summary = "테스트 상세 조회",
             description = """
+<<<<<<< HEAD
                     특정 테스트의 이름, 카테고리, 이미지 키 목록, 보상, 한 줄 소개를 조회합니다.
+=======
+                    특정 테스트의 이름, 카테고리(enum 코드 문자열), 이미지 키 목록, 보상, 한 줄 소개를 조회합니다.
+>>>>>>> origin/dev
                     삭제된 테스트는 조회되지 않습니다.
                     """
     )
     @GetMapping("/{testId}")
+<<<<<<< HEAD
     public ResponseEntity<ApiResponse<TestDetailResponse>> getTest(@PathVariable Long testId) {
+=======
+    public ResponseEntity<ApiResponse<TestDetailResponse>> getTest(
+            @PathVariable Long testId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+>>>>>>> origin/dev
         TestDetailResponse data = testService.getTest(testId);
         return ResponseEntity.ok(ApiResponse.ok("테스트를 조회했습니다.", data));
     }
@@ -118,5 +131,4 @@ public class TestController {
         testService.deleteTest(testId, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트가 삭제되었습니다.", null));
     }
-    
 }
