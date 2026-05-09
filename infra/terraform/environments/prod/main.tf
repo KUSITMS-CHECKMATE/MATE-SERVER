@@ -63,3 +63,11 @@ module "keyvault" {
   location            = var.location
   key_vault_name      = var.key_vault_name
 }
+
+module "user_assigned_identity" {
+  source = "../../modules/user_assigned_identity"
+
+  identity_name       = var.app_managed_identity_name
+  resource_group_name = module.resource_group.name
+  location            = var.location
+}

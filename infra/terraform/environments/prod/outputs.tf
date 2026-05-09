@@ -97,3 +97,23 @@ output "key_vault_uri" {
   description = "Key Vault URI."
   value       = module.keyvault.vault_uri
 }
+
+output "app_managed_identity_id" {
+  description = "User-assigned managed identity resource id."
+  value       = module.user_assigned_identity.id
+}
+
+output "app_managed_identity_principal_id" {
+  description = "User-assigned identity principal id (for RBAC role assignments)."
+  value       = module.user_assigned_identity.principal_id
+}
+
+output "app_managed_identity_client_id" {
+  description = "User-assigned identity client id (for SDK / federation)."
+  value       = module.user_assigned_identity.client_id
+}
+
+output "app_managed_identity_tenant_id" {
+  description = "Tenant id for the managed identity."
+  value       = module.user_assigned_identity.tenant_id
+}

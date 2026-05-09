@@ -120,3 +120,8 @@ variable "key_vault_name" {
   description = "Globally unique Key Vault name"
   type        = string
 }
+
+variable "app_managed_identity_name" {
+  description = "User-assigned managed identity name (RG scope)."
+  type        = string
+}
