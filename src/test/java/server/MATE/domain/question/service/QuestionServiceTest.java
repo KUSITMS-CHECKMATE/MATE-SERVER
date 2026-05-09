@@ -199,6 +199,20 @@ class QuestionServiceTest {
         verify(scaleFetcher, never()).fetch(anyList());
     }
 
+    @Test
+    @DisplayName("삭제된 테스트는 조회 시 TEST_004 예외가 발생한다")
+    void getQuestionsThrowsTest004WhenTestIsDeleted() {
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> questionService.getQuestions(TEST_ID, MAKER_ID))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.TEST_004);
+
+        verify(questionRepository, never()).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
+        verify(objectiveFetcher, never()).fetch(anyList());
+        verify(scaleFetcher, never()).fetch(anyList());
+    }
 
     @Test
     @DisplayName("조회 요청자가 제작자가 아니면 TEST_005 예외가 발생한다")

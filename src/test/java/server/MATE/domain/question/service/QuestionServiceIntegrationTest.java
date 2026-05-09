@@ -48,6 +48,7 @@ import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.image.ImageService;
 
 import java.util.Comparator;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -114,9 +115,114 @@ class QuestionServiceIntegrationTest {
         testRepository.deleteAll();
     }
 
+    @Test
+    @DisplayName("삭제된 테스트는 문항 목록 조회 시 TEST_004 예외가 발생한다")
+    void throwsTest004WhenGettingQuestionsForDeletedTest() {
+        server.MATE.domain.test.entity.Test savedTest = createTest();
+        savedTest.delete(LocalDateTime.now());
+        testRepository.saveAndFlush(savedTest);
 
+        assertThatThrownBy(() -> questionService.getQuestions(savedTest.getId(), 1L))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.TEST_004);
+    }
 
+    @Test
+    @DisplayName("객관식 조회는 선택지 sequence 순서를 유지한다")
+    void getsObjectiveOptionsInSequenceOrder() {
+        server.MATE.domain.test.entity.Test savedTest = createTest();
 
+        questionService.createQuestions(savedTest.getId(), 1L, new QuestionCreateRequest(List.of(
+                new ObjectiveCreateRequest(
+                        "객관식 질문",
+                        "설명",
+                        false,
+                        null,
+                        null,
+                        true,
+                        List.of(
+                                new ObjectiveOptionRequest("첫 번째", null),
+                                new ObjectiveOptionRequest("두 번째", null),
+                                new ObjectiveOptionRequest("세 번째", null)
+                        )
+                )
+        )));
+
+        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId(), 1L);
+
+        ObjectiveDetailResponse objectiveResponse = (ObjectiveDetailResponse) response.questions().getFirst();
+        assertThat(objectiveResponse.options()).extracting(option -> option.content(), option -> option.sequence())
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("첫 번째", 1),
+                        org.assertj.core.groups.Tuple.tuple("두 번째", 2),
+                        org.assertj.core.groups.Tuple.tuple("세 번째", 3)
+                );
+    }
+
+    @Test
+    @DisplayName("5초 테스트 객관식 조회는 선택지 sequence 순서를 유지한다")
+    void getsFiveSecondOptionsInSequenceOrder() {
+        server.MATE.domain.test.entity.Test savedTest = createTest();
+
+        questionService.createQuestions(savedTest.getId(), 1L, new QuestionCreateRequest(List.of(
+                new FiveSecondCreateRequest(
+                        "5초 질문",
+                        "설명",
+                        "five-second-image",
+                        true,
+                        true,
+                        1,
+                        3,
+                        List.of(
+                                new FiveSecondOptionRequest("첫 번째"),
+                                new FiveSecondOptionRequest("두 번째"),
+                                new FiveSecondOptionRequest("세 번째")
+                        )
+                )
+        )));
+
+        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId(), 1L);
+
+        FiveSecondDetailResponse fiveSecondResponse = (FiveSecondDetailResponse) response.questions().getFirst();
+        assertThat(fiveSecondResponse.options()).extracting(option -> option.content(), option -> option.sequence())
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("첫 번째", 1),
+                        org.assertj.core.groups.Tuple.tuple("두 번째", 2),
+                        org.assertj.core.groups.Tuple.tuple("세 번째", 3)
+                );
+    }
+
+    @Test
+    @DisplayName("트리 테스트 조회는 같은 depth의 children 순서를 유지한다")
+    void getsTreeChildrenInSequenceOrder() {
+        server.MATE.domain.test.entity.Test savedTest = createTest();
+
+        questionService.createQuestions(savedTest.getId(), 1L, new QuestionCreateRequest(List.of(
+                new TreeTestCreateRequest(
+                        "트리 질문",
+                        "설명",
+                        List.of(
+                                new TreeTestCreateRequest.Feature(
+                                        "마이페이지",
+                                        List.of(
+                                                new TreeTestCreateRequest.TreeNode("설정", List.of()),
+                                                new TreeTestCreateRequest.TreeNode("프로필", List.of()),
+                                                new TreeTestCreateRequest.TreeNode("보안", List.of())
+                                        )
+                                )
+                        )
+                )
+        )));
+
+        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId(), 1L);
+
+        TreeTestDetailResponse treeResponse = (TreeTestDetailResponse) response.questions().getFirst();
+        assertThat(treeResponse.features()).singleElement();
+        assertThat(treeResponse.features().getFirst().children())
+                .extracting(TreeTestNodeDetailResponse::label)
+                .containsExactly("설정", "프로필", "보안");
+    }
 
     @Test
     @DisplayName("5초 테스트 주관식 조회는 객관식 전용 필드를 비워서 반환한다")
@@ -350,6 +456,68 @@ class QuestionServiceIntegrationTest {
         assertThat(treeResponse.features().getFirst().children()).allSatisfy(node -> assertThat(node.treeTestId()).isNotNull());
     }
 
+    @Test
+    @DisplayName("문항 목록 조회는 루트 testId와 타입별 상세 sequence를 함께 반환한다")
+    void getsQuestionDetailsWithRootTestIdAndNestedSequences() {
+        server.MATE.domain.test.entity.Test savedTest = createTest();
+
+        questionService.createQuestions(savedTest.getId(), 1L, new QuestionCreateRequest(List.of(
+                new ScaleCreateRequest(
+                        "척도 질문",
+                        "설명",
+                        null,
+                        "낮음",
+                        "높음",
+                        5
+                ),
+                new ObjectiveCreateRequest(
+                        "객관식 질문",
+                        "설명",
+                        true,
+                        2,
+                        1,
+                        true,
+                        List.of(
+                                new ObjectiveOptionRequest("A", null),
+                                new ObjectiveOptionRequest("B", "image-b")
+                        )
+                ),
+                new TreeTestCreateRequest(
+                        "트리 테스트",
+                        "설명",
+                        List.of(
+                                new TreeTestCreateRequest.Feature(
+                                        "마이페이지",
+                                        List.of(
+                                                new TreeTestCreateRequest.TreeNode(
+                                                        "설정",
+                                                        List.of(new TreeTestCreateRequest.TreeNode("알림 설정", List.of()))
+                                                )
+                                        )
+                                )
+                        )
+                )
+        )));
+
+        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId(), 1L);
+
+        assertThat(response.testId()).isEqualTo(savedTest.getId());
+        assertThat(response.questions()).extracting(QuestionDetailItem::type)
+                .containsExactly(QuestionType.SCALE, QuestionType.OBJECTIVE, QuestionType.TREE_TEST);
+        assertThat(response.questions()).extracting(QuestionDetailItem::sequence)
+                .containsExactly(1L, 2L, 3L);
+
+        ObjectiveDetailResponse objectiveResponse = (ObjectiveDetailResponse) response.questions().get(1);
+        assertThat(objectiveResponse.objectiveId()).isNotNull();
+        assertThat(objectiveResponse.options()).extracting(option -> option.sequence())
+                .containsExactly(1, 2);
+        assertThat(objectiveResponse.options()).allSatisfy(option -> assertThat(option.objectiveOptionId()).isNotNull());
+
+        TreeTestDetailResponse treeResponse = (TreeTestDetailResponse) response.questions().get(2);
+        assertThat(treeResponse.features()).allSatisfy(node -> assertThat(node.treeTestId()).isNotNull());
+        assertThat(treeResponse.features().getFirst().label()).isEqualTo("마이페이지");
+        assertThat(treeResponse.features().getFirst().children().getFirst().label()).isEqualTo("설정");
+    }
 
     @Test
     @DisplayName("혼합 요청이 성공하면 sequence와 세부 구조가 함께 저장되고 cleanup 삭제는 실행되지 않는다")
