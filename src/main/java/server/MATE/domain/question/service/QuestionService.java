@@ -54,6 +54,7 @@ public class QuestionService {
 
         List<String> imageKeysToCleanup = new ArrayList<>();
         List<QuestionCreateResult> results = new ArrayList<>();
+        List<PendingQuestionCreate> pendingCreates = new ArrayList<>();
 
         List<QuestionCreateItem> items = request.questions();
         for (int i = 0; i < items.size(); i++) {
@@ -62,22 +63,26 @@ public class QuestionService {
             if (handler == null) throw new BaseException(BaseErrorCode.COMMON_002);
 
             handler.validate(item);
+            imageKeysToCleanup.addAll(handler.extractImageKeys(item));
+            pendingCreates.add(new PendingQuestionCreate(handler, item, baseSequence + i + 1));
+        }
 
+        if (!imageKeysToCleanup.isEmpty()) eventPublisher.publishEvent(new ImageCleanupEvent(imageKeysToCleanup));
+
+        for (PendingQuestionCreate pendingCreate : pendingCreates) {
+            QuestionCreateItem item = pendingCreate.item();
             Question question = Question.builder()
                     .testId(testId)
                     .questionType(item.type())
                     .title(item.title())
                     .description(item.description())
-                    .sequence(baseSequence + i + 1)
+                    .sequence(pendingCreate.sequence())
                     .build();
             questionRepository.save(question);
 
-            handler.createDetail(question, item);
-            imageKeysToCleanup.addAll(handler.extractImageKeys(item));
+            pendingCreate.handler().createDetail(question, item);
             results.add(QuestionCreateResult.from(question));
         }
-
-        if (!imageKeysToCleanup.isEmpty()) eventPublisher.publishEvent(new ImageCleanupEvent(imageKeysToCleanup));
 
         return new QuestionCreateResponse(results);
     }
@@ -88,5 +93,12 @@ public class QuestionService {
             handlerMap.put(handler.supports(), handler);
         }
         return handlerMap;
+    }
+
+    private record PendingQuestionCreate(
+            QuestionCreateHandler handler,
+            QuestionCreateItem item,
+            Long sequence
+    ) {
     }
 }
