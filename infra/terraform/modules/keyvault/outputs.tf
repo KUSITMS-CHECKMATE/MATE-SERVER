@@ -28,5 +28,8 @@ output "env_var_mapping" {
     "discord-webhook-url"             = "DISCORD_WEBHOOK_URL"
     "azure-storage-connection-string" = "AZURE_CONNECTION"
     "azure-container-name"            = "AZURE_CONTAINER_NAME"
+    # Spring ssl.bundle.pem.toss.keystore file paths
+    "toss-mtls-certificate" = "TOSS_MTLS_CERT_PATH (PEM file content from KV → write to disk → path here)"
+    "toss-mtls-private-key" = "TOSS_MTLS_KEY_PATH (PEM file content from KV → write to disk → path here)"
   }
 }

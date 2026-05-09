@@ -9,6 +9,8 @@ locals {
     "discord-webhook-url",
     "azure-storage-connection-string",
     "azure-container-name",
+    "toss-mtls-certificate",
+    "toss-mtls-private-key",
   ])
 }
 
