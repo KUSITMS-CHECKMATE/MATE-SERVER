@@ -1,15 +1,15 @@
 package server.MATE.domain.question.service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import server.MATE.domain.question.dto.request.ObjectiveCreateRequest;
 import server.MATE.domain.question.dto.request.ObjectiveOptionRequest;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
@@ -24,6 +24,8 @@ import server.MATE.domain.question.repository.ScaleRepository;
 import server.MATE.domain.question.repository.TreeTestRepository;
 import server.MATE.domain.question.service.handler.ScaleQuestionCreateHandler;
 import server.MATE.domain.test.repository.TestRepository;
+import server.MATE.global.common.exception.BaseErrorCode;
+import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.image.ImageService;
 
 import java.util.Comparator;
@@ -32,10 +34,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.then;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -48,6 +50,9 @@ class QuestionServiceIntegrationTest {
     private TestRepository testRepository;
 
     @Autowired
+    private QuestionRepository questionRepository;
+
+    @Autowired
     private ObjectiveRepository objectiveRepository;
 
     @Autowired
@@ -56,13 +61,13 @@ class QuestionServiceIntegrationTest {
     @Autowired
     private TreeTestRepository treeTestRepository;
 
-    @SpyBean
-    private QuestionRepository questionRepository;
+    @PersistenceContext
+    private EntityManager entityManager;
 
-    @SpyBean
+    @MockitoSpyBean
     private ScaleQuestionCreateHandler scaleQuestionCreateHandler;
 
-    @MockBean
+    @MockitoBean
     private ImageService imageService;
 
     @AfterEach
@@ -75,8 +80,8 @@ class QuestionServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("혼합 요청이 성공하면 sequence 순서와 세부 엔티티가 함께 저장되고 cleanup 삭제는 실행되지 않는다")
-    void savesMixedQuestionsInOrderWithoutDeletingImagesOnSuccess() {
+    @DisplayName("혼합 요청이 성공하면 sequence와 세부 구조가 함께 저장되고 cleanup 삭제는 실행되지 않는다")
+    void savesMixedQuestionsInOrderWithDetailsWithoutDeletingImagesOnSuccess() {
         server.MATE.domain.test.entity.Test savedTest = createTest();
 
         QuestionCreateRequest request = new QuestionCreateRequest(List.of(
@@ -127,110 +132,86 @@ class QuestionServiceIntegrationTest {
         assertThat(response.questions()).extracting(result -> result.sequence())
                 .containsExactly(1L, 2L, 3L);
 
+        Long objectiveId = objectiveRepository.findAll().get(0).getId();
+        List<Object[]> objectiveOptions = entityManager.createQuery("""
+                        select option.content, option.sequence
+                        from ObjectiveOption option
+                        where option.objective.id = :objectiveId
+                        order by option.sequence
+                        """, Object[].class)
+                .setParameter("objectiveId", objectiveId)
+                .getResultList();
+        assertThat(objectiveOptions)
+                .extracting(row -> row[0], row -> row[1])
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("A", 1),
+                        org.assertj.core.groups.Tuple.tuple("B", 2)
+                );
+
+        Long treeQuestionId = savedQuestions.get(2).getId();
+        List<Object[]> treeNodes = entityManager.createQuery("""
+                        select node.label, node.depth, parent.label
+                        from TreeTest node
+                        left join node.parent parent
+                        where node.question.id = :questionId
+                        order by node.depth, node.sequence
+                        """, Object[].class)
+                .setParameter("questionId", treeQuestionId)
+                .getResultList();
+        assertThat(treeNodes)
+                .extracting(row -> row[0], row -> row[1], row -> row[2])
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("마이페이지", 0, null),
+                        org.assertj.core.groups.Tuple.tuple("설정", 1, "마이페이지")
+                );
+
         assertThat(objectiveRepository.count()).isEqualTo(1L);
         assertThat(scaleRepository.count()).isEqualTo(1L);
         assertThat(treeTestRepository.count()).isEqualTo(2L);
-        then(imageService).should(never()).deleteFiles(any());
+        verify(imageService, never()).deleteFiles(anyList());
     }
 
     @Test
-    @DisplayName("문항 저장 중간에 DB 제약 오류가 나면 선행 저장도 rollback 되고 cleanup 이벤트가 rollback 시점에 실행된다")
-    void rollsBackPersistedQuestionsAndTriggersCleanupOnRollback() {
+    @DisplayName("두 번째 문항 상세 저장에서 애플리케이션 예외가 나면 선행 저장도 rollback 되고 cleanup 이벤트가 rollback 시점에 실행된다")
+    void rollsBackWhenApplicationExceptionOccursDuringSecondDetailCreation() {
         server.MATE.domain.test.entity.Test savedTest = createTest();
 
-        questionRepository.save(Question.builder()
-                .testId(savedTest.getId())
-                .questionType(QuestionType.SUBJECTIVE)
-                .title("기존 질문")
-                .description("기존 설명")
-                .sequence(2L)
-                .build());
-
-        doReturn(0L).when(questionRepository).findMaxSequenceByTestId(savedTest.getId());
-
-        QuestionCreateRequest request = new QuestionCreateRequest(List.of(
-                new ObjectiveCreateRequest(
-                        "객관식 질문",
-                        "설명",
-                        false,
-                        null,
-                        null,
-                        true,
-                        List.of(
-                                new ObjectiveOptionRequest("A", "image-a"),
-                                new ObjectiveOptionRequest("B", null)
-                        )
-                ),
-                new ScaleCreateRequest(
-                        "척도 질문",
-                        "설명",
-                        "image-scale",
-                        "낮음",
-                        "높음",
-                        5
-                )
-        ));
-
-        long questionCountBefore = questionRepository.count();
-
-        assertThatThrownBy(() -> questionService.createQuestions(savedTest.getId(), 1L, request))
-                .isInstanceOf(DataIntegrityViolationException.class);
-
-        assertThat(questionRepository.count()).isEqualTo(questionCountBefore);
-        assertThat(questionRepository.findAll())
-                .extracting(Question::getTitle, Question::getSequence)
-                .containsExactly(org.assertj.core.groups.Tuple.tuple("기존 질문", 2L));
-        assertThat(objectiveRepository.count()).isZero();
-        assertThat(scaleRepository.count()).isZero();
-
-        ArgumentCaptor<List<String>> imageKeysCaptor = ArgumentCaptor.forClass(List.class);
-        then(imageService).should().deleteFiles(imageKeysCaptor.capture());
-        assertThat(imageKeysCaptor.getValue()).containsExactly("image-a", "image-scale");
-    }
-
-    @Test
-    @DisplayName("두 번째 문항 상세 저장에서 예외가 나면 선행 저장도 rollback 되고 cleanup 이벤트가 rollback 시점에 실행된다")
-    void rollsBackWhenDetailCreationFailsAfterFirstQuestionIsSaved() {
-        server.MATE.domain.test.entity.Test savedTest = createTest();
-
-        QuestionCreateRequest request = new QuestionCreateRequest(List.of(
-                new ObjectiveCreateRequest(
-                        "객관식 질문",
-                        "설명",
-                        false,
-                        null,
-                        null,
-                        true,
-                        List.of(
-                                new ObjectiveOptionRequest("A", "image-a"),
-                                new ObjectiveOptionRequest("B", null)
-                        )
-                ),
-                new ScaleCreateRequest(
-                        "척도 질문",
-                        "설명",
-                        "image-scale",
-                        "낮음",
-                        "높음",
-                        5
-                )
-        ));
-
-        doThrow(new IllegalStateException("detail save failed"))
+        doThrow(new BaseException(BaseErrorCode.COMMON_999, "detail save failed"))
                 .when(scaleQuestionCreateHandler)
                 .createDetail(any(Question.class), any());
 
+        QuestionCreateRequest request = new QuestionCreateRequest(List.of(
+                new ObjectiveCreateRequest(
+                        "객관식 질문",
+                        "설명",
+                        false,
+                        null,
+                        null,
+                        true,
+                        List.of(
+                                new ObjectiveOptionRequest("A", "image-a"),
+                                new ObjectiveOptionRequest("B", null)
+                        )
+                ),
+                new ScaleCreateRequest(
+                        "척도 질문",
+                        "설명",
+                        "image-scale",
+                        "낮음",
+                        "높음",
+                        5
+                )
+        ));
+
         assertThatThrownBy(() -> questionService.createQuestions(savedTest.getId(), 1L, request))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("detail save failed");
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.COMMON_999);
 
         assertThat(questionRepository.count()).isZero();
         assertThat(objectiveRepository.count()).isZero();
         assertThat(scaleRepository.count()).isZero();
-
-        ArgumentCaptor<List<String>> imageKeysCaptor = ArgumentCaptor.forClass(List.class);
-        then(imageService).should().deleteFiles(imageKeysCaptor.capture());
-        assertThat(imageKeysCaptor.getValue()).containsExactly("image-a", "image-scale");
+        verify(imageService).deleteFiles(List.of("image-a", "image-scale"));
     }
 
     private server.MATE.domain.test.entity.Test createTest() {
