@@ -34,6 +34,7 @@ public class FiveSecond {
     private Integer maxSelect;
 
     @OneToMany(mappedBy = "fiveSecond", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sequence ASC")
     private List<FiveSecondOption> options = new ArrayList<>();
 
     @Builder
