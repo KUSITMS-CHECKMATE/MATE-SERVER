@@ -33,8 +33,8 @@ public class QuestionController {
 
     private final QuestionService questionService;
 
-    @Operation(summary = "질문 문항 목록 조회", description = """
-            특정 테스트에 등록된 질문 문항 목록을 조회합니다.
+    @Operation(summary = "테스트 질문 조회", description = """
+            testId에 해당한 테스트의 모든 질문 문항을 상세조회합니다.
             - 응답 루트에 `testId`와 `questions`를 함께 반환합니다.
             - `questions` 배열은 `sequence` 오름차순입니다.
             - 각 질문 항목은 공통 필드와 유형별 상세 필드를 모두 포함합니다.
