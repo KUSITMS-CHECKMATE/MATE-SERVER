@@ -13,10 +13,16 @@ import server.MATE.domain.question.dto.request.ObjectiveOptionRequest;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.dto.request.ScaleCreateRequest;
 import server.MATE.domain.question.dto.request.TreeTestCreateRequest;
+import server.MATE.domain.question.dto.response.ObjectiveOptionDetailResponse;
+import server.MATE.domain.question.dto.response.ObjectiveDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
+import server.MATE.domain.question.dto.response.QuestionDetailItem;
+import server.MATE.domain.question.dto.response.QuestionDetailResponse;
+import server.MATE.domain.question.dto.response.ScaleDetailResponse;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.QuestionRepository;
+import server.MATE.domain.question.service.fetcher.QuestionDetailFetcher;
 import server.MATE.domain.question.service.handler.QuestionCreateHandler;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
@@ -24,6 +30,7 @@ import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.image.event.ImageCleanupEvent;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,6 +65,12 @@ class QuestionServiceTest {
     @Mock
     private QuestionCreateHandler treeTestHandler;
 
+    @Mock
+    private QuestionDetailFetcher objectiveFetcher;
+
+    @Mock
+    private QuestionDetailFetcher scaleFetcher;
+
     private QuestionService questionService;
 
     private static final Long TEST_ID = 10L;
@@ -78,14 +91,81 @@ class QuestionServiceTest {
         lenient().when(objectiveHandler.supports()).thenReturn(QuestionType.OBJECTIVE);
         lenient().when(scaleHandler.supports()).thenReturn(QuestionType.SCALE);
         lenient().when(treeTestHandler.supports()).thenReturn(QuestionType.TREE_TEST);
+        lenient().when(objectiveFetcher.supports()).thenReturn(QuestionType.OBJECTIVE);
+        lenient().when(scaleFetcher.supports()).thenReturn(QuestionType.SCALE);
         lenient().when(questionRepository.save(any(Question.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         questionService = new QuestionService(
                 testRepository,
                 questionRepository,
                 eventPublisher,
-                List.of(objectiveHandler, scaleHandler, treeTestHandler)
+                List.of(objectiveHandler, scaleHandler, treeTestHandler),
+                List.of(objectiveFetcher, scaleFetcher)
         );
+    }
+
+    @Test
+    @DisplayName("문항 목록 조회는 sequence 순서를 유지하면서 타입별 fetcher 결과를 조립한다")
+    void getQuestionsAssemblesFetcherResultsInSequenceOrder() {
+        Question objectiveQuestion = Question.builder()
+                .testId(TEST_ID)
+                .questionType(QuestionType.OBJECTIVE)
+                .title("객관식 질문")
+                .description("설명")
+                .sequence(2L)
+                .build();
+        Question scaleQuestion = Question.builder()
+                .testId(TEST_ID)
+                .questionType(QuestionType.SCALE)
+                .title("척도 질문")
+                .description("설명")
+                .sequence(1L)
+                .build();
+        setQuestionId(objectiveQuestion, 201L);
+        setQuestionId(scaleQuestion, 202L);
+
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID))
+                .willReturn(List.of(scaleQuestion, objectiveQuestion));
+        given(objectiveFetcher.fetch(List.of(objectiveQuestion))).willReturn(Map.of(
+                201L,
+                new ObjectiveDetailResponse(
+                        201L,
+                        201L,
+                        QuestionType.OBJECTIVE,
+                        2L,
+                        "객관식 질문",
+                        "설명",
+                        false,
+                        null,
+                        null,
+                        true,
+                        List.of(new ObjectiveOptionDetailResponse(1001L, "A", null, 1))
+                )
+        ));
+        given(scaleFetcher.fetch(List.of(scaleQuestion))).willReturn(Map.of(
+                202L,
+                new ScaleDetailResponse(
+                        202L,
+                        202L,
+                        QuestionType.SCALE,
+                        1L,
+                        "척도 질문",
+                        "설명",
+                        null,
+                        "낮음",
+                        "높음",
+                        5
+                )
+        ));
+
+        QuestionDetailResponse response = questionService.getQuestions(TEST_ID, MAKER_ID);
+
+        assertThat(response.testId()).isEqualTo(TEST_ID);
+        assertThat(response.questions()).extracting(QuestionDetailItem::questionId)
+                .containsExactly(202L, 201L);
+        assertThat(response.questions()).extracting(QuestionDetailItem::type)
+                .containsExactly(QuestionType.SCALE, QuestionType.OBJECTIVE);
     }
 
     @Test
@@ -424,5 +504,15 @@ class QuestionServiceTest {
                 .isSameAs(exception);
 
         verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    private void setQuestionId(Question question, Long id) {
+        try {
+            java.lang.reflect.Field field = Question.class.getDeclaredField("id");
+            field.setAccessible(true);
+            field.set(question, id);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
