@@ -3,7 +3,6 @@ package server.MATE.domain.question.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import server.MATE.domain.question.dto.request.CardSortingCategoryItemRequest;
 import server.MATE.domain.question.dto.request.CardSortingCreateRequest;
 import server.MATE.domain.question.dto.response.CardSortingCreateResponse;
 import server.MATE.domain.question.entity.CardSorting;

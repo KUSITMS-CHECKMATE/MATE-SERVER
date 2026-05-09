@@ -62,14 +62,11 @@ public class TestController {
                     """
     )
     @GetMapping("/{testId}")
-<<<<<<< HEAD
-    public ResponseEntity<ApiResponse<TestDetailResponse>> getTest(@PathVariable Long testId) {
-=======
+
     public ResponseEntity<ApiResponse<TestDetailResponse>> getTest(
             @PathVariable Long testId,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
->>>>>>> origin/dev
         TestDetailResponse data = testService.getTest(testId);
         return ResponseEntity.ok(ApiResponse.ok("테스트를 조회했습니다.", data));
     }
