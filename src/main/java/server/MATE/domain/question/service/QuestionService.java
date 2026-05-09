@@ -7,10 +7,13 @@ import server.MATE.domain.question.dto.request.QuestionCreateItem;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResult;
+import server.MATE.domain.question.dto.response.QuestionDetailItem;
+import server.MATE.domain.question.dto.response.QuestionDetailResponse;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.question.service.handler.QuestionCreateHandler;
+import server.MATE.domain.question.service.fetcher.QuestionDetailFetcher;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
@@ -30,15 +33,18 @@ public class QuestionService {
     private final QuestionRepository questionRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final Map<QuestionType, QuestionCreateHandler> handlerMap;
+    private final Map<QuestionType, QuestionDetailFetcher> fetcherMap;
 
     public QuestionService(TestRepository testRepository,
                            QuestionRepository questionRepository,
                            ApplicationEventPublisher eventPublisher,
-                           List<QuestionCreateHandler> handlers) {
+                           List<QuestionCreateHandler> handlers,
+                           List<QuestionDetailFetcher> fetchers) {
         this.testRepository = testRepository;
         this.questionRepository = questionRepository;
         this.eventPublisher = eventPublisher;
         this.handlerMap = buildHandlerMap(handlers);
+        this.fetcherMap = buildFetcherMap(fetchers);
     }
 
     public QuestionCreateResponse createQuestions(Long testId, Long makerId, QuestionCreateRequest request) {
@@ -87,12 +93,45 @@ public class QuestionService {
         return new QuestionCreateResponse(results);
     }
 
+    @Transactional(readOnly = true)
+    public QuestionDetailResponse getQuestions(Long testId, Long makerId) {
+        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        if (!test.getMakerId().equals(makerId)) throw new BaseException(BaseErrorCode.TEST_005);
+
+        List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
+        Map<QuestionType, List<Question>> questionsByType = questions.stream()
+                .collect(java.util.stream.Collectors.groupingBy(Question::getQuestionType, () -> new EnumMap<>(QuestionType.class), java.util.stream.Collectors.toList()));
+
+        Map<Long, QuestionDetailItem> detailMap = new java.util.LinkedHashMap<>();
+        for (Map.Entry<QuestionType, List<Question>> entry : questionsByType.entrySet()) {
+            QuestionDetailFetcher fetcher = fetcherMap.get(entry.getKey());
+            if (fetcher == null) throw new BaseException(BaseErrorCode.COMMON_002);
+            detailMap.putAll(fetcher.fetch(entry.getValue()));
+        }
+
+        List<QuestionDetailItem> results = questions.stream()
+                .map(question -> detailMap.get(question.getId()))
+                .toList();
+
+        return new QuestionDetailResponse(testId, results);
+    }
+
     private Map<QuestionType, QuestionCreateHandler> buildHandlerMap(List<QuestionCreateHandler> handlers) {
         Map<QuestionType, QuestionCreateHandler> handlerMap = new EnumMap<>(QuestionType.class);
         for (QuestionCreateHandler handler : handlers) {
             handlerMap.put(handler.supports(), handler);
         }
         return handlerMap;
+    }
+
+    private Map<QuestionType, QuestionDetailFetcher> buildFetcherMap(List<QuestionDetailFetcher> fetchers) {
+        Map<QuestionType, QuestionDetailFetcher> fetcherMap = new EnumMap<>(QuestionType.class);
+        for (QuestionDetailFetcher fetcher : fetchers) {
+            fetcherMap.put(fetcher.supports(), fetcher);
+        }
+        return fetcherMap;
     }
 
     private record PendingQuestionCreate(
