@@ -32,6 +32,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -148,6 +149,47 @@ class QuestionControllerTest {
     }
 
     @Test
+    @DisplayName("혼합 요청 중 뒤 문항이 검증에 실패하면 전체 요청이 400으로 종료되고 서비스를 호출하지 않는다")
+    void returnsBadRequestWhenLaterMixedQuestionFailsValidation() throws Exception {
+        String requestBody = """
+                {
+                  "questions": [
+                    {
+                      "type": "OBJECTIVE",
+                      "title": "객관식 질문",
+                      "description": "설명",
+                      "isDuplicate": false,
+                      "isOther": true,
+                      "options": [
+                        { "content": "A", "imageKey": null },
+                        { "content": "B", "imageKey": null }
+                      ]
+                    },
+                    {
+                      "type": "OBJECTIVE",
+                      "title": "두 번째 객관식",
+                      "description": "설명",
+                      "isDuplicate": false,
+                      "isOther": true
+                    }
+                  ]
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/tests/10/questions")
+                        .with(authenticationPrincipal())
+                        .contentType(APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("COMMON_002"))
+                .andExpect(jsonPath("$.message").value("선택지는 필수 입력 사항입니다."))
+                .andExpect(jsonPath("$.field").value("questions[1].options"));
+
+        verifyNoInteractions(questionService);
+    }
+
+    @Test
     @DisplayName("통합 문항 등록 요청 본문 파싱에 실패하면 field 없이 400을 반환한다")
     void returnsBadRequestWithoutFieldWhenRequestBodyParsingFails() throws Exception {
         String requestBody = """
@@ -175,6 +217,52 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.code").value("COMMON_003"))
                 .andExpect(jsonPath("$.message").value("요청 본문을 읽을 수 없습니다."))
                 .andExpect(jsonPath("$.field").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("혼합 요청 중 뒤 문항에 다른 타입 필드가 섞이면 전체 요청이 400으로 종료되고 서비스를 호출하지 않는다")
+    void returnsBadRequestWhenLaterMixedQuestionContainsAnotherTypeField() throws Exception {
+        String requestBody = """
+                {
+                  "questions": [
+                    {
+                      "type": "OBJECTIVE",
+                      "title": "객관식 질문",
+                      "description": "설명",
+                      "isDuplicate": false,
+                      "isOther": true,
+                      "options": [
+                        { "content": "A", "imageKey": null },
+                        { "content": "B", "imageKey": null }
+                      ]
+                    },
+                    {
+                      "type": "OBJECTIVE",
+                      "title": "두 번째 객관식",
+                      "description": "설명",
+                      "isDuplicate": false,
+                      "isOther": true,
+                      "options": [
+                        { "content": "A", "imageKey": null },
+                        { "content": "B", "imageKey": null }
+                      ],
+                      "range": 5
+                    }
+                  ]
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/tests/10/questions")
+                        .with(authenticationPrincipal())
+                        .contentType(APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("COMMON_003"))
+                .andExpect(jsonPath("$.message").value("요청 본문을 읽을 수 없습니다."))
+                .andExpect(jsonPath("$.field").doesNotExist());
+
+        verifyNoInteractions(questionService);
     }
 
     @Test
