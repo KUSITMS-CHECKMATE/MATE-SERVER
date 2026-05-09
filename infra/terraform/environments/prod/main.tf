@@ -74,3 +74,16 @@ module "user_assigned_identity" {
   resource_group_name = module.resource_group.name
   location            = var.location
 }
+
+module "identity_role_assignments" {
+  source = "../../modules/identity_role_assignments"
+
+  principal_id       = module.user_assigned_identity.principal_id
+  key_vault_id       = module.keyvault.id
+  storage_account_id = module.storage.storage_account_id
+
+  assign_key_vault_secrets_user        = var.app_identity_assign_key_vault_secrets_user
+  assign_storage_blob_data_contributor = var.app_identity_assign_storage_blob_data_contributor
+  acr_id                               = module.container_registry.id
+  assign_acr_pull                      = var.app_identity_assign_acr_pull
+}

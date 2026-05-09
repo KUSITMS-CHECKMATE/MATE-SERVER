@@ -3,6 +3,11 @@ output "storage_account_name" {
   value       = data.azurerm_storage_account.this.name
 }
 
+output "storage_account_id" {
+  description = "Referenced Storage Account resource id."
+  value       = data.azurerm_storage_account.this.id
+}
+
 output "primary_blob_endpoint" {
   description = "Blob endpoint for the referenced Storage Account."
   value       = data.azurerm_storage_account.this.primary_blob_endpoint

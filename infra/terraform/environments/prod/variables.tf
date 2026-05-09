@@ -144,3 +144,21 @@ variable "app_managed_identity_name" {
   description = "User-assigned managed identity name (RG scope)."
   type        = string
 }
+
+variable "app_identity_assign_key_vault_secrets_user" {
+  description = "Assign Key Vault Secrets User to app managed identity."
+  type        = bool
+  default     = true
+}
+
+variable "app_identity_assign_storage_blob_data_contributor" {
+  description = "Assign Storage Blob Data Contributor to app managed identity."
+  type        = bool
+  default     = true
+}
+
+variable "app_identity_assign_acr_pull" {
+  description = "Assign AcrPull on ACR for app MI"
+  type        = bool
+  default     = true
+}

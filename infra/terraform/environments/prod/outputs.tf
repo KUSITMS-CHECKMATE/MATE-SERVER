@@ -127,3 +127,23 @@ output "app_managed_identity_tenant_id" {
   description = "Tenant id for the managed identity."
   value       = module.user_assigned_identity.tenant_id
 }
+
+output "app_identity_kv_secrets_user_role_assignment_id" {
+  description = "Role assignment: MI -> Key Vault (Secrets User)."
+  value       = module.identity_role_assignments.key_vault_secrets_user_assignment_id
+}
+
+output "app_identity_storage_blob_contributor_role_assignment_id" {
+  description = "Role assignment: MI -> Storage Account (Blob Data Contributor)."
+  value       = module.identity_role_assignments.storage_blob_data_contributor_assignment_id
+}
+
+output "app_identity_acr_pull_role_assignment_id" {
+  description = "Role assignment: MI -> ACR (AcrPull)."
+  value       = module.identity_role_assignments.acr_pull_assignment_id
+}
+
+output "storage_account_id" {
+  description = "Referenced Storage Account id (RBAC scope)."
+  value       = module.storage.storage_account_id
+}
