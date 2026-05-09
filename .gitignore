@@ -74,12 +74,3 @@ certs/
 *.key
 *.p12
 *.pfx
-
-# Terraform local artifacts
-.terraform/
-*.tfstate
-*.tfstate.*
-crash.log
-*.tfvars
-*.tfvars.json
-!*.tfvars.example

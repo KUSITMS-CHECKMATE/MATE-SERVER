@@ -33,7 +33,6 @@ public class TestService {
 
     @Transactional(readOnly = true)
     public List<TestSummaryResponse> listTests() {
-
         return testRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc().stream()
                 .map(TestSummaryResponse::from)
                 .toList();

@@ -38,7 +38,6 @@ public class TestController {
                     - **representativeImageKey**: 업로드된 이미지 키 목록 중 첫 번째. 없으면 null입니다.
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
-                    - **categories**: 테스트에 연결된 카테고리 enum 코드 문자열 목록
                     목록은 생성일 기준 최신순입니다.
                     """
     )
@@ -53,16 +52,11 @@ public class TestController {
     @Operation(
             summary = "테스트 상세 조회",
             description = """
-<<<<<<< HEAD
-                    특정 테스트의 이름, 카테고리, 이미지 키 목록, 보상, 한 줄 소개를 조회합니다.
-=======
                     특정 테스트의 이름, 카테고리(enum 코드 문자열), 이미지 키 목록, 보상, 한 줄 소개를 조회합니다.
->>>>>>> origin/dev
                     삭제된 테스트는 조회되지 않습니다.
                     """
     )
     @GetMapping("/{testId}")
-
     public ResponseEntity<ApiResponse<TestDetailResponse>> getTest(
             @PathVariable Long testId,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
