@@ -37,6 +37,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.lenient;
@@ -166,6 +167,52 @@ class QuestionServiceTest {
                 .containsExactly(202L, 201L);
         assertThat(response.questions()).extracting(QuestionDetailItem::type)
                 .containsExactly(QuestionType.SCALE, QuestionType.OBJECTIVE);
+    }
+
+    @Test
+    @DisplayName("질문이 없는 테스트 조회는 빈 questions 배열을 반환한다")
+    void returnsEmptyQuestionListWhenTestHasNoQuestions() {
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID))
+                .willReturn(List.of());
+
+        QuestionDetailResponse response = questionService.getQuestions(TEST_ID, MAKER_ID);
+
+        assertThat(response.testId()).isEqualTo(TEST_ID);
+        assertThat(response.questions()).isEmpty();
+        verify(objectiveFetcher, never()).fetch(anyList());
+        verify(scaleFetcher, never()).fetch(anyList());
+    }
+
+    @Test
+    @DisplayName("조회 대상 테스트가 없으면 TEST_004 예외가 발생한다")
+    void getQuestionsThrowsTest004WhenTestDoesNotExist() {
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> questionService.getQuestions(TEST_ID, MAKER_ID))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.TEST_004);
+
+        verify(questionRepository, never()).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
+        verify(objectiveFetcher, never()).fetch(anyList());
+        verify(scaleFetcher, never()).fetch(anyList());
+    }
+
+
+    @Test
+    @DisplayName("조회 요청자가 제작자가 아니면 TEST_005 예외가 발생한다")
+    void getQuestionsThrowsTest005WhenMakerDoesNotMatch() {
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+
+        assertThatThrownBy(() -> questionService.getQuestions(TEST_ID, MAKER_ID + 1))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.TEST_005);
+
+        verify(questionRepository, never()).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
+        verify(objectiveFetcher, never()).fetch(anyList());
+        verify(scaleFetcher, never()).fetch(anyList());
     }
 
     @Test
