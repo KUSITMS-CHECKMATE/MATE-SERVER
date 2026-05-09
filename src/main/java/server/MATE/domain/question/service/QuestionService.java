@@ -23,7 +23,9 @@ import server.MATE.global.image.event.ImageCleanupEvent;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -102,9 +104,13 @@ public class QuestionService {
 
         List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
         Map<QuestionType, List<Question>> questionsByType = questions.stream()
-                .collect(java.util.stream.Collectors.groupingBy(Question::getQuestionType, () -> new EnumMap<>(QuestionType.class), java.util.stream.Collectors.toList()));
+                .collect(Collectors.groupingBy(
+                        Question::getQuestionType,
+                        () -> new EnumMap<>(QuestionType.class),
+                        Collectors.toList()
+                ));
 
-        Map<Long, QuestionDetailItem> detailMap = new java.util.LinkedHashMap<>();
+        Map<Long, QuestionDetailItem> detailMap = new LinkedHashMap<>();
         for (Map.Entry<QuestionType, List<Question>> entry : questionsByType.entrySet()) {
             QuestionDetailFetcher fetcher = fetcherMap.get(entry.getKey());
             if (fetcher == null) throw new BaseException(BaseErrorCode.COMMON_002);
