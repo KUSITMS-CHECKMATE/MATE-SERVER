@@ -45,3 +45,13 @@ module "storage" {
   storage_account_name   = var.storage_account_name
   storage_container_name = var.storage_container_name
 }
+
+module "container_registry" {
+  source = "../../modules/container_registry"
+
+  resource_group_name = module.resource_group.name
+  location            = var.location
+  acr_name            = var.acr_name
+  acr_sku             = var.acr_sku
+  admin_enabled       = var.acr_admin_enabled
+}

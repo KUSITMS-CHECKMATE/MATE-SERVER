@@ -67,3 +67,18 @@ output "storage_container_name" {
   description = "Blob container name used by the application."
   value       = module.storage.storage_container_name
 }
+
+output "acr_id" {
+  description = "Azure Container Registry resource id."
+  value       = module.container_registry.id
+}
+
+output "acr_name" {
+  description = "Azure Container Registry name."
+  value       = module.container_registry.name
+}
+
+output "acr_login_server" {
+  description = "ACR login server (image host)."
+  value       = module.container_registry.login_server
+}

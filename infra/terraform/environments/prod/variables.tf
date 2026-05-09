@@ -98,3 +98,20 @@ variable "storage_container_name" {
   description = "Blob container name used by the application."
   type        = string
 }
+
+variable "acr_name" {
+  description = "Globally unique ACR name"
+  type        = string
+}
+
+variable "acr_sku" {
+  description = "Azure Container Registry SKU."
+  type        = string
+  default     = "Basic"
+}
+
+variable "acr_admin_enabled" {
+  description = "If true, enables admin credentials (prefer false when using AcrPull with AKS)."
+  type        = bool
+  default     = false
+}
