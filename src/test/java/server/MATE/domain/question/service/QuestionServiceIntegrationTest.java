@@ -15,7 +15,11 @@ import server.MATE.domain.question.dto.request.ObjectiveOptionRequest;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.dto.request.ScaleCreateRequest;
 import server.MATE.domain.question.dto.request.TreeTestCreateRequest;
+import server.MATE.domain.question.dto.response.ObjectiveDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
+import server.MATE.domain.question.dto.response.QuestionDetailItem;
+import server.MATE.domain.question.dto.response.QuestionDetailResponse;
+import server.MATE.domain.question.dto.response.TreeTestDetailResponse;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.ObjectiveRepository;
@@ -77,6 +81,69 @@ class QuestionServiceIntegrationTest {
         scaleRepository.deleteAll();
         questionRepository.deleteAll();
         testRepository.deleteAll();
+    }
+
+    @Test
+    @DisplayName("문항 목록 조회는 루트 testId와 타입별 상세 sequence를 함께 반환한다")
+    void getsQuestionDetailsWithRootTestIdAndNestedSequences() {
+        server.MATE.domain.test.entity.Test savedTest = createTest();
+
+        questionService.createQuestions(savedTest.getId(), 1L, new QuestionCreateRequest(List.of(
+                new ScaleCreateRequest(
+                        "척도 질문",
+                        "설명",
+                        null,
+                        "낮음",
+                        "높음",
+                        5
+                ),
+                new ObjectiveCreateRequest(
+                        "객관식 질문",
+                        "설명",
+                        true,
+                        2,
+                        1,
+                        true,
+                        List.of(
+                                new ObjectiveOptionRequest("A", null),
+                                new ObjectiveOptionRequest("B", "image-b")
+                        )
+                ),
+                new TreeTestCreateRequest(
+                        "트리 테스트",
+                        "설명",
+                        List.of(
+                                new TreeTestCreateRequest.Feature(
+                                        "마이페이지",
+                                        List.of(
+                                                new TreeTestCreateRequest.TreeNode(
+                                                        "설정",
+                                                        List.of(new TreeTestCreateRequest.TreeNode("알림 설정", List.of()))
+                                                )
+                                        )
+                                )
+                        )
+                )
+        )));
+
+        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId(), 1L);
+
+        assertThat(response.testId()).isEqualTo(savedTest.getId());
+        assertThat(response.questions()).extracting(QuestionDetailItem::type)
+                .containsExactly(QuestionType.SCALE, QuestionType.OBJECTIVE, QuestionType.TREE_TEST);
+        assertThat(response.questions()).extracting(QuestionDetailItem::sequence)
+                .containsExactly(1L, 2L, 3L);
+
+        ObjectiveDetailResponse objectiveResponse = (ObjectiveDetailResponse) response.questions().get(1);
+        assertThat(objectiveResponse.objectiveId()).isNotNull();
+        assertThat(objectiveResponse.options()).extracting(option -> option.sequence())
+                .containsExactly(1, 2);
+        assertThat(objectiveResponse.options()).allSatisfy(option -> assertThat(option.objectiveOptionId()).isNotNull());
+
+        TreeTestDetailResponse treeResponse = (TreeTestDetailResponse) response.questions().get(2);
+        assertThat(treeResponse.features()).allSatisfy(node -> assertThat(node.treeTestId()).isNotNull());
+        assertThat(treeResponse.features().getFirst().label()).isEqualTo("마이페이지");
+        assertThat(treeResponse.features().getFirst().children().getFirst().label()).isEqualTo("설정");
     }
 
     @Test
