@@ -98,6 +98,16 @@ output "key_vault_uri" {
   value       = module.keyvault.vault_uri
 }
 
+output "key_vault_secret_names" {
+  description = "Created application secret slots (update values in Portal)."
+  value       = module.keyvault.secret_names
+}
+
+output "key_vault_env_var_mapping" {
+  description = "KV secret name -> Spring env (application-prod.yml)."
+  value       = module.keyvault.env_var_mapping
+}
+
 output "app_managed_identity_id" {
   description = "User-assigned managed identity resource id."
   value       = module.user_assigned_identity.id

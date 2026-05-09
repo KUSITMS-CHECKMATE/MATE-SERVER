@@ -41,3 +41,22 @@ variable "public_network_access_enabled" {
   type        = bool
   default     = true
 }
+
+variable "placeholder_secret_value" {
+  description = "Initial secret value until replaced in Portal/CLI (나중에 변경 필요)."
+  type        = string
+  default     = "PLACEHOLDER-SET-MANUALLY"
+}
+
+variable "secret_initial_values" {
+  description = "Optional map secret name -> value for first apply; later updates must be Portal/CLI (ignored by Terraform)."
+  type        = map(string)
+  default     = {}
+  sensitive   = true
+}
+
+variable "deployer_object_id" {
+  description = "Object ID for Key Vault Secrets Officer on this vault (default: terraform az login principal)."
+  type        = string
+  default     = null
+}

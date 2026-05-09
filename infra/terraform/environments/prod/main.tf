@@ -59,9 +59,12 @@ module "container_registry" {
 module "keyvault" {
   source = "../../modules/keyvault"
 
-  resource_group_name = module.resource_group.name
-  location            = var.location
-  key_vault_name      = var.key_vault_name
+  resource_group_name      = module.resource_group.name
+  location                 = var.location
+  key_vault_name           = var.key_vault_name
+  placeholder_secret_value = var.key_vault_placeholder_secret_value
+  secret_initial_values    = var.key_vault_secret_initial_values
+  deployer_object_id       = var.key_vault_deployer_object_id
 }
 
 module "user_assigned_identity" {

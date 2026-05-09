@@ -121,6 +121,25 @@ variable "key_vault_name" {
   type        = string
 }
 
+variable "key_vault_placeholder_secret_value" {
+  description = "Placeholder for new secrets; replace real values in Portal (나중에 변경)."
+  type        = string
+  default     = "PLACEHOLDER-SET-MANUALLY"
+}
+
+variable "key_vault_secret_initial_values" {
+  description = "Optional: set real values on first apply only (sensitive). Omit to use placeholder for all slots."
+  type        = map(string)
+  default     = {}
+  sensitive   = true
+}
+
+variable "key_vault_deployer_object_id" {
+  description = "Object ID to grant Key Vault Secrets Officer for Terraform (defaults to current login)."
+  type        = string
+  default     = null
+}
+
 variable "app_managed_identity_name" {
   description = "User-assigned managed identity name (RG scope)."
   type        = string
