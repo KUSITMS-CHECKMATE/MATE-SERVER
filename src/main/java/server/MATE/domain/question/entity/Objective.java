@@ -33,6 +33,7 @@ public class Objective {
     private boolean isOther;
 
     @OneToMany(mappedBy = "objective", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sequence ASC")
     private List<ObjectiveOption> options = new ArrayList<>();
 
     @Builder
