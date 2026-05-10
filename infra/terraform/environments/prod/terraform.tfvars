@@ -23,3 +23,14 @@ postgres_backup_retention_days = 7
 
 storage_account_name   = "matestoragedev"
 storage_container_name = "mate-images"
+
+# ACR 이름은 Azure 전역에서 유일하도록
+acr_name = "kusitmsmateacr"
+acr_sku  = "Basic"
+
+# Key Vault 이름
+key_vault_name = "kusitms-mate-keyvault"
+
+# 앱(VM)에 부착할 User-assigned MI 이름 
+app_managed_identity_name = "mate-app-identity"
+
