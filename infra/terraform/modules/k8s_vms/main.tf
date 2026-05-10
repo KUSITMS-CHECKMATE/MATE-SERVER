@@ -3,18 +3,9 @@ locals {
   worker_size  = "Standard_B2ms"
 }
 
+# 마스터(control) 접속·kubectl(API server) 접근용 공인 IP 1개만 사용
 resource "azurerm_public_ip" "control" {
   name                = "${var.control_vm_name}-pip"
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-
-  tags = var.tags
-}
-
-resource "azurerm_public_ip" "worker" {
-  name                = "${var.worker_vm_name}-pip"
   location            = var.location
   resource_group_name = var.resource_group_name
   allocation_method   = "Static"
@@ -47,7 +38,7 @@ resource "azurerm_network_interface" "worker" {
     name                          = "primary"
     subnet_id                     = var.subnet_id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.worker.id
+    # 워커는 사설만 (마스터 경유 SSH / 클러스터 내부 통신)
   }
 
   tags = var.tags
