@@ -45,3 +45,27 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "ssh_allow_source_address_prefixes" {
+  description = "SSH(22) 인바운드 허용 출발지 목록"
+  type        = list(string)
+  default     = ["*"]
+}
+
+variable "kubernetes_api_allow_source_address_prefixes" {
+  description = "API 서버(6443) 허용 출발지 목록 (* = 인터넷; 내부만이면 VirtualNetwork 또는 CIDR)."
+  type        = list(string)
+  default     = ["*"]
+}
+
+variable "cluster_internal_allow_source_address_prefixes" {
+  description = "etcd/스케줄러/컨트롤러/kubelet 포트 허용 출발지. 기본 VNet 내."
+  type        = list(string)
+  default     = ["VirtualNetwork"]
+}
+
+variable "nodeport_allow_source_address_prefixes" {
+  description = "NodePort(30000-32767) 허용 출발지. 필요 시 * 로 인터넷 노출 가능."
+  type        = list(string)
+  default     = ["VirtualNetwork"]
+}

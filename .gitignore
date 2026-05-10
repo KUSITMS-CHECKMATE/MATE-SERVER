@@ -87,7 +87,3 @@ crash.log
 .terraform.tfvars
 .terraform.tfvars.json
 !*.tfvars.example
-
-*.pem
-id_ed25519
-id_ed25519.pub
