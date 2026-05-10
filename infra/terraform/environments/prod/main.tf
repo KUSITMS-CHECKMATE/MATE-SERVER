@@ -87,3 +87,16 @@ module "identity_role_assignments" {
   acr_id                               = module.container_registry.id
   assign_acr_pull                      = var.app_identity_assign_acr_pull
 }
+
+module "kubernetes_vms" {
+  source = "../../modules/kubernetes_vms"
+
+  resource_group_name = module.resource_group.name
+  location            = var.location
+  subnet_id           = module.networking.app_subnet_id
+
+  admin_username  = var.kubernetes_vm_admin_username
+  ssh_public_key  = var.kubernetes_vm_ssh_public_key
+  control_vm_name = var.kubernetes_control_vm_name
+  worker_vm_name  = var.kubernetes_worker_vm_name
+}
