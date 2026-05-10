@@ -147,3 +147,23 @@ output "storage_account_id" {
   description = "Referenced Storage Account id (RBAC scope)."
   value       = module.storage.storage_account_id
 }
+
+output "kubernetes_control_vm_id" {
+  description = "K8s control plane Linux VM resource id."
+  value       = module.kubernetes_vms.control_vm_id
+}
+
+output "kubernetes_worker_vm_id" {
+  description = "K8s worker Linux VM resource id."
+  value       = module.kubernetes_vms.worker_vm_id
+}
+
+output "kubernetes_control_public_ip" {
+  description = "Control plane public IP (SSH)."
+  value       = module.kubernetes_vms.control_public_ip_address
+}
+
+output "kubernetes_worker_public_ip" {
+  description = "Worker public IP."
+  value       = module.kubernetes_vms.worker_public_ip_address
+}

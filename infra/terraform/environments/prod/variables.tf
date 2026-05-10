@@ -162,3 +162,27 @@ variable "app_identity_assign_acr_pull" {
   type        = bool
   default     = true
 }
+
+variable "kubernetes_vm_admin_username" {
+  description = "SSH username for Kubernetes control/worker VMs."
+  type        = string
+  default     = "azureuser"
+}
+
+variable "kubernetes_vm_ssh_public_key" {
+  description = "SSH public key (openssh 한 줄). terraform.tfvars에 설정"
+  type        = string
+  sensitive   = true
+}
+
+variable "kubernetes_control_vm_name" {
+  description = "Control plane VM name (Standard_B2s)."
+  type        = string
+  default     = "mate-control"
+}
+
+variable "kubernetes_worker_vm_name" {
+  description = "Worker VM name (Standard_B2ms)."
+  type        = string
+  default     = "mate-worker"
+}
