@@ -67,3 +67,83 @@ output "storage_container_name" {
   description = "Blob container name used by the application."
   value       = module.storage.storage_container_name
 }
+
+output "acr_id" {
+  description = "Azure Container Registry resource id."
+  value       = module.container_registry.id
+}
+
+output "acr_name" {
+  description = "Azure Container Registry name."
+  value       = module.container_registry.name
+}
+
+output "acr_login_server" {
+  description = "ACR login server (image host)."
+  value       = module.container_registry.login_server
+}
+
+output "key_vault_id" {
+  description = "Key Vault resource id."
+  value       = module.keyvault.id
+}
+
+output "key_vault_name" {
+  description = "Key Vault name."
+  value       = module.keyvault.name
+}
+
+output "key_vault_uri" {
+  description = "Key Vault URI."
+  value       = module.keyvault.vault_uri
+}
+
+output "key_vault_secret_names" {
+  description = "Created application secret slots (update values in Portal)."
+  value       = module.keyvault.secret_names
+}
+
+output "key_vault_env_var_mapping" {
+  description = "KV secret name -> Spring env (application-prod.yml)."
+  value       = module.keyvault.env_var_mapping
+}
+
+output "app_managed_identity_id" {
+  description = "User-assigned managed identity resource id."
+  value       = module.user_assigned_identity.id
+}
+
+output "app_managed_identity_principal_id" {
+  description = "User-assigned identity principal id (for RBAC role assignments)."
+  value       = module.user_assigned_identity.principal_id
+}
+
+output "app_managed_identity_client_id" {
+  description = "User-assigned identity client id (for SDK / federation)."
+  value       = module.user_assigned_identity.client_id
+}
+
+output "app_managed_identity_tenant_id" {
+  description = "Tenant id for the managed identity."
+  value       = module.user_assigned_identity.tenant_id
+}
+
+output "app_identity_kv_secrets_user_role_assignment_id" {
+  description = "Role assignment: MI -> Key Vault (Secrets User)."
+  value       = module.identity_role_assignments.key_vault_secrets_user_assignment_id
+}
+
+output "app_identity_storage_blob_contributor_role_assignment_id" {
+  description = "Role assignment: MI -> Storage Account (Blob Data Contributor)."
+  value       = module.identity_role_assignments.storage_blob_data_contributor_assignment_id
+}
+
+output "app_identity_acr_pull_role_assignment_id" {
+  description = "Role assignment: MI -> ACR (AcrPull)."
+  value       = module.identity_role_assignments.acr_pull_assignment_id
+}
+
+output "storage_account_id" {
+  description = "Referenced Storage Account id (RBAC scope)."
+  value       = module.storage.storage_account_id
+}
