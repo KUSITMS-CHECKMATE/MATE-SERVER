@@ -159,11 +159,11 @@ output "kubernetes_worker_vm_id" {
 }
 
 output "kubernetes_control_public_ip" {
-  description = "Control plane public IP (SSH)."
+  description = "control 공인 IP — SSH 및 kubectl(API server)."
   value       = module.kubernetes_vms.control_public_ip_address
 }
 
-output "kubernetes_worker_public_ip" {
-  description = "Worker public IP."
-  value       = module.kubernetes_vms.worker_public_ip_address
+output "kubernetes_worker_private_ip" {
+  description = "K8s worker 사설 IP"
+  value       = module.kubernetes_vms.worker_private_ip_address
 }

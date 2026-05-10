@@ -10,10 +10,10 @@ output "worker_vm_id" {
 
 output "control_public_ip_address" {
   value       = azurerm_public_ip.control.ip_address
-  description = "Control plane SSH / API access"
+  description = "control 공인 IP — SSH 및 kubectl(API server) 접근"
 }
 
-output "worker_public_ip_address" {
-  value       = azurerm_public_ip.worker.ip_address
-  description = "Worker public IP."
+output "worker_private_ip_address" {
+  value       = azurerm_network_interface.worker.private_ip_address
+  description = "Worker 사설 IP (VPC 내부)"
 }
