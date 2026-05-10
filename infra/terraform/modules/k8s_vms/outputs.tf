@@ -17,3 +17,8 @@ output "worker_private_ip_address" {
   value       = azurerm_network_interface.worker.private_ip_address
   description = "Worker 사설 IP (VPC 내부)"
 }
+
+output "network_security_group_id" {
+  description = "K8s 노드(VM) NIC에 부착한 NSG id."
+  value       = azurerm_network_security_group.k8s.id
+}
