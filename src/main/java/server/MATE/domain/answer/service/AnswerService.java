@@ -30,9 +30,13 @@ public class AnswerService {
     private final ObjectMapper objectMapper;
 
     @Transactional
-    public AnswerCreateResponse createSubjectiveAnswer(Long participationId, SubjectiveAnswerCreateRequest request) {
+    public AnswerCreateResponse createSubjectiveAnswer(Long participationId, Long testerId, SubjectiveAnswerCreateRequest request) {
         Participation participation = participationRepository.findByIdAndDeletedAtIsNull(participationId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PARTICIPATION_001));
+
+        if (!participation.getTesterId().equals(testerId)) {
+            throw new BaseException(BaseErrorCode.COMMON_009);
+        }
 
         Question question = questionRepository.findByIdAndDeletedAtIsNull(request.questionId())
                 .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
@@ -43,6 +47,10 @@ public class AnswerService {
 
         if (!question.getTestId().equals(participation.getTestId())) {
             throw new BaseException(BaseErrorCode.ANSWER_002);
+        }
+
+        if (answerRepository.existsByParticipationIdAndQuestionIdAndDeletedAtIsNull(participationId, request.questionId())) {
+            throw new BaseException(BaseErrorCode.ANSWER_003);
         }
 
         String answerJson = toJson(Map.of("text", request.text()));

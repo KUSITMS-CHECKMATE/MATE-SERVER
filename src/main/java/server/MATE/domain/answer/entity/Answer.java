@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(name = "answer")
+@Table(name = "answer", uniqueConstraints = @UniqueConstraint(columnNames = {"participation_id", "question_id"}))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Answer extends BaseEntity {
 
