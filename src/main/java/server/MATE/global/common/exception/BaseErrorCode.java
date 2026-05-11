@@ -49,6 +49,7 @@ public enum BaseErrorCode implements ErrorCode {
     PARTICIPATION_001(HttpStatus.NOT_FOUND, "PARTICIPATION_001", "참여 정보를 찾을 수 없습니다."),
     PARTICIPATION_002(HttpStatus.BAD_REQUEST, "PARTICIPATION_002", "참여할 수 없는 테스트입니다."),
     PARTICIPATION_003(HttpStatus.BAD_REQUEST, "PARTICIPATION_003", "이미 참여한 테스트입니다."),
+    PARTICIPATION_004(HttpStatus.BAD_REQUEST, "PARTICIPATION_004", "테스트 참여 인원이 마감되었습니다."),
 
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
