@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.Query;
 import server.MATE.domain.question.entity.Question;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface QuestionRepository extends JpaRepository<Question, Long> {
 
@@ -11,4 +12,6 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     Long findMaxSequenceByTestId(Long testId);
 
     List<Question> findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(Long testId);
+
+    Optional<Question> findByIdAndDeletedAtIsNull(Long id);
 }
