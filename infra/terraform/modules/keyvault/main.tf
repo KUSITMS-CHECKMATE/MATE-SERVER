@@ -1,17 +1,7 @@
 data "azurerm_client_config" "current" {}
 
 locals {
-  secret_slots = toset([
-    "jwt-secret",
-    "db-url",
-    "db-username",
-    "db-password",
-    "discord-webhook-url",
-    "azure-storage-connection-string",
-    "azure-container-name",
-    "toss-mtls-certificate",
-    "toss-mtls-private-key",
-  ])
+  secret_names_set = toset(var.secret_names)
 }
 
 resource "azurerm_key_vault" "this" {
@@ -36,7 +26,7 @@ resource "azurerm_role_assignment" "deployer_secrets_officer" {
 }
 
 resource "azurerm_key_vault_secret" "app" {
-  for_each = local.secret_slots
+  for_each = local.secret_names_set
 
   name         = each.key
   value        = lookup(var.secret_initial_values, each.key, var.placeholder_secret_value)
