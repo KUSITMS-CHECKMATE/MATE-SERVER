@@ -21,7 +21,7 @@ public class ParticipationService {
 
     @Transactional
     public ParticipationCreateResponse createParticipation(Long testId, Long testerId) {
-        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
+        Test test = testRepository.findByIdAndDeletedAtIsNullForUpdate(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         test.validateCanParticipate();
@@ -36,6 +36,7 @@ public class ParticipationService {
                 .build();
 
         participationRepository.save(participation);
+        test.incrementPplCount();
         return ParticipationCreateResponse.from(participation);
     }
 }
