@@ -49,7 +49,7 @@ variable "placeholder_secret_value" {
 }
 
 variable "secret_names" {
-  description = "Key Vault에 만들 시크릿 이름 목록(슬롯). 환경·프로젝트별로 모듈 호출 시 주입(중복 없이)."
+  description = "Key Vault에 만들 시크릿 이름 목록(슬롯), 환경·프로젝트별로 모듈 호출 시 주입(중복 없이)"
   type        = list(string)
   default = [
     "jwt-secret",
@@ -62,22 +62,6 @@ variable "secret_names" {
     "toss-mtls-certificate",
     "toss-mtls-private-key",
   ]
-}
-
-variable "env_var_mapping" {
-  description = "시크릿 이름 → Spring env 등 설명 출력용 맵(secret_names에 있는 항목만 출력에 노출)."
-  type        = map(string)
-  default = {
-    "jwt-secret"                      = "JWT_SECRET"
-    "db-url"                          = "DB_URL"
-    "db-username"                     = "DB_USERNAME"
-    "db-password"                     = "DB_PASSWORD"
-    "discord-webhook-url"             = "DISCORD_WEBHOOK_URL"
-    "azure-storage-connection-string" = "AZURE_CONNECTION"
-    "azure-container-name"            = "AZURE_CONTAINER_NAME"
-    "toss-mtls-certificate"           = "TOSS_MTLS_CERT_PATH (PEM file content from KV → write to disk → path here)"
-    "toss-mtls-private-key"           = "TOSS_MTLS_KEY_PATH (PEM file content from KV → write to disk → path here)"
-  }
 }
 
 variable "secret_initial_values" {

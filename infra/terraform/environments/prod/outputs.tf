@@ -1,3 +1,19 @@
+locals {
+  # Spring(application-prod.yml)전용 — Key Vault 슬롯 이름 → 실행 시 넣어줄 환경 변수/설명
+  spring_keyvault_env_mapping = {
+    "jwt-secret"                      = "JWT_SECRET"
+    "db-url"                          = "DB_URL"
+    "db-username"                     = "DB_USERNAME"
+    "db-password"                     = "DB_PASSWORD"
+    "discord-webhook-url"             = "DISCORD_WEBHOOK_URL"
+    "azure-storage-connection-string" = "AZURE_CONNECTION"
+    "azure-container-name"            = "AZURE_CONTAINER_NAME"
+    # Spring ssl.bundle.pem.toss.keystore 는 파일 경로 전제 (KV PEM → 디스크 반영 후 path)
+    "toss-mtls-certificate" = "TOSS_MTLS_CERT_PATH (PEM file content from KV → write to disk → path here)"
+    "toss-mtls-private-key" = "TOSS_MTLS_KEY_PATH (PEM file content from KV → write to disk → path here)"
+  }
+}
+
 output "resource_group_id" {
   description = "Referenced existing Resource Group id."
   value       = module.resource_group.id
@@ -105,7 +121,10 @@ output "key_vault_secret_names" {
 
 output "key_vault_env_var_mapping" {
   description = "KV secret name -> Spring env (application-prod.yml)."
-  value       = module.keyvault.env_var_mapping
+  value = {
+    for k, v in local.spring_keyvault_env_mapping :
+    k => v if contains(module.keyvault.secret_names, k)
+  }
 }
 
 output "app_managed_identity_id" {
