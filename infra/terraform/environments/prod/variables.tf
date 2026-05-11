@@ -98,3 +98,67 @@ variable "storage_container_name" {
   description = "Blob container name used by the application."
   type        = string
 }
+
+variable "acr_name" {
+  description = "Globally unique ACR name"
+  type        = string
+}
+
+variable "acr_sku" {
+  description = "Azure Container Registry SKU."
+  type        = string
+  default     = "Basic"
+}
+
+variable "acr_admin_enabled" {
+  description = "If true, enables admin credentials (prefer false when using AcrPull)."
+  type        = bool
+  default     = false
+}
+
+variable "key_vault_name" {
+  description = "Globally unique Key Vault name"
+  type        = string
+}
+
+variable "key_vault_placeholder_secret_value" {
+  description = "Placeholder for new secrets; replace real values in Portal (나중에 변경)."
+  type        = string
+  default     = "PLACEHOLDER-SET-MANUALLY"
+}
+
+variable "key_vault_secret_initial_values" {
+  description = "Optional: set real values on first apply only (sensitive). Omit to use placeholder for all slots."
+  type        = map(string)
+  default     = {}
+  sensitive   = true
+}
+
+variable "key_vault_deployer_object_id" {
+  description = "Object ID to grant Key Vault Secrets Officer for Terraform (defaults to current login)."
+  type        = string
+  default     = null
+}
+
+variable "app_managed_identity_name" {
+  description = "User-assigned managed identity name (RG scope)."
+  type        = string
+}
+
+variable "app_identity_assign_key_vault_secrets_user" {
+  description = "Assign Key Vault Secrets User to app managed identity."
+  type        = bool
+  default     = true
+}
+
+variable "app_identity_assign_storage_blob_data_contributor" {
+  description = "Assign Storage Blob Data Contributor to app managed identity."
+  type        = bool
+  default     = true
+}
+
+variable "app_identity_assign_acr_pull" {
+  description = "Assign AcrPull on ACR for app MI"
+  type        = bool
+  default     = true
+}
