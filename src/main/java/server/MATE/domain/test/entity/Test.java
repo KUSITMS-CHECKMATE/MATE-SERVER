@@ -97,7 +97,7 @@ public class Test extends BaseEntity {
         if (this.approvalStatus != ApprovalStatus.ACCEPTED || this.testStatus != TestStatus.IN_PROGRESS) {
             throw new BaseException(BaseErrorCode.PARTICIPATION_002);
         }
-        if (this.pplCount >= this.goalPpl) {
+        if (this.pplCount >= this.goalPpl.longValue()) {
             throw new BaseException(BaseErrorCode.PARTICIPATION_004);
         }
     }
