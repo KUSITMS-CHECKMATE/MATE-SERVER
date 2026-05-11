@@ -7,11 +7,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import server.MATE.domain.answer.dto.request.SubjectiveAnswerCreateRequest;
 import server.MATE.domain.answer.dto.response.AnswerCreateResponse;
 import server.MATE.domain.answer.service.AnswerService;
 import server.MATE.global.common.response.ApiResponse;
+import server.MATE.global.security.principal.AuthenticatedUser;
 
 @Tag(name = "[ANSWER] 응답 API", description = "테스트 응답 관련 API")
 @RestController
@@ -30,9 +32,10 @@ public class AnswerController {
     @PostMapping("/subjective")
     public ResponseEntity<ApiResponse<AnswerCreateResponse>> createSubjectiveAnswer(
             @PathVariable Long participationId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @RequestBody @Valid SubjectiveAnswerCreateRequest request
     ) {
-        AnswerCreateResponse response = answerService.createSubjectiveAnswer(participationId, request);
+        AnswerCreateResponse response = answerService.createSubjectiveAnswer(participationId, authenticatedUser.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("응답이 등록되었습니다.", response));
     }
