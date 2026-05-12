@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.BatchSize;
 import server.MATE.global.common.entity.BaseEntity;
+import server.MATE.global.common.exception.BaseErrorCode;
+import server.MATE.global.common.exception.BaseException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -89,6 +91,19 @@ public class Test extends BaseEntity {
             this.imageKeys.clear();
             this.imageKeys.addAll(imageKeys);
         }
+    }
+
+    public void validateCanParticipate() {
+        if (this.approvalStatus != ApprovalStatus.ACCEPTED || this.testStatus != TestStatus.IN_PROGRESS) {
+            throw new BaseException(BaseErrorCode.PARTICIPATION_002);
+        }
+        if (this.pplCount >= this.goalPpl.longValue()) {
+            throw new BaseException(BaseErrorCode.PARTICIPATION_004);
+        }
+    }
+
+    public void incrementPplCount() {
+        this.pplCount++;
     }
 
     public void delete(LocalDateTime deletedAt) {
