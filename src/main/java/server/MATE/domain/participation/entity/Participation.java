@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import server.MATE.global.common.entity.BaseEntity;
+import server.MATE.global.common.exception.BaseErrorCode;
+import server.MATE.global.common.exception.BaseException;
 
 import java.time.LocalDateTime;
 
@@ -34,5 +36,11 @@ public class Participation extends BaseEntity {
     public Participation(Long testId, Long testerId) {
         this.testId = testId;
         this.testerId = testerId;
+    }
+
+    public void validateTester(Long testerId) {
+        if (!this.testerId.equals(testerId)) {
+            throw new BaseException(BaseErrorCode.COMMON_009);
+        }
     }
 }
