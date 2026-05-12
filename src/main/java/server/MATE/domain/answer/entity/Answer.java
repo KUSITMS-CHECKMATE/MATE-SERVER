@@ -11,6 +11,7 @@ import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Getter
 @Entity
@@ -33,13 +34,13 @@ public class Answer extends BaseEntity {
     private QuestionType questionType;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(nullable = false, columnDefinition = "jsonb")
-    private String answer;
+    @Column(nullable = false, updatable = false, columnDefinition = "jsonb")
+    private Map<String, Object> answer;
 
     private LocalDateTime deletedAt;
 
     @Builder
-    public Answer(Long participationId, Long questionId, QuestionType questionType, String answer) {
+    public Answer(Long participationId, Long questionId, QuestionType questionType, Map<String, Object> answer) {
         this.participationId = participationId;
         this.questionId = questionId;
         this.questionType = questionType;
