@@ -1,0 +1,7 @@
+.git
+.github
+infra
+.idea
+**/build/tmp
+**/build/classes
+**/build/generated
