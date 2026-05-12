@@ -48,6 +48,21 @@ variable "placeholder_secret_value" {
   default     = "PLACEHOLDER-SET-MANUALLY"
 }
 
+variable "secret_names" {
+  description = "Key Vault에 만들 시크릿 이름 목록(슬롯), 환경·프로젝트별로 모듈 호출 시 주입(중복 없이)"
+  type        = list(string)
+  default = [
+    "jwt-secret",
+    "db-url",
+    "db-username",
+    "db-password",
+    "discord-webhook-url",
+    "azure-storage-connection-string",
+    "azure-container-name",
+    "toss-mtls-certificate",
+    "toss-mtls-private-key",
+  ]
+}
 variable "secret_initial_values" {
   description = "Optional map secret name -> value for first apply; later updates must be Portal/CLI (ignored by Terraform)."
   type        = map(string)
