@@ -63,7 +63,6 @@ variable "secret_names" {
     "toss-mtls-private-key",
   ]
 }
-
 variable "secret_initial_values" {
   description = "Optional map secret name -> value for first apply; later updates must be Portal/CLI (ignored by Terraform)."
   type        = map(string)

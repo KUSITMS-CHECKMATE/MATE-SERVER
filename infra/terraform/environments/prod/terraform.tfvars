@@ -34,3 +34,12 @@ key_vault_name = "kusitms-mate-keyvault"
 # 앱(VM)에 부착할 User-assigned MI 이름 
 app_managed_identity_name = "mate-app-identity"
 
+kubernetes_vm_admin_username = "azureuser"
+kubernetes_vm_ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIReplace-with-your-public-key-from-cat-dot-pub"
+kubernetes_control_vm_name   = "mate-k8s-control"
+kubernetes_worker_vm_name    = "mate-k8s-worker"
+
+# NSG: 이 PC 공인 기준 허용(동적 IP면 바뀔 때마다 수정 후 apply).
+kubernetes_ssh_allow_source_address_prefixes       = ["175.118.225.161/32"]
+kubernetes_api_allow_source_address_prefixes       = ["175.118.225.161/32"]
+
