@@ -75,3 +75,14 @@ variable "deployer_object_id" {
   type        = string
   default     = null
 }
+
+variable "deployer_principal_type" {
+  description = "Secrets Officer 역할을 받는 주체 유형, 개인 az login이면 User, CI 서비스 principal이면 ServicePrincipal."
+  type        = string
+  default     = "User"
+
+  validation {
+    condition     = contains(["User", "ServicePrincipal", "Group"], var.deployer_principal_type)
+    error_message = "deployer_principal_type must be User, ServicePrincipal, or Group."
+  }
+}

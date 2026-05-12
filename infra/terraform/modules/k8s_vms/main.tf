@@ -1,8 +1,3 @@
-locals {
-  control_size = "Standard_B2s"
-  worker_size  = "Standard_B2ms"
-}
-
 # 노드(VM) NIC 부착용 NSG — kube 구성표에 맞는 인바운드 기본 허용
 resource "azurerm_network_security_group" "k8s" {
   name                = "${var.control_vm_name}-nodes-nsg"
@@ -179,7 +174,7 @@ resource "azurerm_linux_virtual_machine" "control" {
   name                = var.control_vm_name
   resource_group_name = var.resource_group_name
   location            = var.location
-  size                = local.control_size
+  size                = var.control_vm_size
   admin_username      = var.admin_username
 
   disable_password_authentication = true
@@ -221,7 +216,7 @@ resource "azurerm_linux_virtual_machine" "worker" {
   name                = var.worker_vm_name
   resource_group_name = var.resource_group_name
   location            = var.location
-  size                = local.worker_size
+  size                = var.worker_vm_size
   admin_username      = var.admin_username
 
   disable_password_authentication = true
