@@ -25,7 +25,8 @@ resource "azurerm_role_assignment" "storage_blob_data_contributor" {
 }
 
 resource "azurerm_role_assignment" "acr_pull" {
-  count = var.assign_acr_pull && var.acr_id != null ? 1 : 0
+  # acr_id는 (known after apply)일 수 있어 여기서 참조하면 count가 불안정해짐 → assign 플래그만 사용
+  count = var.assign_acr_pull ? 1 : 0
 
   scope                            = var.acr_id
   role_definition_name             = "AcrPull"

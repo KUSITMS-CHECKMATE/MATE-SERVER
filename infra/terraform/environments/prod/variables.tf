@@ -90,12 +90,12 @@ variable "postgres_backup_retention_days" {
 }
 
 variable "storage_account_name" {
-  description = "Existing Storage Account name to reference."
+  description = "Storage Account name"
   type        = string
 }
 
 variable "storage_container_name" {
-  description = "Blob container name used by the application."
+  description = "Private blob container name created inside the Storage Account."
   type        = string
 }
 
@@ -140,6 +140,12 @@ variable "key_vault_deployer_object_id" {
   default     = null
 }
 
+variable "key_vault_deployer_principal_type" {
+  description = "Secrets Officer 주체 유형: 로컬 az login(개인) = User, CI 서비스 프린시펄 = ServicePrincipal."
+  type        = string
+  default     = "User"
+}
+
 variable "app_managed_identity_name" {
   description = "User-assigned managed identity name (RG scope)."
   type        = string
@@ -182,9 +188,21 @@ variable "kubernetes_control_vm_name" {
 }
 
 variable "kubernetes_worker_vm_name" {
-  description = "K8s worker VM 이름 (SKU Standard_B2ms)."
+  description = "K8s worker VM 이름."
   type        = string
   default     = "mate-k8s-worker"
+}
+
+variable "kubernetes_control_vm_size" {
+  description = "Control VM SKU."
+  type        = string
+  default     = "Standard_D2s_v3"
+}
+
+variable "kubernetes_worker_vm_size" {
+  description = "Worker VM SKU. 재고 문제 시 Standard_D2s_v3 또는 리전 변경."
+  type        = string
+  default     = "Standard_B2ls_v2"
 }
 
 variable "kubernetes_ssh_allow_source_address_prefixes" {

@@ -42,6 +42,7 @@ module "storage" {
   source = "../../modules/storage"
 
   resource_group_name    = module.resource_group.name
+  location               = var.location
   storage_account_name   = var.storage_account_name
   storage_container_name = var.storage_container_name
 }
@@ -65,6 +66,7 @@ module "keyvault" {
   placeholder_secret_value = var.key_vault_placeholder_secret_value
   secret_initial_values    = var.key_vault_secret_initial_values
   deployer_object_id       = var.key_vault_deployer_object_id
+  deployer_principal_type  = var.key_vault_deployer_principal_type
 }
 
 module "user_assigned_identity" {
@@ -102,4 +104,7 @@ module "kubernetes_vms" {
 
   ssh_allow_source_address_prefixes            = var.kubernetes_ssh_allow_source_address_prefixes
   kubernetes_api_allow_source_address_prefixes = var.kubernetes_api_allow_source_address_prefixes
+
+  control_vm_size = var.kubernetes_control_vm_size
+  worker_vm_size  = var.kubernetes_worker_vm_size
 }
