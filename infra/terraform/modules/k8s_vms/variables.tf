@@ -47,15 +47,15 @@ variable "tags" {
 }
 
 variable "ssh_allow_source_address_prefixes" {
-  description = "SSH(22) 인바운드 허용 출발지 목록"
+  description = "SSH(22) 인바운드 허용 출발지"
   type        = list(string)
-  default     = ["*"]
+  default     = []
 }
 
 variable "kubernetes_api_allow_source_address_prefixes" {
-  description = "API 서버(6443) 허용 출발지 목록 (* = 인터넷; 내부만이면 VirtualNetwork 또는 CIDR)."
+  description = "API(6443) 인바운드 허용 출발지"
   type        = list(string)
-  default     = ["*"]
+  default     = []
 }
 
 variable "cluster_internal_allow_source_address_prefixes" {

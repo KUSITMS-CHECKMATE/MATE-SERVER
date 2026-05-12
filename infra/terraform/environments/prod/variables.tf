@@ -187,3 +187,13 @@ variable "kubernetes_worker_vm_name" {
   default     = "mate-k8s-worker"
 }
 
+variable "kubernetes_ssh_allow_source_address_prefixes" {
+  description = "K8s 노드 NSG: SSH(22) 허용 출발지"
+  type        = list(string)
+}
+
+variable "kubernetes_api_allow_source_address_prefixes" {
+  description = "K8s 노드 NSG: API(6443) 허용 출발지"
+  type        = list(string)
+}
+
