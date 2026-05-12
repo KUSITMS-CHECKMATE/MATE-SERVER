@@ -91,7 +91,7 @@ public class AnswerService {
             }
         } else {
             int min = objective.getMinSelect() != null ? objective.getMinSelect() : 1;
-            int max = objective.getMaxSelect() != null ? objective.getMaxSelect() : validOptionIds.size();
+            int max = objective.getMaxSelect() != null ? objective.getMaxSelect() : validOptionIds.size() + (objective.isOther() ? 1 : 0);
             int effectiveCount = selectedCount + (hasOtherText ? 1 : 0);
             if (effectiveCount < min || effectiveCount > max) {
                 throw new BaseException(BaseErrorCode.ANSWER_005);
