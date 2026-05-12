@@ -66,7 +66,8 @@ jobs:
             .
 
       - name: Azure login (OIDC)
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/develop'))
+        # main/develop 이외 브랜치에서도 ACR까지 검증할 때 포함하기 위함
+        if: github.event_name == 'push'
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -79,7 +80,7 @@ jobs:
       #     creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Log in to ACR and push
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/develop'))
+        if: github.event_name == 'push'
         run: |
           az acr login --name '${{ steps.acr.outputs.name }}'
           SHORT_SHA="$(echo '${{ github.sha }}' | cut -c1-12)"
