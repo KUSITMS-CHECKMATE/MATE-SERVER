@@ -163,3 +163,27 @@ variable "app_identity_assign_acr_pull" {
   default     = true
 }
 
+variable "kubernetes_vm_admin_username" {
+  description = "SSH 사용자명 (Linux VM)."
+  type        = string
+  default     = "azureuser"
+}
+
+variable "kubernetes_vm_ssh_public_key" {
+  description = "SSH 공개키. terraform.tfvars 또는 TF_VAR_kubernetes_vm_ssh_public_key 로 전달."
+  type        = string
+  sensitive   = true
+}
+
+variable "kubernetes_control_vm_name" {
+  description = "K8s control 플레인 VM 이름 (SKU Standard_B2s)."
+  type        = string
+  default     = "mate-k8s-control"
+}
+
+variable "kubernetes_worker_vm_name" {
+  description = "K8s worker VM 이름 (SKU Standard_B2ms)."
+  type        = string
+  default     = "mate-k8s-worker"
+}
+
