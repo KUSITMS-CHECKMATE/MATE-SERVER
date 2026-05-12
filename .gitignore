@@ -82,4 +82,8 @@ certs/
 crash.log
 *.tfvars
 *.tfvars.json
+# *.tfvars 패턴에는 걸리지 않는 변수 파일 명시
+*.auto.tfvars
+.terraform.tfvars
+.terraform.tfvars.json
 !*.tfvars.example
