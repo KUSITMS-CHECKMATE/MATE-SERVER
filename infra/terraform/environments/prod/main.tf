@@ -99,4 +99,7 @@ module "kubernetes_vms" {
   ssh_public_key  = var.kubernetes_vm_ssh_public_key
   control_vm_name = var.kubernetes_control_vm_name
   worker_vm_name  = var.kubernetes_worker_vm_name
+
+  ssh_allow_source_address_prefixes            = var.kubernetes_ssh_allow_source_address_prefixes
+  kubernetes_api_allow_source_address_prefixes = var.kubernetes_api_allow_source_address_prefixes
 }
