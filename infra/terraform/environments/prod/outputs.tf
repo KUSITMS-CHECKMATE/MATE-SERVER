@@ -166,7 +166,6 @@ output "storage_account_id" {
   description = "Referenced Storage Account id (RBAC scope)."
   value       = module.storage.storage_account_id
 }
-<<<<<<< HEAD
 
 output "kubernetes_control_vm_id" {
   description = "K8s control plane Linux VM resource id."
@@ -179,7 +178,7 @@ output "kubernetes_worker_vm_id" {
 }
 
 output "kubernetes_control_public_ip" {
-  description = "control 공인 IP — SSH 및 kubectl(API server)."
+  description = "마스터(control) 공인 IP — SSH 및 kubectl(API server)."
   value       = module.kubernetes_vms.control_public_ip_address
 }
 
@@ -187,5 +186,8 @@ output "kubernetes_worker_private_ip" {
   description = "K8s worker 사설 IP"
   value       = module.kubernetes_vms.worker_private_ip_address
 }
-=======
->>>>>>> origin/dev
+
+output "kubernetes_nodes_nsg_id" {
+  description = "K8s 노드(VM) NIC에 부착한 NSG 리소스 id."
+  value       = module.kubernetes_vms.network_security_group_id
+}
