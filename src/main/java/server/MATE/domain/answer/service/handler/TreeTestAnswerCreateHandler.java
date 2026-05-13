@@ -31,6 +31,8 @@ public class TreeTestAnswerCreateHandler implements AnswerCreateHandler {
         TreeTestAnswerCreateRequest request = (TreeTestAnswerCreateRequest) item;
 
         if (request.nodeId() == null) throw new BaseException(BaseErrorCode.ANSWER_005);
+        if (request.path() == null || request.path().isEmpty()) throw new BaseException(BaseErrorCode.ANSWER_005);
+        if (!request.nodeId().equals(request.path().getLast())) throw new BaseException(BaseErrorCode.ANSWER_004);
 
         TreeTest node = treeTestRepository.findByIdAndQuestion_Id(request.nodeId(), request.questionId())
                 .orElseThrow(() -> new BaseException(BaseErrorCode.ANSWER_004));
@@ -43,7 +45,7 @@ public class TreeTestAnswerCreateHandler implements AnswerCreateHandler {
                 .participationId(participationId)
                 .questionId(request.questionId())
                 .questionType(QuestionType.TREE_TEST)
-                .answer(Map.of("nodeId", request.nodeId()))
+                .answer(Map.of("nodeId", request.nodeId(), "path", request.path()))
                 .build();
         return answerRepository.save(answer);
     }
