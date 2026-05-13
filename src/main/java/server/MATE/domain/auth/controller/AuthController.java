@@ -4,32 +4,32 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import server.MATE.domain.auth.dto.request.TestTokenRequest;
-import server.MATE.domain.auth.dto.response.TestTokenResponse;
-import server.MATE.domain.auth.service.AuthService;
+import server.MATE.domain.auth.dto.request.TossLoginRequest;
+import server.MATE.domain.auth.dto.response.TossLoginResponse;
 import server.MATE.global.common.response.ApiResponse;
+import server.MATE.toss.service.TossLoginService;
 
-@Profile("local")
 @Tag(name = "[AUTH] 인증 API", description = "인증 관련 API")
 @RestController
 @RequestMapping("/api/v1/auth")
+@ConditionalOnProperty(prefix = "toss.api", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+    private final TossLoginService tossLoginService;
 
-    @Operation(summary = "테스트용 액세스 토큰 발급", description = "토스 로그인 구현 전 사용자 ID로 테스트용 JWT를 발급합니다.")
-    @PostMapping("/test-token")
-    public ResponseEntity<ApiResponse<TestTokenResponse>> issueTestToken(
-            @RequestBody @Valid TestTokenRequest request
+    @Operation(summary = "토스 로그인", description = "토스 authorization code를 사용해 Mate JWT를 발급합니다.")
+    @PostMapping("/toss/login")
+    public ResponseEntity<ApiResponse<TossLoginResponse>> loginWithToss(
+            @RequestBody @Valid TossLoginRequest request
     ) {
-        TestTokenResponse response = authService.issueTestAccessToken(request.userId());
-        return ResponseEntity.ok(ApiResponse.ok("테스트용 액세스 토큰이 발급되었습니다.", response));
+        TossLoginResponse response = tossLoginService.login(request.authorizationCode(), request.referrer());
+        return ResponseEntity.ok(ApiResponse.ok("토스 로그인이 완료되었습니다.", response));
     }
 }
