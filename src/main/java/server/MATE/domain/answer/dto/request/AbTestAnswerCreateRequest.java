@@ -4,17 +4,14 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import jakarta.validation.constraints.NotNull;
 import server.MATE.domain.question.entity.QuestionType;
 
-import java.util.List;
-
-@JsonTypeName("FIVE_SECOND")
-public record FiveSecondAnswerCreateRequest(
+@JsonTypeName("AB_TEST")
+public record AbTestAnswerCreateRequest(
         @NotNull Long questionId,
-        String text,
-        List<Long> optionIds
+        String selected
 ) implements AnswerCreateItem {
 
     @Override
     public QuestionType type() {
-        return QuestionType.FIVE_SECOND;
+        return QuestionType.AB_TEST;
     }
 }

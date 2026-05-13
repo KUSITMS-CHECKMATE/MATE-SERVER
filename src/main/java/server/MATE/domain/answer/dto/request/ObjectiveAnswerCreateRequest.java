@@ -9,7 +9,7 @@ import java.util.List;
 @JsonTypeName("OBJECTIVE")
 public record ObjectiveAnswerCreateRequest(
         @NotNull Long questionId,
-        @NotNull List<Long> selectedOptionIds,
+        @NotNull List<Long> optionIds,
         String otherText
 ) implements AnswerCreateItem {
 
