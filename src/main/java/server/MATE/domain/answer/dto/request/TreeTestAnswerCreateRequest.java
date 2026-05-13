@@ -4,10 +4,13 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import jakarta.validation.constraints.NotNull;
 import server.MATE.domain.question.entity.QuestionType;
 
+import java.util.List;
+
 @JsonTypeName("TREE_TEST")
 public record TreeTestAnswerCreateRequest(
         @NotNull Long questionId,
-        Long nodeId
+        Long nodeId,
+        List<Long> path
 ) implements AnswerCreateItem {
 
     @Override
