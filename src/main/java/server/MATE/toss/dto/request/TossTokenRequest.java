@@ -1,4 +1,4 @@
-package server.MATE.toss.dto;
+package server.MATE.toss.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 

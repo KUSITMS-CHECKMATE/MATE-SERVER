@@ -4,10 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import server.MATE.toss.client.http.TossHttpClient;
-import server.MATE.toss.dto.TossLoginUserResponse;
-import server.MATE.toss.dto.TossRefreshTokenRequest;
-import server.MATE.toss.dto.TossTokenRequest;
-import server.MATE.toss.dto.TossTokenResponse;
+import server.MATE.toss.dto.response.TossLoginUserResponse;
+import server.MATE.toss.dto.request.TossRefreshTokenRequest;
+import server.MATE.toss.dto.request.TossTokenRequest;
+import server.MATE.toss.dto.response.TossTokenResponse;
 
 @Component
 @ConditionalOnProperty(prefix = "toss.api", name = "enabled", havingValue = "true")
