@@ -2,9 +2,9 @@ name: CI - build and push to ACR
 
 on:
   push:
-    branches: [feat/#70-ci-acr]
+    branches: [feat/ci]
   pull_request:
-    branches: [feat/#70-ci-acr]
+    branches: [feat/ci]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
