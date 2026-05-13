@@ -1,4 +1,4 @@
-package server.MATE.toss.dto;
+package server.MATE.toss.dto.response;
 
 public record TossDecryptedUserInfo(
         Long userKey,

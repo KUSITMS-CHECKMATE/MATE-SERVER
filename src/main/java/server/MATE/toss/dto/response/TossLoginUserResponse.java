@@ -1,6 +1,4 @@
-package server.MATE.toss.dto;
-
-import java.util.List;
+package server.MATE.toss.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
