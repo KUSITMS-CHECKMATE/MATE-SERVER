@@ -23,6 +23,9 @@ toss:
     ssl:
       enabled: ${TOSS_API_SSL_ENABLED:true}
       bundle: toss
+  crypto:
+    decryption-key: ${TOSS_CRYPTO_DECRYPTION_KEY:}
+    aad: ${TOSS_CRYPTO_AAD:}
 
 discord:
   webhook-url: ${DISCORD_WEBHOOK_URL:}
