@@ -35,45 +35,45 @@ public class TossAccount extends BaseEntity {
     private Long tossUserKey;
 
     @Column(length = 2000)
-    private String tossAccessToken;
-
-    @Column(length = 2000)
-    private String tossRefreshToken;
-
-    @Column
-    private LocalDateTime tossAccessTokenExpiresAt;
+    private String encryptedTossRefreshToken;
 
     @Column(length = 1000)
     private String scope;
+
+    @Column(nullable = false)
+    private LocalDateTime lastLoginAt;
+
+    @Column(nullable = false)
+    private LocalDateTime lastTokenRefreshedAt;
 
     @Builder
     public TossAccount(
             Users user,
             Long tossUserKey,
-            String tossAccessToken,
-            String tossRefreshToken,
-            LocalDateTime tossAccessTokenExpiresAt,
-            String scope
+            String encryptedTossRefreshToken,
+            String scope,
+            LocalDateTime lastLoginAt,
+            LocalDateTime lastTokenRefreshedAt
     ) {
         this.user = user;
         this.tossUserKey = tossUserKey;
-        this.tossAccessToken = tossAccessToken;
-        this.tossRefreshToken = tossRefreshToken;
-        this.tossAccessTokenExpiresAt = tossAccessTokenExpiresAt;
+        this.encryptedTossRefreshToken = encryptedTossRefreshToken;
         this.scope = scope;
+        this.lastLoginAt = lastLoginAt;
+        this.lastTokenRefreshedAt = lastTokenRefreshedAt;
     }
 
-    public void syncTokenState(
+    public void syncLoginState(
             Long tossUserKey,
-            String tossAccessToken,
-            String tossRefreshToken,
-            LocalDateTime tossAccessTokenExpiresAt,
-            String scope
+            String encryptedTossRefreshToken,
+            String scope,
+            LocalDateTime lastLoginAt,
+            LocalDateTime lastTokenRefreshedAt
     ) {
         this.tossUserKey = tossUserKey;
-        this.tossAccessToken = tossAccessToken;
-        this.tossRefreshToken = tossRefreshToken;
-        this.tossAccessTokenExpiresAt = tossAccessTokenExpiresAt;
+        this.encryptedTossRefreshToken = encryptedTossRefreshToken;
         this.scope = scope;
+        this.lastLoginAt = lastLoginAt;
+        this.lastTokenRefreshedAt = lastTokenRefreshedAt;
     }
 }
