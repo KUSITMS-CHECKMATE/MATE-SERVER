@@ -188,12 +188,12 @@ public class AnswerService {
     private AnswerCreateResponse createScaleAnswer(Long participationId, Long testerId, ScaleAnswerCreateRequest request) {
         validateAnswerRequest(participationId, testerId, request.questionId(), QuestionType.SCALE);
 
-        Scale scale = scaleRepository.findById(request.questionId())
-                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
-
         if (request.score() == null) {
             throw new BaseException(BaseErrorCode.ANSWER_005);
         }
+
+        Scale scale = scaleRepository.findById(request.questionId())
+                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
 
         if (request.score() < 1 || request.score() > scale.getRange()) {
             throw new BaseException(BaseErrorCode.ANSWER_007);
