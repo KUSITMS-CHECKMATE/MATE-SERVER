@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.answer.dto.request.AnswerCreateItem;
 import server.MATE.domain.answer.dto.request.FiveSecondAnswerCreateRequest;
 import server.MATE.domain.answer.dto.request.ObjectiveAnswerCreateRequest;
+import server.MATE.domain.answer.dto.request.ScaleAnswerCreateRequest;
 import server.MATE.domain.answer.dto.request.SubjectiveAnswerCreateRequest;
 import server.MATE.domain.answer.dto.response.AnswerCreateResponse;
 import server.MATE.domain.answer.entity.Answer;
@@ -18,9 +19,11 @@ import server.MATE.domain.question.entity.Objective;
 import server.MATE.domain.question.entity.ObjectiveOption;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
+import server.MATE.domain.question.entity.Scale;
 import server.MATE.domain.question.repository.FiveSecondRepository;
 import server.MATE.domain.question.repository.ObjectiveRepository;
 import server.MATE.domain.question.repository.QuestionRepository;
+import server.MATE.domain.question.repository.ScaleRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
@@ -39,6 +42,7 @@ public class AnswerService {
     private final QuestionRepository questionRepository;
     private final ObjectiveRepository objectiveRepository;
     private final FiveSecondRepository fiveSecondRepository;
+    private final ScaleRepository scaleRepository;
     private final AnswerRepository answerRepository;
 
     @Transactional
@@ -47,6 +51,7 @@ public class AnswerService {
             case SubjectiveAnswerCreateRequest r -> createSubjectiveAnswer(participationId, testerId, r);
             case ObjectiveAnswerCreateRequest r -> createObjectiveAnswer(participationId, testerId, r);
             case FiveSecondAnswerCreateRequest r -> createFiveSecondAnswer(participationId, testerId, r);
+            case ScaleAnswerCreateRequest r -> createScaleAnswer(participationId, testerId, r);
         };
     }
 
@@ -174,6 +179,31 @@ public class AnswerService {
                 .questionId(request.questionId())
                 .questionType(QuestionType.FIVE_SECOND)
                 .answer(answerMap)
+                .build();
+
+        answerRepository.save(answer);
+        return AnswerCreateResponse.from(answer);
+    }
+
+    private AnswerCreateResponse createScaleAnswer(Long participationId, Long testerId, ScaleAnswerCreateRequest request) {
+        validateAnswerRequest(participationId, testerId, request.questionId(), QuestionType.SCALE);
+
+        if (request.score() == null) {
+            throw new BaseException(BaseErrorCode.ANSWER_005);
+        }
+
+        Scale scale = scaleRepository.findById(request.questionId())
+                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
+
+        if (request.score() < 1 || request.score() > scale.getRange()) {
+            throw new BaseException(BaseErrorCode.ANSWER_007);
+        }
+
+        Answer answer = Answer.builder()
+                .participationId(participationId)
+                .questionId(request.questionId())
+                .questionType(QuestionType.SCALE)
+                .answer(Map.of("score", request.score()))
                 .build();
 
         answerRepository.save(answer);
