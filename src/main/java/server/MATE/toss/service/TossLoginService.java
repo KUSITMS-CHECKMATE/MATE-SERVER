@@ -118,8 +118,9 @@ public class TossLoginService {
 
     private void cacheTossTokens(Long userId, TossTokenResponse tossTokenResponse) {
         try {
-            long accessTokenTtlMillis = (tossTokenResponse.expiresIn() == null ? 0L : tossTokenResponse.expiresIn()) * 1000L;
-            tossTokenStore.saveAccessToken(userId, tossTokenResponse.accessToken(), accessTokenTtlMillis);
+            long expiresIn = tossTokenResponse.expiresIn() == null ? 0L : tossTokenResponse.expiresIn();
+            if (expiresIn > 0) tossTokenStore.saveAccessToken(userId, tossTokenResponse.accessToken(), expiresIn * 1000L);
+
             tossTokenStore.saveRefreshToken(userId, tossTokenResponse.refreshToken(), tossRefreshCacheTtlMillis);
         } catch (Exception e) {
             throw new BaseException(BaseErrorCode.AUTH_009, BaseErrorCode.AUTH_009.getMessage(), e);
