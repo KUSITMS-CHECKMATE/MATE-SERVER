@@ -16,7 +16,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
 @Configuration
-@EnableConfigurationProperties(TossProperties.class)
+@EnableConfigurationProperties({TossProperties.class, TossCryptoProperties.class})
 public class TossClientConfig {
 
     @Bean
