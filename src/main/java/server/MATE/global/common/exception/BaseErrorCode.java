@@ -31,6 +31,9 @@ public enum BaseErrorCode implements ErrorCode {
     AUTH_007(HttpStatus.UNAUTHORIZED, "AUTH_007", "토스 사용자 정보를 복호화할 수 없습니다."),
     AUTH_008(HttpStatus.UNAUTHORIZED, "AUTH_008", "토스 사용자 식별 정보가 누락되었습니다."),
     AUTH_009(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH_009", "리프레시 토큰을 저장할 수 없습니다."),
+    AUTH_010(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH_010", "토큰 암호화 설정 정보를 찾을 수 없습니다."),
+    AUTH_011(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH_011", "토큰을 암호화할 수 없습니다."),
+    AUTH_012(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH_012", "저장된 토큰을 복호화할 수 없습니다."),
 
     // Test
     TEST_001(HttpStatus.BAD_REQUEST, "TEST_001", "카테고리는 1개 이상 3개 이하로 선택해야 합니다."),
