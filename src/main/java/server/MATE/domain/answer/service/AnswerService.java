@@ -10,6 +10,7 @@ import server.MATE.domain.answer.dto.request.FiveSecondAnswerCreateRequest;
 import server.MATE.domain.answer.dto.request.ObjectiveAnswerCreateRequest;
 import server.MATE.domain.answer.dto.request.ScaleAnswerCreateRequest;
 import server.MATE.domain.answer.dto.request.SubjectiveAnswerCreateRequest;
+import server.MATE.domain.answer.dto.request.TreeTestAnswerCreateRequest;
 import server.MATE.domain.answer.dto.response.AnswerCreateResponse;
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.answer.repository.AnswerRepository;
@@ -23,11 +24,13 @@ import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.CardSorting;
 import server.MATE.domain.question.entity.Scale;
+import server.MATE.domain.question.entity.TreeTest;
 import server.MATE.domain.question.repository.CardSortingRepository;
 import server.MATE.domain.question.repository.FiveSecondRepository;
 import server.MATE.domain.question.repository.ObjectiveRepository;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.question.repository.ScaleRepository;
+import server.MATE.domain.question.repository.TreeTestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
@@ -49,6 +52,7 @@ public class AnswerService {
     private final FiveSecondRepository fiveSecondRepository;
     private final ScaleRepository scaleRepository;
     private final CardSortingRepository cardSortingRepository;
+    private final TreeTestRepository treeTestRepository;
     private final AnswerRepository answerRepository;
 
     @Transactional
@@ -60,6 +64,7 @@ public class AnswerService {
             case ScaleAnswerCreateRequest r -> createScaleAnswer(participationId, testerId, r);
             case AbTestAnswerCreateRequest r -> createAbTestAnswer(participationId, testerId, r);
             case CardSortingAnswerCreateRequest r -> createCardSortingAnswer(participationId, testerId, r);
+            case TreeTestAnswerCreateRequest r -> createTreeTestAnswer(participationId, testerId, r);
         };
     }
 
@@ -284,6 +289,31 @@ public class AnswerService {
                 .questionId(request.questionId())
                 .questionType(QuestionType.CARD_SORTING)
                 .answer(Map.of("groups", request.groups()))
+                .build();
+
+        answerRepository.save(answer);
+        return AnswerCreateResponse.from(answer);
+    }
+
+    private AnswerCreateResponse createTreeTestAnswer(Long participationId, Long testerId, TreeTestAnswerCreateRequest request) {
+        validateAnswerRequest(participationId, testerId, request.questionId(), QuestionType.TREE_TEST);
+
+        if (request.nodeId() == null) {
+            throw new BaseException(BaseErrorCode.ANSWER_005);
+        }
+
+        TreeTest node = treeTestRepository.findByIdAndQuestion_Id(request.nodeId(), request.questionId())
+                .orElseThrow(() -> new BaseException(BaseErrorCode.ANSWER_004));
+
+        if (treeTestRepository.existsByParent_Id(node.getId())) {
+            throw new BaseException(BaseErrorCode.ANSWER_004);
+        }
+
+        Answer answer = Answer.builder()
+                .participationId(participationId)
+                .questionId(request.questionId())
+                .questionType(QuestionType.TREE_TEST)
+                .answer(Map.of("nodeId", request.nodeId()))
                 .build();
 
         answerRepository.save(answer);

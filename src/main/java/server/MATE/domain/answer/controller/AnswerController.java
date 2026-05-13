@@ -29,7 +29,7 @@ public class AnswerController {
 
     @Operation(summary = "응답 등록", description = """
             질문에 대한 응답을 등록합니다.
-            - `type` 필드로 응답 유형을 구분합니다: `SUBJECTIVE`, `OBJECTIVE`, `FIVE_SECOND`, `SCALE`, `AB_TEST`, `CARD_SORTING`
+            - `type` 필드로 응답 유형을 구분합니다: `SUBJECTIVE`, `OBJECTIVE`, `FIVE_SECOND`, `SCALE`, `AB_TEST`, `CARD_SORTING`, `TREE_TEST`
             - questionId는 type과 일치하는 질문 타입이어야 합니다.
             - 질문은 해당 참여 세션의 테스트에 속해야 합니다.
 
@@ -55,6 +55,10 @@ public class AnswerController {
             - `groups` 필수: 카테고리별 카드 이름(cardNames) 목록
             - 모든 카드를 빠짐없이 하나의 카테고리에 배치해야 합니다
             - 카드 중복 배치 불가, 카테고리 중복 불가
+
+            **TREE_TEST**
+            - `nodeId` 필수: 선택한 리프 노드의 ID
+            - 리프 노드(자식이 없는 노드)만 선택 가능
             """)
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -161,6 +165,17 @@ public class AnswerController {
                                                 { "category": "쇼핑", "cardNames": ["홈", "장바구니"] },
                                                 { "category": "정보", "cardNames": ["검색", "공지사항"] }
                                               ]
+                                            }
+                                            """
+                            ),
+                            @ExampleObject(
+                                    name = "트리 테스트",
+                                    summary = "TREE_TEST 예시",
+                                    value = """
+                                            {
+                                              "type": "TREE_TEST",
+                                              "questionId": 7,
+                                              "nodeId": 301
                                             }
                                             """
                             )
