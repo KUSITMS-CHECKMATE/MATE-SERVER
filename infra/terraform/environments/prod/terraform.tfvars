@@ -28,6 +28,9 @@ storage_container_name = "mate-images"
 acr_name = "kusitmsmateacr"
 acr_sku  = "Basic"
 
+# GitHub Actions OIDC 앱(AZURE_CLIENT_ID) — 설정 시 ACR에 AcrPush 자동 부여
+github_actions_oidc_application_client_id = "1ad1fd94-9112-48ae-a8ee-e229f355d51c"
+
 # Key Vault 이름
 key_vault_name = "kusitms-mate-keyvault"
 

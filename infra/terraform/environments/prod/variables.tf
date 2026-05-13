@@ -116,6 +116,12 @@ variable "acr_admin_enabled" {
   default     = false
 }
 
+variable "github_actions_oidc_application_client_id" {
+  description = "GitHub Actions OIDC용 App 등록의 애플리케이션(클라이언트) ID(AZURE_CLIENT_ID). 설정 시 해당 서비스 주체에 프로덕션 ACR에 AcrPush 부여. federation 자격 증명은 Entra에서 별도 설정."
+  type        = string
+  default     = null
+}
+
 variable "key_vault_name" {
   description = "Globally unique Key Vault name"
   type        = string
