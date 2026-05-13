@@ -138,6 +138,9 @@ public class AnswerService {
             }
             answerMap = Map.of("text", request.text().trim());
         } else {
+            if (request.text() != null && !request.text().isBlank()) {
+                throw new BaseException(BaseErrorCode.ANSWER_004);
+            }
             List<Long> selectedOptionIds = request.selectedOptionIds() != null ? request.selectedOptionIds() : List.of();
 
             Set<Long> validOptionIds = fiveSecond.getOptions().stream()
