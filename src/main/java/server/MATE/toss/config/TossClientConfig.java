@@ -14,9 +14,15 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
+import server.MATE.domain.auth.crypto.TokenEncryptionProperties;
+import server.MATE.toss.crypto.TossCryptoProperties;
 
 @Configuration
-@EnableConfigurationProperties({TossProperties.class, TossCryptoProperties.class})
+@EnableConfigurationProperties({
+        TossProperties.class,
+        TossCryptoProperties.class,
+        TokenEncryptionProperties.class
+})
 public class TossClientConfig {
 
     @Bean
