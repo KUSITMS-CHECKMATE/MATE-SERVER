@@ -1,6 +1,9 @@
 package server.MATE.domain.answer.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -9,8 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import server.MATE.domain.answer.dto.request.ObjectiveAnswerCreateRequest;
-import server.MATE.domain.answer.dto.request.SubjectiveAnswerCreateRequest;
+import server.MATE.domain.answer.dto.request.AnswerCreateItem;
 import server.MATE.domain.answer.dto.response.AnswerCreateResponse;
 import server.MATE.domain.answer.service.AnswerService;
 import server.MATE.global.common.response.ApiResponse;
@@ -25,47 +27,106 @@ public class AnswerController {
 
     private final AnswerService answerService;
 
-    @Operation(summary = "주관식 응답 등록", description = """
-            주관식 질문에 대한 응답을 등록합니다.
-            - questionId는 SUBJECTIVE 타입이어야 합니다.
+    @Operation(summary = "응답 등록", description = """
+            질문에 대한 응답을 등록합니다.
+            - `type` 필드로 응답 유형을 구분합니다: `SUBJECTIVE`, `OBJECTIVE`, `FIVE_SECOND`
+            - questionId는 type과 일치하는 질문 타입이어야 합니다.
             - 질문은 해당 참여 세션의 테스트에 속해야 합니다.
+
+            **SUBJECTIVE**
+            - `text` 필수
+
+            **OBJECTIVE**
+            - `selectedOptionIds`: 선택지 ID 목록 (단일 선택이면 1개, 복수 선택이면 minSelect~maxSelect 범위)
+            - `otherText`: isOther=true인 질문에서만 입력 가능
+            - 기타만 선택하는 경우 selectedOptionIds는 빈 배열, otherText 입력
+
+            **FIVE_SECOND**
+            - isObjective=false(주관식 모드): `text` 필수, selectedOptionIds 불필요
+            - isObjective=true(객관식 모드): `selectedOptionIds` 필수, text 불필요
             """)
-    @PostMapping("/subjective")
-    public ResponseEntity<ApiResponse<AnswerCreateResponse>> createSubjectiveAnswer(
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "201", description = "응답 등록 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                              "success": true,
+                                              "code": "201",
+                                              "message": "응답이 등록되었습니다.",
+                                              "data": {
+                                                "answerId": 1
+                                              }
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = {
+                            @ExampleObject(
+                                    name = "주관식",
+                                    summary = "SUBJECTIVE 예시",
+                                    value = """
+                                            {
+                                              "type": "SUBJECTIVE",
+                                              "questionId": 1,
+                                              "text": "UI가 직관적이고 사용하기 편했습니다."
+                                            }
+                                            """
+                            ),
+                            @ExampleObject(
+                                    name = "객관식",
+                                    summary = "OBJECTIVE 예시",
+                                    value = """
+                                            {
+                                              "type": "OBJECTIVE",
+                                              "questionId": 2,
+                                              "selectedOptionIds": [1001, 1002],
+                                              "otherText": null
+                                            }
+                                            """
+                            ),
+                            @ExampleObject(
+                                    name = "5초 테스트 (주관식)",
+                                    summary = "FIVE_SECOND 주관식 모드(isObjective=false) 예시",
+                                    value = """
+                                            {
+                                              "type": "FIVE_SECOND",
+                                              "questionId": 3,
+                                              "text": "가장 먼저 검색창이 눈에 들어왔습니다.",
+                                              "selectedOptionIds": null
+                                            }
+                                            """
+                            ),
+                            @ExampleObject(
+                                    name = "5초 테스트 (객관식)",
+                                    summary = "FIVE_SECOND 객관식 모드(isObjective=true) 예시",
+                                    value = """
+                                            {
+                                              "type": "FIVE_SECOND",
+                                              "questionId": 3,
+                                              "text": null,
+                                              "selectedOptionIds": [2001]
+                                            }
+                                            """
+                            )
+                    }
+            )
+    )
+    @PostMapping
+    public ResponseEntity<ApiResponse<AnswerCreateResponse>> createAnswer(
             @PathVariable Long participationId,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-            @RequestBody @Valid SubjectiveAnswerCreateRequest request
+            @RequestBody @Valid AnswerCreateItem request
     ) {
-        AnswerCreateResponse response = answerService.createSubjectiveAnswer(participationId, authenticatedUser.getId(), request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created("응답이 등록되었습니다.", response));
-    }
-
-    @Operation(summary = "객관식 응답 등록", description = """
-            객관식 질문에 대한 응답을 등록합니다.
-            - questionId는 OBJECTIVE 타입이어야 합니다.
-            - 질문은 해당 참여 세션의 테스트에 속해야 합니다.
-            - selectedOptionIds는 해당 질문의 선택지 ID만 허용됩니다.
-            - 단일 선택(isDuplicate=false)이면 selectedOptionIds는 정확히 1개여야 합니다.
-            - 복수 선택(isDuplicate=true)이면 minSelect 이상 maxSelect 이하로 선택해야 합니다.
-            - isOther=true인 질문에서만 otherText를 입력할 수 있습니다.
-
-            **[에러 코드]**
-            | 코드 | HTTP | 설명 |
-            |------|------|------|
-            | ANSWER_001 | 400 | questionId가 OBJECTIVE 타입이 아님 |
-            | ANSWER_002 | 400 | 질문이 해당 테스트에 속하지 않음 |
-            | ANSWER_003 | 400 | 이미 응답한 질문 |
-            | ANSWER_004 | 400 | selectedOptionIds에 유효하지 않은 선택지 포함 |
-            | ANSWER_005 | 400 | 선택 개수가 허용 범위를 벗어남 |
-            """)
-    @PostMapping("/objective")
-    public ResponseEntity<ApiResponse<AnswerCreateResponse>> createObjectiveAnswer(
-            @PathVariable Long participationId,
-            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-            @RequestBody @Valid ObjectiveAnswerCreateRequest request
-    ) {
-        AnswerCreateResponse response = answerService.createObjectiveAnswer(participationId, authenticatedUser.getId(), request);
+        AnswerCreateResponse response = answerService.createAnswer(participationId, authenticatedUser.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("응답이 등록되었습니다.", response));
     }
