@@ -1,4 +1,4 @@
-package server.MATE.toss.service;
+package server.MATE.toss.crypto;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -13,9 +13,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.toss.config.TossCryptoProperties;
-import server.MATE.toss.dto.TossDecryptedUserInfo;
-import server.MATE.toss.dto.TossLoginUserResponse;
+import server.MATE.toss.dto.response.TossDecryptedUserInfo;
+import server.MATE.toss.dto.response.TossLoginUserResponse;
 
 @Slf4j
 @Component

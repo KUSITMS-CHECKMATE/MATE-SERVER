@@ -5,13 +5,16 @@ import java.util.Arrays;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.auth.dto.response.TossLoginResponse;
 import server.MATE.domain.auth.jwt.JwtProvider;
 import server.MATE.domain.auth.jwt.TokenType;
-import server.MATE.domain.auth.service.RefreshTokenStore;
+import server.MATE.domain.auth.crypto.TokenEncryptor;
+import server.MATE.domain.auth.store.TossTokenStore;
+import server.MATE.domain.auth.store.UserRefreshTokenStore;
 import server.MATE.domain.users.entity.TossAccount;
 import server.MATE.domain.users.repository.TossAccountRepository;
 import server.MATE.domain.users.dto.response.MeResponse;
@@ -20,10 +23,11 @@ import server.MATE.domain.users.repository.UsersRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.toss.client.login.TossLoginApiClient;
-import server.MATE.toss.dto.TossDecryptedUserInfo;
-import server.MATE.toss.dto.TossLoginUserResponse;
-import server.MATE.toss.dto.TossTokenRequest;
-import server.MATE.toss.dto.TossTokenResponse;
+import server.MATE.toss.crypto.TossUserInfoDecryptor;
+import server.MATE.toss.dto.response.TossDecryptedUserInfo;
+import server.MATE.toss.dto.response.TossLoginUserResponse;
+import server.MATE.toss.dto.request.TossTokenRequest;
+import server.MATE.toss.dto.response.TossTokenResponse;
 import server.MATE.toss.exception.TossApiException;
 import server.MATE.toss.exception.TossErrorCode;
 
@@ -39,7 +43,13 @@ public class TossLoginService {
     private final UsersRepository usersRepository;
     private final TossAccountRepository tossAccountRepository;
     private final JwtProvider jwtProvider;
-    private final RefreshTokenStore refreshTokenStore;
+    private final UserRefreshTokenStore userRefreshTokenStore;
+    private final TossTokenStore tossTokenStore;
+    private final TokenEncryptor tokenEncryptor;
+    private final java.time.Clock clock;
+
+    @Value("${toss.token.refresh-cache-ttl}")
+    private long tossRefreshCacheTtlMillis;
 
     public TossLoginResponse login(String authorizationCode, String referrer) {
         TossTokenResponse tossTokenResponse = tossLoginApiClient.generateToken(new TossTokenRequest(authorizationCode, referrer));
@@ -54,10 +64,11 @@ public class TossLoginService {
 
         UserLoginContext userLoginContext = upsertUser(decryptedUserInfo);
         syncTossAccount(userLoginContext.user(), decryptedUserInfo, tossTokenResponse);
+        cacheTossTokens(userLoginContext.user().getId(), tossTokenResponse);
 
         String accessToken = jwtProvider.generateToken(userLoginContext.user().getId(), userLoginContext.user().getRole().name(), TokenType.ACCESS);
         String refreshToken = jwtProvider.generateToken(userLoginContext.user().getId(), userLoginContext.user().getRole().name(), TokenType.REFRESH);
-        persistRefreshToken(userLoginContext.user().getId(), refreshToken);
+        persistUserRefreshToken(userLoginContext.user().getId(), refreshToken);
 
         return new TossLoginResponse(
                 accessToken,
@@ -83,33 +94,41 @@ public class TossLoginService {
     }
 
     private void syncTossAccount(Users user, TossDecryptedUserInfo decryptedUserInfo, TossTokenResponse tossTokenResponse) {
-        LocalDateTime accessTokenExpiresAt = LocalDateTime.now().plusSeconds(tossTokenResponse.expiresIn() == null ? 0L : tossTokenResponse.expiresIn());
+        LocalDateTime now = LocalDateTime.now(clock);
+        String encryptedRefreshToken = tokenEncryptor.encrypt(tossTokenResponse.refreshToken());
 
         TossAccount tossAccount = tossAccountRepository.findByUser(user)
                 .orElseGet(() -> TossAccount.builder()
                         .user(user)
                         .tossUserKey(decryptedUserInfo.userKey())
+                        .lastLoginAt(now)
+                        .lastTokenRefreshedAt(now)
                         .build());
 
-        tossAccount.syncTokenState(
+        tossAccount.syncLoginState(
                 decryptedUserInfo.userKey(),
-                tossTokenResponse.accessToken(),
-                tossTokenResponse.refreshToken(),
-                accessTokenExpiresAt,
-                decryptedUserInfo.scope()
+                encryptedRefreshToken,
+                decryptedUserInfo.scope(),
+                now,
+                now
         );
 
         tossAccountRepository.save(tossAccount);
     }
 
-    private void persistRefreshToken(Long userId, String refreshToken) {
+    private void cacheTossTokens(Long userId, TossTokenResponse tossTokenResponse) {
         try {
-            refreshTokenStore.save(
-                    userId,
-                    refreshToken,
-                    TokenType.REFRESH,
-                    jwtProvider.getExpiration(TokenType.REFRESH)
-            );
+            long accessTokenTtlMillis = (tossTokenResponse.expiresIn() == null ? 0L : tossTokenResponse.expiresIn()) * 1000L;
+            tossTokenStore.saveAccessToken(userId, tossTokenResponse.accessToken(), accessTokenTtlMillis);
+            tossTokenStore.saveRefreshToken(userId, tossTokenResponse.refreshToken(), tossRefreshCacheTtlMillis);
+        } catch (Exception e) {
+            throw new BaseException(BaseErrorCode.AUTH_009, BaseErrorCode.AUTH_009.getMessage(), e);
+        }
+    }
+
+    private void persistUserRefreshToken(Long userId, String refreshToken) {
+        try {
+            userRefreshTokenStore.save(userId, refreshToken, jwtProvider.getExpiration(TokenType.REFRESH));
         } catch (Exception e) {
             throw new BaseException(BaseErrorCode.AUTH_009, BaseErrorCode.AUTH_009.getMessage(), e);
         }
