@@ -29,7 +29,7 @@ public class AnswerController {
 
     @Operation(summary = "응답 등록", description = """
             질문에 대한 응답을 등록합니다.
-            - `type` 필드로 응답 유형을 구분합니다: `SUBJECTIVE`, `OBJECTIVE`, `FIVE_SECOND`
+            - `type` 필드로 응답 유형을 구분합니다: `SUBJECTIVE`, `OBJECTIVE`, `FIVE_SECOND`, `SCALE`
             - questionId는 type과 일치하는 질문 타입이어야 합니다.
             - 질문은 해당 참여 세션의 테스트에 속해야 합니다.
 
@@ -44,6 +44,9 @@ public class AnswerController {
             **FIVE_SECOND**
             - isObjective=false(주관식 모드): `text` 필수, selectedOptionIds 불필요
             - isObjective=true(객관식 모드): `selectedOptionIds` 필수, text 불필요
+
+            **SCALE**
+            - `score` 필수: 1 이상 척도 범위(5점 또는 7점) 이하의 정수
             """)
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -114,6 +117,17 @@ public class AnswerController {
                                               "questionId": 3,
                                               "text": null,
                                               "selectedOptionIds": [2001]
+                                            }
+                                            """
+                            ),
+                            @ExampleObject(
+                                    name = "척도",
+                                    summary = "SCALE 예시",
+                                    value = """
+                                            {
+                                              "type": "SCALE",
+                                              "questionId": 4,
+                                              "score": 4
                                             }
                                             """
                             )

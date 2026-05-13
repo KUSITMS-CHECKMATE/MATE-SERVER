@@ -58,6 +58,7 @@ public enum BaseErrorCode implements ErrorCode {
     ANSWER_004(HttpStatus.BAD_REQUEST, "ANSWER_004", "유효하지 않은 선택지입니다."),
     ANSWER_005(HttpStatus.BAD_REQUEST, "ANSWER_005", "응답이 입력되지 않았습니다."),
     ANSWER_006(HttpStatus.BAD_REQUEST, "ANSWER_006", "선택 개수가 허용 범위를 벗어났습니다."),
+    ANSWER_007(HttpStatus.BAD_REQUEST, "ANSWER_007", "점수가 허용 범위를 벗어났습니다."),
 
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
