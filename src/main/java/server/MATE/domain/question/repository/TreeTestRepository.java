@@ -5,8 +5,13 @@ import org.springframework.data.jpa.repository.Query;
 import server.MATE.domain.question.entity.TreeTest;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TreeTestRepository extends JpaRepository<TreeTest, Long> {
+
+    Optional<TreeTest> findByIdAndQuestion_Id(Long id, Long questionId);
+
+    boolean existsByParent_Id(Long parentId);
 
     @Query("""
             select node
