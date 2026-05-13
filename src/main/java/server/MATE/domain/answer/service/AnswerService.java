@@ -3,6 +3,7 @@ package server.MATE.domain.answer.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import server.MATE.domain.answer.dto.request.AbTestAnswerCreateRequest;
 import server.MATE.domain.answer.dto.request.AnswerCreateItem;
 import server.MATE.domain.answer.dto.request.FiveSecondAnswerCreateRequest;
 import server.MATE.domain.answer.dto.request.ObjectiveAnswerCreateRequest;
@@ -52,6 +53,7 @@ public class AnswerService {
             case ObjectiveAnswerCreateRequest r -> createObjectiveAnswer(participationId, testerId, r);
             case FiveSecondAnswerCreateRequest r -> createFiveSecondAnswer(participationId, testerId, r);
             case ScaleAnswerCreateRequest r -> createScaleAnswer(participationId, testerId, r);
+            case AbTestAnswerCreateRequest r -> createAbTestAnswer(participationId, testerId, r);
         };
     }
 
@@ -79,7 +81,7 @@ public class AnswerService {
                 .map(ObjectiveOption::getId)
                 .collect(Collectors.toSet());
 
-        List<Long> selectedOptionIds = request.selectedOptionIds();
+        List<Long> selectedOptionIds = request.optionIds();
         boolean hasOtherText = objective.isOther() && request.otherText() != null && !request.otherText().isBlank();
 
         if (selectedOptionIds.isEmpty() && !hasOtherText) {
@@ -110,7 +112,7 @@ public class AnswerService {
         }
 
         Map<String, Object> answerMap = new LinkedHashMap<>();
-        answerMap.put("selectedOptionIds", selectedOptionIds);
+        answerMap.put("optionIds", selectedOptionIds);
         if (hasOtherText) {
             answerMap.put("otherText", request.otherText().trim());
         }
@@ -138,7 +140,7 @@ public class AnswerService {
             if (request.text() == null || request.text().isBlank()) {
                 throw new BaseException(BaseErrorCode.ANSWER_005);
             }
-            if (request.selectedOptionIds() != null && !request.selectedOptionIds().isEmpty()) {
+            if (request.optionIds() != null && !request.optionIds().isEmpty()) {
                 throw new BaseException(BaseErrorCode.ANSWER_004);
             }
             answerMap = Map.of("text", request.text().trim());
@@ -146,7 +148,7 @@ public class AnswerService {
             if (request.text() != null && !request.text().isBlank()) {
                 throw new BaseException(BaseErrorCode.ANSWER_004);
             }
-            List<Long> selectedOptionIds = request.selectedOptionIds() != null ? request.selectedOptionIds() : List.of();
+            List<Long> selectedOptionIds = request.optionIds() != null ? request.optionIds() : List.of();
 
             Set<Long> validOptionIds = fiveSecond.getOptions().stream()
                     .map(FiveSecondOption::getId)
@@ -171,7 +173,7 @@ public class AnswerService {
                 }
             }
 
-            answerMap = Map.of("selectedOptionIds", selectedOptionIds);
+            answerMap = Map.of("optionIds", selectedOptionIds);
         }
 
         Answer answer = Answer.builder()
@@ -188,14 +190,14 @@ public class AnswerService {
     private AnswerCreateResponse createScaleAnswer(Long participationId, Long testerId, ScaleAnswerCreateRequest request) {
         validateAnswerRequest(participationId, testerId, request.questionId(), QuestionType.SCALE);
 
-        if (request.score() == null) {
+        if (request.value() == null) {
             throw new BaseException(BaseErrorCode.ANSWER_005);
         }
 
         Scale scale = scaleRepository.findById(request.questionId())
                 .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
 
-        if (request.score() < 1 || request.score() > scale.getRange()) {
+        if (request.value() < 1 || request.value() > scale.getRange()) {
             throw new BaseException(BaseErrorCode.ANSWER_007);
         }
 
@@ -203,7 +205,29 @@ public class AnswerService {
                 .participationId(participationId)
                 .questionId(request.questionId())
                 .questionType(QuestionType.SCALE)
-                .answer(Map.of("score", request.score()))
+                .answer(Map.of("value", request.value()))
+                .build();
+
+        answerRepository.save(answer);
+        return AnswerCreateResponse.from(answer);
+    }
+
+    private AnswerCreateResponse createAbTestAnswer(Long participationId, Long testerId, AbTestAnswerCreateRequest request) {
+        validateAnswerRequest(participationId, testerId, request.questionId(), QuestionType.AB_TEST);
+
+        if (request.selected() == null) {
+            throw new BaseException(BaseErrorCode.ANSWER_005);
+        }
+
+        if (!request.selected().equals("A") && !request.selected().equals("B")) {
+            throw new BaseException(BaseErrorCode.ANSWER_004);
+        }
+
+        Answer answer = Answer.builder()
+                .participationId(participationId)
+                .questionId(request.questionId())
+                .questionType(QuestionType.AB_TEST)
+                .answer(Map.of("selected", request.selected()))
                 .build();
 
         answerRepository.save(answer);

@@ -9,13 +9,15 @@ import server.MATE.domain.question.entity.QuestionType;
         @JsonSubTypes.Type(value = SubjectiveAnswerCreateRequest.class, name = "SUBJECTIVE"),
         @JsonSubTypes.Type(value = ObjectiveAnswerCreateRequest.class, name = "OBJECTIVE"),
         @JsonSubTypes.Type(value = FiveSecondAnswerCreateRequest.class, name = "FIVE_SECOND"),
-        @JsonSubTypes.Type(value = ScaleAnswerCreateRequest.class, name = "SCALE")
+        @JsonSubTypes.Type(value = ScaleAnswerCreateRequest.class, name = "SCALE"),
+        @JsonSubTypes.Type(value = AbTestAnswerCreateRequest.class, name = "AB_TEST")
 })
 public sealed interface AnswerCreateItem permits
         SubjectiveAnswerCreateRequest,
         ObjectiveAnswerCreateRequest,
         FiveSecondAnswerCreateRequest,
-        ScaleAnswerCreateRequest {
+        ScaleAnswerCreateRequest,
+        AbTestAnswerCreateRequest {
 
     Long questionId();
 
