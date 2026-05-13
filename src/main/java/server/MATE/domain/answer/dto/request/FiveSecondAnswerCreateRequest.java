@@ -10,7 +10,7 @@ import java.util.List;
 public record FiveSecondAnswerCreateRequest(
         @NotNull Long questionId,
         String text,
-        List<Long> selectedOptionIds
+        List<Long> optionIds
 ) implements AnswerCreateItem {
 
     @Override
