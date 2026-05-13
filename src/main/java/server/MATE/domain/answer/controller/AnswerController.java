@@ -36,19 +36,6 @@ public class AnswerController {
 
             **[type]**
             - SUBJECTIVE, OBJECTIVE, FIVE_SECOND, SCALE, AB_TEST, CARD_SORTING, TREE_TEST
-
-            **[에러 코드]**
-            | 코드 | HTTP | 설명 |
-            |------|------|------|
-            | TEST_004 | 404 | 테스트를 찾을 수 없습니다 |
-            | PARTICIPATION_002 | 400 | 참여할 수 없는 테스트입니다 |
-            | PARTICIPATION_003 | 400 | 이미 참여한 테스트입니다 |
-            | PARTICIPATION_004 | 400 | 테스트 참여 인원이 마감되었습니다 |
-            | ANSWER_001 | 400 | 질문 타입과 응답 타입 불일치 |
-            | ANSWER_003 | 400 | 동일 질문에 대한 응답이 중복되었습니다 |
-            | ANSWER_005 | 400 | 응답이 입력되지 않았습니다 |
-            | ANSWER_006 | 400 | 선택 개수가 허용 범위를 벗어났습니다 |
-            | ANSWER_008 | 400 | 모든 문항에 응답해야 합니다 |
             """)
     @PostMapping
     public ResponseEntity<ApiResponse<AnswerBatchCreateResponse>> createAnswers(
