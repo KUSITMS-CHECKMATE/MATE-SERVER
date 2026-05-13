@@ -256,7 +256,7 @@ public class AnswerService {
         Set<String> assignedCards = new HashSet<>();
         Set<String> usedCategories = new HashSet<>();
         for (CardSortingAnswerCreateRequest.GroupItem group : request.groups()) {
-            if (group.category() == null || !validCategories.contains(group.category())) {
+            if (group == null || group.category() == null || !validCategories.contains(group.category())) {
                 throw new BaseException(BaseErrorCode.ANSWER_004);
             }
             if (!usedCategories.add(group.category())) {
