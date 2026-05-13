@@ -7,7 +7,7 @@ import java.util.function.Consumer;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -21,7 +21,7 @@ import server.MATE.toss.exception.parser.TossErrorResponseParser;
 import server.MATE.toss.response.TossApiResponse;
 
 @Component
-@ConditionalOnBean(name = "tossWebClient")
+@ConditionalOnProperty(prefix = "toss.api", name = "enabled", havingValue = "true")
 public class TossHttpClient {
 
     private final WebClient tossWebClient;
