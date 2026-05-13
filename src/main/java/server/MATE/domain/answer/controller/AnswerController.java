@@ -29,7 +29,7 @@ public class AnswerController {
 
     @Operation(summary = "응답 등록", description = """
             질문에 대한 응답을 등록합니다.
-            - `type` 필드로 응답 유형을 구분합니다: `SUBJECTIVE`, `OBJECTIVE`, `FIVE_SECOND`, `SCALE`
+            - `type` 필드로 응답 유형을 구분합니다: `SUBJECTIVE`, `OBJECTIVE`, `FIVE_SECOND`, `SCALE`, `AB_TEST`
             - questionId는 type과 일치하는 질문 타입이어야 합니다.
             - 질문은 해당 참여 세션의 테스트에 속해야 합니다.
 
@@ -37,16 +37,19 @@ public class AnswerController {
             - `text` 필수
 
             **OBJECTIVE**
-            - `selectedOptionIds`: 선택지 ID 목록 (단일 선택이면 1개, 복수 선택이면 minSelect~maxSelect 범위)
+            - `optionIds`: 선택지 ID 목록 (단일 선택이면 1개, 복수 선택이면 minSelect~maxSelect 범위)
             - `otherText`: isOther=true인 질문에서만 입력 가능
-            - 기타만 선택하는 경우 selectedOptionIds는 빈 배열, otherText 입력
+            - 기타만 선택하는 경우 optionIds 빈 배열, otherText 입력
 
             **FIVE_SECOND**
-            - isObjective=false(주관식 모드): `text` 필수, selectedOptionIds 불필요
-            - isObjective=true(객관식 모드): `selectedOptionIds` 필수, text 불필요
+            - isObjective=false(주관식 모드): `text` 필수, optionIds 불필요
+            - isObjective=true(객관식 모드): `optionIds` 필수, text 불필요
 
             **SCALE**
             - `score` 필수: 1 이상 척도 범위(5점 또는 7점) 이하의 정수
+
+            **AB_TEST**
+            - `selected` 필수: `"A"` 또는 `"B"`
             """)
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -91,7 +94,7 @@ public class AnswerController {
                                             {
                                               "type": "OBJECTIVE",
                                               "questionId": 2,
-                                              "selectedOptionIds": [1001, 1002],
+                                              "optionIds": [1001, 1002],
                                               "otherText": null
                                             }
                                             """
@@ -104,7 +107,7 @@ public class AnswerController {
                                               "type": "FIVE_SECOND",
                                               "questionId": 3,
                                               "text": "가장 먼저 검색창이 눈에 들어왔습니다.",
-                                              "selectedOptionIds": null
+                                              "optionIds": null
                                             }
                                             """
                             ),
@@ -116,7 +119,7 @@ public class AnswerController {
                                               "type": "FIVE_SECOND",
                                               "questionId": 3,
                                               "text": null,
-                                              "selectedOptionIds": [2001]
+                                              "optionIds": [2001]
                                             }
                                             """
                             ),
@@ -127,7 +130,18 @@ public class AnswerController {
                                             {
                                               "type": "SCALE",
                                               "questionId": 4,
-                                              "score": 4
+                                              "value": 4
+                                            }
+                                            """
+                            ),
+                            @ExampleObject(
+                                    name = "AB 테스트",
+                                    summary = "AB_TEST 예시",
+                                    value = """
+                                            {
+                                              "type": "AB_TEST",
+                                              "questionId": 5,
+                                              "selected": "A"
                                             }
                                             """
                             )
