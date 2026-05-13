@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.answer.dto.request.AbTestAnswerCreateRequest;
 import server.MATE.domain.answer.dto.request.AnswerCreateItem;
+import server.MATE.domain.answer.dto.request.CardSortingAnswerCreateRequest;
 import server.MATE.domain.answer.dto.request.FiveSecondAnswerCreateRequest;
 import server.MATE.domain.answer.dto.request.ObjectiveAnswerCreateRequest;
 import server.MATE.domain.answer.dto.request.ScaleAnswerCreateRequest;
@@ -20,7 +21,9 @@ import server.MATE.domain.question.entity.Objective;
 import server.MATE.domain.question.entity.ObjectiveOption;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
+import server.MATE.domain.question.entity.CardSorting;
 import server.MATE.domain.question.entity.Scale;
+import server.MATE.domain.question.repository.CardSortingRepository;
 import server.MATE.domain.question.repository.FiveSecondRepository;
 import server.MATE.domain.question.repository.ObjectiveRepository;
 import server.MATE.domain.question.repository.QuestionRepository;
@@ -28,6 +31,7 @@ import server.MATE.domain.question.repository.ScaleRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +48,7 @@ public class AnswerService {
     private final ObjectiveRepository objectiveRepository;
     private final FiveSecondRepository fiveSecondRepository;
     private final ScaleRepository scaleRepository;
+    private final CardSortingRepository cardSortingRepository;
     private final AnswerRepository answerRepository;
 
     @Transactional
@@ -54,6 +59,7 @@ public class AnswerService {
             case FiveSecondAnswerCreateRequest r -> createFiveSecondAnswer(participationId, testerId, r);
             case ScaleAnswerCreateRequest r -> createScaleAnswer(participationId, testerId, r);
             case AbTestAnswerCreateRequest r -> createAbTestAnswer(participationId, testerId, r);
+            case CardSortingAnswerCreateRequest r -> createCardSortingAnswer(participationId, testerId, r);
         };
     }
 
@@ -228,6 +234,56 @@ public class AnswerService {
                 .questionId(request.questionId())
                 .questionType(QuestionType.AB_TEST)
                 .answer(Map.of("selected", request.selected()))
+                .build();
+
+        answerRepository.save(answer);
+        return AnswerCreateResponse.from(answer);
+    }
+
+    private AnswerCreateResponse createCardSortingAnswer(Long participationId, Long testerId, CardSortingAnswerCreateRequest request) {
+        validateAnswerRequest(participationId, testerId, request.questionId(), QuestionType.CARD_SORTING);
+
+        if (request.groups() == null || request.groups().isEmpty()) {
+            throw new BaseException(BaseErrorCode.ANSWER_005);
+        }
+
+        CardSorting cardSorting = cardSortingRepository.findById(request.questionId())
+                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
+
+        Set<String> validCategories = new HashSet<>(cardSorting.getCategories());
+        Set<String> validCards = new HashSet<>(cardSorting.getCards());
+
+        Set<String> assignedCards = new HashSet<>();
+        Set<String> usedCategories = new HashSet<>();
+        for (CardSortingAnswerCreateRequest.GroupItem group : request.groups()) {
+            if (group == null || group.category() == null || !validCategories.contains(group.category())) {
+                throw new BaseException(BaseErrorCode.ANSWER_004);
+            }
+            if (!usedCategories.add(group.category())) {
+                throw new BaseException(BaseErrorCode.ANSWER_004);
+            }
+            if (group.cardNames() == null) {
+                throw new BaseException(BaseErrorCode.ANSWER_004);
+            }
+            for (String cardName : group.cardNames()) {
+                if (!validCards.contains(cardName)) {
+                    throw new BaseException(BaseErrorCode.ANSWER_004);
+                }
+                if (!assignedCards.add(cardName)) {
+                    throw new BaseException(BaseErrorCode.ANSWER_004);
+                }
+            }
+        }
+
+        if (assignedCards.size() != validCards.size()) {
+            throw new BaseException(BaseErrorCode.ANSWER_005);
+        }
+
+        Answer answer = Answer.builder()
+                .participationId(participationId)
+                .questionId(request.questionId())
+                .questionType(QuestionType.CARD_SORTING)
+                .answer(Map.of("groups", request.groups()))
                 .build();
 
         answerRepository.save(answer);
