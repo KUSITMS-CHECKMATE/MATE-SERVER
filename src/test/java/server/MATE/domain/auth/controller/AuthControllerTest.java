@@ -18,6 +18,7 @@ import org.springframework.security.web.method.annotation.AuthenticationPrincipa
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import server.MATE.domain.auth.dto.response.AuthReissueResponse;
 import server.MATE.domain.auth.jwt.TokenType;
 import server.MATE.domain.auth.service.AuthService;
 import server.MATE.domain.users.entity.Role;
@@ -26,6 +27,7 @@ import server.MATE.global.discord.DiscordWebhookNotifier;
 import server.MATE.global.security.principal.AuthenticatedUser;
 import server.MATE.toss.service.TossLoginService;
 
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -75,6 +77,43 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.data").doesNotExist());
 
         verify(authService).logout(1L);
+    }
+
+    @Test
+    @DisplayName("토큰 재발급 요청을 정상 처리한다")
+    void handlesReissueRequestSuccessfully() throws Exception {
+        given(authService.reissue("refresh-token"))
+                .willReturn(new AuthReissueResponse("new-access-token", "new-refresh-token"));
+
+        mockMvc.perform(post("/api/v1/auth/reissue")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "refreshToken": "refresh-token"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value("200"))
+                .andExpect(jsonPath("$.message").value("토큰이 재발급되었습니다."))
+                .andExpect(jsonPath("$.data.accessToken").value("new-access-token"))
+                .andExpect(jsonPath("$.data.refreshToken").value("new-refresh-token"));
+    }
+
+    @Test
+    @DisplayName("토큰 재발급 요청에서 refreshToken이 비어 있으면 400을 반환한다")
+    void returnsBadRequestWhenRefreshTokenIsBlank() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/reissue")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "refreshToken": ""
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("COMMON_002"))
+                .andExpect(jsonPath("$.field").value("refreshToken"));
     }
 
     private UsernamePasswordAuthenticationToken authentication() {
