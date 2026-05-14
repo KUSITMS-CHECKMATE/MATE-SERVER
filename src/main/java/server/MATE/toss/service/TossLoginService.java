@@ -173,11 +173,9 @@ public class TossLoginService {
 
         try {
             String encodedCredentials = authorization.substring("Basic ".length()).trim();
-            String decodedCredentials = new String(Base64.getDecoder().decode(encodedCredentials), StandardCharsets.UTF_8);
-            if (!MessageDigest.isEqual(
-                    expectedHeader.getBytes(StandardCharsets.UTF_8),
-                    decodedCredentials.getBytes(StandardCharsets.UTF_8)
-            )) {
+            byte[] decodedBytes = Base64.getDecoder().decode(encodedCredentials);
+            byte[] expectedBytes = expectedHeader.getBytes(StandardCharsets.UTF_8);
+            if (!MessageDigest.isEqual(expectedBytes, decodedBytes)) {
                 throw new BaseException(BaseErrorCode.COMMON_008, "유효하지 않은 토스 연결 해제 콜백 인증입니다.");
             }
         } catch (IllegalArgumentException e) {
