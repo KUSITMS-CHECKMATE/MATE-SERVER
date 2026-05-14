@@ -1,5 +1,6 @@
 package server.MATE.toss.service;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 
@@ -46,7 +47,7 @@ public class TossLoginService {
     private final UserRefreshTokenStore userRefreshTokenStore;
     private final TossTokenStore tossTokenStore;
     private final TokenEncryptor tokenEncryptor;
-    private final java.time.Clock clock;
+    private final Clock clock;
 
     @Value("${toss.token.refresh-cache-ttl}")
     private long tossRefreshCacheTtlMillis;
@@ -63,7 +64,8 @@ public class TossLoginService {
         TossDecryptedUserInfo decryptedUserInfo = tossUserInfoDecryptor.decrypt(loginUserResponse);
 
         UserLoginContext userLoginContext = upsertUser(decryptedUserInfo);
-        syncTossAccount(userLoginContext.user(), decryptedUserInfo, tossTokenResponse);
+        String encryptedRefreshToken = tokenEncryptor.encrypt(tossTokenResponse.refreshToken());
+        syncTossAccount(userLoginContext.user(), decryptedUserInfo, encryptedRefreshToken);
         cacheTossTokens(userLoginContext.user().getId(), tossTokenResponse);
 
         String accessToken = jwtProvider.generateToken(userLoginContext.user().getId(), userLoginContext.user().getRole().name(), TokenType.ACCESS);
@@ -93,9 +95,12 @@ public class TossLoginService {
                 ));
     }
 
-    private void syncTossAccount(Users user, TossDecryptedUserInfo decryptedUserInfo, TossTokenResponse tossTokenResponse) {
+    private void syncTossAccount(
+            Users user,
+            TossDecryptedUserInfo decryptedUserInfo,
+            String encryptedRefreshToken
+    ) {
         LocalDateTime now = LocalDateTime.now(clock);
-        String encryptedRefreshToken = tokenEncryptor.encrypt(tossTokenResponse.refreshToken());
 
         TossAccount tossAccount = tossAccountRepository.findByUser(user)
                 .orElseGet(() -> TossAccount.builder()
