@@ -215,6 +215,18 @@ class TossLoginServiceTest {
                     .extracting(exception -> ((BaseException) exception).getErrorCode())
                     .isEqualTo(BaseErrorCode.AUTH_008);
         }
+
+        @Test
+        @DisplayName("토스 로그인 중 네트워크 실패가 발생하면 TOSS_001 예외를 그대로 전파한다")
+        void propagatesToss001WhenGenerateTokenFailsByNetwork() {
+            when(tossLoginApiClient.generateToken(new TossTokenRequest("authorization-code", "APP")))
+                    .thenThrow(new TossApiException(TossErrorCode.TOSS_001, "토스 API 호출에 실패했습니다.", null));
+
+            assertThatThrownBy(() -> tossLoginService.login("authorization-code", "APP"))
+                    .isInstanceOf(TossApiException.class)
+                    .extracting(exception -> ((TossApiException) exception).getErrorCode())
+                    .isEqualTo(TossErrorCode.TOSS_001);
+        }
     }
 
     @Nested
@@ -324,6 +336,25 @@ class TossLoginServiceTest {
             verify(tossLoginSessionService).clearLoginTokens(1L);
             verify(userRefreshTokenStore).delete(1L);
             assertThat(tossAccount.isLinked()).isFalse();
+        }
+
+        @Test
+        @DisplayName("unlink 중 네트워크 실패가 발생하면 TOSS_001 예외를 전파하고 revoke 하지 않는다")
+        void throwsToss001AndDoesNotRevokeWhenNetworkFailureOccursDuringUnlink() {
+            TossAccount tossAccount = createLinkedAccount(1L);
+            when(tossAccountRepository.findByUserId(1L)).thenReturn(Optional.of(tossAccount));
+            when(tossLoginSessionService.getValidAccessToken(1L)).thenReturn(Optional.of("valid-access"));
+            doThrow(new TossApiException(TossErrorCode.TOSS_001, "토스 API 호출에 실패했습니다.", null))
+                    .when(tossLoginApiClient).removeByAccessToken("valid-access");
+
+            assertThatThrownBy(() -> tossLoginService.unlinkCurrentUser(1L))
+                    .isInstanceOf(TossApiException.class)
+                    .extracting(exception -> ((TossApiException) exception).getErrorCode())
+                    .isEqualTo(TossErrorCode.TOSS_001);
+
+            verify(tossLoginSessionService, never()).clearLoginTokens(1L);
+            verify(userRefreshTokenStore, never()).delete(1L);
+            assertThat(tossAccount.isLinked()).isTrue();
         }
 
         @Test
