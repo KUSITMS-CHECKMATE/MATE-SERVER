@@ -40,7 +40,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("토스 로그인이 완료되었습니다.", response));
     }
 
-    @Operation(summary = "로그아웃", description = "현재 인증된 사용자의 Mate 로그아웃을 처리합니다.")
+    @Operation(summary = "로그아웃", description = "현재 인증된 사용자의 Mate 로그아웃 합니다. 별도 요청값 없이 헤더에 포함된 access 토큰으로 처리합니다.")
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
@@ -49,7 +49,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("로그아웃이 완료되었습니다.", null));
     }
 
-    @Operation(summary = "토큰 재발급", description = "MATE refresh token을 검증하고 access/refresh token을 재발급합니다.")
+    @Operation(summary = "토큰 재발급", description = "refresh 토큰으로 요청하면 새 access 토큰과 refresh 토큰을 발급합니다.")
     @PostMapping("/reissue")
     public ResponseEntity<ApiResponse<AuthReissueResponse>> reissue(
             @RequestBody @Valid AuthReissueRequest request
