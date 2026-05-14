@@ -3,6 +3,7 @@ package server.MATE.toss.service;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
@@ -173,7 +174,10 @@ public class TossLoginService {
         try {
             String encodedCredentials = authorization.substring("Basic ".length()).trim();
             String decodedCredentials = new String(Base64.getDecoder().decode(encodedCredentials), StandardCharsets.UTF_8);
-            if (!expectedHeader.equals(decodedCredentials)) {
+            if (!MessageDigest.isEqual(
+                    expectedHeader.getBytes(StandardCharsets.UTF_8),
+                    decodedCredentials.getBytes(StandardCharsets.UTF_8)
+            )) {
                 throw new BaseException(BaseErrorCode.COMMON_008, "유효하지 않은 토스 연결 해제 콜백 인증입니다.");
             }
         } catch (IllegalArgumentException e) {
