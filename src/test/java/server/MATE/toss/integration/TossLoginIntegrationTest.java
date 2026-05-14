@@ -99,7 +99,7 @@ class TossLoginIntegrationTest {
     }
 
     @Test
-    @DisplayName("로그인 성공 시 users, toss_accounts 저장과 토큰 저장이 수행된다")
+    @DisplayName("로그인 성공 시 users, toss_accounts 저장과 토큰 저장소 호출이 수행된다")
     void logsInSuccessfullyAndPersistsUserAndTossAccount() {
         TossTokenResponse tokenResponse = new TossTokenResponse("Bearer", "toss-access", "toss-refresh", 3600L, "user_ci");
         TossLoginUserResponse loginUserResponse = new TossLoginUserResponse(777L, "user_ci,name", "encrypted-name", "encrypted-ci");
