@@ -48,6 +48,55 @@ class TossLoginErrorResponseParserTest {
     }
 
     @Test
+    void parseLoginMeInvalidGrantAsInvalidAccessToken() {
+        TossErrorContext context = parser.parse(
+                HttpStatus.BAD_REQUEST,
+                LOGIN_API_PREFIX + "/login-me",
+                """
+                {
+                  "error": "invalid_grant"
+                }
+                """
+        );
+
+        assertThat(context.errorCode()).isEqualTo(TossErrorCode.TOSS_005);
+        assertThat(context.errorResponse().errorCode()).isEqualTo("INVALID_ACCESS_TOKEN");
+        assertThat(context.errorResponse().reason()).isEqualTo("access token이 만료되었거나 유효하지 않습니다.");
+    }
+
+    @Test
+    void parseObjectErrorBody() {
+        TossErrorContext context = parser.parse(
+                HttpStatus.BAD_REQUEST,
+                LOGIN_API_PREFIX + "/login-me",
+                """
+                {
+                  "error": {
+                    "errorCode": "USER_NOT_FOUND",
+                    "reason": "토스 사용자를 찾을 수 없습니다."
+                  }
+                }
+                """
+        );
+
+        assertThat(context.errorCode()).isEqualTo(TossErrorCode.TOSS_008);
+        assertThat(context.errorResponse().errorCode()).isEqualTo("USER_NOT_FOUND");
+        assertThat(context.errorResponse().reason()).isEqualTo("토스 사용자를 찾을 수 없습니다.");
+    }
+
+    @Test
+    void parseMalformedBodyAsFallbackError() {
+        TossErrorContext context = parser.parse(
+                HttpStatus.BAD_REQUEST,
+                LOGIN_API_PREFIX + "/generate-token",
+                "not-json"
+        );
+
+        assertThat(context.errorCode()).isEqualTo(TossErrorCode.TOSS_001);
+        assertThat(context.errorResponse().errorCode()).isEqualTo("TOSS_LOGIN_UNKNOWN_ERROR");
+    }
+
+    @Test
     void supportsOnlyTossLoginApiPath() {
         assertThat(parser.supports(HttpStatus.BAD_REQUEST, LOGIN_API_PREFIX + "/generate-token", "{}")).isTrue();
         assertThat(parser.supports(HttpStatus.BAD_REQUEST, "/api-partner/v1/payments/confirm", "{}")).isFalse();
