@@ -36,7 +36,12 @@ public class AuthService {
         String savedRefreshToken = userRefreshTokenStore.find(userId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.AUTH_013));
 
-        if (!savedRefreshToken.equals(refreshToken)) throw new BaseException(BaseErrorCode.AUTH_013);
+        // refresh 토큰의 JWT 형태는 유효하지만 redis에 저장된 최신 토큰과 일치하지 않은 경우
+        // 기존 토큰의 탈취 위험으로 간주하여 세션 상태를 삭제함
+        if (!savedRefreshToken.equals(refreshToken)) {
+            revokeUserTokens(userId);
+            throw new BaseException(BaseErrorCode.AUTH_013);
+        }
 
         Users user = usersRepository.findById(userId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.AUTH_004));
@@ -47,5 +52,11 @@ public class AuthService {
         userRefreshTokenStore.save(userId, newRefreshToken, jwtProvider.getExpiration(TokenType.REFRESH));
 
         return new AuthReissueResponse(newAccessToken, newRefreshToken);
+    }
+
+    private void revokeUserTokens(Long userId) {
+        userRefreshTokenStore.delete(userId);
+        tossTokenStore.deleteAccessToken(userId);
+        tossTokenStore.deleteRefreshToken(userId);
     }
 }
