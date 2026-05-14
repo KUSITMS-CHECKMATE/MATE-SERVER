@@ -9,4 +9,8 @@ import server.MATE.domain.users.entity.Users;
 public interface TossAccountRepository extends JpaRepository<TossAccount, Long> {
 
     Optional<TossAccount> findByUser(Users user);
+
+    Optional<TossAccount> findByUserId(Long userId);
+
+    Optional<TossAccount> findByTossUserKey(Long tossUserKey);
 }
