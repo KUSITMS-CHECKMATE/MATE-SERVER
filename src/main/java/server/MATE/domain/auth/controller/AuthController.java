@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import server.MATE.domain.auth.dto.request.AuthReissueRequest;
 import server.MATE.domain.auth.dto.request.TossLoginRequest;
+import server.MATE.domain.auth.dto.response.AuthReissueResponse;
 import server.MATE.domain.auth.dto.response.TossLoginResponse;
 import server.MATE.domain.auth.service.AuthService;
 import server.MATE.global.common.exception.BaseErrorCode;
@@ -45,6 +47,15 @@ public class AuthController {
     ) {
         authService.logout(authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("로그아웃이 완료되었습니다.", null));
+    }
+
+    @Operation(summary = "토큰 재발급", description = "MATE refresh token을 검증하고 access/refresh token을 재발급합니다.")
+    @PostMapping("/reissue")
+    public ResponseEntity<ApiResponse<AuthReissueResponse>> reissue(
+            @RequestBody @Valid AuthReissueRequest request
+    ) {
+        AuthReissueResponse response = authService.reissue(request.refreshToken());
+        return ResponseEntity.ok(ApiResponse.ok("토큰이 재발급되었습니다.", response));
     }
 
     private TossLoginService getTossLoginService() {
