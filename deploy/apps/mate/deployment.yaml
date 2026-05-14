@@ -1,0 +1,48 @@
+# ACR pull: 클러스터에 docker-registry 시크릿이 있어야 함.
+#   kubectl create secret docker-registry acr-pull \
+#     --namespace mate \
+#     --docker-server=kusitmsmateacr.azurecr.io \
+#     --docker-username=<acr-name 또는 token-user> \
+#     --docker-password=<acr-token>
+# 앱 설정: mate-app-secrets에 prod용 키(DB_URL, DB_USERNAME, …)를 넣을 것 (Git에 실값 커밋 금지).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mate
+  labels:
+    app: mate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mate
+  template:
+    metadata:
+      labels:
+        app: mate
+    spec:
+      imagePullSecrets:
+        - name: acr-pull
+      containers:
+        - name: mate
+          image: kusitmsmateacr.azurecr.io/mate:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+          envFrom:
+            - secretRef:
+                name: mate-app-secrets
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 25
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 20
