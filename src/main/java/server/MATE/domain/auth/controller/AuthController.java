@@ -84,7 +84,7 @@ public class AuthController {
     }
 
     @Operation(
-            summary = "토스 연결 해제(userKey)",
+            summary = "🙅🏻‍♀️ 토스 연결 해제",
             description = "운영/관리/보정용 API입니다. 프론트에서 직접 호출하는 API가 아닙니다."
     )
     @PostMapping("/toss/unlink/by-user-key")
@@ -97,22 +97,29 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("토스 연결이 해제되었습니다.", null));
     }
 
-    @Operation(summary = "토스 연동 상태 조회", description = "현재 사용자의 토스 로그인 연동 상태를 조회합니다.")
+    @Operation(
+            summary = "토스 연동 상태 조회",
+            description = """
+                현재 사용자의 토스 로그인 연동 상태를 서버 기준으로 조회합니다. 클라이언트 SDK 기준 연동 여부 확인용이고, 서버에 저장된 연동 상태 기준으로 응답합니다.
+                - `isLinked=true`: 현재 계정이 토스 로그인과 연동된 상태입니다.
+                - `isLinked=false`: 현재 계정이 토스 로그인과 연동되지 않았거나 연결 해제된 상태입니다.
+                
+                앱인토스 클라이언트 동작을 함께 확인하려면
+                [getIsTossLoginIntegratedService 공식 문서](https://developers-apps-in-toss.toss.im/bedrock/reference/framework/%EB%A1%9C%EA%B7%B8%EC%9D%B8/getIsTossLoginIntegratedService.html)를 참고해주세요.
+                """
+    )
     @GetMapping("/toss/integration-status")
     public ResponseEntity<ApiResponse<TossLinkStatusResponse>> getTossIntegrationStatus(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
         TossLoginService tossLoginService = tossLoginServiceProvider.getIfAvailable();
         boolean isLinked = tossLoginService != null && tossLoginService.isLinked(authenticatedUser.getId());
-        return ResponseEntity.ok(ApiResponse.ok(
-                "토스 연동 상태를 조회했습니다.",
-                new TossLinkStatusResponse(isLinked)
-        ));
+        return ResponseEntity.ok(ApiResponse.ok("토스 연동 상태를 조회했습니다.", new TossLinkStatusResponse(isLinked)));
     }
 
     // @Hidden
     @Operation(
-            summary = "토스 연결 해제 콜백",
+            summary = "🙅🏻‍♀️ 토스 연결 해제 콜백",
             description = "토스 시스템이 호출하는 운영용 콜백 API입니다. 프론트에서 직접 호출하는 API가 아닙니다. Basic Auth 헤더 검증이 필요합니다."
     )
     @GetMapping("/toss/login/unlink/callback")
@@ -129,7 +136,7 @@ public class AuthController {
 
     // @Hidden
     @Operation(
-            summary = "토스 연결 해제 콜백",
+            summary = "🙅🏻‍♀️ 토스 연결 해제 콜백",
             description = "토스 시스템이 호출하는 운영용 콜백 API입니다. 프론트에서 직접 호출하는 API가 아닙니다. Basic Auth 헤더 검증이 필요합니다."
     )
     @PostMapping("/toss/login/unlink/callback")
