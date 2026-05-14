@@ -125,13 +125,18 @@ class TossHttpClientTest {
     }
 
     @Test
-    @DisplayName("네트워크 예외는 현재 구현 기준으로 그대로 전파된다")
-    void propagatesNetworkExceptionAsIs() {
+    @DisplayName("네트워크 예외는 TOSS_001 TossApiException으로 변환한다")
+    void convertsNetworkExceptionToToss001() {
         TossHttpClient tossHttpClient = createClient(request -> Mono.error(new IllegalStateException("network failure")));
 
         assertThatThrownBy(() -> tossHttpClient.get("/api-partner/v1/apps-in-toss/user/oauth2/login-me", TossTokenResponse.class))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("network failure");
+                .isInstanceOf(TossApiException.class)
+                .satisfies(exception -> {
+                    TossApiException tossApiException = (TossApiException) exception;
+                    assertThat(tossApiException.getErrorCode()).isEqualTo(TossErrorCode.TOSS_001);
+                    assertThat(tossApiException.getCause()).isInstanceOf(IllegalStateException.class);
+                    assertThat(tossApiException.getCause()).hasMessage("network failure");
+                });
     }
 
     private TossHttpClient createClient(ExchangeFunction exchangeFunction) {
