@@ -1,0 +1,24 @@
+# Argo CD 설치 후, 이 리소스를 argocd 네임스페이스에 적용:
+#   kubectl apply -n argocd -f deploy/argocd/applications/mate-application.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mate
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/KUSITMS-CHECKMATE/MATE-SERVER.git
+    targetRevision: HEAD
+    path: deploy/apps/mate
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mate
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
