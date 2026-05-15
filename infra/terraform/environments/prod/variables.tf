@@ -227,3 +227,21 @@ variable "kubernetes_nodeport_allow_source_address_prefixes" {
   default     = ["VirtualNetwork"]
 }
 
+variable "cloudflare_zone_id" {
+  description = "Cloudflare Zone ID. 비워두면 Cloudflare DNS 레코드를 만들지 않음."
+  type        = string
+  default     = null
+}
+
+variable "cloudflare_api_record_name" {
+  description = "Cloudflare에 만들 API A 레코드 이름"
+  type        = string
+  default     = "api"
+}
+
+variable "cloudflare_api_record_proxied" {
+  description = "Cloudflare 프록시(주황 구름) 사용 여부. 현재 NodePort 30080 구조에서는 false, 80/443 origin 노출 후 true 전환."
+  type        = bool
+  default     = false
+}
+
