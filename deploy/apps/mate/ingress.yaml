@@ -1,0 +1,23 @@
+# 초기 외부 노출용 Ingress.
+# 도메인 확정 전에는 host 없이 모든 Host 헤더를 받아 mate Service로 라우팅한다.
+# 접속 예: http://<control-vm-public-ip>:30080
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mate
+  labels:
+    app: mate
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mate
+                port:
+                  number: 80

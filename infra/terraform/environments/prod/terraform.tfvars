@@ -50,3 +50,6 @@ kubernetes_ssh_allow_source_address_prefixes = ["*"]
 # NSG: Kube API(6443) — 출발지 Any (*). 보안상 이후 수정
 kubernetes_api_allow_source_address_prefixes = ["*"]
 
+# NSG: Ingress Controller NodePort(30080/30443 포함 30000-32767) — FE/API 외부 접근용.
+kubernetes_nodeport_allow_source_address_prefixes = ["*"]
+
