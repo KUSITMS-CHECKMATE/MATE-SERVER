@@ -9,6 +9,7 @@ metadata:
     app: mate
 spec:
   replicas: 1
+  revisionHistoryLimit: 1
   selector:
     matchLabels:
       app: mate
