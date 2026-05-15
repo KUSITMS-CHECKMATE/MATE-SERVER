@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/azuread"
       version = "~> 3.0"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0"
+    }
   }
 }
 
@@ -21,3 +25,6 @@ provider "azurerm" {
 
 # Entra Directory 읽기
 provider "azuread" {}
+
+# Cloudflare DNS. API token은 TF_VAR가 아니라 CLOUDFLARE_API_TOKEN 환경변수로 주입 권장.
+provider "cloudflare" {}
