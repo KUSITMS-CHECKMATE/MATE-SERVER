@@ -25,7 +25,8 @@ public class SecurityConfig {
     private final UsersRepository usersRepository;
 
     private static final String[] PUBLIC_WHITELIST = {
-            "/", "/api/v1/auth/test-token",
+            "/",
+            "/api/v1/auth/toss/login",
             "/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**", "/docs/error-codes"
     };
 
