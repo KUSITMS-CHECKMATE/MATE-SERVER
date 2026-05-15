@@ -1,0 +1,22 @@
+# Bootstrap only: this is the single Application that should be applied manually once.
+# After this root app is created, changes under deploy/argocd are managed by Argo CD via Git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mate-root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/KUSITMS-CHECKMATE/MATE-SERVER.git
+    targetRevision: feat/ci
+    path: deploy/argocd
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
