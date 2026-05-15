@@ -3,9 +3,8 @@ kind: Kustomization
 namespace: mate
 resources:
   - namespace.yaml
+  - secretstore-azurekv.yaml
+  - externalsecret-mate-env.yaml
+  - externalsecret-mate-mtls.yaml
   - deployment.yaml
   - service.yaml
-# 이미지 태그만 바꿀 때 예시:
-# images:
-#   - name: kusitmsmateacr.azurecr.io/mate
-#     newTag: gha-5

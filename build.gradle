@@ -55,7 +55,7 @@ dependencies {
 	testCompileOnly 'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'
   
-    // azure SDK
+    // azure SDK (런타임 Blob). prod 비밀은 클러스터에서 External Secrets → env 주입 — KV SDK 미사용.
     implementation 'com.azure:azure-storage-blob:12.29.1'
   
 	// test
