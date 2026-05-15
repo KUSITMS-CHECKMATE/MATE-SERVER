@@ -21,7 +21,7 @@ spec:
         - name: acr-pull
       containers:
         - name: mate
-          image: kusitmsmateacr.azurecr.io/mate:latest
+          image: kusitmsmateacr.azurecr.io/mate
           imagePullPolicy: Always
           ports:
             - name: http
