@@ -24,7 +24,7 @@ public class JwtProvider {
     }
 
     public String generateToken(Long userId, String role, TokenType tokenType) {
-        long expiration = jwtProperties.getExpiration(tokenType);
+        long expiration = getExpiration(tokenType);
 
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
@@ -34,6 +34,10 @@ public class JwtProvider {
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public long getExpiration(TokenType tokenType) {
+        return jwtProperties.getExpiration(tokenType);
     }
 
     public Claims parseClaims(String token) {
