@@ -201,3 +201,13 @@ output "github_actions_acr_push_role_assignment_id" {
   description = "GitHub Actions OIDC SP에 부여한 AcrPush 역할 할당 id. github_actions_oidc_application_client_id 미설정 시 null."
   value       = try(azurerm_role_assignment.github_actions_acr_push[0].id, null)
 }
+
+output "cloudflare_api_record_hostname" {
+  description = "Cloudflare API DNS 레코드 이름. cloudflare_zone_id 미설정 시 null."
+  value       = try(cloudflare_record.api[0].hostname, null)
+}
+
+output "cloudflare_api_record_proxied" {
+  description = "Cloudflare API DNS 레코드 프록시 여부. 현재 NodePort 30080 구조에서는 false"
+  value       = try(cloudflare_record.api[0].proxied, null)
+}
