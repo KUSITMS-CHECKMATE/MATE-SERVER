@@ -10,4 +10,4 @@ resources:
   - service.yaml
 images:
   - name: kusitmsmateacr.azurecr.io/mate
-    newTag: gha-0
+    newTag: gha-7
