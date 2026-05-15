@@ -19,9 +19,11 @@ import org.springframework.security.web.method.annotation.AuthenticationPrincipa
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import server.MATE.domain.auth.dto.response.TossLoginResponse;
 import server.MATE.domain.auth.dto.response.AuthReissueResponse;
 import server.MATE.domain.auth.jwt.TokenType;
 import server.MATE.domain.auth.service.AuthService;
+import server.MATE.domain.users.dto.response.MeResponse;
 import server.MATE.domain.users.entity.Role;
 import server.MATE.domain.users.entity.TossUnlinkReferrer;
 import server.MATE.global.common.exception.GlobalExceptionHandler;
@@ -73,6 +75,69 @@ class AuthControllerTest {
     @org.junit.jupiter.api.AfterEach
     void clearSecurityContext() {
         SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("토스 로그인 요청을 정상 처리한다")
+    void handlesTossLoginRequestSuccessfully() throws Exception {
+        given(tossLoginServiceProvider.getIfAvailable()).willReturn(tossLoginService);
+        given(tossLoginService.login("authorization-code", "APP"))
+                .willReturn(new TossLoginResponse(
+                        "mate-access",
+                        "mate-refresh",
+                        MeResponse.of(1L, "tester", Role.USER),
+                        true
+                ));
+
+        mockMvc.perform(post("/api/v1/auth/toss/login")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "authorizationCode": "authorization-code",
+                                  "referrer": "APP"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("토스 로그인이 완료되었습니다."))
+                .andExpect(jsonPath("$.data.accessToken").value("mate-access"))
+                .andExpect(jsonPath("$.data.refreshToken").value("mate-refresh"))
+                .andExpect(jsonPath("$.data.meResponse.id").value(1L))
+                .andExpect(jsonPath("$.data.isNewUser").value(true));
+    }
+
+    @Test
+    @DisplayName("토스 로그인 요청에서 authorizationCode가 비어 있으면 400을 반환한다")
+    void returnsBadRequestWhenAuthorizationCodeIsBlank() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/toss/login")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "authorizationCode": "",
+                                  "referrer": "APP"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("COMMON_002"))
+                .andExpect(jsonPath("$.field").value("authorizationCode"));
+    }
+
+    @Test
+    @DisplayName("토스 로그인 요청에서 referrer가 비어 있으면 400을 반환한다")
+    void returnsBadRequestWhenReferrerIsBlank() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/toss/login")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "authorizationCode": "authorization-code",
+                                  "referrer": ""
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("COMMON_002"))
+                .andExpect(jsonPath("$.field").value("referrer"));
     }
 
     @Test
@@ -190,6 +255,19 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("토스 연동 상태가 false이면 false를 반환한다")
+    void handlesTossIntegrationStatusRequestWhenUnlinked() throws Exception {
+        given(tossLoginServiceProvider.getIfAvailable()).willReturn(tossLoginService);
+        given(tossLoginService.isLinked(1L)).willReturn(false);
+
+        mockMvc.perform(get("/api/v1/auth/toss/integration-status")
+                        .with(authenticationPrincipal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.isLinked").value(false));
+    }
+
+    @Test
     @DisplayName("GET 연결 해제 콜백을 정상 처리한다")
     void handlesGetCallbackSuccessfully() throws Exception {
         given(tossLoginServiceProvider.getIfAvailable()).willReturn(tossLoginService);
@@ -240,6 +318,33 @@ class AuthControllerTest {
                         .param("referrer", "UNLINK"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("COMMON_008"));
+    }
+
+    @Test
+    @DisplayName("GET 연결 해제 콜백에서 userKey가 누락되면 400을 반환한다")
+    void returnsBadRequestWhenCallbackUserKeyMissing() throws Exception {
+        mockMvc.perform(get("/api/v1/auth/toss/login/unlink/callback")
+                        .header("Authorization", basicAuthHeader())
+                        .param("referrer", "UNLINK"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("COMMON_004"));
+    }
+
+    @Test
+    @DisplayName("POST 연결 해제 콜백에서 referrer가 비어 있으면 400을 반환한다")
+    void returnsBadRequestWhenCallbackReferrerBlank() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/toss/login/unlink/callback")
+                        .header("Authorization", basicAuthHeader())
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "userKey": 443731103,
+                                  "referrer": ""
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("COMMON_002"))
+                .andExpect(jsonPath("$.field").value("referrer"));
     }
 
     private UsernamePasswordAuthenticationToken authentication() {
