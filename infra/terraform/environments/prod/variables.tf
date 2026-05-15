@@ -221,3 +221,9 @@ variable "kubernetes_api_allow_source_address_prefixes" {
   type        = list(string)
 }
 
+variable "kubernetes_nodeport_allow_source_address_prefixes" {
+  description = "K8s 노드 NSG: NodePort(30000-32767) 허용 출발지. Ingress NodePort 외부 노출용."
+  type        = list(string)
+  default     = ["VirtualNetwork"]
+}
+
