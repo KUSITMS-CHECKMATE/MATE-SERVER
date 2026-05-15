@@ -67,6 +67,9 @@ replay_pid*
 .env.*
 application-local.yml
 
+# External Secrets — Entra SP (Key Vault 읽기 전용)
+deploy/apps/mate/eso-azure-credentials.yaml
+
 # Local secrets and certificates
 secrets/
 certs/

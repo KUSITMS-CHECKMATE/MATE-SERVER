@@ -1,10 +1,6 @@
-# ACR pull: 클러스터에 docker-registry 시크릿이 있어야 함.
-#   kubectl create secret docker-registry acr-pull \
-#     --namespace mate \
-#     --docker-server=kusitmsmateacr.azurecr.io \
-#     --docker-username=<acr-name 또는 token-user> \
-#     --docker-password=<acr-token>
-# 앱 설정: mate-app-secrets에 prod용 키(DB_URL, DB_USERNAME, …)를 넣을 것 (Git에 실값 커밋 금지).
+# ACR: kubelet이 이미지 pull — 클러스터에 docker-registry Secret 필요
+# 앱 env: External Secrets가 KV → Secret(mate-app-secrets) 동기화 후 envFrom으로 주입
+# mTLS PEM: KV → Secret(mate-mtls-certs) → 볼륨 마운트, 경로는 Spring ssl.bundle.pem.toss 와 맞춤
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -33,9 +29,17 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod
+            - name: TOSS_MTLS_CERT_PATH
+              value: /mnt/mtls/cert.pem
+            - name: TOSS_MTLS_KEY_PATH
+              value: /mnt/mtls/key.pem
           envFrom:
             - secretRef:
                 name: mate-app-secrets
+          volumeMounts:
+            - name: mtls-certs
+              mountPath: /mnt/mtls
+              readOnly: true
           readinessProbe:
             tcpSocket:
               port: http
@@ -46,3 +50,7 @@ spec:
               port: http
             initialDelaySeconds: 60
             periodSeconds: 20
+      volumes:
+        - name: mtls-certs
+          secret:
+            secretName: mate-mtls-certs
