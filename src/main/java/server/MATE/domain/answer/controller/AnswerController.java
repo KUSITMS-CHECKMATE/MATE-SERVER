@@ -35,7 +35,13 @@ public class AnswerController {
             - 모든 문항에 빠짐없이 응답해야 합니다.
 
             **[type]**
-            - SUBJECTIVE, OBJECTIVE, FIVE_SECOND, SCALE, AB_TEST, CARD_SORTING, TREE_TEST
+            - SUBJECTIVE: text 필수
+            - OBJECTIVE: optionIds 필수, 기타 선택 시 otherText
+            - FIVE_SECOND: 주관식(text) 또는 객관식(optionIds) 모드
+            - SCALE: value 필수 (1 ~ range)
+            - AB_TEST: selected 필수 ("A" 또는 "B")
+            - CARD_SORTING: groups 필수
+            - TREE_TEST: nodeId 필수, path 필수 (루트부터 최종 노드까지 클릭 순서)
             """)
     @PostMapping
     public ResponseEntity<ApiResponse<AnswerBatchCreateResponse>> createAnswers(
@@ -166,7 +172,8 @@ public class AnswerController {
                                                         {
                                                           "type": "TREE_TEST",
                                                           "questionId": 7,
-                                                          "nodeId": 301
+                                                          "nodeId": 301,
+                                                          "path": [1, 45, 120, 301]
                                                         }
                                                       ]
                                                     }
