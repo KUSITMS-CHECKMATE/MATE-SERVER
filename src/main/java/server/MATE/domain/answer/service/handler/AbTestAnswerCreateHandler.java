@@ -1,22 +1,16 @@
 package server.MATE.domain.answer.service.handler;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import server.MATE.domain.answer.dto.request.AbTestAnswerCreateRequest;
 import server.MATE.domain.answer.dto.request.AnswerCreateItem;
 import server.MATE.domain.answer.entity.Answer;
-import server.MATE.domain.answer.repository.AnswerRepository;
+import server.MATE.domain.answer.service.AnswerCreateContext;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.global.common.exception.BaseErrorCode;
-import server.MATE.global.common.exception.BaseException;
 
 import java.util.Map;
 
 @Component
-@RequiredArgsConstructor
 public class AbTestAnswerCreateHandler implements AnswerCreateHandler {
-
-    private final AnswerRepository answerRepository;
 
     @Override
     public QuestionType supports() {
@@ -24,20 +18,14 @@ public class AbTestAnswerCreateHandler implements AnswerCreateHandler {
     }
 
     @Override
-    public Answer save(Long participationId, AnswerCreateItem item) {
+    public Answer build(Long participationId, AnswerCreateItem item, AnswerCreateContext context) {
         AbTestAnswerCreateRequest request = (AbTestAnswerCreateRequest) item;
 
-        if (request.selected() == null) throw new BaseException(BaseErrorCode.ANSWER_005);
-        if (!request.selected().equals("A") && !request.selected().equals("B")) {
-            throw new BaseException(BaseErrorCode.ANSWER_004);
-        }
-
-        Answer answer = Answer.builder()
+        return Answer.builder()
                 .participationId(participationId)
                 .questionId(request.questionId())
                 .questionType(QuestionType.AB_TEST)
                 .answer(Map.of("selected", request.selected()))
                 .build();
-        return answerRepository.save(answer);
     }
 }
