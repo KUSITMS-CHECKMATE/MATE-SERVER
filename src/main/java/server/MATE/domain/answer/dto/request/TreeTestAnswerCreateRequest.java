@@ -7,7 +7,7 @@ import server.MATE.domain.question.entity.QuestionType;
 @JsonTypeName("TREE_TEST")
 public record TreeTestAnswerCreateRequest(
         @NotNull Long questionId,
-        Long nodeId
+        @NotNull Long nodeId
 ) implements AnswerCreateItem {
 
     @Override

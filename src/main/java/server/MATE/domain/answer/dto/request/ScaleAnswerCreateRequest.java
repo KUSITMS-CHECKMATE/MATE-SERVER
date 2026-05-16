@@ -7,7 +7,7 @@ import server.MATE.domain.question.entity.QuestionType;
 @JsonTypeName("SCALE")
 public record ScaleAnswerCreateRequest(
         @NotNull Long questionId,
-        Integer value
+        @NotNull Integer value
 ) implements AnswerCreateItem {
 
     @Override

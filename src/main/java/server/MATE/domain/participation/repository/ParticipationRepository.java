@@ -7,7 +7,5 @@ import java.util.Optional;
 
 public interface ParticipationRepository extends JpaRepository<Participation, Long> {
 
-    Optional<Participation> findByIdAndDeletedAtIsNull(Long id);
-
     boolean existsByTestIdAndTesterIdAndDeletedAtIsNull(Long testId, Long testerId);
 }

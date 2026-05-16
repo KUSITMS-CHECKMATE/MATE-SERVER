@@ -1,15 +1,13 @@
 package server.MATE.domain.answer.service.handler;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import server.MATE.domain.answer.dto.request.AnswerCreateItem;
 import server.MATE.domain.answer.dto.request.ObjectiveAnswerCreateRequest;
 import server.MATE.domain.answer.entity.Answer;
-import server.MATE.domain.answer.repository.AnswerRepository;
+import server.MATE.domain.answer.service.AnswerCreateContext;
 import server.MATE.domain.question.entity.Objective;
 import server.MATE.domain.question.entity.ObjectiveOption;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.question.repository.ObjectiveRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
@@ -20,11 +18,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
-@RequiredArgsConstructor
 public class ObjectiveAnswerCreateHandler implements AnswerCreateHandler {
-
-    private final ObjectiveRepository objectiveRepository;
-    private final AnswerRepository answerRepository;
 
     @Override
     public QuestionType supports() {
@@ -32,11 +26,11 @@ public class ObjectiveAnswerCreateHandler implements AnswerCreateHandler {
     }
 
     @Override
-    public Answer save(Long participationId, AnswerCreateItem item) {
+    public Answer build(Long participationId, AnswerCreateItem item, AnswerCreateContext context) {
         ObjectiveAnswerCreateRequest request = (ObjectiveAnswerCreateRequest) item;
 
-        Objective objective = objectiveRepository.findWithOptionsById(request.questionId())
-                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
+        Objective objective = context.objectives().get(request.questionId());
+        if (objective == null) throw new BaseException(BaseErrorCode.QUESTION_005);
 
         Set<Long> validOptionIds = objective.getOptions().stream()
                 .map(ObjectiveOption::getId)
@@ -70,13 +64,12 @@ public class ObjectiveAnswerCreateHandler implements AnswerCreateHandler {
         answerMap.put("optionIds", selectedOptionIds);
         if (hasOtherText) answerMap.put("otherText", request.otherText().trim());
 
-        Answer answer = Answer.builder()
+        return Answer.builder()
                 .participationId(participationId)
                 .questionId(request.questionId())
                 .questionType(QuestionType.OBJECTIVE)
                 .answer(answerMap)
                 .build();
-        return answerRepository.save(answer);
     }
 
     private void validateSelectedOptions(List<Long> selectedOptionIds, Set<Long> validOptionIds) {
