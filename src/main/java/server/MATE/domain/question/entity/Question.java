@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import server.MATE.global.common.entity.BaseEntity;
-import server.MATE.global.common.exception.BaseErrorCode;
-import server.MATE.global.common.exception.BaseException;
 
 import java.time.LocalDateTime;
 
@@ -51,9 +49,4 @@ public class Question extends BaseEntity {
         this.sequence = sequence == null ? 0L : sequence;
     }
 
-    public void validateTestBelonging(Long testId) {
-        if (!this.testId.equals(testId)) {
-            throw new BaseException(BaseErrorCode.ANSWER_002);
-        }
-    }
 }
