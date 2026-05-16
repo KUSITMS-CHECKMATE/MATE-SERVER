@@ -2,12 +2,13 @@ package server.MATE.toss.client.http;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -21,7 +22,7 @@ import server.MATE.toss.exception.parser.TossErrorResponseParser;
 import server.MATE.toss.response.TossApiResponse;
 
 @Component
-@ConditionalOnBean(name = "tossWebClient")
+@ConditionalOnProperty(prefix = "toss.api", name = "enabled", havingValue = "true")
 public class TossHttpClient {
 
     private final WebClient tossWebClient;
@@ -43,7 +44,7 @@ public class TossHttpClient {
     }
 
     public <T> T get(String path, Consumer<HttpHeaders> headersConsumer, Class<T> responseType) {
-        String responseBody = tossWebClient.get()
+        String responseBody = execute(path, () -> tossWebClient.get()
                 .uri(path)
                 .headers(headersConsumer)
                 .retrieve()
@@ -51,7 +52,7 @@ public class TossHttpClient {
                         .defaultIfEmpty("")
                         .flatMap(body -> Mono.error(toException(response.statusCode(), path, body))))
                 .bodyToMono(String.class)
-                .block();
+                .block());
 
         return unwrapSuccess(path, responseBody, responseType);
     }
@@ -75,7 +76,7 @@ public class TossHttpClient {
             Consumer<HttpHeaders> headersConsumer,
             Class<T> responseType
     ) {
-        String responseBody = tossWebClient.post()
+        String responseBody = execute(path, () -> tossWebClient.post()
                 .uri(path)
                 .contentType(MediaType.APPLICATION_JSON)
                 .headers(headersConsumer)
@@ -85,9 +86,19 @@ public class TossHttpClient {
                         .defaultIfEmpty("")
                         .flatMap(body -> Mono.error(toException(response.statusCode(), path, body))))
                 .bodyToMono(String.class)
-                .block();
+                .block());
 
         return unwrapSuccess(path, responseBody, responseType);
+    }
+
+    private String execute(String path, Supplier<String> requestSupplier) {
+        try {
+            return requestSupplier.get();
+        } catch (TossApiException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw toNetworkException(path, e);
+        }
     }
 
     private <T> T unwrapSuccess(String path, String responseBody, Class<T> responseType) {
@@ -117,5 +128,14 @@ public class TossHttpClient {
                 .findFirst()
                 .orElseThrow();
         return TossApiException.from(statusCode, parser.parse(statusCode, path, responseBody), responseBody);
+    }
+
+    private TossApiException toNetworkException(String path, RuntimeException cause) {
+        return new TossApiException(
+                TossErrorCode.TOSS_001,
+                "토스 API 호출에 실패했습니다. path=" + path,
+                null,
+                cause
+        );
     }
 }

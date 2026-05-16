@@ -40,4 +40,11 @@ public class Users extends BaseEntity {
         this.name = name;
         this.role = role == null ? Role.USER : role;
     }
+
+    public void updateName(String name) {
+        if (name == null || name.isBlank()) {
+            return;
+        }
+        this.name = name;
+    }
 }

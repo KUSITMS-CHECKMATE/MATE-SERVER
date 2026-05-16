@@ -5,22 +5,19 @@ import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.answer.dto.request.AnswerCreateItem;
 import server.MATE.domain.answer.dto.request.AnswerCreateRequest;
 import server.MATE.domain.answer.dto.response.AnswerBatchCreateResponse;
+import server.MATE.domain.answer.entity.Answer;
+import server.MATE.domain.answer.repository.AnswerRepository;
 import server.MATE.domain.answer.service.handler.AnswerCreateHandler;
 import server.MATE.domain.participation.entity.Participation;
 import server.MATE.domain.participation.repository.ParticipationRepository;
-import server.MATE.domain.question.entity.Question;
-import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.question.repository.QuestionRepository;
+import server.MATE.domain.question.entity.*;
+import server.MATE.domain.question.repository.*;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
-import java.util.EnumMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,15 +27,33 @@ public class AnswerService {
     private final TestRepository testRepository;
     private final ParticipationRepository participationRepository;
     private final QuestionRepository questionRepository;
+    private final AnswerRepository answerRepository;
+    private final ObjectiveRepository objectiveRepository;
+    private final FiveSecondRepository fiveSecondRepository;
+    private final ScaleRepository scaleRepository;
+    private final CardSortingRepository cardSortingRepository;
+    private final TreeTestRepository treeTestRepository;
     private final Map<QuestionType, AnswerCreateHandler> handlerMap;
 
     public AnswerService(TestRepository testRepository,
                          ParticipationRepository participationRepository,
                          QuestionRepository questionRepository,
+                         AnswerRepository answerRepository,
+                         ObjectiveRepository objectiveRepository,
+                         FiveSecondRepository fiveSecondRepository,
+                         ScaleRepository scaleRepository,
+                         CardSortingRepository cardSortingRepository,
+                         TreeTestRepository treeTestRepository,
                          List<AnswerCreateHandler> handlers) {
         this.testRepository = testRepository;
         this.participationRepository = participationRepository;
         this.questionRepository = questionRepository;
+        this.answerRepository = answerRepository;
+        this.objectiveRepository = objectiveRepository;
+        this.fiveSecondRepository = fiveSecondRepository;
+        this.scaleRepository = scaleRepository;
+        this.cardSortingRepository = cardSortingRepository;
+        this.treeTestRepository = treeTestRepository;
         this.handlerMap = buildHandlerMap(handlers);
     }
 
@@ -83,16 +98,58 @@ public class AnswerService {
                 throw new BaseException(BaseErrorCode.ANSWER_001);
             }
 
-            AnswerCreateHandler handler = handlerMap.get(item.type());
-            if (handler == null) {
+            if (!handlerMap.containsKey(item.type())) {
                 throw new BaseException(BaseErrorCode.COMMON_999);
             }
-
-            handler.save(participation.getId(), item);
         }
 
+        AnswerCreateContext context = buildContext(request.answers());
+
+        List<Answer> answers = new ArrayList<>();
+        for (AnswerCreateItem item : request.answers()) {
+            answers.add(handlerMap.get(item.type()).build(participation.getId(), item, context));
+        }
+
+        answerRepository.saveAll(answers);
         test.incrementPplCount();
         return AnswerBatchCreateResponse.from(participation);
+    }
+
+    private AnswerCreateContext buildContext(List<AnswerCreateItem> items) {
+        Map<QuestionType, List<Long>> idsByType = new EnumMap<>(QuestionType.class);
+        for (AnswerCreateItem item : items) {
+            idsByType.computeIfAbsent(item.type(), k -> new ArrayList<>()).add(item.questionId());
+        }
+
+        Map<Long, Objective> objectives = fetchByType(idsByType, QuestionType.OBJECTIVE,
+                ids -> objectiveRepository.findAllByIdIn(ids), Objective::getId);
+
+        Map<Long, FiveSecond> fiveSeconds = fetchByType(idsByType, QuestionType.FIVE_SECOND,
+                ids -> fiveSecondRepository.findAllByIdIn(ids), FiveSecond::getId);
+
+        Map<Long, Scale> scales = fetchByType(idsByType, QuestionType.SCALE,
+                ids -> scaleRepository.findAllByIdIn(ids), Scale::getId);
+
+        Map<Long, CardSorting> cardSortings = fetchByType(idsByType, QuestionType.CARD_SORTING,
+                ids -> cardSortingRepository.findAllByIdIn(ids), CardSorting::getId);
+
+        List<Long> treeTestIds = idsByType.getOrDefault(QuestionType.TREE_TEST, List.of());
+        Map<Long, List<TreeTest>> treeNodes = treeTestIds.isEmpty()
+                ? Collections.emptyMap()
+                : treeTestRepository.findAllByQuestionIdInOrderByQuestionAndTree(treeTestIds)
+                        .stream()
+                        .collect(Collectors.groupingBy(node -> node.getQuestion().getId()));
+
+        return new AnswerCreateContext(objectives, fiveSeconds, scales, cardSortings, treeNodes);
+    }
+
+    private <E> Map<Long, E> fetchByType(Map<QuestionType, List<Long>> idsByType,
+                                          QuestionType type,
+                                          java.util.function.Function<List<Long>, List<E>> fetcher,
+                                          java.util.function.Function<E, Long> idExtractor) {
+        List<Long> ids = idsByType.get(type);
+        if (ids == null || ids.isEmpty()) return Collections.emptyMap();
+        return fetcher.apply(ids).stream().collect(Collectors.toMap(idExtractor, e -> e));
     }
 
     private Map<QuestionType, AnswerCreateHandler> buildHandlerMap(List<AnswerCreateHandler> handlers) {
