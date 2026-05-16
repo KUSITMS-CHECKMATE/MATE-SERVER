@@ -1,14 +1,12 @@
 package server.MATE.domain.answer.service.handler;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import server.MATE.domain.answer.dto.request.AnswerCreateItem;
 import server.MATE.domain.answer.dto.request.CardSortingAnswerCreateRequest;
 import server.MATE.domain.answer.entity.Answer;
-import server.MATE.domain.answer.repository.AnswerRepository;
+import server.MATE.domain.answer.service.AnswerCreateContext;
 import server.MATE.domain.question.entity.CardSorting;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.question.repository.CardSortingRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
@@ -17,11 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Component
-@RequiredArgsConstructor
 public class CardSortingAnswerCreateHandler implements AnswerCreateHandler {
-
-    private final CardSortingRepository cardSortingRepository;
-    private final AnswerRepository answerRepository;
 
     @Override
     public QuestionType supports() {
@@ -29,13 +23,13 @@ public class CardSortingAnswerCreateHandler implements AnswerCreateHandler {
     }
 
     @Override
-    public Answer save(Long participationId, AnswerCreateItem item) {
+    public Answer build(Long participationId, AnswerCreateItem item, AnswerCreateContext context) {
         CardSortingAnswerCreateRequest request = (CardSortingAnswerCreateRequest) item;
 
         if (request.groups() == null || request.groups().isEmpty()) throw new BaseException(BaseErrorCode.ANSWER_005);
 
-        CardSorting cardSorting = cardSortingRepository.findById(request.questionId())
-                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
+        CardSorting cardSorting = context.cardSortings().get(request.questionId());
+        if (cardSorting == null) throw new BaseException(BaseErrorCode.QUESTION_005);
 
         Set<String> validCategories = new HashSet<>(cardSorting.getCategories());
         Set<String> validCards = new HashSet<>(cardSorting.getCards());
@@ -56,12 +50,11 @@ public class CardSortingAnswerCreateHandler implements AnswerCreateHandler {
 
         if (assignedCards.size() != validCards.size()) throw new BaseException(BaseErrorCode.ANSWER_005);
 
-        Answer answer = Answer.builder()
+        return Answer.builder()
                 .participationId(participationId)
                 .questionId(request.questionId())
                 .questionType(QuestionType.CARD_SORTING)
                 .answer(Map.of("groups", request.groups()))
                 .build();
-        return answerRepository.save(answer);
     }
 }

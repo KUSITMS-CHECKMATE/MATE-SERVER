@@ -24,3 +24,10 @@ jwt:
 toss:
   api:
     enabled: false
+  crypto:
+    decryption-key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    aad: test-aad
+
+security:
+  token-encryption:
+    key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=

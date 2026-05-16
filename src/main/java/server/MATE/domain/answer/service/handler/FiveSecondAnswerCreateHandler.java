@@ -1,15 +1,13 @@
 package server.MATE.domain.answer.service.handler;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import server.MATE.domain.answer.dto.request.AnswerCreateItem;
 import server.MATE.domain.answer.dto.request.FiveSecondAnswerCreateRequest;
 import server.MATE.domain.answer.entity.Answer;
-import server.MATE.domain.answer.repository.AnswerRepository;
+import server.MATE.domain.answer.service.AnswerCreateContext;
 import server.MATE.domain.question.entity.FiveSecond;
 import server.MATE.domain.question.entity.FiveSecondOption;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.question.repository.FiveSecondRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
@@ -19,11 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
-@RequiredArgsConstructor
 public class FiveSecondAnswerCreateHandler implements AnswerCreateHandler {
-
-    private final FiveSecondRepository fiveSecondRepository;
-    private final AnswerRepository answerRepository;
 
     @Override
     public QuestionType supports() {
@@ -31,11 +25,11 @@ public class FiveSecondAnswerCreateHandler implements AnswerCreateHandler {
     }
 
     @Override
-    public Answer save(Long participationId, AnswerCreateItem item) {
+    public Answer build(Long participationId, AnswerCreateItem item, AnswerCreateContext context) {
         FiveSecondAnswerCreateRequest request = (FiveSecondAnswerCreateRequest) item;
 
-        FiveSecond fiveSecond = fiveSecondRepository.findWithOptionsById(request.questionId())
-                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
+        FiveSecond fiveSecond = context.fiveSeconds().get(request.questionId());
+        if (fiveSecond == null) throw new BaseException(BaseErrorCode.QUESTION_005);
 
         Map<String, Object> answerMap;
 
@@ -67,13 +61,12 @@ public class FiveSecondAnswerCreateHandler implements AnswerCreateHandler {
             answerMap = Map.of("optionIds", selectedOptionIds);
         }
 
-        Answer answer = Answer.builder()
+        return Answer.builder()
                 .participationId(participationId)
                 .questionId(request.questionId())
                 .questionType(QuestionType.FIVE_SECOND)
                 .answer(answerMap)
                 .build();
-        return answerRepository.save(answer);
     }
 
     private void validateSelectedOptions(List<Long> selectedOptionIds, Set<Long> validOptionIds) {
