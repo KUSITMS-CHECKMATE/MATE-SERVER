@@ -8,9 +8,12 @@ import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
+import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestUpdateResponse;
 import server.MATE.domain.test.entity.Test;
+import server.MATE.domain.test.entity.TestLike;
+import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
@@ -28,6 +31,7 @@ import java.util.Set;
 public class TestService {
 
     private final TestRepository testRepository;
+    private final TestLikeRepository testLikeRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
@@ -120,5 +124,33 @@ public class TestService {
         }
 
         test.delete(LocalDateTime.now(clock));
+    }
+
+    public TestLikeResponse likeTest(Long testId, Long userId) {
+        Test test = testRepository.findByIdAndDeletedAtIsNullForUpdate(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        if (!testLikeRepository.existsByUserIdAndTestId(userId, testId)) {
+            testLikeRepository.save(TestLike.builder()
+                    .userId(userId)
+                    .testId(testId)
+                    .build());
+            test.incrementLikeCount();
+        }
+
+        return new TestLikeResponse(test.getId(), true, test.getLikeCount());
+    }
+
+    public TestLikeResponse unlikeTest(Long testId, Long userId) {
+        Test test = testRepository.findByIdAndDeletedAtIsNullForUpdate(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        testLikeRepository.findByUserIdAndTestId(userId, testId)
+                .ifPresent(testLike -> {
+                    testLikeRepository.delete(testLike);
+                    test.decrementLikeCount();
+                });
+
+        return new TestLikeResponse(test.getId(), false, test.getLikeCount());
     }
 }
