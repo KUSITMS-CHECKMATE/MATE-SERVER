@@ -1,0 +1,57 @@
+# ACR: kubelet이 이미지 pull — 클러스터에 docker-registry Secret 필요
+# 앱 env: External Secrets가 KV → Secret(mate-app-secrets) 동기화 후 envFrom으로 주입
+# mTLS PEM: KV → Secret(mate-mtls-certs) → 볼륨 마운트, 경로는 Spring ssl.bundle.pem.toss 와 맞춤
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mate
+  labels:
+    app: mate
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: mate
+  template:
+    metadata:
+      labels:
+        app: mate
+    spec:
+      imagePullSecrets:
+        - name: acr-pull
+      containers:
+        - name: mate
+          image: kusitmsmateacr.azurecr.io/mate
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+            - name: TOSS_MTLS_CERT_PATH
+              value: /mnt/mtls/cert.pem
+            - name: TOSS_MTLS_KEY_PATH
+              value: /mnt/mtls/key.pem
+          envFrom:
+            - secretRef:
+                name: mate-app-secrets
+          volumeMounts:
+            - name: mtls-certs
+              mountPath: /mnt/mtls
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 25
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 20
+      volumes:
+        - name: mtls-certs
+          secret:
+            secretName: mate-mtls-certs

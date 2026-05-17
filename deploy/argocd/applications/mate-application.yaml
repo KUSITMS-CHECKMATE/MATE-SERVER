@@ -1,0 +1,27 @@
+# Argo CD 설치 후 적용. external-secrets Application이 Ready된 뒤 이 앱을 Sync할 것.
+# 클러스터: eso-azure-credentials Secret + SecretStore의 tenantId 치환 후 mate 리소스 적용.
+# kubectl apply -n argocd -f deploy/argocd/applications/mate-application.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mate
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/KUSITMS-CHECKMATE/MATE-SERVER.git
+    targetRevision: HEAD
+    path: deploy/apps/mate
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mate
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

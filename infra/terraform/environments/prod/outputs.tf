@@ -114,6 +114,11 @@ output "key_vault_uri" {
   value       = module.keyvault.vault_uri
 }
 
+output "azure_tenant_id" {
+  description = "Entra tenant ID — deploy/apps/mate SecretStore(tenantId) 및 ESO용 Entra 앱 설정에 사용."
+  value       = data.azurerm_client_config.current.tenant_id
+}
+
 output "key_vault_secret_names" {
   description = "Created application secret slots (update values in Portal)."
   value       = module.keyvault.secret_names
