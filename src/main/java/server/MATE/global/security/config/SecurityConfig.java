@@ -27,6 +27,7 @@ public class SecurityConfig {
     private static final String[] PUBLIC_WHITELIST = {
             "/",
             "/api/v1/auth/toss/login", "/api/v1/auth/reissue", "/api/v1/auth/toss/login/unlink/callback",
+            "/api/v1/auth/local-test-token",
             "/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**", "/docs/error-codes"
     };
 
