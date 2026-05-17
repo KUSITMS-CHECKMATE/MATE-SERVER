@@ -225,9 +225,8 @@ variable "kubernetes_api_allow_source_address_prefixes" {
 variable "kubernetes_nodeport_allow_source_address_prefixes" {
   description = "K8s 노드 NSG: NodePort(30000-32767) 허용 출발지. Ingress NodePort 외부 노출용."
   type        = list(string)
-  # 개발 중 임시 점검이 필요하더라도 "*" override는 커밋하지 않는다.
-  # 운영 반영 전에는 LB/내부망 경유만 허용하도록 제한한다.
-  default = ["VirtualNetwork"]
+  # 운영 반영 전에는 LB/내부망 경유만 허용하도록 제한 예정
+  default     = ["VirtualNetwork"]
 }
 
 variable "kubernetes_ingress_lb_allow_source_address_prefixes" {
