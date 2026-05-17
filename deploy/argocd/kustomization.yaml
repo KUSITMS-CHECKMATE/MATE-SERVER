@@ -2,5 +2,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: argocd
 resources:
+  - applications/ingress-nginx-application.yaml
   - applications/external-secrets-operator-application.yaml
   - applications/mate-application.yaml

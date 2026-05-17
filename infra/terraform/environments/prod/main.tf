@@ -106,6 +106,8 @@ module "kubernetes_vms" {
 
   ssh_allow_source_address_prefixes            = var.kubernetes_ssh_allow_source_address_prefixes
   kubernetes_api_allow_source_address_prefixes = var.kubernetes_api_allow_source_address_prefixes
+  nodeport_allow_source_address_prefixes       = var.kubernetes_nodeport_allow_source_address_prefixes
+  ingress_lb_allow_source_address_prefixes     = var.kubernetes_ingress_lb_allow_source_address_prefixes
 
   control_vm_size = var.kubernetes_control_vm_size
   worker_vm_size  = var.kubernetes_worker_vm_size
