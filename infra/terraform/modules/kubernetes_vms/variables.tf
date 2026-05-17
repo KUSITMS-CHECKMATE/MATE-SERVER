@@ -46,6 +46,18 @@ variable "tags" {
   default     = {}
 }
 
+variable "control_vm_size" {
+  description = "Control plane VM SKU. DASv5 패밀리는 구독·리전별 코어 할당량 0 일 수 있음 → D2s_v3 등 DSv3으로 대체ㅠㅠ"
+  type        = string
+  default     = "Standard_D2s_v3"
+}
+
+variable "worker_vm_size" {
+  description = "Worker VM SKU. Southeast Asia 등에서 B2s 재고 부족 시 B2ls_v2 또는 더 작은 B로 시도."
+  type        = string
+  default     = "Standard_B2ls_v2"
+}
+
 variable "ssh_allow_source_address_prefixes" {
   description = "SSH(22) 인바운드 허용 출발지"
   type        = list(string)
