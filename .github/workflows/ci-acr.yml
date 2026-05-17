@@ -1,0 +1,85 @@
+name: CI - build and push to ACR
+
+on:
+  push:
+    branches: [feat/ci]
+  pull_request:
+    branches: [feat/ci]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: "21"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ACR_LOGIN_NAME_FALLBACK: kusitmsmateacr
+      IMAGE_REPOSITORY: mate
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve ACR login server
+        id: acr
+        env:
+          ACR_LOGIN_NAME_OVERRIDE: ${{ vars.ACR_LOGIN_NAME }}
+        run: |
+          NAME="${ACR_LOGIN_NAME_OVERRIDE}"
+          if [ -z "$NAME" ]; then NAME="${ACR_LOGIN_NAME_FALLBACK}"; fi
+          echo "name=${NAME}" >> "$GITHUB_OUTPUT"
+          echo "login_server=${NAME}.azurecr.io" >> "$GITHUB_OUTPUT"
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+
+      - name: Run tests & bootJar
+        run: chmod +x gradlew && ./gradlew test bootJar --no-daemon --stacktrace
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata
+        id: meta
+        run: |
+          REG="${{ steps.acr.outputs.login_server }}"
+          IMG="${REG}/${IMAGE_REPOSITORY}"
+          SHORT_SHA="$(echo '${{ github.sha }}' | cut -c1-12)"
+          echo "image=${IMG}" >> "$GITHUB_OUTPUT"
+          echo "digest_tag=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          docker build \
+            -t "${IMG}:${SHORT_SHA}" \
+            -t "${IMG}:gha-${{ github.run_number }}" \
+            .
+
+      - name: Azure login (OIDC)
+        # main/develop 이외 브랜치에서도 ACR까지 검증할 때 포함하기 
+        if: github.event_name == 'push'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+
+      - name: Log in to ACR and push
+        if: github.event_name == 'push'
+        run: |
+          az acr login --name '${{ steps.acr.outputs.name }}'
+          SHORT_SHA="$(echo '${{ github.sha }}' | cut -c1-12)"
+          docker push "${{ steps.meta.outputs.image }}:${SHORT_SHA}"
+          docker push "${{ steps.meta.outputs.image }}:gha-${{ github.run_number }}"
+          printf 'Pushed %s (%s variants)\n' "${{ steps.meta.outputs.image }}" "$SHORT_SHA gha-${{ github.run_number }}"

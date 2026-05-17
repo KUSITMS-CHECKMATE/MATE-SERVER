@@ -20,6 +20,7 @@ resource "azurerm_role_assignment" "deployer_secrets_officer" {
   scope                            = azurerm_key_vault.this.id
   role_definition_name             = "Key Vault Secrets Officer"
   principal_id                     = coalesce(var.deployer_object_id, data.azurerm_client_config.current.object_id)
+  principal_type                   = var.deployer_principal_type
   skip_service_principal_aad_check = true
 
   depends_on = [azurerm_key_vault.this]
