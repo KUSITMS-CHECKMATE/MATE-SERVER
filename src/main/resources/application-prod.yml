@@ -56,5 +56,7 @@ jwt:
       expiration: 1209600000
 
 security:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
   token-encryption:
     key: ${TOKEN_ENCRYPTION_KEY:}
