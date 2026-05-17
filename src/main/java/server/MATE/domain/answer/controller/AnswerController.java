@@ -26,15 +26,16 @@ public class AnswerController {
 
     private final AnswerService answerService;
 
-    @Operation(summary = "테스트 응답 일괄 등록", description = """
+    @Operation(summary = "⚠️ 테스트 응답 일괄 등록", description = """
             참여자가 테스트의 모든 문항에 대한 응답을 한 번에 제출합니다.
-            - 테스트가 진행 중(IN_PROGRESS)이고 승인(ACCEPTED) 상태여야 합니다.
-            - 목표 인원(goalPpl)이 초과된 경우 참여 불가합니다.
+            - 테스트가 진행 중(`IN_PROGRESS`)이고 승인(`ACCEPTED`) 상태여야 합니다.
+            - 목표 인원 수(`goalPpl`)이 초과된 경우 참여 불가합니다.
             - 이미 참여한 테스트에 중복 제출 불가합니다.
-            - `answers` 배열의 각 항목은 `type` 필드로 유형을 구분합니다.
+            - 응답(`answers`) 배열의 각 항목은 질문 유형(`type`) 필드로 구분합니다.
             - 모든 문항에 빠짐없이 응답해야 합니다.
+            - **5초 테스트 객관식 문항은 리팩토링 중 입니다. (기타(직접입력) 여부 필드 추가 필요)**
 
-            **[type]**
+            질문 유형
             - SUBJECTIVE: text 필수
             - OBJECTIVE: optionIds 필수, 기타 선택 시 otherText
             - FIVE_SECOND: 주관식(text) 또는 객관식(optionIds) 모드
