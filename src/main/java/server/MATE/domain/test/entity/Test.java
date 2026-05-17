@@ -61,6 +61,9 @@ public class Test extends BaseEntity {
     @Column(nullable = false)
     private Long pplCount;
 
+    @Column(nullable = false, columnDefinition = "bigint default 0")
+    private Long likeCount;
+
     private LocalDateTime deletedAt;
 
     @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -106,6 +109,16 @@ public class Test extends BaseEntity {
         this.pplCount++;
     }
 
+    public void incrementLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decrementLikeCount() {
+        if (this.likeCount > 0) {
+            this.likeCount--;
+        }
+    }
+
     public void delete(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
     }
@@ -126,5 +139,6 @@ public class Test extends BaseEntity {
         this.goalPpl = 100;
         this.reward = 300;
         this.pplCount = 0L;
+        this.likeCount = 0L;
     }
 }
