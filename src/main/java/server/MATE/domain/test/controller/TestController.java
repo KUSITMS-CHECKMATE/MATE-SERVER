@@ -46,7 +46,7 @@ public class TestController {
     public ResponseEntity<ApiResponse<List<TestSummaryResponse>>> listTests(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        List<TestSummaryResponse> data = testService.listTests();
+        List<TestSummaryResponse> data = testService.listTests(authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트 목록을 조회했습니다.", data));
     }
 
