@@ -45,7 +45,8 @@ kubernetes_worker_vm_name    = "mate-k8s-worker"
 kubernetes_control_vm_size = "Standard_D2s_v3"
 kubernetes_worker_vm_size  = "Standard_B2ls_v2"
 
-# NSG: 이 PC 공인 기준 허용(동적 IP면 바뀔 때마다 수정 후 apply).
-kubernetes_ssh_allow_source_address_prefixes = ["175.118.225.161/32"]
-kubernetes_api_allow_source_address_prefixes = ["175.118.225.161/32"]
+# NSG: SSH(22) — 출발지 Any (*). 보안상 이후 수정
+kubernetes_ssh_allow_source_address_prefixes = ["*"]
+# NSG: Kube API(6443) — 출발지 Any (*). 보안상 이후 수정
+kubernetes_api_allow_source_address_prefixes = ["*"]
 

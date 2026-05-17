@@ -1,3 +1,6 @@
+# prod: DB·JWT·스토리지 등은 External Secrets Operator가 Azure Key Vault에서 동기화한
+# Kubernetes Secret(mate-app-secrets)을 Deployment envFrom으로 주입한다. Spring은 KV SDK 없이 표준 env만 사용.
+# mTLS PEM은 mate-mtls-certs 볼륨 → TOSS_MTLS_CERT_PATH / TOSS_MTLS_KEY_PATH 파일 경로.
 spring:
   config:
     activate:
