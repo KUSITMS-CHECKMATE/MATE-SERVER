@@ -6,6 +6,7 @@ variable "resource_group_name" {
 variable "location" {
   description = "Azure region used for deployable resources."
   type        = string
+  default     = "eastasia"
 }
 
 variable "vnet_name" {
@@ -221,3 +222,32 @@ variable "kubernetes_api_allow_source_address_prefixes" {
   type        = list(string)
 }
 
+variable "kubernetes_nodeport_allow_source_address_prefixes" {
+  description = "K8s 노드 NSG: NodePort(30000-32767) 허용 출발지. Ingress NodePort 외부 노출용."
+  type        = list(string)
+  default     = ["VirtualNetwork"]
+}
+
+variable "kubernetes_ingress_lb_allow_source_address_prefixes" {
+  description = "K8s 노드 NSG: LB가 전달하는 ingress-nginx HTTP/HTTPS NodePort 허용 출발지. Cloudflare 프록시만 허용하려면 Cloudflare IP 대역으로 제한."
+  type        = list(string)
+  default     = ["Internet"]
+}
+
+variable "cloudflare_zone_id" {
+  description = "Cloudflare Zone ID. 비워두면 Cloudflare DNS 레코드를 만들지 않음."
+  type        = string
+  default     = null
+}
+
+variable "cloudflare_api_record_name" {
+  description = "Cloudflare에 만들 API A 레코드 이름"
+  type        = string
+  default     = "api"
+}
+
+variable "cloudflare_api_record_proxied" {
+  description = "Cloudflare 프록시(주황 구름) 사용 여부. Ingress LB가 80/443 origin을 제공하므로 true 권장."
+  type        = bool
+  default     = true
+}

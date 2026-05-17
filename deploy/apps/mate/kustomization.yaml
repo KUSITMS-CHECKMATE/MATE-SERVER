@@ -8,6 +8,7 @@ resources:
   - externalsecret-mate-mtls.yaml
   - deployment.yaml
   - service.yaml
+  - ingress.yaml
 images:
   - name: kusitmsmateacr.azurecr.io/mate
-    newTag: gha-0
+    newTag: gha-8

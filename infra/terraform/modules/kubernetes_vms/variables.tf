@@ -81,3 +81,21 @@ variable "nodeport_allow_source_address_prefixes" {
   type        = list(string)
   default     = ["VirtualNetwork"]
 }
+
+variable "ingress_lb_allow_source_address_prefixes" {
+  description = "Ingress LB가 전달하는 HTTP/HTTPS NodePort 허용 출발지"
+  type        = list(string)
+  default     = ["Internet"]
+}
+
+variable "ingress_http_nodeport" {
+  description = "ingress-nginx HTTP NodePort."
+  type        = number
+  default     = 30080
+}
+
+variable "ingress_https_nodeport" {
+  description = "ingress-nginx HTTPS NodePort."
+  type        = number
+  default     = 30443
+}
