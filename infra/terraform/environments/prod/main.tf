@@ -91,7 +91,7 @@ module "identity_role_assignments" {
 }
 
 module "kubernetes_vms" {
-  source = "../../modules/k8s_vms"
+  source = "../../modules/kubernetes_vms"
 
   resource_group_name = module.resource_group.name
   location            = var.location
