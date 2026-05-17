@@ -39,6 +39,7 @@ public class QuestionController {
             - `questions` 배열은 `sequence` 오름차순입니다.
             - 각 질문 항목은 공통 필드와 유형별 상세 필드를 모두 포함합니다.
             - **5초 테스트 객관식 문항은 리팩토링 중 입니다. (기타(직접입력) 여부 필드 추가 필요)**
+            - **AB 테스트 문항은 리팩토링 중 입니다. (사진 비율 필드 추가 필요)**
             """)
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공",
@@ -274,6 +275,7 @@ public class QuestionController {
             - `questions` 배열 순서대로 sequence가 부여됩니다.
             - 같은 유형 중복 요청, 없는 유형 생략이 가능합니다.
             - **5초 테스트 객관식 문항은 리팩토링 중 입니다. (기타(직접입력) 여부 필드 추가 필요)**
+            - **AB 테스트 문항은 리팩토링 중 입니다. (사진 비율 필드 추가 필요)**
             
             **[type]**
             - OBJECTIVE, SUBJECTIVE, FIVE_SECOND, SCALE, AB_TEST, CARD_SORTING, TREE_TEST
