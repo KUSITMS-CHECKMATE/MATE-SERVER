@@ -62,7 +62,7 @@ public class Test extends BaseEntity {
     private Long pplCount;
 
     @Column(nullable = false, columnDefinition = "bigint default 0")
-    private Long likeCount;
+    private Long likeCount = 0L;
 
     private LocalDateTime deletedAt;
 
