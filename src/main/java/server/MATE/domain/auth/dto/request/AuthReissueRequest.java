@@ -1,8 +1,8 @@
-package server.MATE.toss.dto;
+package server.MATE.domain.auth.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record TossRefreshTokenRequest(
+public record AuthReissueRequest(
         @NotBlank String refreshToken
 ) {
 }

@@ -13,7 +13,11 @@ public enum TossErrorCode implements ErrorCode {
     TOSS_002(HttpStatus.INTERNAL_SERVER_ERROR, "TOSS_002", "토스 API 응답을 해석할 수 없습니다."),
     TOSS_003(HttpStatus.UNAUTHORIZED, "TOSS_003", "토스 인가 코드가 유효하지 않습니다."),
     TOSS_004(HttpStatus.UNAUTHORIZED, "TOSS_004", "토스 refresh token이 유효하지 않습니다."),
-    TOSS_005(HttpStatus.UNAUTHORIZED, "TOSS_005", "토스 access token이 유효하지 않습니다.");
+    TOSS_005(HttpStatus.UNAUTHORIZED, "TOSS_005", "토스 access token이 유효하지 않습니다."),
+    TOSS_006(HttpStatus.BAD_GATEWAY, "TOSS_006", "토스 내부 서버 오류가 발생했습니다."),
+    TOSS_007(HttpStatus.NOT_FOUND, "TOSS_007", "토스 userKey를 찾을 수 없습니다."),
+    TOSS_008(HttpStatus.NOT_FOUND, "TOSS_008", "토스 사용자 정보를 찾을 수 없습니다."),
+    TOSS_009(HttpStatus.TOO_MANY_REQUESTS, "TOSS_009", "토스 인증서 조회 가능 횟수를 초과했습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
@@ -28,6 +32,10 @@ public enum TossErrorCode implements ErrorCode {
             case "INVALID_AUTHORIZATION_CODE", "invalid_grant" -> TOSS_003;
             case "INVALID_REFRESH_TOKEN" -> TOSS_004;
             case "INVALID_ACCESS_TOKEN", "invalid_token", "UNAUTHORIZED", "ACCESS_DENIED" -> TOSS_005;
+            case "INTERNAL_ERROR" -> TOSS_006;
+            case "USER_KEY_NOT_FOUND" -> TOSS_007;
+            case "USER_NOT_FOUND" -> TOSS_008;
+            case "BAD_REQUEST_RETRIEVE_CERT_RESULT_EXCEEDED_LIMIT" -> TOSS_009;
             default -> TOSS_001;
         };
     }

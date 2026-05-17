@@ -1,7 +1,7 @@
 package server.MATE.domain.auth.dto.response;
 
-public record TestTokenResponse(
+public record AuthReissueResponse(
         String accessToken,
-        String tokenType
+        String refreshToken
 ) {
 }
