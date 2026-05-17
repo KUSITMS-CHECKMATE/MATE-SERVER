@@ -1,138 +1,162 @@
 package server.MATE.domain.answer.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import server.MATE.domain.answer.dto.request.ObjectiveAnswerCreateRequest;
-import server.MATE.domain.answer.dto.request.SubjectiveAnswerCreateRequest;
-import server.MATE.domain.answer.dto.response.AnswerCreateResponse;
+import server.MATE.domain.answer.dto.request.AnswerCreateItem;
+import server.MATE.domain.answer.dto.request.AnswerCreateRequest;
+import server.MATE.domain.answer.dto.response.AnswerBatchCreateResponse;
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.answer.repository.AnswerRepository;
+import server.MATE.domain.answer.service.handler.AnswerCreateHandler;
 import server.MATE.domain.participation.entity.Participation;
 import server.MATE.domain.participation.repository.ParticipationRepository;
-import server.MATE.domain.question.entity.Objective;
-import server.MATE.domain.question.entity.ObjectiveOption;
-import server.MATE.domain.question.entity.Question;
-import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.question.repository.ObjectiveRepository;
-import server.MATE.domain.question.repository.QuestionRepository;
+import server.MATE.domain.question.entity.*;
+import server.MATE.domain.question.repository.*;
+import server.MATE.domain.test.entity.Test;
+import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
-@RequiredArgsConstructor
 public class AnswerService {
 
+    private final TestRepository testRepository;
     private final ParticipationRepository participationRepository;
     private final QuestionRepository questionRepository;
-    private final ObjectiveRepository objectiveRepository;
     private final AnswerRepository answerRepository;
+    private final ObjectiveRepository objectiveRepository;
+    private final FiveSecondRepository fiveSecondRepository;
+    private final ScaleRepository scaleRepository;
+    private final CardSortingRepository cardSortingRepository;
+    private final TreeTestRepository treeTestRepository;
+    private final Map<QuestionType, AnswerCreateHandler> handlerMap;
 
-    @Transactional
-    public AnswerCreateResponse createSubjectiveAnswer(Long participationId, Long testerId, SubjectiveAnswerCreateRequest request) {
-        validateAnswerRequest(participationId, testerId, request.questionId(), QuestionType.SUBJECTIVE);
-
-        Answer answer = Answer.builder()
-                .participationId(participationId)
-                .questionId(request.questionId())
-                .questionType(QuestionType.SUBJECTIVE)
-                .answer(Map.of("text", request.text()))
-                .build();
-
-        answerRepository.save(answer);
-        return AnswerCreateResponse.from(answer);
+    public AnswerService(TestRepository testRepository,
+                         ParticipationRepository participationRepository,
+                         QuestionRepository questionRepository,
+                         AnswerRepository answerRepository,
+                         ObjectiveRepository objectiveRepository,
+                         FiveSecondRepository fiveSecondRepository,
+                         ScaleRepository scaleRepository,
+                         CardSortingRepository cardSortingRepository,
+                         TreeTestRepository treeTestRepository,
+                         List<AnswerCreateHandler> handlers) {
+        this.testRepository = testRepository;
+        this.participationRepository = participationRepository;
+        this.questionRepository = questionRepository;
+        this.answerRepository = answerRepository;
+        this.objectiveRepository = objectiveRepository;
+        this.fiveSecondRepository = fiveSecondRepository;
+        this.scaleRepository = scaleRepository;
+        this.cardSortingRepository = cardSortingRepository;
+        this.treeTestRepository = treeTestRepository;
+        this.handlerMap = buildHandlerMap(handlers);
     }
 
     @Transactional
-    public AnswerCreateResponse createObjectiveAnswer(Long participationId, Long testerId, ObjectiveAnswerCreateRequest request) {
-        validateAnswerRequest(participationId, testerId, request.questionId(), QuestionType.OBJECTIVE);
+    public AnswerBatchCreateResponse createAnswers(Long testId, Long testerId, AnswerCreateRequest request) {
+        Test test = testRepository.findByIdAndDeletedAtIsNullForUpdate(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
-        Objective objective = objectiveRepository.findWithOptionsById(request.questionId())
-                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
+        test.validateCanParticipate();
 
-        Set<Long> validOptionIds = objective.getOptions().stream()
-                .map(ObjectiveOption::getId)
-                .collect(Collectors.toSet());
-
-        List<Long> selectedOptionIds = request.selectedOptionIds();
-        boolean hasOtherText = objective.isOther() && request.otherText() != null && !request.otherText().isBlank();
-
-        if (selectedOptionIds.isEmpty() && !hasOtherText) {
-            throw new BaseException(BaseErrorCode.ANSWER_005);
+        if (participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(testId, testerId)) {
+            throw new BaseException(BaseErrorCode.PARTICIPATION_003);
         }
 
-        if (!objective.isOther() && request.otherText() != null && !request.otherText().isBlank()) {
-            throw new BaseException(BaseErrorCode.ANSWER_004);
+        Map<Long, Question> questionMap = questionRepository
+                .findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId)
+                .stream()
+                .collect(Collectors.toMap(Question::getId, q -> q));
+
+        if (questionMap.size() != request.answers().size()) {
+            throw new BaseException(BaseErrorCode.ANSWER_008);
         }
 
-        if (selectedOptionIds.size() != Set.copyOf(selectedOptionIds).size()) {
-            throw new BaseException(BaseErrorCode.ANSWER_004);
-        }
-
-        if (!validOptionIds.containsAll(selectedOptionIds)) {
-            throw new BaseException(BaseErrorCode.ANSWER_004);
-        }
-
-        int selectedCount = selectedOptionIds.size();
-        if (!objective.isDuplicate()) {
-            // 단일 선택: 일반 선택지 1개 또는 기타만 선택 가능
-            if (hasOtherText && selectedCount > 0) {
-                throw new BaseException(BaseErrorCode.ANSWER_005);
-            }
-            if (!hasOtherText && selectedCount != 1) {
-                throw new BaseException(BaseErrorCode.ANSWER_005);
-            }
-        } else {
-            int min = objective.getMinSelect() != null ? objective.getMinSelect() : 1;
-            int max = objective.getMaxSelect() != null ? objective.getMaxSelect() : validOptionIds.size() + (objective.isOther() ? 1 : 0);
-            int effectiveCount = selectedCount + (hasOtherText ? 1 : 0);
-            if (effectiveCount < min || effectiveCount > max) {
-                throw new BaseException(BaseErrorCode.ANSWER_005);
-            }
-        }
-
-        Map<String, Object> answerMap = new LinkedHashMap<>();
-        answerMap.put("selectedOptionIds", selectedOptionIds);
-        if (hasOtherText) {
-            answerMap.put("otherText", request.otherText().trim());
-        }
-
-        Answer answer = Answer.builder()
-                .participationId(participationId)
-                .questionId(request.questionId())
-                .questionType(QuestionType.OBJECTIVE)
-                .answer(answerMap)
+        Participation participation = Participation.builder()
+                .testId(testId)
+                .testerId(testerId)
                 .build();
+        participationRepository.save(participation);
 
-        answerRepository.save(answer);
-        return AnswerCreateResponse.from(answer);
-    }
+        Set<Long> processedQuestionIds = new HashSet<>();
+        for (AnswerCreateItem item : request.answers()) {
+            if (!processedQuestionIds.add(item.questionId())) {
+                throw new BaseException(BaseErrorCode.ANSWER_003);
+            }
 
-    private void validateAnswerRequest(Long participationId, Long testerId, Long questionId, QuestionType expectedType) {
-        Participation participation = participationRepository.findByIdAndDeletedAtIsNull(participationId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.PARTICIPATION_001));
+            Question question = questionMap.get(item.questionId());
+            if (question == null) {
+                throw new BaseException(BaseErrorCode.ANSWER_002);
+            }
 
-        participation.validateTester(testerId);
+            if (question.getQuestionType() != item.type()) {
+                throw new BaseException(BaseErrorCode.ANSWER_001);
+            }
 
-        Question question = questionRepository.findByIdAndDeletedAtIsNull(questionId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
-
-        if (question.getQuestionType() != expectedType) {
-            throw new BaseException(BaseErrorCode.ANSWER_001);
+            if (!handlerMap.containsKey(item.type())) {
+                throw new BaseException(BaseErrorCode.COMMON_999);
+            }
         }
 
-        question.validateTestBelonging(participation.getTestId());
+        AnswerCreateContext context = buildContext(request.answers());
 
-        if (answerRepository.existsByParticipationIdAndQuestionIdAndDeletedAtIsNull(participationId, questionId)) {
-            throw new BaseException(BaseErrorCode.ANSWER_003);
+        List<Answer> answers = new ArrayList<>();
+        for (AnswerCreateItem item : request.answers()) {
+            answers.add(handlerMap.get(item.type()).build(participation.getId(), item, context));
         }
+
+        answerRepository.saveAll(answers);
+        test.incrementPplCount();
+        return AnswerBatchCreateResponse.from(participation);
     }
 
+    private AnswerCreateContext buildContext(List<AnswerCreateItem> items) {
+        Map<QuestionType, List<Long>> idsByType = new EnumMap<>(QuestionType.class);
+        for (AnswerCreateItem item : items) {
+            idsByType.computeIfAbsent(item.type(), k -> new ArrayList<>()).add(item.questionId());
+        }
+
+        Map<Long, Objective> objectives = fetchByType(idsByType, QuestionType.OBJECTIVE,
+                ids -> objectiveRepository.findAllByIdIn(ids), Objective::getId);
+
+        Map<Long, FiveSecond> fiveSeconds = fetchByType(idsByType, QuestionType.FIVE_SECOND,
+                ids -> fiveSecondRepository.findAllByIdIn(ids), FiveSecond::getId);
+
+        Map<Long, Scale> scales = fetchByType(idsByType, QuestionType.SCALE,
+                ids -> scaleRepository.findAllByIdIn(ids), Scale::getId);
+
+        Map<Long, CardSorting> cardSortings = fetchByType(idsByType, QuestionType.CARD_SORTING,
+                ids -> cardSortingRepository.findAllByIdIn(ids), CardSorting::getId);
+
+        List<Long> treeTestIds = idsByType.getOrDefault(QuestionType.TREE_TEST, List.of());
+        Map<Long, List<TreeTest>> treeNodes = treeTestIds.isEmpty()
+                ? Collections.emptyMap()
+                : treeTestRepository.findAllByQuestionIdInOrderByQuestionAndTree(treeTestIds)
+                        .stream()
+                        .collect(Collectors.groupingBy(node -> node.getQuestion().getId()));
+
+        return new AnswerCreateContext(objectives, fiveSeconds, scales, cardSortings, treeNodes);
+    }
+
+    private <E> Map<Long, E> fetchByType(Map<QuestionType, List<Long>> idsByType,
+                                          QuestionType type,
+                                          java.util.function.Function<List<Long>, List<E>> fetcher,
+                                          java.util.function.Function<E, Long> idExtractor) {
+        List<Long> ids = idsByType.get(type);
+        if (ids == null || ids.isEmpty()) return Collections.emptyMap();
+        return fetcher.apply(ids).stream().collect(Collectors.toMap(idExtractor, e -> e));
+    }
+
+    private Map<QuestionType, AnswerCreateHandler> buildHandlerMap(List<AnswerCreateHandler> handlers) {
+        Map<QuestionType, AnswerCreateHandler> map = new EnumMap<>(QuestionType.class);
+        for (AnswerCreateHandler handler : handlers) {
+            map.put(handler.supports(), handler);
+        }
+        return map;
+    }
 }
