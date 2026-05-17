@@ -66,6 +66,7 @@ replay_pid*
 .env
 .env.*
 application-local.yml
+src/main/java/server/MATE/domain/auth/controller/LocalTestTokenController.java
 
 # External Secrets — Entra SP (Key Vault 읽기 전용)
 deploy/apps/mate/eso-azure-credentials.yaml
