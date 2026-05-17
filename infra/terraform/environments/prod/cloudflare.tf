@@ -11,9 +11,9 @@ resource "cloudflare_record" "api" {
   zone_id = trimspace(var.cloudflare_zone_id)
   name    = var.cloudflare_api_record_name
   type    = "A"
-  value   = module.kubernetes_vms.control_public_ip_address
+  value   = module.kubernetes_vms.ingress_public_ip_address
   ttl     = 1
   proxied = var.cloudflare_api_record_proxied
 
-  comment = "MATE API ingress endpoint managed by Terraform"
+  comment = "MATE API ingress LB endpoint managed by Terraform"
 }

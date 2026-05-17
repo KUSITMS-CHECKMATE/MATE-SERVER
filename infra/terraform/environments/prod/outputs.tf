@@ -187,6 +187,16 @@ output "kubernetes_control_public_ip" {
   value       = module.kubernetes_vms.control_public_ip_address
 }
 
+output "kubernetes_ingress_public_ip" {
+  description = "Ingress LB 공인 IP — Cloudflare API A 레코드 origin."
+  value       = module.kubernetes_vms.ingress_public_ip_address
+}
+
+output "kubernetes_ingress_load_balancer_id" {
+  description = "Ingress Azure Load Balancer resource id."
+  value       = module.kubernetes_vms.ingress_load_balancer_id
+}
+
 output "kubernetes_worker_private_ip" {
   description = "K8s worker 사설 IP"
   value       = module.kubernetes_vms.worker_private_ip_address
@@ -208,6 +218,6 @@ output "cloudflare_api_record_hostname" {
 }
 
 output "cloudflare_api_record_proxied" {
-  description = "Cloudflare API DNS 레코드 프록시 여부. 현재 NodePort 30080 구조에서는 false"
+  description = "Cloudflare API DNS 레코드 프록시 여부."
   value       = try(cloudflare_record.api[0].proxied, null)
 }
