@@ -8,10 +8,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
+import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.entity.Category;
+import server.MATE.domain.test.entity.TestLike;
+import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.image.event.ImageCleanupEvent;
 import server.MATE.global.image.event.ImageDeleteEvent;
@@ -30,6 +34,9 @@ class TestServiceTest {
 
     @Mock
     private TestRepository testRepository;
+
+    @Mock
+    private TestLikeRepository testLikeRepository;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -54,6 +61,7 @@ class TestServiceTest {
                 .serviceDescription("기존 서비스 소개")
                 .imageKeys(new ArrayList<>(List.of("old-key-1", "old-key-2")))
                 .build();
+        ReflectionTestUtils.setField(test, "id", TEST_ID);
         test.addCategories(List.of(Category.FOOD));
     }
 
@@ -91,5 +99,37 @@ class TestServiceTest {
         testService.updateTest(TEST_ID, request, MAKER_ID);
 
         verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    void 테스트_찜_시_찜_정보를_저장하고_카운트를_증가시킨다() {
+        given(testRepository.findByIdAndDeletedAtIsNullForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(testLikeRepository.existsByUserIdAndTestId(MAKER_ID, TEST_ID)).willReturn(false);
+
+        TestLikeResponse response = testService.likeTest(TEST_ID, MAKER_ID);
+
+        assertThat(response.testId()).isEqualTo(TEST_ID);
+        assertThat(response.isLiked()).isTrue();
+        assertThat(response.likeCount()).isEqualTo(1L);
+        verify(testLikeRepository).save(any(TestLike.class));
+    }
+
+    @Test
+    void 테스트_찜_취소_시_찜_정보를_삭제하고_카운트를_감소시킨다() {
+        TestLike testLike = TestLike.builder()
+                .userId(MAKER_ID)
+                .testId(TEST_ID)
+                .build();
+        test.incrementLikeCount();
+
+        given(testRepository.findByIdAndDeletedAtIsNullForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(testLikeRepository.findByUserIdAndTestId(MAKER_ID, TEST_ID)).willReturn(Optional.of(testLike));
+
+        TestLikeResponse response = testService.unlikeTest(TEST_ID, MAKER_ID);
+
+        assertThat(response.testId()).isEqualTo(TEST_ID);
+        assertThat(response.isLiked()).isFalse();
+        assertThat(response.likeCount()).isZero();
+        verify(testLikeRepository).delete(testLike);
     }
 }

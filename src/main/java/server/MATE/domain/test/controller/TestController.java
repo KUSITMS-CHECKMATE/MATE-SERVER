@@ -13,6 +13,7 @@ import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
+import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestUpdateResponse;
 import server.MATE.domain.test.service.TestService;
@@ -63,6 +64,26 @@ public class TestController {
     ) {
         TestDetailResponse data = testService.getTest(testId);
         return ResponseEntity.ok(ApiResponse.ok("테스트를 조회했습니다.", data));
+    }
+
+    @Operation(summary = "테스트 찜하기", description = "테스트를 찜하고 해당 테스트의 찜 개수를 1 증가시킵니다. 이미 찜한 테스트면 현재 상태를 반환합니다.")
+    @PostMapping("/{testId}/likes")
+    public ResponseEntity<ApiResponse<TestLikeResponse>> likeTest(
+            @PathVariable Long testId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        TestLikeResponse response = testService.likeTest(testId, authenticatedUser.getId());
+        return ResponseEntity.ok(ApiResponse.ok("테스트를 찜했습니다.", response));
+    }
+
+    @Operation(summary = "테스트 찜 취소", description = "테스트 찜을 취소하고 해당 테스트의 찜 개수를 1 감소시킵니다. 찜하지 않은 테스트면 현재 상태를 반환합니다.")
+    @DeleteMapping("/{testId}/likes")
+    public ResponseEntity<ApiResponse<TestLikeResponse>> unlikeTest(
+            @PathVariable Long testId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        TestLikeResponse response = testService.unlikeTest(testId, authenticatedUser.getId());
+        return ResponseEntity.ok(ApiResponse.ok("테스트 찜을 취소했습니다.", response));
     }
 
     @Operation(summary = "테스트 등록", description = """
