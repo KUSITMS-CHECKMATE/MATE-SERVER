@@ -14,9 +14,11 @@ public record TestSummaryResponse(
         String title,
         String description,
         Integer reward,
+        Long likeCount,
+        Boolean isLiked,
         List<String> categories
 ) {
-    public static TestSummaryResponse from(Test test) {
+    public static TestSummaryResponse from(Test test, boolean isLiked) {
         List<String> keys = test.getImageKeys();
         String representative = keys.isEmpty() ? null : keys.getFirst();
         List<String> categories = test.getCategories().stream()
@@ -29,6 +31,8 @@ public record TestSummaryResponse(
                 test.getTitle(),
                 test.getDescription(),
                 test.getReward(),
+                test.getLikeCount(),
+                isLiked,
                 categories
         );
     }

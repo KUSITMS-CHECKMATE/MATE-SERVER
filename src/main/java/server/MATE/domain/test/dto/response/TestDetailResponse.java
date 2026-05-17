@@ -13,7 +13,9 @@ public record TestDetailResponse(
         List<String> categories,
         List<String> imageKeys,
         Integer reward,
-        String description
+        String description,
+        String serviceName,
+        String serviceDescription
 ) {
     public static TestDetailResponse from(Test test) {
         List<String> categoryCodes = test.getCategories().stream()
@@ -28,7 +30,9 @@ public record TestDetailResponse(
                 categoryCodes,
                 keys,
                 test.getReward(),
-                test.getDescription()
+                test.getDescription(),
+                test.getServiceName(),
+                test.getServiceDescription()
         );
     }
 }
