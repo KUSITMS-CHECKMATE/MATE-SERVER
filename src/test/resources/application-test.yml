@@ -29,5 +29,20 @@ toss:
     aad: test-aad
 
 security:
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+    allowed-methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - OPTIONS
+    allowed-headers:
+      - "*"
+    exposed-headers: []
+    allow-credentials: true
+    max-age-seconds: 3600
   token-encryption:
     key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
