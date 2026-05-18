@@ -95,7 +95,9 @@ class QuestionCreateRequestDeserializationTest {
                       "type": "FIVE_SECOND",
                       "title": "5초",
                       "imageKey": "five-second-image-key",
-                      "isObjective": false
+                      "imageRatio": "9:16",
+                      "isObjective": false,
+                      "isOther": null
                     },
                     {
                       "type": "SCALE",
@@ -106,7 +108,8 @@ class QuestionCreateRequestDeserializationTest {
                       "type": "AB_TEST",
                       "title": "AB 테스트",
                       "aImageKey": "image-a",
-                      "bImageKey": "image-b"
+                      "bImageKey": "image-b",
+                      "imageRatio": "9:16"
                     },
                     {
                       "type": "CARD_SORTING",

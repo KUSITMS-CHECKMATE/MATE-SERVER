@@ -12,6 +12,7 @@ import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,6 +37,7 @@ public class FiveSecondAnswerCreateHandler implements AnswerCreateHandler {
         if (!fiveSecond.isObjective()) {
             if (request.text() == null || request.text().isBlank()) throw new BaseException(BaseErrorCode.ANSWER_005);
             if (request.optionIds() != null && !request.optionIds().isEmpty()) throw new BaseException(BaseErrorCode.ANSWER_004);
+            if (request.otherText() != null && !request.otherText().isBlank()) throw new BaseException(BaseErrorCode.ANSWER_004);
             answerMap = Map.of("text", request.text().trim());
         } else {
             if (request.text() != null && !request.text().isBlank()) throw new BaseException(BaseErrorCode.ANSWER_004);
@@ -45,7 +47,24 @@ public class FiveSecondAnswerCreateHandler implements AnswerCreateHandler {
                     .map(FiveSecondOption::getId)
                     .collect(Collectors.toSet());
 
+            Long otherOptionId = fiveSecond.getOptions().stream()
+                    .filter(option -> Boolean.TRUE.equals(option.getIsOtherOption()))
+                    .map(FiveSecondOption::getId)
+                    .findFirst()
+                    .orElse(null);
+
+            boolean hasOtherText = request.otherText() != null && !request.otherText().isBlank();
+            boolean selectedOtherOption = otherOptionId != null && selectedOptionIds.contains(otherOptionId);
+
             if (selectedOptionIds.isEmpty()) throw new BaseException(BaseErrorCode.ANSWER_005);
+
+            if (!Boolean.TRUE.equals(fiveSecond.getIsOther()) && (hasOtherText || selectedOtherOption)) {
+                throw new BaseException(BaseErrorCode.ANSWER_004);
+            }
+
+            if (selectedOtherOption != hasOtherText) {
+                throw new BaseException(BaseErrorCode.ANSWER_004);
+            }
 
             validateSelectedOptions(selectedOptionIds, validOptionIds);
 
@@ -58,7 +77,11 @@ public class FiveSecondAnswerCreateHandler implements AnswerCreateHandler {
                 if (selectedCount < min || selectedCount > max) throw new BaseException(BaseErrorCode.ANSWER_006);
             }
 
-            answerMap = Map.of("optionIds", selectedOptionIds);
+            answerMap = new LinkedHashMap<>();
+            answerMap.put("optionIds", selectedOptionIds);
+            if (hasOtherText) {
+                answerMap.put("otherText", request.otherText().trim());
+            }
         }
 
         return Answer.builder()

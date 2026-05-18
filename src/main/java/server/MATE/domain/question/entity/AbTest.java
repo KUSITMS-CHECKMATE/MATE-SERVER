@@ -2,6 +2,8 @@ package server.MATE.domain.question.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -34,10 +36,15 @@ public class AbTest extends BaseEntity {
     @Column(name = "b_image_key", nullable = false)
     private String bImageKey;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ImageRatio imageRatio;
+
     @Builder
-    public AbTest(Question question, String aImageKey, String bImageKey) {
+    public AbTest(Question question, String aImageKey, String bImageKey, ImageRatio imageRatio) {
         this.question = question;
         this.aImageKey = aImageKey;
         this.bImageKey = bImageKey;
+        this.imageRatio = imageRatio;
     }
 }

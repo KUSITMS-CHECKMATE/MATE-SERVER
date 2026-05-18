@@ -24,8 +24,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import server.MATE.domain.auth.crypto.TokenEncryptionProperties;
 import server.MATE.domain.auth.crypto.TokenEncryptor;
-import server.MATE.global.image.ImageService;
-
 @SpringBootTest(classes = RedisTokenStoreContextTest.TestConfig.class)
 @ActiveProfiles("test")
 class RedisTokenStoreContextTest {
@@ -52,9 +50,6 @@ class RedisTokenStoreContextTest {
     @MockitoBean
     @SuppressWarnings("unchecked")
     private ValueOperations<String, String> valueOperations;
-
-    @MockitoBean
-    private ImageService imageService;
 
     @Autowired
     private RedisTossTokenStore redisTossTokenStore;

@@ -3,7 +3,9 @@ package server.MATE.domain.question.dto.request;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import server.MATE.domain.question.entity.ImageRatio;
 import server.MATE.domain.question.entity.QuestionType;
 
 @JsonTypeName("AB_TEST")
@@ -23,7 +25,11 @@ public record AbTestCreateRequest(
 
         @Schema(example = "ab-test-image-b")
         @NotBlank
-        String bImageKey
+        String bImageKey,
+
+        @Schema(example = "9:16", allowableValues = {"9:16", "1:1", "4:3"})
+        @NotNull(message = "사진 비율은 필수 입력 사항입니다.")
+        ImageRatio imageRatio
 ) implements QuestionCreateItem {
     @Override
     public QuestionType type() {

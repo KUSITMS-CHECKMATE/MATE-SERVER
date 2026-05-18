@@ -26,24 +26,22 @@ public class AnswerController {
 
     private final AnswerService answerService;
 
-    @Operation(summary = "⚠️ 테스트 응답 일괄 등록", description = """
+    @Operation(summary = "응답 전체 등록", description = """
             참여자가 테스트의 모든 문항에 대한 응답을 한 번에 제출합니다.
             - 테스트가 진행 중(`IN_PROGRESS`)이고 승인(`ACCEPTED`) 상태여야 합니다.
             - 목표 인원 수(`goalPpl`)이 초과된 경우 참여 불가합니다.
             - 이미 참여한 테스트에 중복 제출 불가합니다.
             - 응답(`answers`) 배열의 각 항목은 질문 유형(`type`) 필드로 구분합니다.
             - 모든 문항에 빠짐없이 응답해야 합니다.
-            - **5초 테스트 객관식 문항은 리팩토링 중 입니다. (기타(직접입력) 여부 필드 추가 필요)**
-            - **AB 테스트 문항은 리팩토링 중 입니다. (사진 비율 필드 추가 필요)**
 
             질문 유형
-            - SUBJECTIVE: text 필수
-            - OBJECTIVE: optionIds 필수, 기타 선택 시 otherText
-            - FIVE_SECOND: 주관식(text) 또는 객관식(optionIds) 모드
-            - SCALE: value 필수 (1 ~ range)
-            - AB_TEST: selected 필수 ("A" 또는 "B")
-            - CARD_SORTING: groups 필수
-            - TREE_TEST: nodeId 필수, path 필수 (루트부터 최종 노드까지 클릭 순서)
+            - **SUBJECTIVE**: text 필수
+            - **OBJECTIVE**: optionIds 필수, 기타 선택지 선택 시 otherText
+            - **FIVE_SECOND**: 주관식(text) 또는 객관식(optionIds) 모드, 기타 선택지 선택 시 otherText
+            - **SCALE**: value 필수 (1 ~ range)
+            - **AB_TEST**: selected 필수 ("A" 또는 "B")
+            - **CARD_SORTING**: groups 필수
+            - **TREE_TEST**: nodeId 필수, path 필수 (루트부터 최종 노드까지 클릭 순서), 최종 선택은 leaf node여야 함
             """)
     @PostMapping
     public ResponseEntity<ApiResponse<AnswerBatchCreateResponse>> createAnswers(
@@ -56,7 +54,7 @@ public class AnswerController {
                             examples = {
                                     @ExampleObject(
                                             name = "주관식",
-                                            summary = "SUBJECTIVE 예시",
+                                            summary = "SUBJECTIVE 등록 예시",
                                             value = """
                                                     {
                                                       "answers": [
@@ -71,15 +69,15 @@ public class AnswerController {
                                     ),
                                     @ExampleObject(
                                             name = "객관식",
-                                            summary = "OBJECTIVE 예시",
+                                            summary = "OBJECTIVE 등록 예시",
                                             value = """
                                                     {
                                                       "answers": [
                                                         {
                                                           "type": "OBJECTIVE",
                                                           "questionId": 2,
-                                                          "optionIds": [1001, 1002],
-                                                          "otherText": null
+                                                          "optionIds": [1001, 1999],
+                                                          "otherText": "직접 입력한 기타 의견"
                                                         }
                                                       ]
                                                     }
@@ -87,15 +85,14 @@ public class AnswerController {
                                     ),
                                     @ExampleObject(
                                             name = "5초 테스트 (주관식)",
-                                            summary = "FIVE_SECOND 주관식 모드(isObjective=false) 예시",
+                                            summary = "FIVE_SECOND 주관식 등록 예시",
                                             value = """
                                                     {
                                                       "answers": [
                                                         {
                                                           "type": "FIVE_SECOND",
                                                           "questionId": 3,
-                                                          "text": "가장 먼저 검색창이 눈에 들어왔습니다.",
-                                                          "optionIds": null
+                                                          "text": "가장 먼저 검색창이 눈에 들어왔습니다."
                                                         }
                                                       ]
                                                     }
@@ -103,15 +100,15 @@ public class AnswerController {
                                     ),
                                     @ExampleObject(
                                             name = "5초 테스트 (객관식)",
-                                            summary = "FIVE_SECOND 객관식 모드(isObjective=true) 예시",
+                                            summary = "FIVE_SECOND 객관식 등록 예시",
                                             value = """
                                                     {
                                                       "answers": [
                                                         {
                                                           "type": "FIVE_SECOND",
                                                           "questionId": 3,
-                                                          "text": null,
-                                                          "optionIds": [2001]
+                                                          "optionIds": [2001, 2099],
+                                                          "otherText": "하단 CTA 버튼"
                                                         }
                                                       ]
                                                     }
@@ -119,7 +116,7 @@ public class AnswerController {
                                     ),
                                     @ExampleObject(
                                             name = "척도",
-                                            summary = "SCALE 예시",
+                                            summary = "SCALE 등록 예시",
                                             value = """
                                                     {
                                                       "answers": [
@@ -134,7 +131,7 @@ public class AnswerController {
                                     ),
                                     @ExampleObject(
                                             name = "AB 테스트",
-                                            summary = "AB_TEST 예시",
+                                            summary = "AB_TEST 등록 예시",
                                             value = """
                                                     {
                                                       "answers": [
@@ -149,7 +146,7 @@ public class AnswerController {
                                     ),
                                     @ExampleObject(
                                             name = "카드 소팅",
-                                            summary = "CARD_SORTING 예시",
+                                            summary = "CARD_SORTING 등록 예시",
                                             value = """
                                                     {
                                                       "answers": [
@@ -167,7 +164,7 @@ public class AnswerController {
                                     ),
                                     @ExampleObject(
                                             name = "트리 테스트",
-                                            summary = "TREE_TEST 예시",
+                                            summary = "TREE_TEST 등록 예시",
                                             value = """
                                                     {
                                                       "answers": [

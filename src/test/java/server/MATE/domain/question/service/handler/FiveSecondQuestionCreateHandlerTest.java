@@ -9,6 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import server.MATE.domain.question.dto.request.FiveSecondCreateRequest;
 import server.MATE.domain.question.dto.request.FiveSecondOptionRequest;
 import server.MATE.domain.question.entity.FiveSecond;
+import server.MATE.domain.question.entity.ImageRatio;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.FiveSecondRepository;
@@ -35,10 +36,12 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 true,
                 false,
                 null,
                 null,
+                true,
                 List.of(new FiveSecondOptionRequest("A"))
         );
 
@@ -56,7 +59,9 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 false,
+                null,
                 null,
                 null,
                 null,
@@ -77,10 +82,12 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 false,
                 true,
                 1,
                 2,
+                null,
                 List.of()
         );
 
@@ -91,6 +98,81 @@ class FiveSecondQuestionCreateHandlerTest {
     }
 
     @Test
+    @DisplayName("5초 테스트가 주관식인데 isOther가 있으면 QUESTION_008 예외가 발생한다")
+    void throwsQuestion008WhenSubjectiveFiveSecondContainsIsOther() {
+        FiveSecondQuestionCreateHandler handler = new FiveSecondQuestionCreateHandler(fiveSecondRepository);
+        FiveSecondCreateRequest request = new FiveSecondCreateRequest(
+                "5초",
+                "설명",
+                "image",
+                ImageRatio.RATIO_9_16,
+                false,
+                null,
+                null,
+                null,
+                true,
+                List.of()
+        );
+
+        assertThatThrownBy(() -> handler.validate(request))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.QUESTION_008);
+    }
+
+    @Test
+    @DisplayName("5초 테스트가 객관식인데 isOther가 없으면 COMMON_002 예외가 발생한다")
+    void throwsCommon002WhenObjectiveFiveSecondDoesNotContainIsOther() {
+        FiveSecondQuestionCreateHandler handler = new FiveSecondQuestionCreateHandler(fiveSecondRepository);
+        FiveSecondCreateRequest request = new FiveSecondCreateRequest(
+                "5초",
+                "설명",
+                "image",
+                ImageRatio.RATIO_9_16,
+                true,
+                false,
+                null,
+                null,
+                null,
+                List.of(
+                        new FiveSecondOptionRequest("A"),
+                        new FiveSecondOptionRequest("B")
+                )
+        );
+
+        assertThatThrownBy(() -> handler.validate(request))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.COMMON_002);
+    }
+
+    @Test
+    @DisplayName("5초 테스트 단일 선택 객관식에 min/max가 들어오면 QUESTION_009 예외가 발생한다")
+    void throwsQuestion009WhenSingleSelectFiveSecondContainsMinMax() {
+        FiveSecondQuestionCreateHandler handler = new FiveSecondQuestionCreateHandler(fiveSecondRepository);
+        FiveSecondCreateRequest request = new FiveSecondCreateRequest(
+                "5초",
+                "설명",
+                "image",
+                ImageRatio.RATIO_9_16,
+                true,
+                false,
+                1,
+                2,
+                true,
+                List.of(
+                        new FiveSecondOptionRequest("A"),
+                        new FiveSecondOptionRequest("B")
+                )
+        );
+
+        assertThatThrownBy(() -> handler.validate(request))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.QUESTION_009);
+    }
+
+    @Test
     @DisplayName("5초 테스트 중복 선택에서 min이 1보다 작으면 QUESTION_001 예외가 발생한다")
     void throwsQuestion001WhenMinSelectIsLessThanOne() {
         FiveSecondQuestionCreateHandler handler = new FiveSecondQuestionCreateHandler(fiveSecondRepository);
@@ -98,10 +180,12 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 true,
                 true,
                 0,
                 2,
+                false,
                 List.of(
                         new FiveSecondOptionRequest("A"),
                         new FiveSecondOptionRequest("B")
@@ -122,10 +206,12 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 true,
                 true,
                 2,
                 1,
+                false,
                 List.of(
                         new FiveSecondOptionRequest("A"),
                         new FiveSecondOptionRequest("B")
@@ -146,10 +232,12 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 true,
                 true,
                 1,
                 3,
+                false,
                 List.of(
                         new FiveSecondOptionRequest("A"),
                         new FiveSecondOptionRequest("B")
@@ -163,6 +251,40 @@ class FiveSecondQuestionCreateHandlerTest {
     }
 
     @Test
+    @DisplayName("5초 테스트 객관식은 기타 포함 총 선택지가 10개를 초과하면 COMMON_002 예외가 발생한다")
+    void throwsCommon002WhenFiveSecondEffectiveOptionCountExceedsTen() {
+        FiveSecondQuestionCreateHandler handler = new FiveSecondQuestionCreateHandler(fiveSecondRepository);
+        FiveSecondCreateRequest request = new FiveSecondCreateRequest(
+                "5초",
+                "설명",
+                "image",
+                ImageRatio.RATIO_9_16,
+                true,
+                false,
+                null,
+                null,
+                true,
+                List.of(
+                        new FiveSecondOptionRequest("A"),
+                        new FiveSecondOptionRequest("B"),
+                        new FiveSecondOptionRequest("C"),
+                        new FiveSecondOptionRequest("D"),
+                        new FiveSecondOptionRequest("E"),
+                        new FiveSecondOptionRequest("F"),
+                        new FiveSecondOptionRequest("G"),
+                        new FiveSecondOptionRequest("H"),
+                        new FiveSecondOptionRequest("I"),
+                        new FiveSecondOptionRequest("J")
+                )
+        );
+
+        assertThatThrownBy(() -> handler.validate(request))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.COMMON_002);
+    }
+
+    @Test
     @DisplayName("5초 테스트 상세 엔티티를 저장하고 이미지 키를 추출한다")
     void savesFiveSecondDetailAndExtractsImageKeys() {
         FiveSecondQuestionCreateHandler handler = new FiveSecondQuestionCreateHandler(fiveSecondRepository);
@@ -170,10 +292,12 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 true,
                 false,
                 null,
                 null,
+                true,
                 List.of(
                         new FiveSecondOptionRequest("A"),
                         new FiveSecondOptionRequest("B")
@@ -194,8 +318,15 @@ class FiveSecondQuestionCreateHandlerTest {
         FiveSecond saved = captor.getValue();
 
         assertThat(saved.getQuestion()).isEqualTo(question);
-        assertThat(saved.getOptions()).hasSize(2);
+        assertThat(saved.getImageRatio()).isEqualTo(ImageRatio.RATIO_9_16);
+        assertThat(saved.getIsOther()).isTrue();
+        assertThat(saved.getOptions()).hasSize(3);
         assertThat(saved.getOptions().get(0).getSequence()).isEqualTo(1);
+        assertThat(saved.getOptions().get(0).getIsOtherOption()).isFalse();
+        assertThat(saved.getOptions().get(1).getIsOtherOption()).isFalse();
+        assertThat(saved.getOptions().get(2).getContent()).isEqualTo("기타 (직접 입력)");
+        assertThat(saved.getOptions().get(2).getSequence()).isEqualTo(3);
+        assertThat(saved.getOptions().get(2).getIsOtherOption()).isTrue();
         assertThat(handler.extractImageKeys(request)).containsExactly("image");
     }
 }
