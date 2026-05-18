@@ -36,7 +36,7 @@ public record ObjectiveCreateRequest(
 
         @Schema(description = "객관식 선택지 목록")
         @NotNull(message = "선택지는 필수 입력 사항입니다.")
-        @Size(min = 2, max = 10, message = "선택지는 최소 2개, 최대 10개까지 추가 가능합니다.")
+        @Size(min = 2, message = "선택지는 최소 2개 이상 추가해야 합니다.")
         List<@Valid ObjectiveOptionRequest> options
 ) implements QuestionCreateItem {
     @Override

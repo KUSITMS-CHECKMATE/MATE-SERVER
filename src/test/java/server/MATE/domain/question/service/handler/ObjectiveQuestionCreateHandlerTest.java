@@ -9,6 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import server.MATE.domain.question.dto.request.ObjectiveCreateRequest;
 import server.MATE.domain.question.dto.request.ObjectiveOptionRequest;
 import server.MATE.domain.question.entity.Objective;
+import server.MATE.domain.question.entity.ObjectiveOption;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.ObjectiveRepository;
@@ -97,6 +98,37 @@ class ObjectiveQuestionCreateHandlerTest {
     }
 
     @Test
+    @DisplayName("기타 포함 총 선택지가 10개를 초과하면 COMMON_002 예외가 발생한다")
+    void throwsCommon002WhenEffectiveOptionCountExceedsTen() {
+        ObjectiveQuestionCreateHandler handler = new ObjectiveQuestionCreateHandler(objectiveRepository);
+        ObjectiveCreateRequest request = new ObjectiveCreateRequest(
+                "객관식",
+                "설명",
+                false,
+                null,
+                null,
+                true,
+                List.of(
+                        new ObjectiveOptionRequest("A", null),
+                        new ObjectiveOptionRequest("B", null),
+                        new ObjectiveOptionRequest("C", null),
+                        new ObjectiveOptionRequest("D", null),
+                        new ObjectiveOptionRequest("E", null),
+                        new ObjectiveOptionRequest("F", null),
+                        new ObjectiveOptionRequest("G", null),
+                        new ObjectiveOptionRequest("H", null),
+                        new ObjectiveOptionRequest("I", null),
+                        new ObjectiveOptionRequest("J", null)
+                )
+        );
+
+        assertThatThrownBy(() -> handler.validate(request))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.COMMON_002);
+    }
+
+    @Test
     @DisplayName("단일 선택 객관식에 min/max가 들어오면 QUESTION_009 예외가 발생한다")
     void throwsQuestion009WhenSingleSelectObjectiveContainsMinMax() {
         ObjectiveQuestionCreateHandler handler = new ObjectiveQuestionCreateHandler(objectiveRepository);
@@ -150,8 +182,13 @@ class ObjectiveQuestionCreateHandlerTest {
         Objective saved = captor.getValue();
 
         assertThat(saved.getQuestion()).isEqualTo(question);
-        assertThat(saved.getOptions()).hasSize(2);
+        assertThat(saved.getOptions()).hasSize(3);
         assertThat(saved.getOptions().get(0).getSequence()).isEqualTo(1);
+        ObjectiveOption otherOption = saved.getOptions().get(2);
+        assertThat(otherOption.getContent()).isEqualTo("기타 (직접 입력)");
+        assertThat(otherOption.getImageKey()).isNull();
+        assertThat(otherOption.getSequence()).isEqualTo(3);
+        assertThat(otherOption.getIsOtherOption()).isTrue();
         assertThat(handler.extractImageKeys(request)).containsExactly("image-a");
     }
 }

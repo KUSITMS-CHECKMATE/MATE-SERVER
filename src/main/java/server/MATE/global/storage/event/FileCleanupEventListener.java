@@ -1,0 +1,21 @@
+package server.MATE.global.storage.event;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+import server.MATE.global.storage.FileStorageService;
+
+@Component
+@RequiredArgsConstructor
+public class FileCleanupEventListener {
+
+    private final FileStorageService fileStorageService;
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_ROLLBACK)
+    public void handleFileCleanup(FileCleanupEvent event) {
+        if (event.fileKeys() != null && !event.fileKeys().isEmpty()) {
+            fileStorageService.deleteFiles(event.fileKeys());
+        }
+    }
+}

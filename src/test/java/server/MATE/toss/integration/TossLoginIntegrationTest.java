@@ -30,7 +30,7 @@ import server.MATE.domain.users.entity.TossUnlinkReferrer;
 import server.MATE.domain.users.entity.Users;
 import server.MATE.domain.users.repository.TossAccountRepository;
 import server.MATE.domain.users.repository.UsersRepository;
-import server.MATE.global.image.ImageService;
+import server.MATE.global.storage.FileStorageService;
 import server.MATE.toss.client.login.TossLoginApiClient;
 import server.MATE.toss.crypto.TossUserInfoDecryptor;
 import server.MATE.toss.dto.request.TossRefreshTokenRequest;
@@ -82,7 +82,7 @@ class TossLoginIntegrationTest {
     private UserRefreshTokenStore userRefreshTokenStore;
 
     @MockitoBean
-    private ImageService imageService;
+    private FileStorageService fileStorageService;
 
     @AfterEach
     void tearDown() {

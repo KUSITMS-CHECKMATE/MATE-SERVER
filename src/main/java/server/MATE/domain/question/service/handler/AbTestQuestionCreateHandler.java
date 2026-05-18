@@ -34,6 +34,7 @@ public class AbTestQuestionCreateHandler extends AbstractQuestionCreateHandler<A
                 .question(question)
                 .aImageKey(item.aImageKey())
                 .bImageKey(item.bImageKey())
+                .imageRatio(item.imageRatio())
                 .build();
         abTestRepository.save(abTest);
     }
