@@ -187,6 +187,16 @@ output "kubernetes_control_public_ip" {
   value       = module.kubernetes_vms.control_public_ip_address
 }
 
+output "kubernetes_ingress_public_ip" {
+  description = "Ingress LB 공인 IP — Cloudflare API A 레코드 origin."
+  value       = module.kubernetes_vms.ingress_public_ip_address
+}
+
+output "kubernetes_ingress_load_balancer_id" {
+  description = "Ingress Azure Load Balancer resource id."
+  value       = module.kubernetes_vms.ingress_load_balancer_id
+}
+
 output "kubernetes_worker_private_ip" {
   description = "K8s worker 사설 IP"
   value       = module.kubernetes_vms.worker_private_ip_address
@@ -200,4 +210,14 @@ output "kubernetes_nodes_nsg_id" {
 output "github_actions_acr_push_role_assignment_id" {
   description = "GitHub Actions OIDC SP에 부여한 AcrPush 역할 할당 id. github_actions_oidc_application_client_id 미설정 시 null."
   value       = try(azurerm_role_assignment.github_actions_acr_push[0].id, null)
+}
+
+output "cloudflare_api_record_hostname" {
+  description = "Cloudflare API DNS 레코드 이름. cloudflare_zone_id 미설정 시 null."
+  value       = try(cloudflare_record.api[0].hostname, null)
+}
+
+output "cloudflare_api_record_proxied" {
+  description = "Cloudflare API DNS 레코드 프록시 여부."
+  value       = try(cloudflare_record.api[0].proxied, null)
 }

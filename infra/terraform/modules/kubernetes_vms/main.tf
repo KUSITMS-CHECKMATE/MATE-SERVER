@@ -119,6 +119,38 @@ resource "azurerm_network_security_rule" "nodeport" {
   network_security_group_name = azurerm_network_security_group.k8s.name
 }
 
+resource "azurerm_network_security_rule" "ingress_http" {
+  count = length(var.ingress_lb_allow_source_address_prefixes)
+
+  name                        = format("Inbound-Ingress-HTTP-%03d", count.index)
+  priority                    = 1710 + count.index
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = tostring(var.ingress_http_nodeport)
+  destination_address_prefix  = "*"
+  source_address_prefix       = var.ingress_lb_allow_source_address_prefixes[count.index]
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.k8s.name
+}
+
+resource "azurerm_network_security_rule" "ingress_https" {
+  count = length(var.ingress_lb_allow_source_address_prefixes)
+
+  name                        = format("Inbound-Ingress-HTTPS-%03d", count.index)
+  priority                    = 1810 + count.index
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = tostring(var.ingress_https_nodeport)
+  destination_address_prefix  = "*"
+  source_address_prefix       = var.ingress_lb_allow_source_address_prefixes[count.index]
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.k8s.name
+}
+
 # 마스터(control) 접속·kubectl(API server) 접근용 공인 IP 1개만 사용
 resource "azurerm_public_ip" "control" {
   name                = "${var.control_vm_name}-pip"
@@ -128,6 +160,35 @@ resource "azurerm_public_ip" "control" {
   sku                 = "Standard"
 
   tags = var.tags
+}
+
+resource "azurerm_public_ip" "ingress" {
+  name                = "${var.control_vm_name}-ingress-pip"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+
+  tags = var.tags
+}
+
+resource "azurerm_lb" "ingress" {
+  name                = "${var.control_vm_name}-ingress-lb"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  sku                 = "Standard"
+
+  frontend_ip_configuration {
+    name                 = "public"
+    public_ip_address_id = azurerm_public_ip.ingress.id
+  }
+
+  tags = var.tags
+}
+
+resource "azurerm_lb_backend_address_pool" "ingress" {
+  name            = "ingress-nodes"
+  loadbalancer_id = azurerm_lb.ingress.id
 }
 
 resource "azurerm_network_interface" "control" {
@@ -168,6 +229,58 @@ resource "azurerm_network_interface_security_group_association" "control" {
 resource "azurerm_network_interface_security_group_association" "worker" {
   network_interface_id      = azurerm_network_interface.worker.id
   network_security_group_id = azurerm_network_security_group.k8s.id
+}
+
+resource "azurerm_network_interface_backend_address_pool_association" "control_ingress" {
+  network_interface_id    = azurerm_network_interface.control.id
+  ip_configuration_name   = "primary"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.ingress.id
+}
+
+resource "azurerm_network_interface_backend_address_pool_association" "worker_ingress" {
+  network_interface_id    = azurerm_network_interface.worker.id
+  ip_configuration_name   = "primary"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.ingress.id
+}
+
+resource "azurerm_lb_probe" "ingress_http" {
+  name                = "ingress-http"
+  loadbalancer_id     = azurerm_lb.ingress.id
+  protocol            = "Tcp"
+  port                = var.ingress_http_nodeport
+  interval_in_seconds = 5
+  number_of_probes    = 2
+}
+
+resource "azurerm_lb_probe" "ingress_https" {
+  name                = "ingress-https"
+  loadbalancer_id     = azurerm_lb.ingress.id
+  protocol            = "Tcp"
+  port                = var.ingress_https_nodeport
+  interval_in_seconds = 5
+  number_of_probes    = 2
+}
+
+resource "azurerm_lb_rule" "ingress_http" {
+  name                           = "ingress-http"
+  loadbalancer_id                = azurerm_lb.ingress.id
+  protocol                       = "Tcp"
+  frontend_port                  = 80
+  backend_port                   = var.ingress_http_nodeport
+  frontend_ip_configuration_name = "public"
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.ingress.id]
+  probe_id                       = azurerm_lb_probe.ingress_http.id
+}
+
+resource "azurerm_lb_rule" "ingress_https" {
+  name                           = "ingress-https"
+  loadbalancer_id                = azurerm_lb.ingress.id
+  protocol                       = "Tcp"
+  frontend_port                  = 443
+  backend_port                   = var.ingress_https_nodeport
+  frontend_ip_configuration_name = "public"
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.ingress.id]
+  probe_id                       = azurerm_lb_probe.ingress_https.id
 }
 
 resource "azurerm_linux_virtual_machine" "control" {

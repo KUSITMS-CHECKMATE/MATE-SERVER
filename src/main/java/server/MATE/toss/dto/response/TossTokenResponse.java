@@ -1,4 +1,4 @@
-package server.MATE.toss.dto;
+package server.MATE.toss.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

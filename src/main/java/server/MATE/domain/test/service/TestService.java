@@ -8,9 +8,13 @@ import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
+import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestUpdateResponse;
+import server.MATE.domain.test.entity.ApprovalStatus;
 import server.MATE.domain.test.entity.Test;
+import server.MATE.domain.test.entity.TestLike;
+import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
@@ -19,6 +23,7 @@ import server.MATE.global.image.event.ImageDeleteEvent;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -28,20 +33,23 @@ import java.util.Set;
 public class TestService {
 
     private final TestRepository testRepository;
+    private final TestLikeRepository testLikeRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
     @Transactional(readOnly = true)
-    public List<TestSummaryResponse> listTests() {
-        return testRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc().stream()
-                .map(TestSummaryResponse::from)
+    public List<TestSummaryResponse> listTests(Long userId) {
+        List<Test> tests = testRepository.findAllByApprovalStatusAndDeletedAtIsNullOrderByCreatedAtDesc(ApprovalStatus.ACCEPTED);
+        Set<Long> likedTestIds = findLikedTestIds(userId, tests);
+
+        return tests.stream()
+                .map(test -> TestSummaryResponse.from(test, likedTestIds.contains(test.getId())))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public TestDetailResponse getTest(Long testId) {
-        Test test = testRepository.findById(testId)
-                .filter(t -> t.getDeletedAt() == null)
+        Test test = testRepository.findByIdAndApprovalStatusAndDeletedAtIsNull(testId, ApprovalStatus.ACCEPTED)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         return TestDetailResponse.from(test);
     }
@@ -85,12 +93,8 @@ public class TestService {
                     .filter(key -> !newKeySet.contains(key))
                     .toList();
 
-            if (!addedKeys.isEmpty()) {
-                eventPublisher.publishEvent(new ImageCleanupEvent(addedKeys));
-            }
-            if (!removedKeys.isEmpty()) {
-                eventPublisher.publishEvent(new ImageDeleteEvent(removedKeys));
-            }
+            if (!addedKeys.isEmpty()) eventPublisher.publishEvent(new ImageCleanupEvent(addedKeys));
+            if (!removedKeys.isEmpty()) eventPublisher.publishEvent(new ImageDeleteEvent(removedKeys));
         }
 
         test.update(
@@ -110,15 +114,48 @@ public class TestService {
         Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
-        if (!test.getMakerId().equals(makerId)) {
-            throw new BaseException(BaseErrorCode.TEST_005);
-        }
+        if (!test.getMakerId().equals(makerId)) throw new BaseException(BaseErrorCode.TEST_005);
 
         List<String> imageKeys = List.copyOf(test.getImageKeys());
-        if (!imageKeys.isEmpty()) {
-            eventPublisher.publishEvent(new ImageDeleteEvent(imageKeys));
-        }
+        if (!imageKeys.isEmpty()) eventPublisher.publishEvent(new ImageDeleteEvent(imageKeys));
 
         test.delete(LocalDateTime.now(clock));
+    }
+
+    public TestLikeResponse likeTest(Long testId, Long userId) {
+        Test test = testRepository.findByIdAndDeletedAtIsNullForUpdate(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        if (!testLikeRepository.existsByUserIdAndTestId(userId, testId)) {
+            testLikeRepository.save(TestLike.builder()
+                    .userId(userId)
+                    .testId(testId)
+                    .build());
+            test.incrementLikeCount();
+        }
+
+        return new TestLikeResponse(test.getId(), true, test.getLikeCount());
+    }
+
+    public TestLikeResponse unlikeTest(Long testId, Long userId) {
+        Test test = testRepository.findByIdAndDeletedAtIsNullForUpdate(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        testLikeRepository.findByUserIdAndTestId(userId, testId)
+                .ifPresent(testLike -> {
+                    testLikeRepository.delete(testLike);
+                    test.decrementLikeCount();
+                });
+
+        return new TestLikeResponse(test.getId(), false, test.getLikeCount());
+    }
+
+    private Set<Long> findLikedTestIds(Long userId, List<Test> tests) {
+        if (tests.isEmpty()) return Set.of();
+
+        List<Long> testIds = tests.stream()
+                .map(Test::getId)
+                .toList();
+        return new HashSet<>(testLikeRepository.findLikedTestIds(userId, testIds));
     }
 }

@@ -1,5 +1,3 @@
-# Bootstrap only: this is the single Application that should be applied manually once.
-# After this root app is created, changes under deploy/argocd are managed by Argo CD via Git.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

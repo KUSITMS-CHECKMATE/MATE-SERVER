@@ -77,7 +77,27 @@ variable "cluster_internal_allow_source_address_prefixes" {
 }
 
 variable "nodeport_allow_source_address_prefixes" {
-  description = "NodePort(30000-32767) 허용 출발지. 필요 시 * 로 인터넷 노출 가능."
+  description = "NodePort(30000-32767) 허용 출발지."
   type        = list(string)
-  default     = ["VirtualNetwork"]
+  # 개발 중 임시 점검이 필요하더라도 "*" override는 커밋하지 않는다.
+  # 운영 반영 전에는 LB/내부망 경유만 허용하도록 제한한다.
+  default = ["VirtualNetwork"]
+}
+
+variable "ingress_lb_allow_source_address_prefixes" {
+  description = "Ingress LB가 전달하는 HTTP/HTTPS NodePort 허용 출발지. 기본값은 Azure Load Balancer 전달 트래픽만 허용."
+  type        = list(string)
+  default     = ["AzureLoadBalancer"]
+}
+
+variable "ingress_http_nodeport" {
+  description = "ingress-nginx HTTP NodePort."
+  type        = number
+  default     = 30080
+}
+
+variable "ingress_https_nodeport" {
+  description = "ingress-nginx HTTPS NodePort."
+  type        = number
+  default     = 30443
 }

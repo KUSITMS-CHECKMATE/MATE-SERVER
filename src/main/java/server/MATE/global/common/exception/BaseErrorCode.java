@@ -8,8 +8,7 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum BaseErrorCode implements ErrorCode {
 
-    // 커스텀 에러 코드 네이밍 가이드: DOMAIN_NNN (예: AUTH_001, USER_001)
-
+    // Common
     COMMON_001(HttpStatus.NOT_FOUND, "COMMON_001", "요청하신 리소스를 찾을 수 없습니다."),
     COMMON_002(HttpStatus.BAD_REQUEST, "COMMON_002", "요청 값이 올바르지 않습니다."),
     COMMON_003(HttpStatus.BAD_REQUEST, "COMMON_003", "요청 본문을 읽을 수 없습니다."),
@@ -27,6 +26,14 @@ public enum BaseErrorCode implements ErrorCode {
     AUTH_003(HttpStatus.UNAUTHORIZED, "AUTH_003", "허용되지 않은 토큰 타입입니다."),
     AUTH_004(HttpStatus.UNAUTHORIZED, "AUTH_004", "사용자를 찾을 수 없습니다."),
     AUTH_005(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH_005", "JWT 설정 정보를 찾을 수 없습니다."),
+    AUTH_006(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH_006", "토스 복호화 설정 정보를 찾을 수 없습니다."),
+    AUTH_007(HttpStatus.UNAUTHORIZED, "AUTH_007", "토스 사용자 정보를 복호화할 수 없습니다."),
+    AUTH_008(HttpStatus.UNAUTHORIZED, "AUTH_008", "토스 사용자 식별 정보가 누락되었습니다."),
+    AUTH_009(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH_009", "리프레시 토큰을 저장할 수 없습니다."),
+    AUTH_010(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH_010", "토큰 암호화 설정 정보를 찾을 수 없습니다."),
+    AUTH_011(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH_011", "토큰을 암호화할 수 없습니다."),
+    AUTH_012(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH_012", "저장된 토큰을 복호화할 수 없습니다."),
+    AUTH_013(HttpStatus.UNAUTHORIZED, "AUTH_013", "유효하지 않은 리프레시 토큰입니다."),
 
     // Test
     TEST_001(HttpStatus.BAD_REQUEST, "TEST_001", "카테고리는 1개 이상 3개 이하로 선택해야 합니다."),
@@ -55,8 +62,11 @@ public enum BaseErrorCode implements ErrorCode {
     ANSWER_001(HttpStatus.BAD_REQUEST, "ANSWER_001", "해당 질문 유형에 대한 응답을 등록할 수 없습니다."),
     ANSWER_002(HttpStatus.BAD_REQUEST, "ANSWER_002", "질문이 해당 테스트에 속하지 않습니다."),
     ANSWER_003(HttpStatus.BAD_REQUEST, "ANSWER_003", "이미 응답한 질문입니다."),
-    ANSWER_004(HttpStatus.BAD_REQUEST, "ANSWER_004", "유효하지 않은 선택지입니다."),
-    ANSWER_005(HttpStatus.BAD_REQUEST, "ANSWER_005", "선택 개수가 허용 범위를 벗어났습니다."),
+    ANSWER_004(HttpStatus.BAD_REQUEST, "ANSWER_004", "유효하지 않은 입력입니다."),
+    ANSWER_005(HttpStatus.BAD_REQUEST, "ANSWER_005", "응답이 입력되지 않았습니다."),
+    ANSWER_006(HttpStatus.BAD_REQUEST, "ANSWER_006", "선택 개수가 허용 범위를 벗어났습니다."),
+    ANSWER_007(HttpStatus.BAD_REQUEST, "ANSWER_007", "점수가 허용 범위를 벗어났습니다."),
+    ANSWER_008(HttpStatus.BAD_REQUEST, "ANSWER_008", "모든 문항에 응답해야 합니다."),
 
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
