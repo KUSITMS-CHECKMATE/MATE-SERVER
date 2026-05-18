@@ -13,6 +13,16 @@ output "control_public_ip_address" {
   description = "control 공인 IP — SSH 및 kubectl(API server) 접근"
 }
 
+output "ingress_public_ip_address" {
+  value       = azurerm_public_ip.ingress.ip_address
+  description = "Ingress LB 공인 IP — HTTP/HTTPS 서비스 진입점"
+}
+
+output "ingress_load_balancer_id" {
+  value       = azurerm_lb.ingress.id
+  description = "Ingress Azure Load Balancer resource id."
+}
+
 output "worker_private_ip_address" {
   value       = azurerm_network_interface.worker.private_ip_address
   description = "Worker 사설 IP (VPC 내부)"

@@ -36,4 +36,11 @@ public class TossApiException extends BaseException {
         this.error = null;
         this.responseBody = responseBody;
     }
+
+    public TossApiException(TossErrorCode errorCode, String message, String responseBody, Throwable cause) {
+        super(errorCode, message, cause);
+        this.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+        this.error = null;
+        this.responseBody = responseBody;
+    }
 }

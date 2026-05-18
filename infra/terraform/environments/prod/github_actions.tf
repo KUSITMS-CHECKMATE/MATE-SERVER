@@ -17,6 +17,7 @@ resource "azurerm_role_assignment" "github_actions_acr_push" {
   scope                            = module.container_registry.id
   role_definition_name             = "AcrPush"
   principal_id                     = data.azuread_service_principal.github_actions[0].object_id
+  principal_type                   = "ServicePrincipal"
   skip_service_principal_aad_check = true
 
   timeouts {
