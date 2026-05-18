@@ -1,38 +1,14 @@
 package server.MATE.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import server.MATE.domain.answer.entity.Answer;
-import server.MATE.domain.answer.repository.AnswerRepository;
-import server.MATE.domain.auth.jwt.JwtProvider;
-import server.MATE.domain.auth.jwt.TokenType;
 import server.MATE.domain.participation.entity.Participation;
-import server.MATE.domain.participation.repository.ParticipationRepository;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.question.repository.AbTestRepository;
-import server.MATE.domain.question.repository.CardSortingRepository;
-import server.MATE.domain.question.repository.FiveSecondRepository;
-import server.MATE.domain.question.repository.ObjectiveRepository;
-import server.MATE.domain.question.repository.QuestionRepository;
-import server.MATE.domain.question.repository.ScaleRepository;
-import server.MATE.domain.question.repository.SubjectiveRepository;
-import server.MATE.domain.question.repository.TreeTestRepository;
-import server.MATE.domain.test.repository.TestRepository;
-import server.MATE.domain.users.entity.Users;
-import server.MATE.domain.users.repository.UsersRepository;
-import server.MATE.global.storage.FileStorageService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,82 +18,11 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class QuestionAnswerEndToEndIntegrationTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private JwtProvider jwtProvider;
-
-    @Autowired
-    private UsersRepository usersRepository;
-
-    @Autowired
-    private TestRepository testRepository;
-
-    @Autowired
-    private QuestionRepository questionRepository;
-
-    @Autowired
-    private ObjectiveRepository objectiveRepository;
-
-    @Autowired
-    private ScaleRepository scaleRepository;
-
-    @Autowired
-    private TreeTestRepository treeTestRepository;
-
-    @Autowired
-    private SubjectiveRepository subjectiveRepository;
-
-    @Autowired
-    private FiveSecondRepository fiveSecondRepository;
-
-    @Autowired
-    private AbTestRepository abTestRepository;
-
-    @Autowired
-    private CardSortingRepository cardSortingRepository;
-
-    @Autowired
-    private ParticipationRepository participationRepository;
-
-    @Autowired
-    private AnswerRepository answerRepository;
-
-    @PersistenceContext
-    private EntityManager entityManager;
-
-    @MockitoBean
-    private FileStorageService fileStorageService;
-
-    @AfterEach
-    void tearDown() {
-        answerRepository.deleteAll();
-        participationRepository.deleteAll();
-        treeTestRepository.deleteAll();
-        cardSortingRepository.deleteAll();
-        abTestRepository.deleteAll();
-        fiveSecondRepository.deleteAll();
-        subjectiveRepository.deleteAll();
-        objectiveRepository.deleteAll();
-        scaleRepository.deleteAll();
-        questionRepository.deleteAll();
-        testRepository.deleteAll();
-        usersRepository.deleteAll();
-    }
+class QuestionAnswerEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
     @Test
     @DisplayName("OBJECTIVE 질문 생성 후 기타 option id로 응답 등록하고 JSON shape를 저장한다")
@@ -535,96 +440,6 @@ class QuestionAnswerEndToEndIntegrationTest {
         assertParticipationAndPplCount(actors.testId(), actors.testerId(), answerResponse.path("data").path("participationId").asLong());
     }
 
-    private TestActors createActors() {
-        Users maker = usersRepository.save(Users.builder()
-                .ci("maker-" + System.nanoTime())
-                .name("maker")
-                .build());
-        Users tester = usersRepository.save(Users.builder()
-                .ci("tester-" + System.nanoTime())
-                .name("tester")
-                .build());
-        server.MATE.domain.test.entity.Test test = testRepository.save(server.MATE.domain.test.entity.Test.builder()
-                .makerId(maker.getId())
-                .title("테스트")
-                .description("설명")
-                .serviceName("서비스")
-                .serviceDescription("서비스 설명")
-                .imageKeys(List.of())
-                .build());
-        return new TestActors(
-                maker.getId(),
-                tester.getId(),
-                test.getId(),
-                bearerToken(maker),
-                bearerToken(tester)
-        );
-    }
-
-    private String bearerToken(Users user) {
-        return "Bearer " + jwtProvider.generateToken(user.getId(), user.getRole().name(), TokenType.ACCESS);
-    }
-
-    private JsonNode createQuestion(Long testId, String token, String payload) throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/v1/tests/{testId}/questions", testId)
-                        .header("Authorization", token)
-                        .contentType(APPLICATION_JSON)
-                        .content(payload))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        JsonNode body = parseBody(result);
-        assertThat(body.path("success").asBoolean()).isTrue();
-        assertThat(body.path("code").asText()).isEqualTo("201");
-        assertThat(body.path("message").asText()).isEqualTo("문항이 등록되었습니다.");
-        assertThat(body.path("data").path("questions")).hasSize(1);
-
-        JsonNode createdQuestion = body.path("data").path("questions").get(0);
-        assertThat(createdQuestion.path("questionId").isNumber()).isTrue();
-        assertThat(createdQuestion.path("sequence").asLong()).isEqualTo(1L);
-
-        return body;
-    }
-
-    private JsonNode getSingleQuestion(Long testId, String token) throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/v1/tests/{testId}/questions", testId)
-                        .header("Authorization", token))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        JsonNode body = parseBody(result);
-        assertThat(body.path("success").asBoolean()).isTrue();
-        assertThat(body.path("code").asText()).isEqualTo("200");
-        assertThat(body.path("message").asText()).isEqualTo("문항을 조회했습니다.");
-        assertThat(body.path("data").path("testId").asLong()).isEqualTo(testId);
-        assertThat(body.path("data").path("questions")).hasSize(1);
-        return body.path("data").path("questions").get(0);
-    }
-
-    private JsonNode submitAnswer(Long testId, String token, String payload) throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/v1/tests/{testId}/answers", testId)
-                        .header("Authorization", token)
-                        .contentType(APPLICATION_JSON)
-                        .content(payload))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        JsonNode body = parseBody(result);
-        assertThat(body.path("success").asBoolean()).isTrue();
-        assertThat(body.path("code").asText()).isEqualTo("201");
-        assertThat(body.path("message").asText()).isEqualTo("응답이 등록되었습니다.");
-        assertThat(body.path("data").path("participationId").isNumber()).isTrue();
-        return body;
-    }
-
-    private JsonNode parseBody(MvcResult result) throws Exception {
-        return objectMapper.readTree(result.getResponse().getContentAsString());
-    }
-
-    private Long extractCreatedQuestionId(JsonNode createResponse) {
-        return createResponse.path("data").path("questions").get(0).path("questionId").asLong();
-    }
-
     private Long extractOtherOptionId(JsonNode questionNode, String optionsField, String idField) {
         JsonNode options = questionNode.path(optionsField);
         assertThat(options.isArray()).isTrue();
@@ -717,15 +532,6 @@ class QuestionAnswerEndToEndIntegrationTest {
         Set<String> values = new LinkedHashSet<>(toTextSet(first));
         values.addAll(toTextSet(second));
         return values;
-    }
-
-    private record TestActors(
-            Long makerId,
-            Long testerId,
-            Long testId,
-            String makerToken,
-            String testerToken
-    ) {
     }
 
     private record TreeSelection(Long nodeId, List<Long> path) {
