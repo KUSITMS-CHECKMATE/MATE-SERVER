@@ -59,6 +59,10 @@ variable "secret_names" {
     "discord-webhook-url",
     "azure-storage-connection-string",
     "azure-container-name",
+    "redis-host",
+    "redis-port",
+    "redis-password",
+    "redis-ssl-enabled",
     "toss-mtls-certificate",
     "toss-mtls-private-key",
   ]
