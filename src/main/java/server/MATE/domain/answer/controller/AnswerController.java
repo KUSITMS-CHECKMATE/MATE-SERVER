@@ -33,12 +33,11 @@ public class AnswerController {
             - 이미 참여한 테스트에 중복 제출 불가합니다.
             - 응답(`answers`) 배열의 각 항목은 질문 유형(`type`) 필드로 구분합니다.
             - 모든 문항에 빠짐없이 응답해야 합니다.
-            - **5초 테스트 객관식 문항은 리팩토링 중 입니다. (기타(직접입력) 여부 필드 추가 필요)**
             - **AB 테스트 문항은 리팩토링 중 입니다. (사진 비율 필드 추가 필요)**
 
             질문 유형
             - SUBJECTIVE: text 필수
-            - OBJECTIVE: optionIds 필수, 기타 선택 시 otherText
+            - OBJECTIVE: optionIds 필수, 기타 선택지 선택 시 otherText
             - FIVE_SECOND: 주관식(text) 또는 객관식(optionIds) 모드
             - SCALE: value 필수 (1 ~ range)
             - AB_TEST: selected 필수 ("A" 또는 "B")
@@ -78,8 +77,8 @@ public class AnswerController {
                                                         {
                                                           "type": "OBJECTIVE",
                                                           "questionId": 2,
-                                                          "optionIds": [1001, 1002],
-                                                          "otherText": null
+                                                          "optionIds": [1001, 1999],
+                                                          "otherText": "직접 입력한 기타 의견"
                                                         }
                                                       ]
                                                     }
