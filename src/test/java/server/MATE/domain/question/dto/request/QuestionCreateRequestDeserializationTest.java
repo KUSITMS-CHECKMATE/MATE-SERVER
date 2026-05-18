@@ -108,7 +108,8 @@ class QuestionCreateRequestDeserializationTest {
                       "type": "AB_TEST",
                       "title": "AB 테스트",
                       "aImageKey": "image-a",
-                      "bImageKey": "image-b"
+                      "bImageKey": "image-b",
+                      "imageRatio": "9:16"
                     },
                     {
                       "type": "CARD_SORTING",
