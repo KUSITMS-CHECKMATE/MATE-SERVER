@@ -10,7 +10,7 @@ public record TestSummaryResponse(
         @Schema(description = "테스트 ID", example = "1")
         Long id,
         /** 등록된 이미지 중 첫 번째 키. 없으면 null */
-        String representativeImageKey,
+        String thumbnailKey,
         String title,
         String description,
         Integer reward,
@@ -20,14 +20,14 @@ public record TestSummaryResponse(
 ) {
     public static TestSummaryResponse from(Test test, boolean isLiked) {
         List<String> keys = test.getImageKeys();
-        String representative = keys.isEmpty() ? null : keys.getFirst();
+        String thumbnailKey = keys.isEmpty() ? null : keys.getFirst();
         List<String> categories = test.getCategories().stream()
                 .filter(testCategory -> testCategory.getDeletedAt() == null)
                 .map(testCategory -> testCategory.getCategory().name())
                 .toList();
         return new TestSummaryResponse(
                 test.getId(),
-                representative,
+                thumbnailKey,
                 test.getTitle(),
                 test.getDescription(),
                 test.getReward(),

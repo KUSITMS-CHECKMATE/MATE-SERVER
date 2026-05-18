@@ -93,12 +93,8 @@ public class TestService {
                     .filter(key -> !newKeySet.contains(key))
                     .toList();
 
-            if (!addedKeys.isEmpty()) {
-                eventPublisher.publishEvent(new ImageCleanupEvent(addedKeys));
-            }
-            if (!removedKeys.isEmpty()) {
-                eventPublisher.publishEvent(new ImageDeleteEvent(removedKeys));
-            }
+            if (!addedKeys.isEmpty()) eventPublisher.publishEvent(new ImageCleanupEvent(addedKeys));
+            if (!removedKeys.isEmpty()) eventPublisher.publishEvent(new ImageDeleteEvent(removedKeys));
         }
 
         test.update(
@@ -118,14 +114,10 @@ public class TestService {
         Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
-        if (!test.getMakerId().equals(makerId)) {
-            throw new BaseException(BaseErrorCode.TEST_005);
-        }
+        if (!test.getMakerId().equals(makerId)) throw new BaseException(BaseErrorCode.TEST_005);
 
         List<String> imageKeys = List.copyOf(test.getImageKeys());
-        if (!imageKeys.isEmpty()) {
-            eventPublisher.publishEvent(new ImageDeleteEvent(imageKeys));
-        }
+        if (!imageKeys.isEmpty()) eventPublisher.publishEvent(new ImageDeleteEvent(imageKeys));
 
         test.delete(LocalDateTime.now(clock));
     }
@@ -159,9 +151,7 @@ public class TestService {
     }
 
     private Set<Long> findLikedTestIds(Long userId, List<Test> tests) {
-        if (tests.isEmpty()) {
-            return Set.of();
-        }
+        if (tests.isEmpty()) return Set.of();
 
         List<Long> testIds = tests.stream()
                 .map(Test::getId)
