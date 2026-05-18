@@ -141,7 +141,7 @@ class QuestionControllerTest {
                         new FiveSecondDetailResponse(
                                 103L, 300L, QuestionType.FIVE_SECOND, 3L, "5초", "설명",
                                 "five-second-image", ImageRatio.RATIO_9_16, true, true, 1, 2, true,
-                                List.of(new FiveSecondOptionDetailResponse(3001L, "검색창", 1))
+                                List.of(new FiveSecondOptionDetailResponse(3001L, "검색창", 1, false))
                         ),
                         new ScaleDetailResponse(104L, 400L, QuestionType.SCALE, 4L, "척도", "설명", null, "낮음", "높음", 5),
                         new AbTestDetailResponse(105L, 500L, QuestionType.AB_TEST, 5L, "AB", "설명", "a.jpg", "b.jpg", ImageRatio.RATIO_9_16),
@@ -230,7 +230,7 @@ class QuestionControllerTest {
                         new FiveSecondDetailResponse(
                                 102L, 202L, QuestionType.FIVE_SECOND, 2L, "5초", "설명",
                                 "five-second-image", ImageRatio.RATIO_9_16, true, true, 1, 2, true,
-                                List.of(new FiveSecondOptionDetailResponse(2001L, "검색창", 1))
+                                List.of(new FiveSecondOptionDetailResponse(2001L, "검색창", 1, false))
                         )
                 )
         );

@@ -128,8 +128,9 @@ public class QuestionController {
                                                             "maxSelect": 3,
                                                             "isOther": true,
                                                             "options": [
-                                                              { "fiveSecondOptionId": 2001, "content": "검색창", "sequence": 1 },
-                                                              { "fiveSecondOptionId": 2002, "content": "메인 배너", "sequence": 2 }
+                                                              { "fiveSecondOptionId": 2001, "content": "검색창", "sequence": 1, "isOtherOption": false },
+                                                              { "fiveSecondOptionId": 2002, "content": "메인 배너", "sequence": 2, "isOtherOption": false },
+                                                              { "fiveSecondOptionId": 2099, "content": "기타 (직접 입력)", "sequence": 3, "isOtherOption": true }
                                                             ]
                                                           }
                                                         ]
@@ -308,7 +309,6 @@ public class QuestionController {
             여러 유형의 질문 문항을 한 번에 등록합니다. MKTT_03 (질문 목록) 화면에 해당하는 api 입니다.
             - `questions` 배열 순서대로 sequence가 부여됩니다.
             - 같은 유형 중복 요청, 없는 유형 생략이 가능합니다.
-            - **5초 테스트 객관식 문항은 리팩토링 중 입니다. (기타(직접입력) 여부 필드 추가 필요)**
             
             **[type]**
             - OBJECTIVE, SUBJECTIVE, FIVE_SECOND, SCALE, AB_TEST, CARD_SORTING, TREE_TEST
@@ -368,9 +368,9 @@ public class QuestionController {
                                                       "questions": [
                                                         {
                                                           "type": "FIVE_SECOND",
-                                                          "title": "첫 화면에서 눈에 띄는 요소는 무엇인가요?",
-                                                          "description": "이미지를 5초간 본 뒤 답변해주세요.",
-                                                          "imageKey": "five-second-image-key",
+                                                          "title": "첫 화면에서 가장 먼저 보인 요소는 무엇인가요?",
+                                                          "description": "이미지를 5초간 본 뒤 눈에 들어온 요소를 최대 3개까지 골라주세요.",
+                                                          "imageKey": "tt01-home-hero-image",
                                                           "imageRatio": "9:16",
                                                           "isObjective": true,
                                                           "isDuplicate": true,
@@ -378,10 +378,10 @@ public class QuestionController {
                                                           "maxSelect": 3,
                                                           "isOther": true,
                                                           "options": [
-                                                            { "content": "검색창" },
+                                                            { "content": "상단 검색창" },
                                                             { "content": "메인 배너" },
                                                             { "content": "카테고리 메뉴" },
-                                                            { "content": "하단 네비게이션" }
+                                                            { "content": "하단 CTA 버튼" }
                                                           ]
                                                         }
                                                       ]
