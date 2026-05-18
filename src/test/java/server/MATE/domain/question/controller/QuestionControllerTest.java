@@ -142,7 +142,7 @@ class QuestionControllerTest {
                                 List.of(new FiveSecondOptionDetailResponse(3001L, "검색창", 1))
                         ),
                         new ScaleDetailResponse(104L, 400L, QuestionType.SCALE, 4L, "척도", "설명", null, "낮음", "높음", 5),
-                        new AbTestDetailResponse(105L, 500L, QuestionType.AB_TEST, 5L, "AB", "설명", "a.jpg", "b.jpg"),
+                        new AbTestDetailResponse(105L, 500L, QuestionType.AB_TEST, 5L, "AB", "설명", "a.jpg", "b.jpg", ImageRatio.RATIO_9_16),
                         new CardSortingDetailResponse(106L, 600L, QuestionType.CARD_SORTING, 6L, "카드", "설명", List.of("A", "B", "C", "D"), List.of("cat")),
                         new TreeTestDetailResponse(
                                 107L, QuestionType.TREE_TEST, 7L, "트리", "설명",
@@ -168,6 +168,7 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.data.questions[2].options[0].fiveSecondOptionId").value(3001))
                 .andExpect(jsonPath("$.data.questions[3].scaleId").value(400))
                 .andExpect(jsonPath("$.data.questions[4].abTestId").value(500))
+                .andExpect(jsonPath("$.data.questions[4].imageRatio").value("9:16"))
                 .andExpect(jsonPath("$.data.questions[5].cardSortingId").value(600))
                 .andExpect(jsonPath("$.data.questions[6].features[0].treeTestId").value(7001))
                 .andExpect(jsonPath("$.data.questions[6].features[0].children[0].treeTestId").value(7002))

@@ -421,7 +421,7 @@ class QuestionServiceIntegrationTest {
                         )
                 ),
                 new ScaleCreateRequest("척도 질문", "설명", null, "낮음", "높음", 5),
-                new AbTestCreateRequest("AB 질문", "설명", "a-image", "b-image"),
+                new AbTestCreateRequest("AB 질문", "설명", "a-image", "b-image", ImageRatio.RATIO_9_16),
                 new CardSortingCreateRequest("카드 질문", "설명", List.of("A", "B", "C", "D"), List.of("cat1", "cat2")),
                 new TreeTestCreateRequest(
                         "트리 질문",
@@ -459,6 +459,7 @@ class QuestionServiceIntegrationTest {
 
         AbTestDetailResponse abTestResponse = (AbTestDetailResponse) response.questions().get(4);
         assertThat(abTestResponse.abTestId()).isNotNull();
+        assertThat(abTestResponse.imageRatio()).isEqualTo(ImageRatio.RATIO_9_16);
 
         CardSortingDetailResponse cardSortingResponse = (CardSortingDetailResponse) response.questions().get(5);
         assertThat(cardSortingResponse.cardSortingId()).isNotNull();
