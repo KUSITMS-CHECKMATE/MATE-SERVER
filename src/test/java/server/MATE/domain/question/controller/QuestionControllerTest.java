@@ -98,8 +98,9 @@ class QuestionControllerTest {
                                 null,
                                 true,
                                 List.of(
-                                        new ObjectiveOptionDetailResponse(1001L, "A", null, 1),
-                                        new ObjectiveOptionDetailResponse(1002L, "B", "image-b", 2)
+                                        new ObjectiveOptionDetailResponse(1001L, "A", null, 1, false),
+                                        new ObjectiveOptionDetailResponse(1002L, "B", "image-b", 2, false),
+                                        new ObjectiveOptionDetailResponse(1099L, "기타 (직접 입력)", null, 3, true)
                                 )
                         )
                 )
@@ -121,7 +122,8 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.data.questions[0].isDuplicate").value(false))
                 .andExpect(jsonPath("$.data.questions[0].isOther").value(true))
                 .andExpect(jsonPath("$.data.questions[0].options[0].objectiveOptionId").value(1001))
-                .andExpect(jsonPath("$.data.questions[0].options[1].sequence").value(2));
+                .andExpect(jsonPath("$.data.questions[0].options[1].sequence").value(2))
+                .andExpect(jsonPath("$.data.questions[0].options[2].isOtherOption").value(true));
     }
 
     @Test
@@ -133,7 +135,7 @@ class QuestionControllerTest {
                         new ObjectiveDetailResponse(
                                 101L, 100L, QuestionType.OBJECTIVE, 1L, "객관식", "설명",
                                 false, null, null, true,
-                                List.of(new ObjectiveOptionDetailResponse(1001L, "A", null, 1))
+                                List.of(new ObjectiveOptionDetailResponse(1001L, "A", null, 1, false))
                         ),
                         new SubjectiveDetailResponse(102L, 200L, QuestionType.SUBJECTIVE, 2L, "주관식", "설명", "subjective-image"),
                         new FiveSecondDetailResponse(
@@ -223,7 +225,7 @@ class QuestionControllerTest {
                         new ObjectiveDetailResponse(
                                 101L, 201L, QuestionType.OBJECTIVE, 1L, "객관식", "설명",
                                 true, 1, 2, true,
-                                List.of(new ObjectiveOptionDetailResponse(1001L, "A", null, 1))
+                                List.of(new ObjectiveOptionDetailResponse(1001L, "A", null, 1, false))
                         ),
                         new FiveSecondDetailResponse(
                                 102L, 202L, QuestionType.FIVE_SECOND, 2L, "5초", "설명",

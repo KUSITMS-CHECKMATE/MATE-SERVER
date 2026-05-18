@@ -67,8 +67,9 @@ public class QuestionController {
                                                             "maxSelect": null,
                                                             "isOther": true,
                                                             "options": [
-                                                              { "objectiveOptionId": 1001, "content": "검색", "imageKey": null, "sequence": 1 },
-                                                              { "objectiveOptionId": 1002, "content": "결제", "imageKey": "objective-option-image-key", "sequence": 2 }
+                                                              { "objectiveOptionId": 1001, "content": "검색", "imageKey": null, "sequence": 1, "isOtherOption": false },
+                                                              { "objectiveOptionId": 1002, "content": "결제", "imageKey": "objective-option-image-key", "sequence": 2, "isOtherOption": false },
+                                                              { "objectiveOptionId": 1099, "content": "기타 (직접 입력)", "imageKey": null, "sequence": 3, "isOtherOption": true }
                                                             ]
                                                           }
                                                         ]
