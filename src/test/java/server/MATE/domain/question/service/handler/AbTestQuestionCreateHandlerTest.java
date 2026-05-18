@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import server.MATE.domain.question.dto.request.AbTestCreateRequest;
 import server.MATE.domain.question.entity.AbTest;
+import server.MATE.domain.question.entity.ImageRatio;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.AbTestRepository;
@@ -29,7 +30,8 @@ class AbTestQuestionCreateHandlerTest {
                 "AB 테스트",
                 "설명",
                 "image-a",
-                "image-b"
+                "image-b",
+                ImageRatio.RATIO_9_16
         );
         Question question = Question.builder()
                 .testId(1L)
@@ -48,6 +50,7 @@ class AbTestQuestionCreateHandlerTest {
         assertThat(saved.getQuestion()).isEqualTo(question);
         assertThat(saved.getAImageKey()).isEqualTo("image-a");
         assertThat(saved.getBImageKey()).isEqualTo("image-b");
+        assertThat(saved.getImageRatio()).isEqualTo(ImageRatio.RATIO_9_16);
         assertThat(handler.extractImageKeys(request)).containsExactly("image-a", "image-b");
     }
 }
