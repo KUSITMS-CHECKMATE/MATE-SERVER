@@ -1,6 +1,7 @@
 package server.MATE.domain.question.dto.response;
 
 import server.MATE.domain.question.entity.FiveSecond;
+import server.MATE.domain.question.entity.ImageRatio;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 
@@ -14,6 +15,7 @@ public record FiveSecondDetailResponse(
         String title,
         String description,
         String imageKey,
+        ImageRatio imageRatio,
         boolean isObjective,
         Boolean isDuplicate,
         Integer minSelect,
@@ -31,6 +33,7 @@ public record FiveSecondDetailResponse(
                 question.getTitle(),
                 question.getDescription(),
                 fiveSecond.getImageKey(),
+                fiveSecond.getImageRatio(),
                 fiveSecond.isObjective(),
                 fiveSecond.getIsDuplicate(),
                 fiveSecond.getMinSelect(),

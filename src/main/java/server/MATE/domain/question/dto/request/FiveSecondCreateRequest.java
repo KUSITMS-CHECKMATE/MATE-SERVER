@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import server.MATE.domain.question.entity.ImageRatio;
 import server.MATE.domain.question.entity.QuestionType;
 
 import java.util.List;
@@ -24,6 +25,10 @@ public record FiveSecondCreateRequest(
         @Schema(example = "five-second-image-key")
         @NotBlank(message = "이미지는 필수 입력 사항입니다.")
         String imageKey,
+
+        @Schema(example = "9:16", allowableValues = {"9:16", "1:1", "4:3"})
+        @NotNull(message = "사진 비율은 필수 입력 사항입니다.")
+        ImageRatio imageRatio,
 
         @Schema(example = "true")
         @NotNull(message = "객관식 전환 여부는 필수 입력 사항입니다.")

@@ -90,6 +90,7 @@ public class FiveSecondQuestionCreateHandler extends AbstractQuestionCreateHandl
         FiveSecond fiveSecond = FiveSecond.builder()
                 .question(question)
                 .imageKey(item.imageKey())
+                .imageRatio(item.imageRatio())
                 .isObjective(item.isObjective())
                 .isDuplicate(item.isObjective() ? item.isDuplicate() : null)
                 .minSelect(minSelect)

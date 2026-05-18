@@ -31,6 +31,7 @@ import server.MATE.domain.question.dto.response.ScaleDetailResponse;
 import server.MATE.domain.question.dto.response.SubjectiveDetailResponse;
 import server.MATE.domain.question.dto.response.TreeTestDetailResponse;
 import server.MATE.domain.question.dto.response.TreeTestNodeDetailResponse;
+import server.MATE.domain.question.entity.ImageRatio;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.AbTestRepository;
@@ -170,6 +171,7 @@ class QuestionServiceIntegrationTest {
                         "5초 질문",
                         "설명",
                         "five-second-image",
+                        ImageRatio.RATIO_9_16,
                         true,
                         true,
                         1,
@@ -235,6 +237,7 @@ class QuestionServiceIntegrationTest {
                         "5초 주관식 질문",
                         "설명",
                         "five-second-image",
+                        ImageRatio.RATIO_9_16,
                         false,
                         null,
                         null,
@@ -248,6 +251,7 @@ class QuestionServiceIntegrationTest {
 
         FiveSecondDetailResponse fiveSecondResponse = (FiveSecondDetailResponse) response.questions().getFirst();
         assertThat(fiveSecondResponse.fiveSecondId()).isNotNull();
+        assertThat(fiveSecondResponse.imageRatio()).isEqualTo(ImageRatio.RATIO_9_16);
         assertThat(fiveSecondResponse.isObjective()).isFalse();
         assertThat(fiveSecondResponse.isDuplicate()).isNull();
         assertThat(fiveSecondResponse.minSelect()).isNull();
@@ -267,6 +271,7 @@ class QuestionServiceIntegrationTest {
                         "5초 객관식 질문",
                         "설명",
                         "five-second-image",
+                        ImageRatio.RATIO_9_16,
                         true,
                         true,
                         1,
@@ -283,6 +288,7 @@ class QuestionServiceIntegrationTest {
 
         FiveSecondDetailResponse fiveSecondResponse = (FiveSecondDetailResponse) response.questions().getFirst();
         assertThat(fiveSecondResponse.fiveSecondId()).isNotNull();
+        assertThat(fiveSecondResponse.imageRatio()).isEqualTo(ImageRatio.RATIO_9_16);
         assertThat(fiveSecondResponse.isObjective()).isTrue();
         assertThat(fiveSecondResponse.isDuplicate()).isTrue();
         assertThat(fiveSecondResponse.minSelect()).isEqualTo(1);
@@ -403,6 +409,7 @@ class QuestionServiceIntegrationTest {
                         "5초 질문",
                         "설명",
                         "five-second-image",
+                        ImageRatio.RATIO_9_16,
                         true,
                         true,
                         1,

@@ -31,6 +31,7 @@ import server.MATE.domain.question.dto.response.ScaleDetailResponse;
 import server.MATE.domain.question.dto.response.SubjectiveDetailResponse;
 import server.MATE.domain.question.dto.response.TreeTestDetailResponse;
 import server.MATE.domain.question.dto.response.TreeTestNodeDetailResponse;
+import server.MATE.domain.question.entity.ImageRatio;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.service.QuestionService;
 import server.MATE.domain.users.entity.Role;
@@ -137,7 +138,7 @@ class QuestionControllerTest {
                         new SubjectiveDetailResponse(102L, 200L, QuestionType.SUBJECTIVE, 2L, "주관식", "설명", "subjective-image"),
                         new FiveSecondDetailResponse(
                                 103L, 300L, QuestionType.FIVE_SECOND, 3L, "5초", "설명",
-                                "five-second-image", true, true, 1, 2, true,
+                                "five-second-image", ImageRatio.RATIO_9_16, true, true, 1, 2, true,
                                 List.of(new FiveSecondOptionDetailResponse(3001L, "검색창", 1))
                         ),
                         new ScaleDetailResponse(104L, 400L, QuestionType.SCALE, 4L, "척도", "설명", null, "낮음", "높음", 5),
@@ -163,6 +164,7 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.data.questions[0].options[0].objectiveOptionId").value(1001))
                 .andExpect(jsonPath("$.data.questions[1].subjectiveId").value(200))
                 .andExpect(jsonPath("$.data.questions[2].fiveSecondId").value(300))
+                .andExpect(jsonPath("$.data.questions[2].imageRatio").value("9:16"))
                 .andExpect(jsonPath("$.data.questions[2].options[0].fiveSecondOptionId").value(3001))
                 .andExpect(jsonPath("$.data.questions[3].scaleId").value(400))
                 .andExpect(jsonPath("$.data.questions[4].abTestId").value(500))
@@ -182,7 +184,7 @@ class QuestionControllerTest {
                         new SubjectiveDetailResponse(101L, 201L, QuestionType.SUBJECTIVE, 1L, "주관식", "설명", null),
                         new FiveSecondDetailResponse(
                                 102L, 202L, QuestionType.FIVE_SECOND, 2L, "5초 주관식", "설명",
-                                "five-second-image", false, null, null, null, null, List.of()
+                                "five-second-image", ImageRatio.RATIO_9_16, false, null, null, null, null, List.of()
                         ),
                         new ScaleDetailResponse(103L, 203L, QuestionType.SCALE, 3L, "척도", "설명", null, null, null, 5),
                         new TreeTestDetailResponse(
@@ -198,6 +200,7 @@ class QuestionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.questions[0].imageKey").value((String) null))
                 .andExpect(jsonPath("$.data.questions[1].isDuplicate").value((String) null))
+                .andExpect(jsonPath("$.data.questions[1].imageRatio").value("9:16"))
                 .andExpect(jsonPath("$.data.questions[1].minSelect").value((String) null))
                 .andExpect(jsonPath("$.data.questions[1].maxSelect").value((String) null))
                 .andExpect(jsonPath("$.data.questions[1].isOther").value((String) null))
@@ -223,7 +226,7 @@ class QuestionControllerTest {
                         ),
                         new FiveSecondDetailResponse(
                                 102L, 202L, QuestionType.FIVE_SECOND, 2L, "5초", "설명",
-                                "five-second-image", true, true, 1, 2, true,
+                                "five-second-image", ImageRatio.RATIO_9_16, true, true, 1, 2, true,
                                 List.of(new FiveSecondOptionDetailResponse(2001L, "검색창", 1))
                         )
                 )
@@ -239,6 +242,7 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.data.questions[0].duplicate").doesNotExist())
                 .andExpect(jsonPath("$.data.questions[0].other").doesNotExist())
                 .andExpect(jsonPath("$.data.questions[1].fiveSecondId").value(202))
+                .andExpect(jsonPath("$.data.questions[1].imageRatio").value("9:16"))
                 .andExpect(jsonPath("$.data.questions[1].isObjective").value(true))
                 .andExpect(jsonPath("$.data.questions[1].isDuplicate").value(true))
                 .andExpect(jsonPath("$.data.questions[1].isOther").value(true))
