@@ -17,8 +17,8 @@ import server.MATE.domain.test.entity.Category;
 import server.MATE.domain.test.entity.TestLike;
 import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
-import server.MATE.global.image.event.ImageCleanupEvent;
-import server.MATE.global.image.event.ImageDeleteEvent;
+import server.MATE.global.storage.event.FileCleanupEvent;
+import server.MATE.global.storage.event.FileDeleteEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,17 +78,17 @@ class TestServiceTest {
         verify(eventPublisher, times(2)).publishEvent(captor.capture());
 
         List<Object> events = captor.getAllValues();
-        ImageCleanupEvent cleanupEvent = events.stream()
-                .filter(e -> e instanceof ImageCleanupEvent)
-                .map(e -> (ImageCleanupEvent) e)
+        FileCleanupEvent cleanupEvent = events.stream()
+                .filter(e -> e instanceof FileCleanupEvent)
+                .map(e -> (FileCleanupEvent) e)
                 .findFirst().orElseThrow();
-        ImageDeleteEvent deleteEvent = events.stream()
-                .filter(e -> e instanceof ImageDeleteEvent)
-                .map(e -> (ImageDeleteEvent) e)
+        FileDeleteEvent deleteEvent = events.stream()
+                .filter(e -> e instanceof FileDeleteEvent)
+                .map(e -> (FileDeleteEvent) e)
                 .findFirst().orElseThrow();
 
-        assertThat(cleanupEvent.imageKeys()).containsExactly("new-key-1");
-        assertThat(deleteEvent.imageKeys()).containsExactly("old-key-2");
+        assertThat(cleanupEvent.fileKeys()).containsExactly("new-key-1");
+        assertThat(deleteEvent.fileKeys()).containsExactly("old-key-2");
     }
 
     @Test
