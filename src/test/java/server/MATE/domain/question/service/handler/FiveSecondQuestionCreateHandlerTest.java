@@ -39,6 +39,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 false,
                 null,
                 null,
+                true,
                 List.of(new FiveSecondOptionRequest("A"))
         );
 
@@ -57,6 +58,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 "설명",
                 "image",
                 false,
+                null,
                 null,
                 null,
                 null,
@@ -81,6 +83,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 true,
                 1,
                 2,
+                null,
                 List.of()
         );
 
@@ -88,6 +91,53 @@ class FiveSecondQuestionCreateHandlerTest {
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.QUESTION_008);
+    }
+
+    @Test
+    @DisplayName("5초 테스트가 주관식인데 isOther가 있으면 QUESTION_008 예외가 발생한다")
+    void throwsQuestion008WhenSubjectiveFiveSecondContainsIsOther() {
+        FiveSecondQuestionCreateHandler handler = new FiveSecondQuestionCreateHandler(fiveSecondRepository);
+        FiveSecondCreateRequest request = new FiveSecondCreateRequest(
+                "5초",
+                "설명",
+                "image",
+                false,
+                null,
+                null,
+                null,
+                true,
+                List.of()
+        );
+
+        assertThatThrownBy(() -> handler.validate(request))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.QUESTION_008);
+    }
+
+    @Test
+    @DisplayName("5초 테스트가 객관식인데 isOther가 없으면 COMMON_002 예외가 발생한다")
+    void throwsCommon002WhenObjectiveFiveSecondDoesNotContainIsOther() {
+        FiveSecondQuestionCreateHandler handler = new FiveSecondQuestionCreateHandler(fiveSecondRepository);
+        FiveSecondCreateRequest request = new FiveSecondCreateRequest(
+                "5초",
+                "설명",
+                "image",
+                true,
+                false,
+                null,
+                null,
+                null,
+                List.of(
+                        new FiveSecondOptionRequest("A"),
+                        new FiveSecondOptionRequest("B")
+                )
+        );
+
+        assertThatThrownBy(() -> handler.validate(request))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.COMMON_002);
     }
 
     @Test
@@ -102,6 +152,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 true,
                 0,
                 2,
+                false,
                 List.of(
                         new FiveSecondOptionRequest("A"),
                         new FiveSecondOptionRequest("B")
@@ -126,6 +177,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 true,
                 2,
                 1,
+                false,
                 List.of(
                         new FiveSecondOptionRequest("A"),
                         new FiveSecondOptionRequest("B")
@@ -150,6 +202,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 true,
                 1,
                 3,
+                false,
                 List.of(
                         new FiveSecondOptionRequest("A"),
                         new FiveSecondOptionRequest("B")
@@ -174,6 +227,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 false,
                 null,
                 null,
+                true,
                 List.of(
                         new FiveSecondOptionRequest("A"),
                         new FiveSecondOptionRequest("B")
@@ -194,6 +248,7 @@ class FiveSecondQuestionCreateHandlerTest {
         FiveSecond saved = captor.getValue();
 
         assertThat(saved.getQuestion()).isEqualTo(question);
+        assertThat(saved.getIsOther()).isTrue();
         assertThat(saved.getOptions()).hasSize(2);
         assertThat(saved.getOptions().get(0).getSequence()).isEqualTo(1);
         assertThat(handler.extractImageKeys(request)).containsExactly("image");

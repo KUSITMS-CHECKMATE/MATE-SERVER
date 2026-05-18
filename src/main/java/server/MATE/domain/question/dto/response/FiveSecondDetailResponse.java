@@ -18,6 +18,7 @@ public record FiveSecondDetailResponse(
         Boolean isDuplicate,
         Integer minSelect,
         Integer maxSelect,
+        Boolean isOther,
         List<FiveSecondOptionDetailResponse> options
 ) implements QuestionDetailItem {
 
@@ -34,6 +35,7 @@ public record FiveSecondDetailResponse(
                 fiveSecond.getIsDuplicate(),
                 fiveSecond.getMinSelect(),
                 fiveSecond.getMaxSelect(),
+                fiveSecond.getIsOther(),
                 fiveSecond.getOptions().stream()
                         .map(FiveSecondOptionDetailResponse::from)
                         .toList()

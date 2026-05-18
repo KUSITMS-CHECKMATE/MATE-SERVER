@@ -95,7 +95,8 @@ class QuestionCreateRequestDeserializationTest {
                       "type": "FIVE_SECOND",
                       "title": "5초",
                       "imageKey": "five-second-image-key",
-                      "isObjective": false
+                      "isObjective": false,
+                      "isOther": null
                     },
                     {
                       "type": "SCALE",
