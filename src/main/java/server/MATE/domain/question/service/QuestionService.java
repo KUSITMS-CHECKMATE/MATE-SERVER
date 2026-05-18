@@ -18,7 +18,7 @@ import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.image.event.ImageCleanupEvent;
+import server.MATE.global.storage.event.FileCleanupEvent;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -75,7 +75,7 @@ public class QuestionService {
             pendingCreates.add(new PendingQuestionCreate(handler, item, baseSequence + i + 1));
         }
 
-        if (!imageKeysToCleanup.isEmpty()) eventPublisher.publishEvent(new ImageCleanupEvent(imageKeysToCleanup));
+        if (!imageKeysToCleanup.isEmpty()) eventPublisher.publishEvent(new FileCleanupEvent(imageKeysToCleanup));
 
         for (PendingQuestionCreate pendingCreate : pendingCreates) {
             QuestionCreateItem item = pendingCreate.item();
