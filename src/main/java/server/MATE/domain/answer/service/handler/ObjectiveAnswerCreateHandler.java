@@ -36,28 +36,42 @@ public class ObjectiveAnswerCreateHandler implements AnswerCreateHandler {
                 .map(ObjectiveOption::getId)
                 .collect(Collectors.toSet());
 
-        List<Long> selectedOptionIds = request.optionIds();
-        boolean hasOtherText = objective.isOther() && request.otherText() != null && !request.otherText().isBlank();
+        Long otherOptionId = objective.getOptions().stream()
+                .filter(option -> Boolean.TRUE.equals(option.getIsOtherOption()))
+                .map(ObjectiveOption::getId)
+                .findFirst()
+                .orElse(null);
 
-        if (selectedOptionIds.isEmpty() && !hasOtherText) {
+        List<Long> selectedOptionIds = request.optionIds();
+        boolean hasOtherText = request.otherText() != null && !request.otherText().isBlank();
+        boolean selectedOtherOption = otherOptionId != null && selectedOptionIds.contains(otherOptionId);
+
+        // 객관식 응답은 최소 1개 이상의 선택지가 필요함
+        if (selectedOptionIds.isEmpty()) {
             throw new BaseException(BaseErrorCode.ANSWER_005);
         }
 
-        if (!objective.isOther() && request.otherText() != null && !request.otherText().isBlank()) {
+        // 기타 선택지를 허용하지 않는 문항에는 기타 option, otherText를 함께 사용할 수 없음
+        if (!objective.isOther() && (hasOtherText || selectedOtherOption)) {
+            throw new BaseException(BaseErrorCode.ANSWER_004);
+        }
+
+        // 기타 option 선택 여부와 otherText 입력 여부는 반드시 함께 일치해야 함
+        if (selectedOtherOption != hasOtherText) {
             throw new BaseException(BaseErrorCode.ANSWER_004);
         }
 
         validateSelectedOptions(selectedOptionIds, validOptionIds);
 
         int selectedCount = selectedOptionIds.size();
+        // 단일 선택 객관식은 정확히 1개의 선택지만 허용함
         if (!objective.isDuplicate()) {
-            if (hasOtherText && selectedCount > 0) throw new BaseException(BaseErrorCode.ANSWER_006);
-            if (!hasOtherText && selectedCount != 1) throw new BaseException(BaseErrorCode.ANSWER_006);
+            if (selectedCount != 1) throw new BaseException(BaseErrorCode.ANSWER_006);
         } else {
             int min = objective.getMinSelect() != null ? objective.getMinSelect() : 1;
-            int max = objective.getMaxSelect() != null ? objective.getMaxSelect() : validOptionIds.size() + (objective.isOther() ? 1 : 0);
-            int effectiveCount = selectedCount + (hasOtherText ? 1 : 0);
-            if (effectiveCount < min || effectiveCount > max) throw new BaseException(BaseErrorCode.ANSWER_006);
+            int max = objective.getMaxSelect() != null ? objective.getMaxSelect() : validOptionIds.size();
+            // 복수 선택 객관식은 min/max 범위 내에서만 선택할 수 있음
+            if (selectedCount < min || selectedCount > max) throw new BaseException(BaseErrorCode.ANSWER_006);
         }
 
         Map<String, Object> answerMap = new LinkedHashMap<>();
@@ -73,9 +87,11 @@ public class ObjectiveAnswerCreateHandler implements AnswerCreateHandler {
     }
 
     private void validateSelectedOptions(List<Long> selectedOptionIds, Set<Long> validOptionIds) {
+        // 동일한 선택지를 중복 선택할 수 없음
         if (selectedOptionIds.size() != Set.copyOf(selectedOptionIds).size()) {
             throw new BaseException(BaseErrorCode.ANSWER_004);
         }
+        // 현재 문항에 존재하지 않는 선택지는 응답할 수 없음
         if (!validOptionIds.containsAll(selectedOptionIds)) {
             throw new BaseException(BaseErrorCode.ANSWER_004);
         }
