@@ -16,7 +16,6 @@ import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.storage.dto.DownloadUrlResponse;
 import server.MATE.global.storage.dto.UploadUrlResponse;
 
-import java.util.Set;
 import java.util.UUID;
 
 @Tag(name = "[FILE] 파일 API", description = "파일 업로드/다운로드 Presigned URL 발급 API")
@@ -24,8 +23,6 @@ import java.util.UUID;
 @RequestMapping("/api/v1/files")
 @RequiredArgsConstructor
 public class FileController {
-
-    private static final Set<String> IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png");
 
     private final FileStorageService fileStorageService;
 
@@ -56,16 +53,12 @@ public class FileController {
             @RequestParam String extension
     ) {
         String ext = extension.toLowerCase();
-        String fileKey;
-        if (IMAGE_EXTENSIONS.contains(ext)) {
-            fileKey = "media/" + UUID.randomUUID() + "." + ext;
-        } else if (ext.equals("pdf")) {
-            fileKey = "reports/pdf/" + UUID.randomUUID() + "." + ext;
-        } else if (ext.equals("xlsx")) {
-            fileKey = "reports/excel/" + UUID.randomUUID() + "." + ext;
-        } else {
-            throw new BaseException(BaseErrorCode.FILE_002);
-        }
+        String fileKey = switch (ext) {
+            case "jpg", "jpeg", "png" -> "media/" + UUID.randomUUID() + "." + ext;
+            case "pdf" -> "reports/pdf/" + UUID.randomUUID() + "." + ext;
+            case "xlsx" -> "reports/excel/" + UUID.randomUUID() + "." + ext;
+            default -> throw new BaseException(BaseErrorCode.FILE_002);
+        };
         String presignedUrl = fileStorageService.generatePresignedUrl(fileKey);
         return ResponseEntity.ok(ApiResponse.ok("업로드 URL이 발급되었습니다.",
                 new UploadUrlResponse(presignedUrl, fileKey)));
