@@ -71,6 +71,7 @@ public enum BaseErrorCode implements ErrorCode {
 
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
+    FILE_002(HttpStatus.BAD_REQUEST, "FILE_002", "지원하지 않는 리포트 형식입니다. PDF, XLSX만 허용됩니다."),
 
     ;
 

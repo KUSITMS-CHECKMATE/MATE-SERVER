@@ -1,0 +1,93 @@
+package server.MATE.global.storage;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import server.MATE.global.common.exception.BaseErrorCode;
+import server.MATE.global.common.exception.BaseException;
+import server.MATE.global.common.response.ApiResponse;
+import server.MATE.global.storage.dto.DownloadUrlResponse;
+import server.MATE.global.storage.dto.UploadUrlResponse;
+
+import java.util.Set;
+import java.util.UUID;
+
+@Tag(name = "[FILE] 파일 API", description = "파일 업로드/다운로드 Presigned URL 발급 API")
+@RestController
+@RequestMapping("/api/v1/files")
+@RequiredArgsConstructor
+public class FileController {
+
+    private static final Set<String> IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png");
+
+    private final FileStorageService fileStorageService;
+
+    @Operation(summary = "파일 업로드 URL 발급", description = """
+            파일 업로드용 Presigned URL을 발급합니다. 클라이언트는 서버를 경유하지 않고 Azure Blob Storage에 직접 업로드합니다.
+
+            **[허용 확장자]**
+            - 이미지: jpg, jpeg, png
+            - 리포트: pdf, xlsx
+
+            **[업로드 방법]**
+            - Method: PUT
+            - URL: 발급받은 presignedUrl
+            - Header: x-ms-blob-type: BlockBlob
+            - Body: 파일 바이너리
+
+            **[URL 유효시간]** 10분
+
+            **[에러 코드]**
+            | 코드 | HTTP | 설명 |
+            |------|------|------|
+            | COMMON_004 | 400 | extension 파라미터 누락 |
+            | FILE_002 | 400 | 지원하지 않는 파일 형식 |
+            """)
+    @PostMapping("/presigned-url/upload")
+    public ResponseEntity<ApiResponse<UploadUrlResponse>> generateUploadUrl(
+            @Parameter(description = "파일 확장자 (점 없이 입력, 예: jpg, pdf)", example = "jpg")
+            @RequestParam String extension
+    ) {
+        String ext = extension.toLowerCase();
+        String fileKey;
+        if (IMAGE_EXTENSIONS.contains(ext)) {
+            fileKey = "media/" + UUID.randomUUID() + "." + ext;
+        } else if (ext.equals("pdf")) {
+            fileKey = "reports/pdf/" + UUID.randomUUID() + "." + ext;
+        } else if (ext.equals("xlsx")) {
+            fileKey = "reports/excel/" + UUID.randomUUID() + "." + ext;
+        } else {
+            throw new BaseException(BaseErrorCode.FILE_002);
+        }
+        String presignedUrl = fileStorageService.generatePresignedUrl(fileKey);
+        return ResponseEntity.ok(ApiResponse.ok("업로드 URL이 발급되었습니다.",
+                new UploadUrlResponse(presignedUrl, fileKey)));
+    }
+
+    @Operation(summary = "파일 다운로드 URL 발급", description = """
+            저장된 파일의 다운로드용 Presigned URL을 발급합니다.
+
+            **[URL 유효시간]** 30분
+
+            **[에러 코드]**
+            | 코드 | HTTP | 설명 |
+            |------|------|------|
+            | COMMON_004 | 400 | fileKey 파라미터 누락 |
+            """)
+    @GetMapping("/presigned-url/download")
+    public ResponseEntity<ApiResponse<DownloadUrlResponse>> generateDownloadUrl(
+            @Parameter(description = "업로드 시 발급받은 fileKey", example = "reports/uuid.pdf")
+            @RequestParam String fileKey
+    ) {
+        String presignedUrl = fileStorageService.generateDownloadUrl(fileKey);
+        return ResponseEntity.ok(ApiResponse.ok("다운로드 URL이 발급되었습니다.",
+                new DownloadUrlResponse(presignedUrl)));
+    }
+}
