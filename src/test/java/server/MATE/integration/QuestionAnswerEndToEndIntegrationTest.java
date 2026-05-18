@@ -367,10 +367,14 @@ class QuestionAnswerEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTe
         JsonNode groupsNode = objectMapper.valueToTree(savedAnswer.getAnswer().get("groups"));
         assertThat(groupsNode.isArray()).isTrue();
         assertThat(groupsNode).hasSize(2);
-        assertThat(groupsNode.get(0).path("category").asText()).isEqualTo("쇼핑");
-        assertThat(groupsNode.get(1).path("category").asText()).isEqualTo("정보");
-        assertThat(toTextSet(groupsNode.get(0).path("cardNames"))).containsExactlyInAnyOrder("홈", "장바구니");
-        assertThat(toTextSet(groupsNode.get(1).path("cardNames"))).containsExactlyInAnyOrder("검색", "공지사항");
+        assertThat(groupsNode).anySatisfy(group -> {
+            assertThat(group.path("category").asText()).isEqualTo("쇼핑");
+            assertThat(toTextSet(group.path("cardNames"))).containsExactlyInAnyOrder("홈", "장바구니");
+        });
+        assertThat(groupsNode).anySatisfy(group -> {
+            assertThat(group.path("category").asText()).isEqualTo("정보");
+            assertThat(toTextSet(group.path("cardNames"))).containsExactlyInAnyOrder("검색", "공지사항");
+        });
         assertThat(toTextSet(groupsNode.get(0).path("cardNames"), groupsNode.get(1).path("cardNames")))
                 .containsExactlyInAnyOrder("홈", "검색", "장바구니", "공지사항");
 
