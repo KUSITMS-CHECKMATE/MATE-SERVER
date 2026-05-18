@@ -38,7 +38,7 @@ public class AnswerController {
             질문 유형
             - SUBJECTIVE: text 필수
             - OBJECTIVE: optionIds 필수, 기타 선택지 선택 시 otherText
-            - FIVE_SECOND: 주관식(text) 또는 객관식(optionIds) 모드
+            - FIVE_SECOND: 주관식(text) 또는 객관식(optionIds) 모드, 기타 선택지 선택 시 otherText
             - SCALE: value 필수 (1 ~ range)
             - AB_TEST: selected 필수 ("A" 또는 "B")
             - CARD_SORTING: groups 필수
@@ -109,8 +109,8 @@ public class AnswerController {
                                                         {
                                                           "type": "FIVE_SECOND",
                                                           "questionId": 3,
-                                                          "text": null,
-                                                          "optionIds": [2001]
+                                                          "optionIds": [2001, 2099],
+                                                          "otherText": "하단 CTA 버튼"
                                                         }
                                                       ]
                                                     }
