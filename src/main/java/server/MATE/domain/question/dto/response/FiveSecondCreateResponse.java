@@ -15,7 +15,7 @@ public record FiveSecondCreateResponse(
         Integer minSelect,
         Integer maxSelect,
         Boolean isOther,
-        List<String> options
+        List<FiveSecondOptionResponse> options
 ) {
     public static FiveSecondCreateResponse from(FiveSecond entity) {
         return new FiveSecondCreateResponse(
@@ -29,8 +29,24 @@ public record FiveSecondCreateResponse(
                 entity.getMaxSelect(),
                 entity.getIsOther(),
                 entity.getOptions().stream()
-                        .map(option -> option.getContent())
+                        .map(FiveSecondOptionResponse::from)
                         .toList()
         );
+    }
+
+    public record FiveSecondOptionResponse(
+            Long fiveSecondOptionId,
+            String content,
+            Integer sequence,
+            boolean isOtherOption
+    ) {
+        public static FiveSecondOptionResponse from(server.MATE.domain.question.entity.FiveSecondOption option) {
+            return new FiveSecondOptionResponse(
+                    option.getId(),
+                    option.getContent(),
+                    option.getSequence(),
+                    Boolean.TRUE.equals(option.getIsOtherOption())
+            );
+        }
     }
 }

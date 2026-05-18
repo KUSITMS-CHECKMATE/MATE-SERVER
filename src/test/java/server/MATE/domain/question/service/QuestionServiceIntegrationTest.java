@@ -193,7 +193,8 @@ class QuestionServiceIntegrationTest {
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("첫 번째", 1),
                         org.assertj.core.groups.Tuple.tuple("두 번째", 2),
-                        org.assertj.core.groups.Tuple.tuple("세 번째", 3)
+                        org.assertj.core.groups.Tuple.tuple("세 번째", 3),
+                        org.assertj.core.groups.Tuple.tuple("기타 (직접 입력)", 4)
                 );
     }
 
@@ -298,8 +299,13 @@ class QuestionServiceIntegrationTest {
         assertThat(fiveSecondResponse.options()).extracting(option -> option.content(), option -> option.sequence())
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("검색창", 1),
-                        org.assertj.core.groups.Tuple.tuple("메인 배너", 2)
+                        org.assertj.core.groups.Tuple.tuple("메인 배너", 2),
+                        org.assertj.core.groups.Tuple.tuple("기타 (직접 입력)", 3)
                 );
+        assertThat(fiveSecondResponse.options()).anySatisfy(option -> {
+            assertThat(option.content()).isEqualTo("기타 (직접 입력)");
+            assertThat(option.isOtherOption()).isTrue();
+        });
         assertThat(fiveSecondResponse.options()).allSatisfy(option -> assertThat(option.fiveSecondOptionId()).isNotNull());
     }
 
@@ -456,7 +462,11 @@ class QuestionServiceIntegrationTest {
 
         FiveSecondDetailResponse fiveSecondResponse = (FiveSecondDetailResponse) response.questions().get(2);
         assertThat(fiveSecondResponse.fiveSecondId()).isNotNull();
-        assertThat(fiveSecondResponse.options()).hasSize(2);
+        assertThat(fiveSecondResponse.options()).hasSize(3);
+        assertThat(fiveSecondResponse.options()).anySatisfy(option -> {
+            assertThat(option.content()).isEqualTo("기타 (직접 입력)");
+            assertThat(option.isOtherOption()).isTrue();
+        });
         assertThat(fiveSecondResponse.options()).allSatisfy(option -> assertThat(option.fiveSecondOptionId()).isNotNull());
 
         ScaleDetailResponse scaleResponse = (ScaleDetailResponse) response.questions().get(3);

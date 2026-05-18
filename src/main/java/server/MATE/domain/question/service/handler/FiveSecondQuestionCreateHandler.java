@@ -16,6 +16,8 @@ import java.util.List;
 @Component
 public class FiveSecondQuestionCreateHandler extends AbstractQuestionCreateHandler<FiveSecondCreateRequest> {
 
+    private static final String OTHER_OPTION_CONTENT = "기타 (직접 입력)";
+
     private final FiveSecondRepository fiveSecondRepository;
 
     public FiveSecondQuestionCreateHandler(FiveSecondRepository fiveSecondRepository) {
@@ -49,16 +51,23 @@ public class FiveSecondQuestionCreateHandler extends AbstractQuestionCreateHandl
 
         // 객관식 5초 테스트는 옵션(선지)를 최소 2개 이상 가져야 함
         List<FiveSecondOptionRequest> options = item.options();
-        if (options == null || options.size() < 2) {
+        int optionCount = options == null ? 0 : options.size();
+        int effectiveOptionCount = optionCount + (Boolean.TRUE.equals(item.isOther()) ? 1 : 0);
+        if (options == null || optionCount < 2) {
             throw new BaseException(BaseErrorCode.QUESTION_004);
+        }
+        if (effectiveOptionCount > 10) {
+            throw new BaseException(BaseErrorCode.COMMON_002);
         }
 
         // 단일 선택이면 min/max 선택 개수 검증을 수행하지 않음
         if (!Boolean.TRUE.equals(item.isDuplicate())) {
+            if (item.minSelect() != null || item.maxSelect() != null) {
+                throw new BaseException(BaseErrorCode.QUESTION_009);
+            }
             return;
         }
 
-        int optionCount = options.size();
         Integer min = item.minSelect();
         Integer max = item.maxSelect();
 
@@ -73,10 +82,10 @@ public class FiveSecondQuestionCreateHandler extends AbstractQuestionCreateHandl
         }
 
         // min/max 선택 개수는 전체 선택지 개수를 초과할 수 없음
-        if (min != null && min > optionCount) {
+        if (min != null && min > effectiveOptionCount) {
             throw new BaseException(BaseErrorCode.QUESTION_003);
         }
-        if (max != null && max > optionCount) {
+        if (max != null && max > effectiveOptionCount) {
             throw new BaseException(BaseErrorCode.QUESTION_003);
         }
     }
@@ -105,8 +114,19 @@ public class FiveSecondQuestionCreateHandler extends AbstractQuestionCreateHandl
                         .fiveSecond(fiveSecond)
                         .content(optionRequests.get(i).content())
                         .sequence(i + 1)
+                        .isOtherOption(false)
                         .build();
                 fiveSecond.addOption(option);
+            }
+
+            if (Boolean.TRUE.equals(item.isOther())) {
+                FiveSecondOption otherOption = FiveSecondOption.builder()
+                        .fiveSecond(fiveSecond)
+                        .content(OTHER_OPTION_CONTENT)
+                        .sequence(optionRequests.size() + 1)
+                        .isOtherOption(true)
+                        .build();
+                fiveSecond.addOption(otherOption);
             }
         }
 
