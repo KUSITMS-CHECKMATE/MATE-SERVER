@@ -18,8 +18,8 @@ import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.image.event.ImageCleanupEvent;
-import server.MATE.global.image.event.ImageDeleteEvent;
+import server.MATE.global.storage.event.FileCleanupEvent;
+import server.MATE.global.storage.event.FileDeleteEvent;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -67,7 +67,7 @@ public class TestService {
                 .build();
 
         test.addCategories(request.categories());
-        eventPublisher.publishEvent(new ImageCleanupEvent(imageKeys));
+        eventPublisher.publishEvent(new FileCleanupEvent(imageKeys));
         testRepository.save(test);
 
         return TestCreateResponse.from(test);
@@ -93,8 +93,12 @@ public class TestService {
                     .filter(key -> !newKeySet.contains(key))
                     .toList();
 
-            if (!addedKeys.isEmpty()) eventPublisher.publishEvent(new ImageCleanupEvent(addedKeys));
-            if (!removedKeys.isEmpty()) eventPublisher.publishEvent(new ImageDeleteEvent(removedKeys));
+            if (!addedKeys.isEmpty()) {
+                eventPublisher.publishEvent(new FileCleanupEvent(addedKeys));
+            }
+            if (!removedKeys.isEmpty()) {
+                eventPublisher.publishEvent(new FileDeleteEvent(removedKeys));
+            }
         }
 
         test.update(
@@ -114,10 +118,14 @@ public class TestService {
         Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
-        if (!test.getMakerId().equals(makerId)) throw new BaseException(BaseErrorCode.TEST_005);
+        if (!test.getMakerId().equals(makerId)) {
+            throw new BaseException(BaseErrorCode.TEST_005);
+        }
 
         List<String> imageKeys = List.copyOf(test.getImageKeys());
-        if (!imageKeys.isEmpty()) eventPublisher.publishEvent(new ImageDeleteEvent(imageKeys));
+        if (!imageKeys.isEmpty()) {
+            eventPublisher.publishEvent(new FileDeleteEvent(imageKeys));
+        }
 
         test.delete(LocalDateTime.now(clock));
     }
@@ -151,7 +159,9 @@ public class TestService {
     }
 
     private Set<Long> findLikedTestIds(Long userId, List<Test> tests) {
-        if (tests.isEmpty()) return Set.of();
+        if (tests.isEmpty()) {
+            return Set.of();
+        }
 
         List<Long> testIds = tests.stream()
                 .map(Test::getId)
