@@ -1,4 +1,4 @@
-package server.MATE.global.image;
+package server.MATE.global.storage;
 
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
@@ -16,7 +16,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class AzureBlobImageService implements ImageService {
+public class AzureBlobFileStorageService implements FileStorageService {
 
     private final AzureBlobProperties properties;
     private BlobContainerClient containerClient;
@@ -31,19 +31,41 @@ public class AzureBlobImageService implements ImageService {
     }
 
     @Override
-    public String generatePresignedUrl(String imageKey) {
-        BlobClient blobClient = containerClient.getBlobClient(imageKey);
+    public String generatePresignedUrl(String key) {
+        BlobClient blobClient = containerClient.getBlobClient(key);
         BlobSasPermission permission = new BlobSasPermission()
                 .setCreatePermission(true)
                 .setWritePermission(true)
                 .setAddPermission(true);
         BlobServiceSasSignatureValues values = new BlobServiceSasSignatureValues(
-                OffsetDateTime.now().plusMinutes(10), permission);
+                OffsetDateTime.now().plusMinutes(properties.getUploadSasExpiryMinutes()), permission)
+                .setContentType(resolveContentType(key));
+        return blobClient.getBlobUrl() + "?" + blobClient.generateSas(values);
+    }
+
+    @Override
+    public String generateDownloadUrl(String key) {
+        BlobClient blobClient = containerClient.getBlobClient(key);
+        BlobSasPermission permission = new BlobSasPermission()
+                .setReadPermission(true);
+        BlobServiceSasSignatureValues values = new BlobServiceSasSignatureValues(
+                OffsetDateTime.now().plusMinutes(properties.getDownloadSasExpiryMinutes()), permission);
         return blobClient.getBlobUrl() + "?" + blobClient.generateSas(values);
     }
 
     @Override
     public void deleteFiles(List<String> keys) {
         keys.forEach(key -> containerClient.getBlobClient(key).deleteIfExists());
+    }
+
+    private String resolveContentType(String key) {
+        String ext = key.substring(key.lastIndexOf('.') + 1).toLowerCase();
+        return switch (ext) {
+            case "jpg", "jpeg" -> "image/jpeg";
+            case "png" -> "image/png";
+            case "pdf" -> "application/pdf";
+            case "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            default -> "application/octet-stream";
+        };
     }
 }

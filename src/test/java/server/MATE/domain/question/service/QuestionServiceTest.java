@@ -27,7 +27,7 @@ import server.MATE.domain.question.service.handler.QuestionCreateHandler;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.image.event.ImageCleanupEvent;
+import server.MATE.global.storage.event.FileCleanupEvent;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -141,7 +141,7 @@ class QuestionServiceTest {
                         null,
                         null,
                         true,
-                        List.of(new ObjectiveOptionDetailResponse(1001L, "A", null, 1))
+                        List.of(new ObjectiveOptionDetailResponse(1001L, "A", null, 1, false))
                 )
         ));
         given(scaleFetcher.fetch(List.of(scaleQuestion))).willReturn(Map.of(
@@ -277,9 +277,9 @@ class QuestionServiceTest {
         verify(objectiveHandler).createDetail(savedQuestions.get(0), objective);
         verify(scaleHandler).createDetail(savedQuestions.get(1), scale);
 
-        ArgumentCaptor<ImageCleanupEvent> eventCaptor = ArgumentCaptor.forClass(ImageCleanupEvent.class);
+        ArgumentCaptor<FileCleanupEvent> eventCaptor = ArgumentCaptor.forClass(FileCleanupEvent.class);
         verify(eventPublisher).publishEvent(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().imageKeys()).containsExactly("image-a", "image-scale");
+        assertThat(eventCaptor.getValue().fileKeys()).containsExactly("image-a", "image-scale");
 
         assertThat(response.questions()).hasSize(2);
         assertThat(response.questions().get(0).type()).isEqualTo(QuestionType.OBJECTIVE);
@@ -526,9 +526,9 @@ class QuestionServiceTest {
 
         questionService.createQuestions(TEST_ID, MAKER_ID, request);
 
-        ArgumentCaptor<ImageCleanupEvent> eventCaptor = ArgumentCaptor.forClass(ImageCleanupEvent.class);
+        ArgumentCaptor<FileCleanupEvent> eventCaptor = ArgumentCaptor.forClass(FileCleanupEvent.class);
         verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().imageKeys())
+        assertThat(eventCaptor.getValue().fileKeys())
                 .containsExactly("image-a", "image-b", "image-scale");
     }
 
