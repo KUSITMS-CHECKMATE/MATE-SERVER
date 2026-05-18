@@ -19,12 +19,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import server.MATE.domain.auth.crypto.TokenEncryptionProperties;
 import server.MATE.domain.auth.crypto.TokenEncryptor;
+import server.MATE.global.image.ImageService;
 
 @SpringBootTest(classes = RedisTokenStoreContextTest.TestConfig.class)
+@ActiveProfiles("test")
 class RedisTokenStoreContextTest {
 
     private static final String VALID_BASE64_KEY = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
@@ -49,6 +52,9 @@ class RedisTokenStoreContextTest {
     @MockitoBean
     @SuppressWarnings("unchecked")
     private ValueOperations<String, String> valueOperations;
+
+    @MockitoBean
+    private ImageService imageService;
 
     @Autowired
     private RedisTossTokenStore redisTossTokenStore;

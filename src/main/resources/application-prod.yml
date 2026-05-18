@@ -13,7 +13,6 @@ spring:
     redis:
       host: ${REDIS_HOST:}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
   ssl:
     bundle:
       pem:
@@ -58,5 +57,7 @@ jwt:
       expiration: 1209600000
 
 security:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
   token-encryption:
     key: ${TOKEN_ENCRYPTION_KEY:}

@@ -12,6 +12,21 @@ spring:
     show-sql: false
     open-in-view: false
 
+security:
+  cors:
+    allowed-methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - OPTIONS
+    allowed-headers:
+      - "*"
+    exposed-headers: []
+    allow-credentials: true
+    max-age-seconds: 3600
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
