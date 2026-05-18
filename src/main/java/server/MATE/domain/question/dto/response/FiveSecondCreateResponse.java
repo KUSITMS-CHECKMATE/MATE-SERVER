@@ -12,6 +12,7 @@ public record FiveSecondCreateResponse(
         Boolean isDuplicate,
         Integer minSelect,
         Integer maxSelect,
+        Boolean isOther,
         List<String> options
 ) {
     public static FiveSecondCreateResponse from(FiveSecond entity) {
@@ -23,6 +24,7 @@ public record FiveSecondCreateResponse(
                 entity.getIsDuplicate(),
                 entity.getMinSelect(),
                 entity.getMaxSelect(),
+                entity.getIsOther(),
                 entity.getOptions().stream()
                         .map(option -> option.getContent())
                         .toList()

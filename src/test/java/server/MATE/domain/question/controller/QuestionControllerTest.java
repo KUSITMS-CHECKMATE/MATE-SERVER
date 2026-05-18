@@ -137,7 +137,7 @@ class QuestionControllerTest {
                         new SubjectiveDetailResponse(102L, 200L, QuestionType.SUBJECTIVE, 2L, "주관식", "설명", "subjective-image"),
                         new FiveSecondDetailResponse(
                                 103L, 300L, QuestionType.FIVE_SECOND, 3L, "5초", "설명",
-                                "five-second-image", true, true, 1, 2,
+                                "five-second-image", true, true, 1, 2, true,
                                 List.of(new FiveSecondOptionDetailResponse(3001L, "검색창", 1))
                         ),
                         new ScaleDetailResponse(104L, 400L, QuestionType.SCALE, 4L, "척도", "설명", null, "낮음", "높음", 5),
@@ -182,7 +182,7 @@ class QuestionControllerTest {
                         new SubjectiveDetailResponse(101L, 201L, QuestionType.SUBJECTIVE, 1L, "주관식", "설명", null),
                         new FiveSecondDetailResponse(
                                 102L, 202L, QuestionType.FIVE_SECOND, 2L, "5초 주관식", "설명",
-                                "five-second-image", false, null, null, null, List.of()
+                                "five-second-image", false, null, null, null, null, List.of()
                         ),
                         new ScaleDetailResponse(103L, 203L, QuestionType.SCALE, 3L, "척도", "설명", null, null, null, 5),
                         new TreeTestDetailResponse(
@@ -200,6 +200,7 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.data.questions[1].isDuplicate").value((String) null))
                 .andExpect(jsonPath("$.data.questions[1].minSelect").value((String) null))
                 .andExpect(jsonPath("$.data.questions[1].maxSelect").value((String) null))
+                .andExpect(jsonPath("$.data.questions[1].isOther").value((String) null))
                 .andExpect(jsonPath("$.data.questions[1].options").isArray())
                 .andExpect(jsonPath("$.data.questions[1].options.length()").value(0))
                 .andExpect(jsonPath("$.data.questions[2].imageKey").value((String) null))
@@ -222,7 +223,7 @@ class QuestionControllerTest {
                         ),
                         new FiveSecondDetailResponse(
                                 102L, 202L, QuestionType.FIVE_SECOND, 2L, "5초", "설명",
-                                "five-second-image", true, true, 1, 2,
+                                "five-second-image", true, true, 1, 2, true,
                                 List.of(new FiveSecondOptionDetailResponse(2001L, "검색창", 1))
                         )
                 )
@@ -240,6 +241,7 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.data.questions[1].fiveSecondId").value(202))
                 .andExpect(jsonPath("$.data.questions[1].isObjective").value(true))
                 .andExpect(jsonPath("$.data.questions[1].isDuplicate").value(true))
+                .andExpect(jsonPath("$.data.questions[1].isOther").value(true))
                 .andExpect(jsonPath("$.data.questions[1].objective").doesNotExist())
                 .andExpect(jsonPath("$.data.questions[1].duplicate").doesNotExist());
     }

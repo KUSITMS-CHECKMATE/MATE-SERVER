@@ -35,10 +35,16 @@ public class FiveSecondQuestionCreateHandler extends AbstractQuestionCreateHandl
             if ((item.options() != null && !item.options().isEmpty())
                     || item.isDuplicate() != null
                     || item.minSelect() != null
-                    || item.maxSelect() != null) {
+                    || item.maxSelect() != null
+                    || item.isOther() != null) {
                 throw new BaseException(BaseErrorCode.QUESTION_008);
             }
             return;
+        }
+
+        // 객관식 5초 테스트일 때, isOther은 Null일 수 없음
+        if (item.isOther() == null) {
+            throw new BaseException(BaseErrorCode.COMMON_002);
         }
 
         // 객관식 5초 테스트는 옵션(선지)를 최소 2개 이상 가져야 함
@@ -88,6 +94,7 @@ public class FiveSecondQuestionCreateHandler extends AbstractQuestionCreateHandl
                 .isDuplicate(item.isObjective() ? item.isDuplicate() : null)
                 .minSelect(minSelect)
                 .maxSelect(maxSelect)
+                .isOther(item.isObjective() ? item.isOther() : null)
                 .build();
 
         if (item.isObjective() && item.options() != null) {

@@ -174,6 +174,7 @@ class QuestionServiceIntegrationTest {
                         true,
                         1,
                         3,
+                        true,
                         List.of(
                                 new FiveSecondOptionRequest("첫 번째"),
                                 new FiveSecondOptionRequest("두 번째"),
@@ -238,6 +239,7 @@ class QuestionServiceIntegrationTest {
                         null,
                         null,
                         null,
+                        null,
                         List.of()
                 )
         )));
@@ -250,6 +252,7 @@ class QuestionServiceIntegrationTest {
         assertThat(fiveSecondResponse.isDuplicate()).isNull();
         assertThat(fiveSecondResponse.minSelect()).isNull();
         assertThat(fiveSecondResponse.maxSelect()).isNull();
+        assertThat(fiveSecondResponse.isOther()).isNull();
         assertThat(fiveSecondResponse.options()).isEmpty();
         assertThat(fiveSecondResponse.imageKey()).isEqualTo("five-second-image");
     }
@@ -268,6 +271,7 @@ class QuestionServiceIntegrationTest {
                         true,
                         1,
                         2,
+                        true,
                         List.of(
                                 new FiveSecondOptionRequest("검색창"),
                                 new FiveSecondOptionRequest("메인 배너")
@@ -283,6 +287,7 @@ class QuestionServiceIntegrationTest {
         assertThat(fiveSecondResponse.isDuplicate()).isTrue();
         assertThat(fiveSecondResponse.minSelect()).isEqualTo(1);
         assertThat(fiveSecondResponse.maxSelect()).isEqualTo(2);
+        assertThat(fiveSecondResponse.isOther()).isTrue();
         assertThat(fiveSecondResponse.options()).extracting(option -> option.content(), option -> option.sequence())
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("검색창", 1),
@@ -402,6 +407,7 @@ class QuestionServiceIntegrationTest {
                         true,
                         1,
                         2,
+                        true,
                         List.of(
                                 new FiveSecondOptionRequest("검색창"),
                                 new FiveSecondOptionRequest("메인 배너")
