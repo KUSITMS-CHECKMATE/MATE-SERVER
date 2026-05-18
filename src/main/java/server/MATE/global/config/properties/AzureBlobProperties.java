@@ -12,4 +12,6 @@ import org.springframework.stereotype.Component;
 public class AzureBlobProperties {
     private String connectionString;
     private String containerName;
+    private int uploadSasExpiryMinutes = 10;
+    private int downloadSasExpiryMinutes = 30;
 }
