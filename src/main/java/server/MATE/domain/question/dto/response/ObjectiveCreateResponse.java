@@ -26,7 +26,8 @@ public record ObjectiveCreateResponse(
                                 option.getId(),
                                 option.getContent(),
                                 option.getImageKey(),
-                                option.getSequence()
+                                option.getSequence(),
+                                Boolean.TRUE.equals(option.getIsOtherOption())
                         ))
                         .toList()
         );
@@ -36,7 +37,8 @@ public record ObjectiveCreateResponse(
             Long id,
             String content,
             String imageKey,
-            Integer sequence
+            Integer sequence,
+            boolean isOtherOption
     ) {
     }
 }

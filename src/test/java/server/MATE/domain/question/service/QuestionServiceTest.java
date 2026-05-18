@@ -141,7 +141,7 @@ class QuestionServiceTest {
                         null,
                         null,
                         true,
-                        List.of(new ObjectiveOptionDetailResponse(1001L, "A", null, 1))
+                        List.of(new ObjectiveOptionDetailResponse(1001L, "A", null, 1, false))
                 )
         ));
         given(scaleFetcher.fetch(List.of(scaleQuestion))).willReturn(Map.of(

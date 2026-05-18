@@ -157,7 +157,8 @@ class QuestionServiceIntegrationTest {
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("첫 번째", 1),
                         org.assertj.core.groups.Tuple.tuple("두 번째", 2),
-                        org.assertj.core.groups.Tuple.tuple("세 번째", 3)
+                        org.assertj.core.groups.Tuple.tuple("세 번째", 3),
+                        org.assertj.core.groups.Tuple.tuple("기타 (직접 입력)", 4)
                 );
     }
 
@@ -443,7 +444,11 @@ class QuestionServiceIntegrationTest {
 
         ObjectiveDetailResponse objectiveResponse = (ObjectiveDetailResponse) response.questions().get(0);
         assertThat(objectiveResponse.objectiveId()).isNotNull();
-        assertThat(objectiveResponse.options()).hasSize(2);
+        assertThat(objectiveResponse.options()).hasSize(3);
+        assertThat(objectiveResponse.options()).anySatisfy(option -> {
+            assertThat(option.content()).isEqualTo("기타 (직접 입력)");
+            assertThat(option.isOtherOption()).isTrue();
+        });
         assertThat(objectiveResponse.options()).allSatisfy(option -> assertThat(option.objectiveOptionId()).isNotNull());
 
         SubjectiveDetailResponse subjectiveResponse = (SubjectiveDetailResponse) response.questions().get(1);
@@ -524,7 +529,11 @@ class QuestionServiceIntegrationTest {
         ObjectiveDetailResponse objectiveResponse = (ObjectiveDetailResponse) response.questions().get(1);
         assertThat(objectiveResponse.objectiveId()).isNotNull();
         assertThat(objectiveResponse.options()).extracting(option -> option.sequence())
-                .containsExactly(1, 2);
+                .containsExactly(1, 2, 3);
+        assertThat(objectiveResponse.options()).anySatisfy(option -> {
+            assertThat(option.content()).isEqualTo("기타 (직접 입력)");
+            assertThat(option.isOtherOption()).isTrue();
+        });
         assertThat(objectiveResponse.options()).allSatisfy(option -> assertThat(option.objectiveOptionId()).isNotNull());
 
         TreeTestDetailResponse treeResponse = (TreeTestDetailResponse) response.questions().get(2);
@@ -599,7 +608,8 @@ class QuestionServiceIntegrationTest {
                 .extracting(row -> row[0], row -> row[1])
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("A", 1),
-                        org.assertj.core.groups.Tuple.tuple("B", 2)
+                        org.assertj.core.groups.Tuple.tuple("B", 2),
+                        org.assertj.core.groups.Tuple.tuple("기타 (직접 입력)", 3)
                 );
 
         Long treeQuestionId = savedQuestions.get(2).getId();
