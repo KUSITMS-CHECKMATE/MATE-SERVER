@@ -18,8 +18,8 @@ import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.image.event.ImageCleanupEvent;
-import server.MATE.global.image.event.ImageDeleteEvent;
+import server.MATE.global.storage.event.FileCleanupEvent;
+import server.MATE.global.storage.event.FileDeleteEvent;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -67,7 +67,7 @@ public class TestService {
                 .build();
 
         test.addCategories(request.categories());
-        eventPublisher.publishEvent(new ImageCleanupEvent(imageKeys));
+        eventPublisher.publishEvent(new FileCleanupEvent(imageKeys));
         testRepository.save(test);
 
         return TestCreateResponse.from(test);
@@ -94,10 +94,10 @@ public class TestService {
                     .toList();
 
             if (!addedKeys.isEmpty()) {
-                eventPublisher.publishEvent(new ImageCleanupEvent(addedKeys));
+                eventPublisher.publishEvent(new FileCleanupEvent(addedKeys));
             }
             if (!removedKeys.isEmpty()) {
-                eventPublisher.publishEvent(new ImageDeleteEvent(removedKeys));
+                eventPublisher.publishEvent(new FileDeleteEvent(removedKeys));
             }
         }
 
@@ -124,7 +124,7 @@ public class TestService {
 
         List<String> imageKeys = List.copyOf(test.getImageKeys());
         if (!imageKeys.isEmpty()) {
-            eventPublisher.publishEvent(new ImageDeleteEvent(imageKeys));
+            eventPublisher.publishEvent(new FileDeleteEvent(imageKeys));
         }
 
         test.delete(LocalDateTime.now(clock));

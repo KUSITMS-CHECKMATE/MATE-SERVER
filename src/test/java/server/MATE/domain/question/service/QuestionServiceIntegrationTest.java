@@ -45,7 +45,7 @@ import server.MATE.domain.question.service.handler.ScaleQuestionCreateHandler;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.image.ImageService;
+import server.MATE.global.storage.FileStorageService;
 
 import java.util.Comparator;
 import java.time.LocalDateTime;
@@ -100,7 +100,7 @@ class QuestionServiceIntegrationTest {
     private ScaleQuestionCreateHandler scaleQuestionCreateHandler;
 
     @MockitoBean
-    private ImageService imageService;
+    private FileStorageService fileStorageService;
 
     @AfterEach
     void tearDown() {
@@ -608,7 +608,7 @@ class QuestionServiceIntegrationTest {
         assertThat(objectiveRepository.count()).isEqualTo(1L);
         assertThat(scaleRepository.count()).isEqualTo(1L);
         assertThat(treeTestRepository.count()).isEqualTo(2L);
-        verify(imageService, never()).deleteFiles(anyList());
+        verify(fileStorageService, never()).deleteFiles(anyList());
     }
 
     @Test
@@ -651,7 +651,7 @@ class QuestionServiceIntegrationTest {
         assertThat(questionRepository.count()).isZero();
         assertThat(objectiveRepository.count()).isZero();
         assertThat(scaleRepository.count()).isZero();
-        verify(imageService).deleteFiles(List.of("image-a", "image-scale"));
+        verify(fileStorageService).deleteFiles(List.of("image-a", "image-scale"));
     }
 
     private server.MATE.domain.test.entity.Test createTest() {
