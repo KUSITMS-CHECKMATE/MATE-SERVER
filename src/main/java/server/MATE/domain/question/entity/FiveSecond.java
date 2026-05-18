@@ -26,6 +26,10 @@ public class FiveSecond {
     @Column(nullable = false, length = 255)
     private String imageKey;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ImageRatio imageRatio;
+
     @Column(nullable = false)
     private boolean isObjective;
 
@@ -40,10 +44,11 @@ public class FiveSecond {
     private List<FiveSecondOption> options = new ArrayList<>();
 
     @Builder
-    public FiveSecond(Question question, String imageKey, boolean isObjective,
+    public FiveSecond(Question question, String imageKey, ImageRatio imageRatio, boolean isObjective,
                       Boolean isDuplicate, Integer minSelect, Integer maxSelect, Boolean isOther) {
         this.question = question;
         this.imageKey = imageKey;
+        this.imageRatio = imageRatio;
         this.isObjective = isObjective;
         this.isDuplicate = isDuplicate;
         this.minSelect = minSelect;

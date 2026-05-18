@@ -9,6 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import server.MATE.domain.question.dto.request.FiveSecondCreateRequest;
 import server.MATE.domain.question.dto.request.FiveSecondOptionRequest;
 import server.MATE.domain.question.entity.FiveSecond;
+import server.MATE.domain.question.entity.ImageRatio;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.FiveSecondRepository;
@@ -35,6 +36,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 true,
                 false,
                 null,
@@ -57,6 +59,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 false,
                 null,
                 null,
@@ -79,6 +82,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 false,
                 true,
                 1,
@@ -101,6 +105,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 false,
                 null,
                 null,
@@ -123,6 +128,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 true,
                 false,
                 null,
@@ -148,6 +154,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 true,
                 true,
                 0,
@@ -173,6 +180,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 true,
                 true,
                 2,
@@ -198,6 +206,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 true,
                 true,
                 1,
@@ -223,6 +232,7 @@ class FiveSecondQuestionCreateHandlerTest {
                 "5초",
                 "설명",
                 "image",
+                ImageRatio.RATIO_9_16,
                 true,
                 false,
                 null,
@@ -248,6 +258,7 @@ class FiveSecondQuestionCreateHandlerTest {
         FiveSecond saved = captor.getValue();
 
         assertThat(saved.getQuestion()).isEqualTo(question);
+        assertThat(saved.getImageRatio()).isEqualTo(ImageRatio.RATIO_9_16);
         assertThat(saved.getIsOther()).isTrue();
         assertThat(saved.getOptions()).hasSize(2);
         assertThat(saved.getOptions().get(0).getSequence()).isEqualTo(1);
