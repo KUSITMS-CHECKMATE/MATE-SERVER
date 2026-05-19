@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
 import server.MATE.domain.question.dto.response.QuestionDetailResponse;
+import server.MATE.domain.question.dto.response.QuestionSummaryResponse;
 import server.MATE.domain.question.service.QuestionService;
 import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.security.principal.AuthenticatedUser;
@@ -303,6 +304,21 @@ public class QuestionController {
     ) {
         QuestionDetailResponse response = questionService.getQuestions(testId, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("문항을 조회했습니다.", response));
+    }
+
+    @Operation(summary = "질문 목록 조회", description = """
+            testId에 해당하는 테스트의 질문 목록 정보를 조회합니다. 통계의 질문 탭 MKST_01 화면에 해당하는 api입니다.
+            - 테스트 메이커만 조회할 수 있습니다.
+            - 테스트가 종료된 경우에만 조회할 수 있습니다.
+            - 질문 개수, 테스트 참여자 수, 질문 목록을 반환합니다.
+            """)
+    @GetMapping("/summary")
+    public ResponseEntity<ApiResponse<QuestionSummaryResponse>> getQuestionSummary(
+            @PathVariable Long testId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        QuestionSummaryResponse response = questionService.getQuestionSummary(testId, authenticatedUser.getId());
+        return ResponseEntity.ok(ApiResponse.ok("질문 목록을 조회했습니다.", response));
     }
 
     @Operation(summary = "질문 전체 등록", description = """
