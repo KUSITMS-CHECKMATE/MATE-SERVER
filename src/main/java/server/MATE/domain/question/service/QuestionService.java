@@ -8,14 +8,14 @@ import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResult;
 import server.MATE.domain.question.dto.response.QuestionDetailItem;
-import server.MATE.domain.question.dto.response.QuestionDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionSummaryItem;
 import server.MATE.domain.question.dto.response.QuestionSummaryResponse;
+import server.MATE.domain.question.dto.response.QuestionsDetailResponse;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.QuestionRepository;
-import server.MATE.domain.question.service.handler.QuestionCreateHandler;
 import server.MATE.domain.question.service.fetcher.QuestionDetailFetcher;
+import server.MATE.domain.question.service.handler.QuestionCreateHandler;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
@@ -25,8 +25,8 @@ import server.MATE.global.storage.event.FileCleanupEvent;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -99,8 +99,8 @@ public class QuestionService {
     }
 
     @Transactional(readOnly = true)
-    public QuestionDetailResponse getQuestions(Long testId) {
-        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
+    public QuestionsDetailResponse getQuestionsDetails(Long testId) {
+        testRepository.findByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
@@ -111,18 +111,18 @@ public class QuestionService {
                         Collectors.toList()
                 ));
 
-        Map<Long, QuestionDetailItem> detailMap = new LinkedHashMap<>();
+        Map<Long, QuestionDetailItem> questionDetailsById = new LinkedHashMap<>();
         for (Map.Entry<QuestionType, List<Question>> entry : questionsByType.entrySet()) {
             QuestionDetailFetcher fetcher = fetcherMap.get(entry.getKey());
             if (fetcher == null) throw new BaseException(BaseErrorCode.COMMON_002);
-            detailMap.putAll(fetcher.fetch(entry.getValue()));
+            questionDetailsById.putAll(fetcher.fetch(entry.getValue()));
         }
 
-        List<QuestionDetailItem> results = questions.stream()
-                .map(question -> detailMap.get(question.getId()))
+        List<QuestionDetailItem> questionDetails = questions.stream()
+                .map(question -> questionDetailsById.get(question.getId()))
                 .toList();
 
-        return new QuestionDetailResponse(testId, results);
+        return new QuestionsDetailResponse(testId, questionDetails);
     }
 
     @Transactional(readOnly = true)

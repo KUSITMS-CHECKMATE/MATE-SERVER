@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
-import server.MATE.domain.question.dto.response.QuestionDetailResponse;
+import server.MATE.domain.question.dto.response.QuestionsDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionSummaryResponse;
 import server.MATE.domain.question.service.QuestionService;
 import server.MATE.global.common.response.ApiResponse;
@@ -299,11 +299,11 @@ public class QuestionController {
                     ))
     })
     @GetMapping
-    public ResponseEntity<ApiResponse<QuestionDetailResponse>> getQuestions(
+    public ResponseEntity<ApiResponse<QuestionsDetailResponse>> getQuestionsDetails(
             @PathVariable Long testId
     ) {
-        QuestionDetailResponse response = questionService.getQuestions(testId);
-        return ResponseEntity.ok(ApiResponse.ok("문항을 조회했습니다.", response));
+        QuestionsDetailResponse questionsDetailResponse = questionService.getQuestionsDetails(testId);
+        return ResponseEntity.ok(ApiResponse.ok("문항을 조회했습니다.", questionsDetailResponse));
     }
 
     @Operation(summary = "질문 목록 조회", description = """

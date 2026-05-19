@@ -26,7 +26,7 @@ import server.MATE.domain.question.dto.response.ObjectiveOptionDetailResponse;
 import server.MATE.domain.question.dto.response.ObjectiveDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResult;
-import server.MATE.domain.question.dto.response.QuestionDetailResponse;
+import server.MATE.domain.question.dto.response.QuestionsDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionSummaryItem;
 import server.MATE.domain.question.dto.response.QuestionSummaryResponse;
 import server.MATE.domain.question.dto.response.ScaleDetailResponse;
@@ -85,7 +85,7 @@ class QuestionControllerTest {
     @Test
     @DisplayName("문항 목록 조회 요청을 정상 처리한다")
     void handlesQuestionListRequestSuccessfully() throws Exception {
-        QuestionDetailResponse response = new QuestionDetailResponse(
+        QuestionsDetailResponse response = new QuestionsDetailResponse(
                 10L,
                 List.of(
                         new ObjectiveDetailResponse(
@@ -107,7 +107,7 @@ class QuestionControllerTest {
                         )
                 )
         );
-        given(questionService.getQuestions(10L)).willReturn(response);
+        given(questionService.getQuestionsDetails(10L)).willReturn(response);
 
         mockMvc.perform(get("/api/v1/tests/10/questions")
                         .with(authenticationPrincipal()))
@@ -161,7 +161,7 @@ class QuestionControllerTest {
     @Test
     @DisplayName("문항 목록 조회 응답은 타입별 상세 id 필드와 트리 노드 계약을 포함한다")
     void returnsDetailIdsAndTreeContractInQuestionListResponse() throws Exception {
-        QuestionDetailResponse response = new QuestionDetailResponse(
+        QuestionsDetailResponse response = new QuestionsDetailResponse(
                 10L,
                 List.of(
                         new ObjectiveDetailResponse(
@@ -188,7 +188,7 @@ class QuestionControllerTest {
                         )
                 )
         );
-        given(questionService.getQuestions(10L)).willReturn(response);
+        given(questionService.getQuestionsDetails(10L)).willReturn(response);
 
         mockMvc.perform(get("/api/v1/tests/10/questions")
                         .with(authenticationPrincipal()))
@@ -213,7 +213,7 @@ class QuestionControllerTest {
     @Test
     @DisplayName("문항 목록 조회 응답은 null 필드와 빈 리스트를 계약대로 직렬화한다")
     void serializesNullAndEmptyFieldsAsExpectedForQuestionDetails() throws Exception {
-        QuestionDetailResponse response = new QuestionDetailResponse(
+        QuestionsDetailResponse response = new QuestionsDetailResponse(
                 10L,
                 List.of(
                         new SubjectiveDetailResponse(101L, 201L, QuestionType.SUBJECTIVE, 1L, "주관식", "설명", null),
@@ -228,7 +228,7 @@ class QuestionControllerTest {
                         )
                 )
         );
-        given(questionService.getQuestions(10L)).willReturn(response);
+        given(questionService.getQuestionsDetails(10L)).willReturn(response);
 
         mockMvc.perform(get("/api/v1/tests/10/questions")
                         .with(authenticationPrincipal()))
@@ -251,7 +251,7 @@ class QuestionControllerTest {
     @Test
     @DisplayName("문항 목록 조회 응답은 상세 DTO 필드명을 안정적으로 유지한다")
     void usesStableResponseFieldNamesForDetailDtos() throws Exception {
-        QuestionDetailResponse response = new QuestionDetailResponse(
+        QuestionsDetailResponse response = new QuestionsDetailResponse(
                 10L,
                 List.of(
                         new ObjectiveDetailResponse(
@@ -266,7 +266,7 @@ class QuestionControllerTest {
                         )
                 )
         );
-        given(questionService.getQuestions(10L)).willReturn(response);
+        given(questionService.getQuestionsDetails(10L)).willReturn(response);
 
         mockMvc.perform(get("/api/v1/tests/10/questions")
                         .with(authenticationPrincipal()))

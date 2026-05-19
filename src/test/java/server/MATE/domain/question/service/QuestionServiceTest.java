@@ -17,7 +17,7 @@ import server.MATE.domain.question.dto.response.ObjectiveOptionDetailResponse;
 import server.MATE.domain.question.dto.response.ObjectiveDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
 import server.MATE.domain.question.dto.response.QuestionDetailItem;
-import server.MATE.domain.question.dto.response.QuestionDetailResponse;
+import server.MATE.domain.question.dto.response.QuestionsDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionSummaryResponse;
 import server.MATE.domain.question.dto.response.ScaleDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionSummaryItem;
@@ -163,7 +163,7 @@ class QuestionServiceTest {
                 )
         ));
 
-        QuestionDetailResponse response = questionService.getQuestions(TEST_ID);
+        QuestionsDetailResponse response = questionService.getQuestionsDetails(TEST_ID);
 
         assertThat(response.testId()).isEqualTo(TEST_ID);
         assertThat(response.questions()).extracting(QuestionDetailItem::questionId)
@@ -179,7 +179,7 @@ class QuestionServiceTest {
         given(questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID))
                 .willReturn(List.of());
 
-        QuestionDetailResponse response = questionService.getQuestions(TEST_ID);
+        QuestionsDetailResponse response = questionService.getQuestionsDetails(TEST_ID);
 
         assertThat(response.testId()).isEqualTo(TEST_ID);
         assertThat(response.questions()).isEmpty();
@@ -241,7 +241,7 @@ class QuestionServiceTest {
     void getQuestionsThrowsTest004WhenTestDoesNotExist() {
         given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> questionService.getQuestions(TEST_ID))
+        assertThatThrownBy(() -> questionService.getQuestionsDetails(TEST_ID))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_004);
@@ -256,7 +256,7 @@ class QuestionServiceTest {
     void getQuestionsThrowsTest004WhenTestIsDeleted() {
         given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> questionService.getQuestions(TEST_ID))
+        assertThatThrownBy(() -> questionService.getQuestionsDetails(TEST_ID))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_004);
@@ -297,7 +297,7 @@ class QuestionServiceTest {
                 )
         ));
 
-        QuestionDetailResponse response = questionService.getQuestions(TEST_ID);
+        QuestionsDetailResponse response = questionService.getQuestionsDetails(TEST_ID);
 
         assertThat(response.questions()).hasSize(1);
         verify(questionRepository).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
