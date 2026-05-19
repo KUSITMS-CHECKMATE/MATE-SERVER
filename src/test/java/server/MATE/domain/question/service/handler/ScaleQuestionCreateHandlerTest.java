@@ -73,4 +73,34 @@ class ScaleQuestionCreateHandlerTest {
         assertThat(saved.getRange()).isEqualTo(5);
         assertThat(handler.extractImageKeys(request)).containsExactly("image-scale");
     }
+
+    @Test
+    @DisplayName("척도 라벨이 비어 있으면 엔티티 기본 라벨을 저장한다")
+    void savesDefaultLabelsWhenScaleLabelsAreMissing() {
+        ScaleQuestionCreateHandler handler = new ScaleQuestionCreateHandler(scaleRepository);
+        ScaleCreateRequest request = new ScaleCreateRequest(
+                "척도",
+                "설명",
+                null,
+                null,
+                null,
+                5
+        );
+        Question question = Question.builder()
+                .testId(1L)
+                .questionType(QuestionType.SCALE)
+                .title("척도")
+                .description("설명")
+                .sequence(1L)
+                .build();
+
+        handler.createDetail(question, request);
+
+        ArgumentCaptor<Scale> captor = ArgumentCaptor.forClass(Scale.class);
+        verify(scaleRepository).save(captor.capture());
+        Scale saved = captor.getValue();
+
+        assertThat(saved.getMinLabel()).isEqualTo("전혀 아니다");
+        assertThat(saved.getMaxLabel()).isEqualTo("매우 그렇다");
+    }
 }

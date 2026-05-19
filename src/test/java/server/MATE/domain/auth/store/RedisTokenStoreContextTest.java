@@ -24,7 +24,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import server.MATE.domain.auth.crypto.TokenEncryptionProperties;
 import server.MATE.domain.auth.crypto.TokenEncryptor;
-import server.MATE.global.image.ImageService;
+import server.MATE.global.storage.FileStorageService;
+import server.MATE.global.storage.NoopFileStorageService;
 
 @SpringBootTest(classes = RedisTokenStoreContextTest.TestConfig.class)
 @ActiveProfiles("test")
@@ -44,6 +45,11 @@ class RedisTokenStoreContextTest {
         TokenEncryptionProperties tokenEncryptionProperties() {
             return new TokenEncryptionProperties(VALID_BASE64_KEY);
         }
+
+        @Bean
+        FileStorageService fileStorageService() {
+            return new NoopFileStorageService();
+        }
     }
 
     @MockitoBean
@@ -52,9 +58,6 @@ class RedisTokenStoreContextTest {
     @MockitoBean
     @SuppressWarnings("unchecked")
     private ValueOperations<String, String> valueOperations;
-
-    @MockitoBean
-    private ImageService imageService;
 
     @Autowired
     private RedisTossTokenStore redisTossTokenStore;

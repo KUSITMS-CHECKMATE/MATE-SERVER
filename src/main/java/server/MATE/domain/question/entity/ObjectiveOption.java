@@ -29,11 +29,14 @@ public class ObjectiveOption {
     @Column(nullable = false)
     private Integer sequence;
 
+    private Boolean isOtherOption;
+
     @Builder
-    public ObjectiveOption(Objective objective, String content, String imageKey, Integer sequence) {
+    public ObjectiveOption(Objective objective, String content, String imageKey, Integer sequence, Boolean isOtherOption) {
         this.objective = objective;
         this.content = content;
         this.imageKey = imageKey;
         this.sequence = sequence;
+        this.isOtherOption = isOtherOption;
     }
 }

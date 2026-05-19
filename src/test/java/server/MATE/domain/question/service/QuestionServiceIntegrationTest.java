@@ -31,6 +31,7 @@ import server.MATE.domain.question.dto.response.ScaleDetailResponse;
 import server.MATE.domain.question.dto.response.SubjectiveDetailResponse;
 import server.MATE.domain.question.dto.response.TreeTestDetailResponse;
 import server.MATE.domain.question.dto.response.TreeTestNodeDetailResponse;
+import server.MATE.domain.question.entity.ImageRatio;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.AbTestRepository;
@@ -156,7 +157,8 @@ class QuestionServiceIntegrationTest {
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("첫 번째", 1),
                         org.assertj.core.groups.Tuple.tuple("두 번째", 2),
-                        org.assertj.core.groups.Tuple.tuple("세 번째", 3)
+                        org.assertj.core.groups.Tuple.tuple("세 번째", 3),
+                        org.assertj.core.groups.Tuple.tuple("기타 (직접 입력)", 4)
                 );
     }
 
@@ -170,10 +172,12 @@ class QuestionServiceIntegrationTest {
                         "5초 질문",
                         "설명",
                         "five-second-image",
+                        ImageRatio.RATIO_9_16,
                         true,
                         true,
                         1,
                         3,
+                        true,
                         List.of(
                                 new FiveSecondOptionRequest("첫 번째"),
                                 new FiveSecondOptionRequest("두 번째"),
@@ -189,7 +193,8 @@ class QuestionServiceIntegrationTest {
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("첫 번째", 1),
                         org.assertj.core.groups.Tuple.tuple("두 번째", 2),
-                        org.assertj.core.groups.Tuple.tuple("세 번째", 3)
+                        org.assertj.core.groups.Tuple.tuple("세 번째", 3),
+                        org.assertj.core.groups.Tuple.tuple("기타 (직접 입력)", 4)
                 );
     }
 
@@ -234,7 +239,9 @@ class QuestionServiceIntegrationTest {
                         "5초 주관식 질문",
                         "설명",
                         "five-second-image",
+                        ImageRatio.RATIO_9_16,
                         false,
+                        null,
                         null,
                         null,
                         null,
@@ -246,10 +253,12 @@ class QuestionServiceIntegrationTest {
 
         FiveSecondDetailResponse fiveSecondResponse = (FiveSecondDetailResponse) response.questions().getFirst();
         assertThat(fiveSecondResponse.fiveSecondId()).isNotNull();
+        assertThat(fiveSecondResponse.imageRatio()).isEqualTo(ImageRatio.RATIO_9_16);
         assertThat(fiveSecondResponse.isObjective()).isFalse();
         assertThat(fiveSecondResponse.isDuplicate()).isNull();
         assertThat(fiveSecondResponse.minSelect()).isNull();
         assertThat(fiveSecondResponse.maxSelect()).isNull();
+        assertThat(fiveSecondResponse.isOther()).isNull();
         assertThat(fiveSecondResponse.options()).isEmpty();
         assertThat(fiveSecondResponse.imageKey()).isEqualTo("five-second-image");
     }
@@ -264,10 +273,12 @@ class QuestionServiceIntegrationTest {
                         "5초 객관식 질문",
                         "설명",
                         "five-second-image",
+                        ImageRatio.RATIO_9_16,
                         true,
                         true,
                         1,
                         2,
+                        true,
                         List.of(
                                 new FiveSecondOptionRequest("검색창"),
                                 new FiveSecondOptionRequest("메인 배너")
@@ -279,15 +290,22 @@ class QuestionServiceIntegrationTest {
 
         FiveSecondDetailResponse fiveSecondResponse = (FiveSecondDetailResponse) response.questions().getFirst();
         assertThat(fiveSecondResponse.fiveSecondId()).isNotNull();
+        assertThat(fiveSecondResponse.imageRatio()).isEqualTo(ImageRatio.RATIO_9_16);
         assertThat(fiveSecondResponse.isObjective()).isTrue();
         assertThat(fiveSecondResponse.isDuplicate()).isTrue();
         assertThat(fiveSecondResponse.minSelect()).isEqualTo(1);
         assertThat(fiveSecondResponse.maxSelect()).isEqualTo(2);
+        assertThat(fiveSecondResponse.isOther()).isTrue();
         assertThat(fiveSecondResponse.options()).extracting(option -> option.content(), option -> option.sequence())
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("검색창", 1),
-                        org.assertj.core.groups.Tuple.tuple("메인 배너", 2)
+                        org.assertj.core.groups.Tuple.tuple("메인 배너", 2),
+                        org.assertj.core.groups.Tuple.tuple("기타 (직접 입력)", 3)
                 );
+        assertThat(fiveSecondResponse.options()).anySatisfy(option -> {
+            assertThat(option.content()).isEqualTo("기타 (직접 입력)");
+            assertThat(option.isOtherOption()).isTrue();
+        });
         assertThat(fiveSecondResponse.options()).allSatisfy(option -> assertThat(option.fiveSecondOptionId()).isNotNull());
     }
 
@@ -398,17 +416,19 @@ class QuestionServiceIntegrationTest {
                         "5초 질문",
                         "설명",
                         "five-second-image",
+                        ImageRatio.RATIO_9_16,
                         true,
                         true,
                         1,
                         2,
+                        true,
                         List.of(
                                 new FiveSecondOptionRequest("검색창"),
                                 new FiveSecondOptionRequest("메인 배너")
                         )
                 ),
                 new ScaleCreateRequest("척도 질문", "설명", null, "낮음", "높음", 5),
-                new AbTestCreateRequest("AB 질문", "설명", "a-image", "b-image"),
+                new AbTestCreateRequest("AB 질문", "설명", "a-image", "b-image", ImageRatio.RATIO_9_16),
                 new CardSortingCreateRequest("카드 질문", "설명", List.of("A", "B", "C", "D"), List.of("cat1", "cat2")),
                 new TreeTestCreateRequest(
                         "트리 질문",
@@ -430,7 +450,11 @@ class QuestionServiceIntegrationTest {
 
         ObjectiveDetailResponse objectiveResponse = (ObjectiveDetailResponse) response.questions().get(0);
         assertThat(objectiveResponse.objectiveId()).isNotNull();
-        assertThat(objectiveResponse.options()).hasSize(2);
+        assertThat(objectiveResponse.options()).hasSize(3);
+        assertThat(objectiveResponse.options()).anySatisfy(option -> {
+            assertThat(option.content()).isEqualTo("기타 (직접 입력)");
+            assertThat(option.isOtherOption()).isTrue();
+        });
         assertThat(objectiveResponse.options()).allSatisfy(option -> assertThat(option.objectiveOptionId()).isNotNull());
 
         SubjectiveDetailResponse subjectiveResponse = (SubjectiveDetailResponse) response.questions().get(1);
@@ -438,7 +462,11 @@ class QuestionServiceIntegrationTest {
 
         FiveSecondDetailResponse fiveSecondResponse = (FiveSecondDetailResponse) response.questions().get(2);
         assertThat(fiveSecondResponse.fiveSecondId()).isNotNull();
-        assertThat(fiveSecondResponse.options()).hasSize(2);
+        assertThat(fiveSecondResponse.options()).hasSize(3);
+        assertThat(fiveSecondResponse.options()).anySatisfy(option -> {
+            assertThat(option.content()).isEqualTo("기타 (직접 입력)");
+            assertThat(option.isOtherOption()).isTrue();
+        });
         assertThat(fiveSecondResponse.options()).allSatisfy(option -> assertThat(option.fiveSecondOptionId()).isNotNull());
 
         ScaleDetailResponse scaleResponse = (ScaleDetailResponse) response.questions().get(3);
@@ -446,6 +474,7 @@ class QuestionServiceIntegrationTest {
 
         AbTestDetailResponse abTestResponse = (AbTestDetailResponse) response.questions().get(4);
         assertThat(abTestResponse.abTestId()).isNotNull();
+        assertThat(abTestResponse.imageRatio()).isEqualTo(ImageRatio.RATIO_9_16);
 
         CardSortingDetailResponse cardSortingResponse = (CardSortingDetailResponse) response.questions().get(5);
         assertThat(cardSortingResponse.cardSortingId()).isNotNull();
@@ -510,7 +539,11 @@ class QuestionServiceIntegrationTest {
         ObjectiveDetailResponse objectiveResponse = (ObjectiveDetailResponse) response.questions().get(1);
         assertThat(objectiveResponse.objectiveId()).isNotNull();
         assertThat(objectiveResponse.options()).extracting(option -> option.sequence())
-                .containsExactly(1, 2);
+                .containsExactly(1, 2, 3);
+        assertThat(objectiveResponse.options()).anySatisfy(option -> {
+            assertThat(option.content()).isEqualTo("기타 (직접 입력)");
+            assertThat(option.isOtherOption()).isTrue();
+        });
         assertThat(objectiveResponse.options()).allSatisfy(option -> assertThat(option.objectiveOptionId()).isNotNull());
 
         TreeTestDetailResponse treeResponse = (TreeTestDetailResponse) response.questions().get(2);
@@ -585,7 +618,8 @@ class QuestionServiceIntegrationTest {
                 .extracting(row -> row[0], row -> row[1])
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("A", 1),
-                        org.assertj.core.groups.Tuple.tuple("B", 2)
+                        org.assertj.core.groups.Tuple.tuple("B", 2),
+                        org.assertj.core.groups.Tuple.tuple("기타 (직접 입력)", 3)
                 );
 
         Long treeQuestionId = savedQuestions.get(2).getId();
