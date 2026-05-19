@@ -163,7 +163,7 @@ class QuestionServiceTest {
                 )
         ));
 
-        QuestionDetailResponse response = questionService.getQuestions(TEST_ID, MAKER_ID);
+        QuestionDetailResponse response = questionService.getQuestions(TEST_ID);
 
         assertThat(response.testId()).isEqualTo(TEST_ID);
         assertThat(response.questions()).extracting(QuestionDetailItem::questionId)
@@ -179,7 +179,7 @@ class QuestionServiceTest {
         given(questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID))
                 .willReturn(List.of());
 
-        QuestionDetailResponse response = questionService.getQuestions(TEST_ID, MAKER_ID);
+        QuestionDetailResponse response = questionService.getQuestions(TEST_ID);
 
         assertThat(response.testId()).isEqualTo(TEST_ID);
         assertThat(response.questions()).isEmpty();
@@ -241,7 +241,7 @@ class QuestionServiceTest {
     void getQuestionsThrowsTest004WhenTestDoesNotExist() {
         given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> questionService.getQuestions(TEST_ID, MAKER_ID))
+        assertThatThrownBy(() -> questionService.getQuestions(TEST_ID))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_004);
@@ -256,7 +256,7 @@ class QuestionServiceTest {
     void getQuestionsThrowsTest004WhenTestIsDeleted() {
         given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> questionService.getQuestions(TEST_ID, MAKER_ID))
+        assertThatThrownBy(() -> questionService.getQuestions(TEST_ID))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_004);
@@ -267,18 +267,41 @@ class QuestionServiceTest {
     }
 
     @Test
-    @DisplayName("조회 요청자가 제작자가 아니면 TEST_005 예외가 발생한다")
-    void getQuestionsThrowsTest005WhenMakerDoesNotMatch() {
+    @DisplayName("문항 목록 조회는 제작자가 아니어도 조회할 수 있다")
+    void getQuestionsDoesNotRequireMaker() {
+        Question scaleQuestion = Question.builder()
+                .testId(TEST_ID)
+                .questionType(QuestionType.SCALE)
+                .title("척도 질문")
+                .description("설명")
+                .sequence(1L)
+                .build();
+        setQuestionId(scaleQuestion, 202L);
+
         given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID))
+                .willReturn(List.of(scaleQuestion));
+        given(scaleFetcher.fetch(List.of(scaleQuestion))).willReturn(Map.of(
+                202L,
+                new ScaleDetailResponse(
+                        202L,
+                        202L,
+                        QuestionType.SCALE,
+                        1L,
+                        "척도 질문",
+                        "설명",
+                        null,
+                        "낮음",
+                        "높음",
+                        5
+                )
+        ));
 
-        assertThatThrownBy(() -> questionService.getQuestions(TEST_ID, MAKER_ID + 1))
-                .isInstanceOf(BaseException.class)
-                .extracting(ex -> ((BaseException) ex).getErrorCode())
-                .isEqualTo(BaseErrorCode.TEST_005);
+        QuestionDetailResponse response = questionService.getQuestions(TEST_ID);
 
-        verify(questionRepository, never()).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
-        verify(objectiveFetcher, never()).fetch(anyList());
-        verify(scaleFetcher, never()).fetch(anyList());
+        assertThat(response.questions()).hasSize(1);
+        verify(questionRepository).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
+        verify(scaleFetcher).fetch(List.of(scaleQuestion));
     }
 
     @Test

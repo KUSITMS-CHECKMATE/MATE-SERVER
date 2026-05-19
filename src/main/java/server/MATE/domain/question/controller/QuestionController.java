@@ -38,7 +38,8 @@ public class QuestionController {
             testId에 해당한 테스트의 모든 질문 문항을 상세조회합니다. TT01-01 화면에 해당하는 api 입니다.
             - 응답 루트에 `testId`와 `questions`를 함께 반환합니다.
             - `questions` 배열은 `sequence` 오름차순입니다.
-            - 각 질문 유지은 공통 필드와 유형별 상세 필드를 모두 포함합니다.
+            - 모든 로그인한 사용자가 조회할 수 있습니다.
+            - 각 질문은 공통 필드와 유형별 상세 필드를 모두 포함합니다.
             """)
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공",
@@ -299,10 +300,9 @@ public class QuestionController {
     })
     @GetMapping
     public ResponseEntity<ApiResponse<QuestionDetailResponse>> getQuestions(
-            @PathVariable Long testId,
-            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+            @PathVariable Long testId
     ) {
-        QuestionDetailResponse response = questionService.getQuestions(testId, authenticatedUser.getId());
+        QuestionDetailResponse response = questionService.getQuestions(testId);
         return ResponseEntity.ok(ApiResponse.ok("문항을 조회했습니다.", response));
     }
 

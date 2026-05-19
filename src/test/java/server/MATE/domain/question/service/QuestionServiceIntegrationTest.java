@@ -123,7 +123,7 @@ class QuestionServiceIntegrationTest {
         savedTest.delete(LocalDateTime.now());
         testRepository.saveAndFlush(savedTest);
 
-        assertThatThrownBy(() -> questionService.getQuestions(savedTest.getId(), 1L))
+        assertThatThrownBy(() -> questionService.getQuestions(savedTest.getId()))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_004);
@@ -150,7 +150,7 @@ class QuestionServiceIntegrationTest {
                 )
         )));
 
-        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId(), 1L);
+        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId());
 
         ObjectiveDetailResponse objectiveResponse = (ObjectiveDetailResponse) response.questions().getFirst();
         assertThat(objectiveResponse.options()).extracting(option -> option.content(), option -> option.sequence())
@@ -186,7 +186,7 @@ class QuestionServiceIntegrationTest {
                 )
         )));
 
-        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId(), 1L);
+        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId());
 
         FiveSecondDetailResponse fiveSecondResponse = (FiveSecondDetailResponse) response.questions().getFirst();
         assertThat(fiveSecondResponse.options()).extracting(option -> option.content(), option -> option.sequence())
@@ -220,7 +220,7 @@ class QuestionServiceIntegrationTest {
                 )
         )));
 
-        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId(), 1L);
+        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId());
 
         TreeTestDetailResponse treeResponse = (TreeTestDetailResponse) response.questions().getFirst();
         assertThat(treeResponse.features()).singleElement();
@@ -249,7 +249,7 @@ class QuestionServiceIntegrationTest {
                 )
         )));
 
-        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId(), 1L);
+        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId());
 
         FiveSecondDetailResponse fiveSecondResponse = (FiveSecondDetailResponse) response.questions().getFirst();
         assertThat(fiveSecondResponse.fiveSecondId()).isNotNull();
@@ -286,7 +286,7 @@ class QuestionServiceIntegrationTest {
                 )
         )));
 
-        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId(), 1L);
+        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId());
 
         FiveSecondDetailResponse fiveSecondResponse = (FiveSecondDetailResponse) response.questions().getFirst();
         assertThat(fiveSecondResponse.fiveSecondId()).isNotNull();
@@ -331,7 +331,7 @@ class QuestionServiceIntegrationTest {
                 )
         )));
 
-        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId(), 1L);
+        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId());
 
         TreeTestDetailResponse treeResponse = (TreeTestDetailResponse) response.questions().getFirst();
         assertThat(treeResponse.features()).hasSize(2);
@@ -374,7 +374,7 @@ class QuestionServiceIntegrationTest {
                 )
         )));
 
-        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId(), 1L);
+        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId());
 
         TreeTestDetailResponse treeResponse = (TreeTestDetailResponse) response.questions().getFirst();
         TreeTestNodeDetailResponse root = treeResponse.features().getFirst();
@@ -444,7 +444,7 @@ class QuestionServiceIntegrationTest {
                 )
         )));
 
-        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId(), 1L);
+        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId());
 
         assertThat(response.questions()).hasSize(7);
 
@@ -528,7 +528,7 @@ class QuestionServiceIntegrationTest {
                 )
         )));
 
-        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId(), 1L);
+        QuestionDetailResponse response = questionService.getQuestions(savedTest.getId());
 
         assertThat(response.testId()).isEqualTo(savedTest.getId());
         assertThat(response.questions()).extracting(QuestionDetailItem::type)

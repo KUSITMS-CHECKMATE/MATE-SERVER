@@ -99,11 +99,9 @@ public class QuestionService {
     }
 
     @Transactional(readOnly = true)
-    public QuestionDetailResponse getQuestions(Long testId, Long makerId) {
+    public QuestionDetailResponse getQuestions(Long testId) {
         Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
-
-        if (!test.getMakerId().equals(makerId)) throw new BaseException(BaseErrorCode.TEST_005);
 
         List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
         Map<QuestionType, List<Question>> questionsByType = questions.stream()
