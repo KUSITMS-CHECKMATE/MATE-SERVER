@@ -308,7 +308,7 @@ public class QuestionController {
     }
 
     @Operation(summary = "질문 상세 조회", description = """
-            testId에 해당하는 테스트의 특정 질문 문항 하나를 상세조회합니다.
+            testId에 해당하는 테스트의 특정 질문 문항 하나를 상세조회합니다. 통계의 질문 탭 MKST_01 화면에 해당하는 api입니다.
             - 응답 루트에 `testId`와 `question`을 함께 반환합니다.
             - `question`은 공통 필드와 유형별 상세 필드를 모두 포함합니다.
             - 별도로 조회 요청한 유저가 해당 테스트 메이커인지 검증하지 않습니다.
