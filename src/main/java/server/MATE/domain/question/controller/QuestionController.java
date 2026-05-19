@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
+import server.MATE.domain.question.dto.response.QuestionDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionsDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionSummaryResponse;
 import server.MATE.domain.question.service.QuestionService;
@@ -304,6 +305,22 @@ public class QuestionController {
     ) {
         QuestionsDetailResponse questionsDetailResponse = questionService.getQuestionsDetails(testId);
         return ResponseEntity.ok(ApiResponse.ok("문항을 조회했습니다.", questionsDetailResponse));
+    }
+
+    @Operation(summary = "질문 상세 조회", description = """
+            testId에 해당하는 테스트의 특정 질문 문항 하나를 상세조회합니다.
+            - 응답 루트에 `testId`와 `question`을 함께 반환합니다.
+            - `question`은 공통 필드와 유형별 상세 필드를 모두 포함합니다.
+            - 별도로 조회 요청한 유저가 해당 테스트 메이커인지 검증하지 않습니다.
+            - 테스트 종료 여부를 검증하지 않습니다.
+            """)
+    @GetMapping("/{questionId}")
+    public ResponseEntity<ApiResponse<QuestionDetailResponse>> getQuestionDetail(
+            @PathVariable Long testId,
+            @PathVariable Long questionId
+    ) {
+        QuestionDetailResponse questionDetailResponse = questionService.getQuestionDetail(testId, questionId);
+        return ResponseEntity.ok(ApiResponse.ok("질문 상세 조회했습니다.", questionDetailResponse));
     }
 
     @Operation(summary = "질문 목록 조회", description = """

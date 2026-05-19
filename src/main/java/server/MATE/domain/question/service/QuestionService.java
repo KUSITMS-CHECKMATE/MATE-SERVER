@@ -7,6 +7,7 @@ import server.MATE.domain.question.dto.request.QuestionCreateItem;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResult;
+import server.MATE.domain.question.dto.response.QuestionDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionDetailItem;
 import server.MATE.domain.question.dto.response.QuestionSummaryItem;
 import server.MATE.domain.question.dto.response.QuestionSummaryResponse;
@@ -104,6 +105,26 @@ public class QuestionService {
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
+        List<QuestionDetailItem> questionDetails = buildQuestionDetails(questions);
+
+        return new QuestionsDetailResponse(testId, questionDetails);
+    }
+
+    @Transactional(readOnly = true)
+    public QuestionDetailResponse getQuestionDetail(Long testId, Long questionId) {
+        testRepository.findByIdAndDeletedAtIsNull(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        Question question = questionRepository.findByIdAndTestIdAndDeletedAtIsNull(questionId, testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
+
+        List<QuestionDetailItem> questionDetails = buildQuestionDetails(List.of(question));
+        return new QuestionDetailResponse(testId, questionDetails.getFirst());
+    }
+
+    private List<QuestionDetailItem> buildQuestionDetails(List<Question> questions) {
+        if (questions.isEmpty()) return List.of();
+
         Map<QuestionType, List<Question>> questionsByType = questions.stream()
                 .collect(Collectors.groupingBy(
                         Question::getQuestionType,
@@ -121,8 +142,7 @@ public class QuestionService {
         List<QuestionDetailItem> questionDetails = questions.stream()
                 .map(question -> questionDetailsById.get(question.getId()))
                 .toList();
-
-        return new QuestionsDetailResponse(testId, questionDetails);
+        return questionDetails;
     }
 
     @Transactional(readOnly = true)
