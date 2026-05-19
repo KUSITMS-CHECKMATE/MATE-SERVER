@@ -146,7 +146,7 @@ class QuestionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("200"))
-                .andExpect(jsonPath("$.message").value("질문 요약을 조회했습니다."))
+                .andExpect(jsonPath("$.message").value("질문 목록을 조회했습니다."))
                 .andExpect(jsonPath("$.data.questionCount").value(2))
                 .andExpect(jsonPath("$.data.participantCount").value(17))
                 .andExpect(jsonPath("$.data.questions.length()").value(2))
