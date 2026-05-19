@@ -9,12 +9,15 @@ import server.MATE.domain.question.dto.response.QuestionCreateResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResult;
 import server.MATE.domain.question.dto.response.QuestionDetailItem;
 import server.MATE.domain.question.dto.response.QuestionDetailResponse;
+import server.MATE.domain.question.dto.response.QuestionSummaryItem;
+import server.MATE.domain.question.dto.response.QuestionSummaryResponse;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.question.service.handler.QuestionCreateHandler;
 import server.MATE.domain.question.service.fetcher.QuestionDetailFetcher;
 import server.MATE.domain.test.entity.Test;
+import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
@@ -122,6 +125,22 @@ public class QuestionService {
                 .toList();
 
         return new QuestionDetailResponse(testId, results);
+    }
+
+    @Transactional(readOnly = true)
+    public QuestionSummaryResponse getQuestionSummary(Long testId, Long makerId) {
+        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        if (!test.getMakerId().equals(makerId)) throw new BaseException(BaseErrorCode.TEST_005);
+        if (test.getTestStatus() != TestStatus.COMPLETED) throw new BaseException(BaseErrorCode.TEST_006);
+
+        List<QuestionSummaryItem> questions = questionRepository.findQuestionSummariesByTestId(testId);
+        return new QuestionSummaryResponse(
+                questions.size(),
+                test.getPplCount(),
+                questions
+        );
     }
 
     private Map<QuestionType, QuestionCreateHandler> buildHandlerMap(List<QuestionCreateHandler> handlers) {
