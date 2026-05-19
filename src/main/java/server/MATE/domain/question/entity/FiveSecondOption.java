@@ -26,10 +26,13 @@ public class FiveSecondOption {
     @Column(nullable = false)
     private Integer sequence;
 
+    private Boolean isOtherOption;
+
     @Builder
-    public FiveSecondOption(FiveSecond fiveSecond, String content, Integer sequence) {
+    public FiveSecondOption(FiveSecond fiveSecond, String content, Integer sequence, Boolean isOtherOption) {
         this.fiveSecond = fiveSecond;
         this.content = content;
         this.sequence = sequence;
+        this.isOtherOption = isOtherOption;
     }
 }
