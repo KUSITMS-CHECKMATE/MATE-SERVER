@@ -531,7 +531,7 @@ public class QuestionController {
             @PathVariable Long questionId
     ) {
         QuestionDetailResponse questionDetailResponse = questionService.getQuestionDetail(testId, questionId);
-        return ResponseEntity.ok(ApiResponse.ok("문항을 조회했습니다.", questionDetailResponse));
+        return ResponseEntity.ok(ApiResponse.ok("질문 상세 조회했습니다.", questionDetailResponse));
     }
 
     @Operation(summary = "질문 목록 조회", description = """
