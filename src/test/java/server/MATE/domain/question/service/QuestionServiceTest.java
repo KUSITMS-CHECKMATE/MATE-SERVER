@@ -16,8 +16,9 @@ import server.MATE.domain.question.dto.request.TreeTestCreateRequest;
 import server.MATE.domain.question.dto.response.ObjectiveOptionDetailResponse;
 import server.MATE.domain.question.dto.response.ObjectiveDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
-import server.MATE.domain.question.dto.response.QuestionDetailItem;
 import server.MATE.domain.question.dto.response.QuestionDetailResponse;
+import server.MATE.domain.question.dto.response.QuestionDetailItem;
+import server.MATE.domain.question.dto.response.QuestionsDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionSummaryResponse;
 import server.MATE.domain.question.dto.response.ScaleDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionSummaryItem;
@@ -163,7 +164,7 @@ class QuestionServiceTest {
                 )
         ));
 
-        QuestionDetailResponse response = questionService.getQuestions(TEST_ID, MAKER_ID);
+        QuestionsDetailResponse response = questionService.getQuestionsDetails(TEST_ID);
 
         assertThat(response.testId()).isEqualTo(TEST_ID);
         assertThat(response.questions()).extracting(QuestionDetailItem::questionId)
@@ -179,12 +180,51 @@ class QuestionServiceTest {
         given(questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID))
                 .willReturn(List.of());
 
-        QuestionDetailResponse response = questionService.getQuestions(TEST_ID, MAKER_ID);
+        QuestionsDetailResponse response = questionService.getQuestionsDetails(TEST_ID);
 
         assertThat(response.testId()).isEqualTo(TEST_ID);
         assertThat(response.questions()).isEmpty();
         verify(objectiveFetcher, never()).fetch(anyList());
         verify(scaleFetcher, never()).fetch(anyList());
+    }
+
+    @Test
+    @DisplayName("문항 상세 조회는 타입별 fetcher 결과를 조립한다")
+    void getQuestionDetailAssemblesFetcherResult() {
+        Question objectiveQuestion = Question.builder()
+                .testId(TEST_ID)
+                .questionType(QuestionType.OBJECTIVE)
+                .title("객관식 질문")
+                .description("설명")
+                .sequence(2L)
+                .build();
+        setQuestionId(objectiveQuestion, 201L);
+
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findByIdAndTestIdAndDeletedAtIsNull(201L, TEST_ID))
+                .willReturn(Optional.of(objectiveQuestion));
+        given(objectiveFetcher.fetch(List.of(objectiveQuestion))).willReturn(Map.of(
+                201L,
+                new ObjectiveDetailResponse(
+                        201L,
+                        201L,
+                        QuestionType.OBJECTIVE,
+                        2L,
+                        "객관식 질문",
+                        "설명",
+                        false,
+                        null,
+                        null,
+                        true,
+                        List.of(new ObjectiveOptionDetailResponse(1001L, "A", null, 1, false))
+                )
+        ));
+
+        QuestionDetailResponse response = questionService.getQuestionDetail(TEST_ID, 201L);
+
+        assertThat(response.testId()).isEqualTo(TEST_ID);
+        assertThat(response.question().questionId()).isEqualTo(201L);
+        assertThat(response.question().type()).isEqualTo(QuestionType.OBJECTIVE);
     }
 
     @Test
@@ -241,7 +281,7 @@ class QuestionServiceTest {
     void getQuestionsThrowsTest004WhenTestDoesNotExist() {
         given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> questionService.getQuestions(TEST_ID, MAKER_ID))
+        assertThatThrownBy(() -> questionService.getQuestionsDetails(TEST_ID))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_004);
@@ -256,7 +296,7 @@ class QuestionServiceTest {
     void getQuestionsThrowsTest004WhenTestIsDeleted() {
         given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> questionService.getQuestions(TEST_ID, MAKER_ID))
+        assertThatThrownBy(() -> questionService.getQuestionsDetails(TEST_ID))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_004);
@@ -267,18 +307,67 @@ class QuestionServiceTest {
     }
 
     @Test
-    @DisplayName("조회 요청자가 제작자가 아니면 TEST_005 예외가 발생한다")
-    void getQuestionsThrowsTest005WhenMakerDoesNotMatch() {
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+    @DisplayName("문항 상세 조회 대상 테스트가 없으면 TEST_004 예외가 발생한다")
+    void getQuestionDetailThrowsTest004WhenTestDoesNotExist() {
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> questionService.getQuestions(TEST_ID, MAKER_ID + 1))
+        assertThatThrownBy(() -> questionService.getQuestionDetail(TEST_ID, 201L))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
-                .isEqualTo(BaseErrorCode.TEST_005);
+                .isEqualTo(BaseErrorCode.TEST_004);
 
-        verify(questionRepository, never()).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
-        verify(objectiveFetcher, never()).fetch(anyList());
-        verify(scaleFetcher, never()).fetch(anyList());
+        verify(questionRepository, never()).findByIdAndTestIdAndDeletedAtIsNull(any(), any());
+    }
+
+    @Test
+    @DisplayName("문항 상세 조회 대상 문항이 없으면 QUESTION_005 예외가 발생한다")
+    void getQuestionDetailThrowsQuestion005WhenQuestionDoesNotExist() {
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findByIdAndTestIdAndDeletedAtIsNull(201L, TEST_ID))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> questionService.getQuestionDetail(TEST_ID, 201L))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.QUESTION_005);
+    }
+
+    @Test
+    @DisplayName("문항 목록 조회는 제작자가 아니어도 조회할 수 있다")
+    void getQuestionsDoesNotRequireMaker() {
+        Question scaleQuestion = Question.builder()
+                .testId(TEST_ID)
+                .questionType(QuestionType.SCALE)
+                .title("척도 질문")
+                .description("설명")
+                .sequence(1L)
+                .build();
+        setQuestionId(scaleQuestion, 202L);
+
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID))
+                .willReturn(List.of(scaleQuestion));
+        given(scaleFetcher.fetch(List.of(scaleQuestion))).willReturn(Map.of(
+                202L,
+                new ScaleDetailResponse(
+                        202L,
+                        202L,
+                        QuestionType.SCALE,
+                        1L,
+                        "척도 질문",
+                        "설명",
+                        null,
+                        "낮음",
+                        "높음",
+                        5
+                )
+        ));
+
+        QuestionsDetailResponse response = questionService.getQuestionsDetails(TEST_ID);
+
+        assertThat(response.questions()).hasSize(1);
+        verify(questionRepository).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
+        verify(scaleFetcher).fetch(List.of(scaleQuestion));
     }
 
     @Test

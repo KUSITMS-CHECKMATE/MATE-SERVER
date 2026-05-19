@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
 import server.MATE.domain.question.dto.response.QuestionDetailResponse;
+import server.MATE.domain.question.dto.response.QuestionsDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionSummaryResponse;
 import server.MATE.domain.question.service.QuestionService;
 import server.MATE.global.common.response.ApiResponse;
@@ -38,7 +39,8 @@ public class QuestionController {
             testId에 해당한 테스트의 모든 질문 문항을 상세조회합니다. TT01-01 화면에 해당하는 api 입니다.
             - 응답 루트에 `testId`와 `questions`를 함께 반환합니다.
             - `questions` 배열은 `sequence` 오름차순입니다.
-            - 각 질문 유지은 공통 필드와 유형별 상세 필드를 모두 포함합니다.
+            - 모든 로그인한 사용자가 조회할 수 있습니다.
+            - 각 질문은 공통 필드와 유형별 상세 필드를 모두 포함합니다.
             """)
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공",
@@ -298,12 +300,238 @@ public class QuestionController {
                     ))
     })
     @GetMapping
-    public ResponseEntity<ApiResponse<QuestionDetailResponse>> getQuestions(
-            @PathVariable Long testId,
-            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    public ResponseEntity<ApiResponse<QuestionsDetailResponse>> getQuestionsDetails(
+            @PathVariable Long testId
     ) {
-        QuestionDetailResponse response = questionService.getQuestions(testId, authenticatedUser.getId());
-        return ResponseEntity.ok(ApiResponse.ok("문항을 조회했습니다.", response));
+        QuestionsDetailResponse questionsDetailResponse = questionService.getQuestionsDetails(testId);
+        return ResponseEntity.ok(ApiResponse.ok("문항을 조회했습니다.", questionsDetailResponse));
+    }
+
+    @Operation(summary = "질문 상세 조회", description = """
+            testId에 해당하는 테스트의 특정 질문 문항 하나를 상세조회합니다. 통계의 질문 탭 MKST_01 화면에 해당하는 api입니다.
+            - 응답 루트에 `testId`와 `question`을 함께 반환합니다.
+            - `question`은 공통 필드와 유형별 상세 필드를 모두 포함합니다.
+            - 별도로 조회 요청한 유저가 해당 테스트 메이커인지 검증하지 않습니다.
+            - 테스트 종료 여부를 검증하지 않습니다.
+            """)
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = {
+                                    @ExampleObject(
+                                            name = "객관식 상세 조회",
+                                            summary = "OBJECTIVE 상세 조회 예시",
+                                            value = """
+                                                    {
+                                                      "success": true,
+                                                      "code": "200",
+                                                      "message": "문항을 조회했습니다.",
+                                                      "data": {
+                                                        "testId": 10,
+                                                        "question": {
+                                                          "questionId": 101,
+                                                          "objectiveId": 101,
+                                                          "type": "OBJECTIVE",
+                                                          "sequence": 1,
+                                                          "title": "가장 자주 사용하는 기능은 무엇인가요?",
+                                                          "description": "해당 서비스를 사용할 때 가장 자주 쓰는 기능을 골라주세요.",
+                                                          "isDuplicate": false,
+                                                          "minSelect": null,
+                                                          "maxSelect": null,
+                                                          "isOther": true,
+                                                          "options": [
+                                                            { "objectiveOptionId": 1001, "content": "검색", "imageKey": null, "sequence": 1, "isOtherOption": false },
+                                                            { "objectiveOptionId": 1002, "content": "결제", "imageKey": "objective-option-image-key", "sequence": 2, "isOtherOption": false },
+                                                            { "objectiveOptionId": 1099, "content": "기타 (직접 입력)", "imageKey": null, "sequence": 3, "isOtherOption": true }
+                                                          ]
+                                                        }
+                                                      }
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "주관식 상세 조회",
+                                            summary = "SUBJECTIVE 상세 조회 예시",
+                                            value = """
+                                                    {
+                                                      "success": true,
+                                                      "code": "200",
+                                                      "message": "문항을 조회했습니다.",
+                                                      "data": {
+                                                        "testId": 10,
+                                                        "question": {
+                                                          "questionId": 102,
+                                                          "subjectiveId": 102,
+                                                          "type": "SUBJECTIVE",
+                                                          "sequence": 2,
+                                                          "title": "개선이 필요한 점은 무엇인가요?",
+                                                          "description": "자유롭게 작성해주세요.",
+                                                          "imageKey": "subjective-image-key"
+                                                        }
+                                                      }
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "5초 테스트 상세 조회",
+                                            summary = "FIVE_SECOND 상세 조회 예시",
+                                            value = """
+                                                    {
+                                                      "success": true,
+                                                      "code": "200",
+                                                      "message": "문항을 조회했습니다.",
+                                                      "data": {
+                                                        "testId": 10,
+                                                        "question": {
+                                                          "questionId": 103,
+                                                          "fiveSecondId": 103,
+                                                          "type": "FIVE_SECOND",
+                                                          "sequence": 3,
+                                                          "title": "첫 화면에서 눈에 띄는 요소는 무엇인가요?",
+                                                          "description": "이미지를 5초간 본 뒤 답변해주세요.",
+                                                          "imageKey": "five-second-image-key",
+                                                          "imageRatio": "9:16",
+                                                          "isObjective": true,
+                                                          "isDuplicate": true,
+                                                          "minSelect": 1,
+                                                          "maxSelect": 3,
+                                                          "isOther": true,
+                                                          "options": [
+                                                            { "fiveSecondOptionId": 2001, "content": "검색창", "sequence": 1, "isOtherOption": false },
+                                                            { "fiveSecondOptionId": 2002, "content": "메인 배너", "sequence": 2, "isOtherOption": false },
+                                                            { "fiveSecondOptionId": 2099, "content": "기타 (직접 입력)", "sequence": 3, "isOtherOption": true }
+                                                          ]
+                                                        }
+                                                      }
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "척도형 상세 조회",
+                                            summary = "SCALE 상세 조회 예시",
+                                            value = """
+                                                    {
+                                                      "success": true,
+                                                      "code": "200",
+                                                      "message": "문항을 조회했습니다.",
+                                                      "data": {
+                                                        "testId": 10,
+                                                        "question": {
+                                                          "questionId": 104,
+                                                          "scaleId": 104,
+                                                          "type": "SCALE",
+                                                          "sequence": 4,
+                                                          "title": "전반적인 만족도를 평가해주세요.",
+                                                          "description": "5점 척도로 응답해주세요.",
+                                                          "imageKey": null,
+                                                          "minLabel": "매우 불만족",
+                                                          "maxLabel": "매우 만족",
+                                                          "range": 5
+                                                        }
+                                                      }
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "AB 테스트 상세 조회",
+                                            summary = "AB_TEST 상세 조회 예시",
+                                            value = """
+                                                    {
+                                                      "success": true,
+                                                      "code": "200",
+                                                      "message": "문항을 조회했습니다.",
+                                                      "data": {
+                                                        "testId": 10,
+                                                        "question": {
+                                                          "questionId": 105,
+                                                          "abTestId": 105,
+                                                          "type": "AB_TEST",
+                                                          "sequence": 5,
+                                                          "title": "어느 시안이 더 마음에 드시나요?",
+                                                          "description": "두 시안을 비교하고 더 선호하는 쪽을 선택해주세요.",
+                                                          "aImageKey": "image-a.jpg",
+                                                          "bImageKey": "image-b.jpg",
+                                                          "imageRatio": "9:16"
+                                                        }
+                                                      }
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "카드소팅 상세 조회",
+                                            summary = "CARD_SORTING 상세 조회 예시",
+                                            value = """
+                                                    {
+                                                      "success": true,
+                                                      "code": "200",
+                                                      "message": "문항을 조회했습니다.",
+                                                      "data": {
+                                                        "testId": 10,
+                                                        "question": {
+                                                          "questionId": 106,
+                                                          "cardSortingId": 106,
+                                                          "type": "CARD_SORTING",
+                                                          "sequence": 6,
+                                                          "title": "기능 카드를 그룹으로 묶어주세요.",
+                                                          "description": "비슷하다고 생각하는 항목끼리 분류해주세요.",
+                                                          "cards": ["티셔츠", "꽃무늬가 들어간 티셔츠", "찢어진 청바지", "닥터마틴 워커"],
+                                                          "categories": ["상의", "하의", "신발"]
+                                                        }
+                                                      }
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "트리 테스트 상세 조회",
+                                            summary = "TREE_TEST 상세 조회 예시",
+                                            value = """
+                                                    {
+                                                      "success": true,
+                                                      "code": "200",
+                                                      "message": "문항을 조회했습니다.",
+                                                      "data": {
+                                                        "testId": 10,
+                                                        "question": {
+                                                          "questionId": 107,
+                                                          "type": "TREE_TEST",
+                                                          "sequence": 7,
+                                                          "title": "설정 메뉴에서 알림 설정을 어디서 찾으시겠어요?",
+                                                          "description": "예상되는 경로를 따라 선택해주세요.",
+                                                          "features": [
+                                                            {
+                                                              "treeTestId": 3001,
+                                                              "label": "마이페이지",
+                                                              "children": [
+                                                                {
+                                                                  "treeTestId": 3002,
+                                                                  "label": "설정",
+                                                                  "children": [
+                                                                    {
+                                                                      "treeTestId": 3003,
+                                                                      "label": "알림 설정",
+                                                                      "children": []
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              ]
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    }
+                                                    """
+                                    )
+                            }
+                    ))
+    })
+    @GetMapping("/{questionId}")
+    public ResponseEntity<ApiResponse<QuestionDetailResponse>> getQuestionDetail(
+            @PathVariable Long testId,
+            @PathVariable Long questionId
+    ) {
+        QuestionDetailResponse questionDetailResponse = questionService.getQuestionDetail(testId, questionId);
+        return ResponseEntity.ok(ApiResponse.ok("문항을 조회했습니다.", questionDetailResponse));
     }
 
     @Operation(summary = "질문 목록 조회", description = """
