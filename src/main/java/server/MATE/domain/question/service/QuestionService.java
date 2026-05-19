@@ -29,6 +29,7 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -140,7 +141,8 @@ public class QuestionService {
         }
 
         List<QuestionDetailItem> questionDetails = questions.stream()
-                .map(question -> questionDetailsById.get(question.getId()))
+                .map(question -> Optional.ofNullable(questionDetailsById.get(question.getId()))
+                        .orElseThrow(() -> new BaseException(BaseErrorCode.COMMON_002)))
                 .toList();
         return questionDetails;
     }
