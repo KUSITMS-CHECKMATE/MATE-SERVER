@@ -27,6 +27,8 @@ import server.MATE.domain.question.dto.response.ObjectiveDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResult;
 import server.MATE.domain.question.dto.response.QuestionDetailResponse;
+import server.MATE.domain.question.dto.response.QuestionSummaryItem;
+import server.MATE.domain.question.dto.response.QuestionSummaryResponse;
 import server.MATE.domain.question.dto.response.ScaleDetailResponse;
 import server.MATE.domain.question.dto.response.SubjectiveDetailResponse;
 import server.MATE.domain.question.dto.response.TreeTestDetailResponse;
@@ -124,6 +126,36 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.data.questions[0].options[0].objectiveOptionId").value(1001))
                 .andExpect(jsonPath("$.data.questions[0].options[1].sequence").value(2))
                 .andExpect(jsonPath("$.data.questions[0].options[2].isOtherOption").value(true));
+    }
+
+    @Test
+    @DisplayName("질문 목록 조회 요청을 정상 처리한다")
+    void handlesQuestionSummaryRequestSuccessfully() throws Exception {
+        QuestionSummaryResponse response = new QuestionSummaryResponse(
+                2,
+                17L,
+                List.of(
+                        new QuestionSummaryItem(101L, 1L, "첫 번째 질문", QuestionType.OBJECTIVE),
+                        new QuestionSummaryItem(102L, 2L, "두 번째 질문", QuestionType.SCALE)
+                )
+        );
+        given(questionService.getQuestionSummary(10L, 1L)).willReturn(response);
+
+        mockMvc.perform(get("/api/v1/tests/10/questions/summary")
+                        .with(authenticationPrincipal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value("200"))
+                .andExpect(jsonPath("$.message").value("질문 요약을 조회했습니다."))
+                .andExpect(jsonPath("$.data.questionCount").value(2))
+                .andExpect(jsonPath("$.data.participantCount").value(17))
+                .andExpect(jsonPath("$.data.questions.length()").value(2))
+                .andExpect(jsonPath("$.data.questions[0].questionId").value(101))
+                .andExpect(jsonPath("$.data.questions[0].sequence").value(1))
+                .andExpect(jsonPath("$.data.questions[0].title").value("첫 번째 질문"))
+                .andExpect(jsonPath("$.data.questions[0].type").value("OBJECTIVE"))
+                .andExpect(jsonPath("$.data.questions[1].questionId").value(102))
+                .andExpect(jsonPath("$.data.questions[1].type").value("SCALE"));
     }
 
     @Test

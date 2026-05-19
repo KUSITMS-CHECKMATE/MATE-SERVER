@@ -18,12 +18,15 @@ import server.MATE.domain.question.dto.response.ObjectiveDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
 import server.MATE.domain.question.dto.response.QuestionDetailItem;
 import server.MATE.domain.question.dto.response.QuestionDetailResponse;
+import server.MATE.domain.question.dto.response.QuestionSummaryResponse;
 import server.MATE.domain.question.dto.response.ScaleDetailResponse;
+import server.MATE.domain.question.dto.response.QuestionSummaryItem;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.question.service.fetcher.QuestionDetailFetcher;
 import server.MATE.domain.question.service.handler.QuestionCreateHandler;
+import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
@@ -182,6 +185,55 @@ class QuestionServiceTest {
         assertThat(response.questions()).isEmpty();
         verify(objectiveFetcher, never()).fetch(anyList());
         verify(scaleFetcher, never()).fetch(anyList());
+    }
+
+    @Test
+    @DisplayName("질문 목록 조회는 질문 개수와 참여자 수를 함께 반환한다")
+    void getQuestionSummaryReturnsCountsAndQuestionSummaries() {
+        setTestStatus(test, TestStatus.COMPLETED);
+        setTestPplCount(test, 12L);
+
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findQuestionSummariesByTestId(TEST_ID)).willReturn(List.of(
+                new QuestionSummaryItem(202L, 1L, "척도 질문", QuestionType.SCALE),
+                new QuestionSummaryItem(201L, 2L, "객관식 질문", QuestionType.OBJECTIVE)
+        ));
+
+        QuestionSummaryResponse response = questionService.getQuestionSummary(TEST_ID, MAKER_ID);
+
+        assertThat(response.questionCount()).isEqualTo(2);
+        assertThat(response.participantCount()).isEqualTo(12L);
+        assertThat(response.questions()).extracting(QuestionSummaryItem::questionId)
+                .containsExactly(202L, 201L);
+        assertThat(response.questions()).extracting(QuestionSummaryItem::type)
+                .containsExactly(QuestionType.SCALE, QuestionType.OBJECTIVE);
+    }
+
+    @Test
+    @DisplayName("테스트가 진행 중이면 질문 요약 조회 시 TEST_006 예외가 발생한다")
+    void getQuestionSummaryThrowsTest006WhenTestIsInProgress() {
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+
+        assertThatThrownBy(() -> questionService.getQuestionSummary(TEST_ID, MAKER_ID))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.TEST_006);
+
+        verify(questionRepository, never()).findQuestionSummariesByTestId(TEST_ID);
+    }
+
+    @Test
+    @DisplayName("질문 요약 조회 요청자가 제작자가 아니면 TEST_005 예외가 발생한다")
+    void getQuestionSummaryThrowsTest005WhenMakerDoesNotMatch() {
+        setTestStatus(test, TestStatus.COMPLETED);
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+
+        assertThatThrownBy(() -> questionService.getQuestionSummary(TEST_ID, MAKER_ID + 1))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.TEST_005);
+
+        verify(questionRepository, never()).findQuestionSummariesByTestId(TEST_ID);
     }
 
     @Test
@@ -572,6 +624,26 @@ class QuestionServiceTest {
             java.lang.reflect.Field field = Question.class.getDeclaredField("id");
             field.setAccessible(true);
             field.set(question, id);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void setTestStatus(server.MATE.domain.test.entity.Test test, TestStatus status) {
+        try {
+            java.lang.reflect.Field field = server.MATE.domain.test.entity.Test.class.getDeclaredField("testStatus");
+            field.setAccessible(true);
+            field.set(test, status);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void setTestPplCount(server.MATE.domain.test.entity.Test test, Long pplCount) {
+        try {
+            java.lang.reflect.Field field = server.MATE.domain.test.entity.Test.class.getDeclaredField("pplCount");
+            field.setAccessible(true);
+            field.set(test, pplCount);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
