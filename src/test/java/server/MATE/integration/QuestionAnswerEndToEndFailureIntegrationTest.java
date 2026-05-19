@@ -681,14 +681,15 @@ class QuestionAnswerEndToEndFailureIntegrationTest extends BaseQuestionAnswerEnd
     }
 
     @Test
-    @DisplayName("maker가 아닌 사용자가 질문 조회하면 TEST_005를 반환한다")
-    void returnsTest005WhenNonMakerGetsQuestions() throws Exception {
+    @DisplayName("maker가 아닌 사용자도 질문 조회에 성공한다")
+    void nonMakerCanGetQuestions() throws Exception {
         TestActors actors = createActors();
         createSingleSubjectiveQuestion(actors.testId(), actors.makerToken());
 
-        performExpectingError(get("/api/v1/tests/{testId}/questions", actors.testId())
-                        .header("Authorization", actors.testerToken()),
-                403, "TEST_005");
+        JsonNode response = getQuestionsArray(actors.testId(), actors.testerToken());
+
+        assertThat(response).hasSize(1);
+        assertThat(response.get(0).path("type").asText()).isEqualTo("SUBJECTIVE");
     }
 
     @Test

@@ -107,7 +107,7 @@ class QuestionControllerTest {
                         )
                 )
         );
-        given(questionService.getQuestions(10L, 1L)).willReturn(response);
+        given(questionService.getQuestions(10L)).willReturn(response);
 
         mockMvc.perform(get("/api/v1/tests/10/questions")
                         .with(authenticationPrincipal()))
@@ -188,7 +188,7 @@ class QuestionControllerTest {
                         )
                 )
         );
-        given(questionService.getQuestions(10L, 1L)).willReturn(response);
+        given(questionService.getQuestions(10L)).willReturn(response);
 
         mockMvc.perform(get("/api/v1/tests/10/questions")
                         .with(authenticationPrincipal()))
@@ -228,7 +228,7 @@ class QuestionControllerTest {
                         )
                 )
         );
-        given(questionService.getQuestions(10L, 1L)).willReturn(response);
+        given(questionService.getQuestions(10L)).willReturn(response);
 
         mockMvc.perform(get("/api/v1/tests/10/questions")
                         .with(authenticationPrincipal()))
@@ -266,7 +266,7 @@ class QuestionControllerTest {
                         )
                 )
         );
-        given(questionService.getQuestions(10L, 1L)).willReturn(response);
+        given(questionService.getQuestions(10L)).willReturn(response);
 
         mockMvc.perform(get("/api/v1/tests/10/questions")
                         .with(authenticationPrincipal()))
