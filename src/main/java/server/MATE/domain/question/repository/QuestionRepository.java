@@ -13,6 +13,8 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     @Query("SELECT COALESCE(MAX(q.sequence), 0) FROM Question q WHERE q.testId = :testId")
     Long findMaxSequenceByTestId(Long testId);
 
+    Optional<Question> findByIdAndTestIdAndDeletedAtIsNull(Long id, Long testId);
+
     List<Question> findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(Long testId);
 
     @Query("""
