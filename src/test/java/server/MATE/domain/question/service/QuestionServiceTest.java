@@ -16,6 +16,7 @@ import server.MATE.domain.question.dto.request.TreeTestCreateRequest;
 import server.MATE.domain.question.dto.response.ObjectiveOptionDetailResponse;
 import server.MATE.domain.question.dto.response.ObjectiveDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
+import server.MATE.domain.question.dto.response.QuestionDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionDetailItem;
 import server.MATE.domain.question.dto.response.QuestionsDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionSummaryResponse;
@@ -188,6 +189,45 @@ class QuestionServiceTest {
     }
 
     @Test
+    @DisplayName("문항 상세 조회는 타입별 fetcher 결과를 조립한다")
+    void getQuestionDetailAssemblesFetcherResult() {
+        Question objectiveQuestion = Question.builder()
+                .testId(TEST_ID)
+                .questionType(QuestionType.OBJECTIVE)
+                .title("객관식 질문")
+                .description("설명")
+                .sequence(2L)
+                .build();
+        setQuestionId(objectiveQuestion, 201L);
+
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findByIdAndTestIdAndDeletedAtIsNull(201L, TEST_ID))
+                .willReturn(Optional.of(objectiveQuestion));
+        given(objectiveFetcher.fetch(List.of(objectiveQuestion))).willReturn(Map.of(
+                201L,
+                new ObjectiveDetailResponse(
+                        201L,
+                        201L,
+                        QuestionType.OBJECTIVE,
+                        2L,
+                        "객관식 질문",
+                        "설명",
+                        false,
+                        null,
+                        null,
+                        true,
+                        List.of(new ObjectiveOptionDetailResponse(1001L, "A", null, 1, false))
+                )
+        ));
+
+        QuestionDetailResponse response = questionService.getQuestionDetail(TEST_ID, 201L);
+
+        assertThat(response.testId()).isEqualTo(TEST_ID);
+        assertThat(response.question().questionId()).isEqualTo(201L);
+        assertThat(response.question().type()).isEqualTo(QuestionType.OBJECTIVE);
+    }
+
+    @Test
     @DisplayName("질문 목록 조회는 질문 개수와 참여자 수를 함께 반환한다")
     void getQuestionSummaryReturnsCountsAndQuestionSummaries() {
         setTestStatus(test, TestStatus.COMPLETED);
@@ -264,6 +304,32 @@ class QuestionServiceTest {
         verify(questionRepository, never()).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
         verify(objectiveFetcher, never()).fetch(anyList());
         verify(scaleFetcher, never()).fetch(anyList());
+    }
+
+    @Test
+    @DisplayName("문항 상세 조회 대상 테스트가 없으면 TEST_004 예외가 발생한다")
+    void getQuestionDetailThrowsTest004WhenTestDoesNotExist() {
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> questionService.getQuestionDetail(TEST_ID, 201L))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.TEST_004);
+
+        verify(questionRepository, never()).findByIdAndTestIdAndDeletedAtIsNull(any(), any());
+    }
+
+    @Test
+    @DisplayName("문항 상세 조회 대상 문항이 없으면 QUESTION_005 예외가 발생한다")
+    void getQuestionDetailThrowsQuestion005WhenQuestionDoesNotExist() {
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findByIdAndTestIdAndDeletedAtIsNull(201L, TEST_ID))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> questionService.getQuestionDetail(TEST_ID, 201L))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.QUESTION_005);
     }
 
     @Test

@@ -25,6 +25,7 @@ import server.MATE.domain.question.dto.response.CardSortingDetailResponse;
 import server.MATE.domain.question.dto.response.FiveSecondDetailResponse;
 import server.MATE.domain.question.dto.response.ObjectiveDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
+import server.MATE.domain.question.dto.response.QuestionDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionDetailItem;
 import server.MATE.domain.question.dto.response.QuestionsDetailResponse;
 import server.MATE.domain.question.dto.response.ScaleDetailResponse;
@@ -160,6 +161,67 @@ class QuestionServiceIntegrationTest {
                         org.assertj.core.groups.Tuple.tuple("세 번째", 3),
                         org.assertj.core.groups.Tuple.tuple("기타 (직접 입력)", 4)
                 );
+    }
+
+    @Test
+    @DisplayName("문항 상세 조회는 특정 문항 하나만 반환한다")
+    void getsSingleQuestionDetail() {
+        server.MATE.domain.test.entity.Test savedTest = createTest();
+
+        QuestionCreateResponse createResponse = questionService.createQuestions(savedTest.getId(), 1L, new QuestionCreateRequest(List.of(
+                new ObjectiveCreateRequest(
+                        "객관식 질문",
+                        "설명",
+                        false,
+                        null,
+                        null,
+                        true,
+                        List.of(
+                                new ObjectiveOptionRequest("첫 번째", null),
+                                new ObjectiveOptionRequest("두 번째", null)
+                        )
+                ),
+                new SubjectiveCreateRequest(
+                        "주관식 질문",
+                        "설명",
+                        null
+                )
+        )));
+
+        long questionId = createResponse.questions().getFirst().questionId();
+        QuestionDetailResponse response = questionService.getQuestionDetail(savedTest.getId(), questionId);
+
+        assertThat(response.testId()).isEqualTo(savedTest.getId());
+        assertThat(response.question()).isInstanceOf(ObjectiveDetailResponse.class);
+
+        ObjectiveDetailResponse objectiveResponse = (ObjectiveDetailResponse) response.question();
+        assertThat(objectiveResponse.questionId()).isEqualTo(questionId);
+        assertThat(objectiveResponse.options()).hasSize(3);
+    }
+
+    @Test
+    @DisplayName("문항 상세 조회에서 다른 테스트 문항이면 QUESTION_005 예외가 발생한다")
+    void throwsQuestion005WhenGettingQuestionDetailFromAnotherTest() {
+        server.MATE.domain.test.entity.Test firstTest = createTest();
+        server.MATE.domain.test.entity.Test secondTest = testRepository.save(server.MATE.domain.test.entity.Test.builder()
+                .makerId(2L)
+                .title("다른 테스트")
+                .description("설명")
+                .serviceName("서비스")
+                .serviceDescription("서비스 설명")
+                .imageKeys(List.of())
+                .build());
+
+        QuestionCreateResponse createResponse = questionService.createQuestions(secondTest.getId(), 2L, new QuestionCreateRequest(List.of(
+                new SubjectiveCreateRequest("주관식 질문", "설명", null)
+        )));
+
+        long foreignQuestionId = createResponse.questions().getFirst().questionId();
+
+        assertThatThrownBy(() -> questionService.getQuestionDetail(firstTest.getId(), foreignQuestionId))
+                .isInstanceOf(BaseException.class)
+                .extracting(ex -> ((BaseException) ex).getErrorCode())
+                .isEqualTo(BaseErrorCode.QUESTION_005);
     }
 
     @Test
