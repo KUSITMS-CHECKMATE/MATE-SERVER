@@ -123,6 +123,48 @@ variable "github_actions_oidc_application_client_id" {
   default     = null
 }
 
+variable "redis_cache_name" {
+  description = "Globally unique Azure Cache for Redis name."
+  type        = string
+  default     = "kusitms-mate-redis"
+}
+
+variable "redis_capacity" {
+  description = "Azure Cache for Redis capacity. 1 means C1 for Basic/Standard."
+  type        = number
+  default     = 1
+}
+
+variable "redis_family" {
+  description = "Azure Cache for Redis family."
+  type        = string
+  default     = "C"
+}
+
+variable "redis_sku_name" {
+  description = "Azure Cache for Redis SKU."
+  type        = string
+  default     = "Basic"
+}
+
+variable "redis_minimum_tls_version" {
+  description = "Minimum TLS version for Redis."
+  type        = string
+  default     = "1.2"
+}
+
+variable "redis_private_dns_zone_name" {
+  description = "Private DNS zone name for Azure Cache for Redis."
+  type        = string
+  default     = "privatelink.redis.cache.windows.net"
+}
+
+variable "redis_private_dns_zone_link_name" {
+  description = "VNet link name for Redis private DNS zone."
+  type        = string
+  default     = "redis-private-dns-zone-link"
+}
+
 variable "key_vault_name" {
   description = "Globally unique Key Vault name"
   type        = string
@@ -226,7 +268,7 @@ variable "kubernetes_nodeport_allow_source_address_prefixes" {
   description = "K8s 노드 NSG: NodePort(30000-32767) 허용 출발지. Ingress NodePort 외부 노출용."
   type        = list(string)
   # 운영 반영 전에는 LB/내부망 경유만 허용하도록 제한 예정
-  default     = ["VirtualNetwork"]
+  default = ["VirtualNetwork"]
 }
 
 variable "kubernetes_ingress_lb_allow_source_address_prefixes" {

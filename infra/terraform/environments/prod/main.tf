@@ -59,6 +59,23 @@ module "container_registry" {
   admin_enabled       = var.acr_admin_enabled
 }
 
+module "redis" {
+  source = "../../modules/redis"
+
+  resource_group_name = module.resource_group.name
+  location            = var.location
+  redis_cache_name    = var.redis_cache_name
+
+  virtual_network_id         = module.networking.vnet_id
+  private_endpoint_subnet_id = module.networking.app_subnet_id
+  private_dns_zone_name      = var.redis_private_dns_zone_name
+  private_dns_zone_link_name = var.redis_private_dns_zone_link_name
+  capacity                   = var.redis_capacity
+  family                     = var.redis_family
+  sku_name                   = var.redis_sku_name
+  minimum_tls_version        = var.redis_minimum_tls_version
+}
+
 module "keyvault" {
   source = "../../modules/keyvault"
 
@@ -66,9 +83,17 @@ module "keyvault" {
   location                 = var.location
   key_vault_name           = var.key_vault_name
   placeholder_secret_value = var.key_vault_placeholder_secret_value
-  secret_initial_values    = var.key_vault_secret_initial_values
-  deployer_object_id       = var.key_vault_deployer_object_id
-  deployer_principal_type  = var.key_vault_deployer_principal_type
+  secret_initial_values = merge(
+    var.key_vault_secret_initial_values,
+    {
+      "redis-host"        = module.redis.hostname
+      "redis-port"        = tostring(module.redis.ssl_port)
+      "redis-password"    = module.redis.primary_access_key
+      "redis-ssl-enabled" = "true"
+    }
+  )
+  deployer_object_id      = var.key_vault_deployer_object_id
+  deployer_principal_type = var.key_vault_deployer_principal_type
 }
 
 module "user_assigned_identity" {

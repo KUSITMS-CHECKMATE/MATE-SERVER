@@ -8,6 +8,10 @@ locals {
     "discord-webhook-url"             = "DISCORD_WEBHOOK_URL"
     "azure-storage-connection-string" = "AZURE_CONNECTION"
     "azure-container-name"            = "AZURE_CONTAINER_NAME"
+    "redis-host"                      = "REDIS_HOST"
+    "redis-port"                      = "REDIS_PORT"
+    "redis-password"                  = "REDIS_PASSWORD"
+    "redis-ssl-enabled"               = "REDIS_SSL_ENABLED"
     # Spring ssl.bundle.pem.toss.keystore 는 파일 경로 전제 (KV PEM → 디스크 반영 후 path)
     "toss-mtls-certificate" = "TOSS_MTLS_CERT_PATH (PEM file content from KV → write to disk → path here)"
     "toss-mtls-private-key" = "TOSS_MTLS_KEY_PATH (PEM file content from KV → write to disk → path here)"
@@ -97,6 +101,41 @@ output "acr_name" {
 output "acr_login_server" {
   description = "ACR login server (image host)."
   value       = module.container_registry.login_server
+}
+
+output "redis_cache_id" {
+  description = "Azure Cache for Redis resource id."
+  value       = module.redis.id
+}
+
+output "redis_cache_name" {
+  description = "Azure Cache for Redis name."
+  value       = module.redis.name
+}
+
+output "redis_hostname" {
+  description = "Azure Cache for Redis hostname."
+  value       = module.redis.hostname
+}
+
+output "redis_ssl_port" {
+  description = "Azure Cache for Redis TLS port."
+  value       = module.redis.ssl_port
+}
+
+output "redis_private_dns_zone_id" {
+  description = "Redis private DNS zone id."
+  value       = module.redis.private_dns_zone_id
+}
+
+output "redis_private_endpoint_id" {
+  description = "Redis private endpoint id."
+  value       = module.redis.private_endpoint_id
+}
+
+output "redis_private_endpoint_ip_address" {
+  description = "Redis private endpoint IP address."
+  value       = module.redis.private_endpoint_ip_address
 }
 
 output "key_vault_id" {

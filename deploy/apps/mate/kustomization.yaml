@@ -11,4 +11,4 @@ resources:
   - ingress.yaml
 images:
   - name: kusitmsmateacr.azurecr.io/mate
-    newTag: gha-8
+    newTag: gha-16
