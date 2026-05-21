@@ -5,3 +5,4 @@ resources:
   - applications/ingress-nginx-application.yaml
   - applications/external-secrets-operator-application.yaml
   - applications/mate-application.yaml
+  - applications/monitoring-application.yaml
