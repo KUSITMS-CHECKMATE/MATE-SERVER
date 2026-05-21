@@ -50,9 +50,8 @@ public class ScaleReportHandler implements ReportHandler {
         int total = 0;
         long sum = 0;
         for (Answer answer : answers) {
-            Object valueObj = answer.getAnswer().get("value");
-            if (valueObj == null) continue;
-            int value = ((Number) valueObj).intValue();
+            if (!(answer.getAnswer().get("value") instanceof Number number)) continue;
+            int value = number.intValue();
             if (value >= 1 && value <= range) {
                 counts[value]++;
                 sum += value;

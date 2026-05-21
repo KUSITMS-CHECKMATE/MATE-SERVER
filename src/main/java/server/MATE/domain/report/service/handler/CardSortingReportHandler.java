@@ -39,6 +39,7 @@ public class CardSortingReportHandler implements ReportHandler {
         Map<Long, Object> result = new LinkedHashMap<>();
         for (Question question : questions) {
             CardSorting cardSorting = cardSortingMap.get(question.getId());
+            if (cardSorting == null) continue;
             List<Answer> answers = answersByQuestionId.getOrDefault(question.getId(), List.of());
             result.put(question.getId(), computeForCardSorting(cardSorting, answers));
         }
@@ -60,11 +61,10 @@ public class CardSortingReportHandler implements ReportHandler {
         for (Answer answer : answers) {
             for (Map<String, Object> group : extractGroups(answer.getAnswer())) {
                 String category = (String) group.get("category");
-                @SuppressWarnings("unchecked")
-                List<String> cardNames = (List<String>) group.get("cardNames");
                 Map<String, Integer> cardCounts = categoryCardCounts.get(category);
-                if (cardCounts != null && cardNames != null) {
-                    for (String cardName : cardNames) {
+                if (cardCounts == null || !(group.get("cardNames") instanceof List<?> rawList)) continue;
+                for (Object item : rawList) {
+                    if (item instanceof String cardName) {
                         cardCounts.merge(cardName, 1, Integer::sum);
                     }
                 }
