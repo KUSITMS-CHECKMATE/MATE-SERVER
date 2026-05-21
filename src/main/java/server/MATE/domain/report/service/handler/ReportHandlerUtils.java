@@ -20,7 +20,7 @@ final class ReportHandlerUtils {
         if (raw == null) return List.of();
         List<Long> ids = new ArrayList<>();
         for (Object o : raw) {
-            ids.add(((Number) o).longValue());
+            if (o instanceof Number n) ids.add(n.longValue());
         }
         return ids;
     }
