@@ -38,6 +38,7 @@ public class SecurityConfig {
     };
 
     public static final String[] INFRA_WHITELIST = {
+            "/actuator/health", "/actuator/prometheus"
     };
 
     @Bean
