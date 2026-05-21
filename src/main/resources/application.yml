@@ -32,6 +32,17 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
 toss:
   api:
     base-url: https://apps-in-toss-api.toss.im
