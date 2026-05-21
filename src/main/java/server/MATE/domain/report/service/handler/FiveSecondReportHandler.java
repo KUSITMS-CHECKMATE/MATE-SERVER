@@ -1,0 +1,84 @@
+package server.MATE.domain.report.service.handler;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import server.MATE.domain.answer.entity.Answer;
+import server.MATE.domain.question.entity.FiveSecond;
+import server.MATE.domain.question.entity.FiveSecondOption;
+import server.MATE.domain.question.entity.Question;
+import server.MATE.domain.question.entity.QuestionType;
+import server.MATE.domain.question.repository.FiveSecondRepository;
+import server.MATE.domain.report.dto.response.ObjectiveReportResult;
+import server.MATE.domain.report.dto.response.OptionResult;
+import server.MATE.domain.report.dto.response.SubjectiveReportResult;
+import server.MATE.domain.report.service.ReportHandler;
+
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Component
+@RequiredArgsConstructor
+public class FiveSecondReportHandler implements ReportHandler {
+
+    private static final int MAX_RESPONSES = 15;
+
+    private final FiveSecondRepository fiveSecondRepository;
+
+    @Override
+    public QuestionType supports() {
+        return QuestionType.FIVE_SECOND;
+    }
+
+    @Override
+    public Map<Long, Object> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId) {
+        List<Long> questionIds = questions.stream().map(Question::getId).toList();
+        Map<Long, FiveSecond> fiveSecondMap = fiveSecondRepository.findAllByIdIn(questionIds).stream()
+                .collect(Collectors.toMap(FiveSecond::getId, f -> f));
+
+        Map<Long, Object> result = new LinkedHashMap<>();
+        for (Question question : questions) {
+            FiveSecond fiveSecond = fiveSecondMap.get(question.getId());
+            List<Answer> answers = answersByQuestionId.getOrDefault(question.getId(), List.of());
+            result.put(question.getId(), fiveSecond.isObjective()
+                    ? computeObjective(fiveSecond, answers)
+                    : computeSubjective(answers));
+        }
+        return result;
+    }
+
+    private ObjectiveReportResult computeObjective(FiveSecond fiveSecond, List<Answer> answers) {
+        Map<Long, Integer> countByOptionId = new LinkedHashMap<>();
+        for (FiveSecondOption option : fiveSecond.getOptions()) {
+            countByOptionId.put(option.getId(), 0);
+        }
+
+        for (Answer answer : answers) {
+            for (Long optionId : ReportHandlerUtils.extractOptionIds(answer.getAnswer())) {
+                countByOptionId.merge(optionId, 1, Integer::sum);
+            }
+        }
+
+        int total = answers.size();
+        List<OptionResult> options = fiveSecond.getOptions().stream()
+                .sorted(Comparator.comparingInt((FiveSecondOption o) -> countByOptionId.getOrDefault(o.getId(), 0)).reversed())
+                .map(option -> {
+                    int count = countByOptionId.getOrDefault(option.getId(), 0);
+                    return new OptionResult(option.getId(), option.getContent(), count, ReportHandlerUtils.toPercentage(count, total));
+                })
+                .toList();
+
+        return new ObjectiveReportResult(options);
+    }
+
+    private SubjectiveReportResult computeSubjective(List<Answer> answers) {
+        List<String> responses = answers.stream()
+                .sorted(Comparator.comparing(Answer::getCreatedAt))
+                .limit(MAX_RESPONSES)
+                .map(a -> (String) a.getAnswer().get("text"))
+                .toList();
+        return new SubjectiveReportResult(responses);
+    }
+}
