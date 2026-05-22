@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import server.MATE.domain.question.entity.QuestionType;
 
 @Schema(description = "질문별 리포트 항목")
-public record QuestionReportItem(
+public record ReportItem(
         @Schema(description = "질문 ID", example = "101")
         Long questionId,
 
@@ -17,7 +17,7 @@ public record QuestionReportItem(
         @Schema(description = "질문 유형", example = "OBJECTIVE")
         QuestionType type,
 
-        @Schema(description = "유형별 리포트 결과 (ObjectiveReportResult / SubjectiveReportResult / ScaleReportResult / AbTestReportResult / CardSortingReportResult / TreeTestReportResult)")
-        Object report
+        @Schema(description = "유형별 집계 결과")
+        Object result
 ) {
 }
