@@ -32,7 +32,7 @@ public class SubjectiveReportHandler implements ReportHandler {
         return result;
     }
 
-    SubjectiveReportResult computeForSubjective(List<Answer> answers) {
+    private SubjectiveReportResult computeForSubjective(List<Answer> answers) {
         List<String> responses = answers.stream()
                 .sorted(Comparator.comparing(Answer::getCreatedAt))
                 .limit(MAX_RESPONSES)

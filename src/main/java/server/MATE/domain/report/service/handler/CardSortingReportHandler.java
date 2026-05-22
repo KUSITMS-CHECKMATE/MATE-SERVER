@@ -39,7 +39,6 @@ public class CardSortingReportHandler implements ReportHandler {
         Map<Long, Object> result = new LinkedHashMap<>();
         for (Question question : questions) {
             CardSorting cardSorting = cardSortingMap.get(question.getId());
-            if (cardSorting == null) continue;
             List<Answer> answers = answersByQuestionId.getOrDefault(question.getId(), List.of());
             result.put(question.getId(), computeForCardSorting(cardSorting, answers));
         }

@@ -44,7 +44,7 @@ public class ObjectiveReportHandler implements ReportHandler {
         return result;
     }
 
-    ObjectiveReportResult computeForObjective(Objective objective, List<Answer> answers) {
+    private ObjectiveReportResult computeForObjective(Objective objective, List<Answer> answers) {
         Map<Long, Integer> countByOptionId = new LinkedHashMap<>();
         for (ObjectiveOption option : objective.getOptions()) {
             countByOptionId.put(option.getId(), 0);
