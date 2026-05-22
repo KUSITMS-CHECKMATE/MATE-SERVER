@@ -11,6 +11,8 @@ spring:
         format_sql: true
     show-sql: false
     open-in-view: false
+  cache:
+    type: redis
 
 security:
   cors:
