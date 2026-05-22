@@ -112,9 +112,9 @@ variable "acr_sku" {
 }
 
 variable "acr_admin_enabled" {
-  description = "If true, enables admin credentials (prefer false when using AcrPull)."
+  description = "If true, enables ACR admin credentials for VM-based Kubernetes imagePullSecret."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "github_actions_oidc_application_client_id" {

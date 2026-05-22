@@ -7,6 +7,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -47,6 +49,7 @@ import server.MATE.domain.question.service.handler.ScaleQuestionCreateHandler;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
+import server.MATE.global.config.CacheNames;
 import server.MATE.global.storage.FileStorageService;
 
 import java.util.Comparator;
@@ -67,6 +70,9 @@ class QuestionServiceIntegrationTest {
 
     @Autowired
     private QuestionService questionService;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     @Autowired
     private TestRepository testRepository;
@@ -106,6 +112,10 @@ class QuestionServiceIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        Cache surveyCache = cacheManager.getCache(CacheNames.SURVEY);
+        if (surveyCache != null) {
+            surveyCache.clear();
+        }
         treeTestRepository.deleteAll();
         cardSortingRepository.deleteAll();
         abTestRepository.deleteAll();
