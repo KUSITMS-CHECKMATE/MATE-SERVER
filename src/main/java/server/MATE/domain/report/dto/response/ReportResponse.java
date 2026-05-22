@@ -2,6 +2,7 @@ package server.MATE.domain.report.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import server.MATE.domain.question.dto.response.QuestionSummaryItem;
+import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.TestStatus;
 
 import java.util.List;
@@ -10,6 +11,9 @@ import java.util.List;
 public record ReportResponse(
         @Schema(description = "테스트 상태 (IN_PROGRESS / COMPLETED)", example = "COMPLETED")
         TestStatus testStatus,
+
+        @Schema(description = "리포트 집계 상태 (PENDING / IN_PROGRESS / COMPLETED / FAILED)", example = "COMPLETED")
+        ReportStatus reportStatus,
 
         @Schema(description = "총 질문 수", example = "5")
         int questionCount,
@@ -20,7 +24,7 @@ public record ReportResponse(
         @Schema(description = "질문 목록 (순서 오름차순)")
         List<QuestionSummaryItem> questions,
 
-        @Schema(description = "질문별 집계 결과 (IN_PROGRESS 이면 빈 리스트)")
-        List<ReportItem> stats
+        @Schema(description = "질문별 집계 결과 (reportStatus가 COMPLETED일 때만 포함)")
+        List<ReportItem> reports
 ) {
 }
