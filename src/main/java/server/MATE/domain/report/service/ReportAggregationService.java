@@ -1,12 +1,21 @@
 package server.MATE.domain.report.service;
 
+import java.util.EnumMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.answer.repository.AnswerRepository;
 import server.MATE.domain.question.entity.Question;
@@ -16,15 +25,8 @@ import server.MATE.domain.report.entity.Report;
 import server.MATE.domain.report.repository.ReportRepository;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
-import org.springframework.dao.DataIntegrityViolationException;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-
-import java.util.EnumMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -108,18 +110,19 @@ public class ReportAggregationService {
     public List<Report> recover(Exception e, Long testId) {
         if (e instanceof DataIntegrityViolationException || reportRepository.existsByTestId(testId)) {
             log.info("테스트 {} 리포트가 이미 존재합니다. 상태를 완료로 업데이트합니다.", testId);
-            testRepository.findByIdAndDeletedAtIsNull(testId).ifPresent(test -> {
-                test.completeReportAggregation();
-                testRepository.save(test);
-            });
+            updateReportStatus(testId, Test::completeReportAggregation);
             return reportRepository.findAllByTestId(testId);
         }
         log.error("테스트 {} 집계 3회 실패", testId, e);
+        updateReportStatus(testId, Test::failReportAggregation);
+        return List.of();
+    }
+
+    private void updateReportStatus(Long testId, Consumer<Test> action) {
         testRepository.findByIdAndDeletedAtIsNull(testId).ifPresent(test -> {
-            test.failReportAggregation();
+            action.accept(test);
             testRepository.save(test);
         });
-        return List.of();
     }
 
     private Map<QuestionType, ReportHandler> buildHandlerMap(List<ReportHandler> handlers) {
