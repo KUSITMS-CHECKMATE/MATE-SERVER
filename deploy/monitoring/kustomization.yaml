@@ -3,3 +3,4 @@ kind: Kustomization
 namespace: monitoring
 resources:
   - servicemonitor-mate-backend.yaml
+  - ingress-grafana.yaml
