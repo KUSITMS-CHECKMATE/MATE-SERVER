@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: mate
   labels:
-    app: mate
+    app: mate-backend
 spec:
   type: ClusterIP
   selector:

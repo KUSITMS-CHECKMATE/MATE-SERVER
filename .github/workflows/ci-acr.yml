@@ -20,7 +20,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write 
       id-token: write
     env:
       ACR_LOGIN_NAME_FALLBACK: kusitmsmateacr
