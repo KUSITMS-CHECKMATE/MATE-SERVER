@@ -49,6 +49,10 @@ public class Test extends BaseEntity {
     private TestStatus testStatus;
 
     @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(20) default 'PENDING'")
+    private ReportStatus reportStatus = ReportStatus.PENDING;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ApprovalStatus approvalStatus;
 
@@ -117,6 +121,22 @@ public class Test extends BaseEntity {
         if (this.likeCount > 0) {
             this.likeCount--;
         }
+    }
+
+    public void complete() {
+        this.testStatus = TestStatus.COMPLETED;
+    }
+
+    public void startReportAggregation() {
+        this.reportStatus = ReportStatus.IN_PROGRESS;
+    }
+
+    public void completeReportAggregation() {
+        this.reportStatus = ReportStatus.COMPLETED;
+    }
+
+    public void failReportAggregation() {
+        this.reportStatus = ReportStatus.FAILED;
     }
 
     public void delete(LocalDateTime deletedAt) {

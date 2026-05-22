@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component;
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.report.dto.response.AbTestReportResult;
 import server.MATE.domain.report.service.ReportHandler;
 
 import java.util.LinkedHashMap;
@@ -20,8 +19,8 @@ public class AbTestReportHandler implements ReportHandler {
     }
 
     @Override
-    public Map<Long, Object> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId) {
-        Map<Long, Object> result = new LinkedHashMap<>();
+    public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId) {
+        Map<Long, Map<String, Object>> result = new LinkedHashMap<>();
         for (Question question : questions) {
             List<Answer> answers = answersByQuestionId.getOrDefault(question.getId(), List.of());
             result.put(question.getId(), computeForAbTest(answers));
@@ -29,20 +28,28 @@ public class AbTestReportHandler implements ReportHandler {
         return result;
     }
 
-    private AbTestReportResult computeForAbTest(List<Answer> answers) {
+    private Map<String, Object> computeForAbTest(List<Answer> answers) {
         int aCount = 0;
         int bCount = 0;
         for (Answer answer : answers) {
-            Object selectedObj = answer.getAnswer().get("selected");
-            if (selectedObj == null) continue;
-            String selected = String.valueOf(selectedObj);
-            if ("A".equals(selected)) aCount++;
-            else if ("B".equals(selected)) bCount++;
+            Object selected = answer.getAnswer().get("selected");
+            if (selected == null) continue;
+            if ("A".equals(String.valueOf(selected))) aCount++;
+            else if ("B".equals(String.valueOf(selected))) bCount++;
         }
         int total = aCount + bCount;
-        return new AbTestReportResult(
-                aCount, ReportHandlerUtils.toPercentage(aCount, total),
-                bCount, ReportHandlerUtils.toPercentage(bCount, total)
-        );
+
+        Map<String, Object> aMap = new LinkedHashMap<>();
+        aMap.put("count", aCount);
+        aMap.put("ratio", ReportHandlerUtils.toRatio(aCount, total));
+
+        Map<String, Object> bMap = new LinkedHashMap<>();
+        bMap.put("count", bCount);
+        bMap.put("ratio", ReportHandlerUtils.toRatio(bCount, total));
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("A", aMap);
+        result.put("B", bMap);
+        return result;
     }
 }

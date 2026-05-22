@@ -8,11 +8,9 @@ import server.MATE.domain.question.entity.FiveSecondOption;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.FiveSecondRepository;
-import server.MATE.domain.report.dto.response.ObjectiveReportResult;
-import server.MATE.domain.report.dto.response.OptionResult;
-import server.MATE.domain.report.dto.response.SubjectiveReportResult;
 import server.MATE.domain.report.service.ReportHandler;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,8 +21,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FiveSecondReportHandler implements ReportHandler {
 
-    private static final int MAX_RESPONSES = 15;
-
     private final FiveSecondRepository fiveSecondRepository;
 
     @Override
@@ -33,12 +29,12 @@ public class FiveSecondReportHandler implements ReportHandler {
     }
 
     @Override
-    public Map<Long, Object> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId) {
+    public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId) {
         List<Long> questionIds = questions.stream().map(Question::getId).toList();
         Map<Long, FiveSecond> fiveSecondMap = fiveSecondRepository.findAllByIdIn(questionIds).stream()
                 .collect(Collectors.toMap(FiveSecond::getId, f -> f));
 
-        Map<Long, Object> result = new LinkedHashMap<>();
+        Map<Long, Map<String, Object>> result = new LinkedHashMap<>();
         for (Question question : questions) {
             FiveSecond fiveSecond = fiveSecondMap.get(question.getId());
             List<Answer> answers = answersByQuestionId.getOrDefault(question.getId(), List.of());
@@ -49,36 +45,48 @@ public class FiveSecondReportHandler implements ReportHandler {
         return result;
     }
 
-    private ObjectiveReportResult computeObjective(FiveSecond fiveSecond, List<Answer> answers) {
+    private Map<String, Object> computeObjective(FiveSecond fiveSecond, List<Answer> answers) {
         Map<Long, Integer> countByOptionId = new LinkedHashMap<>();
         for (FiveSecondOption option : fiveSecond.getOptions()) {
             countByOptionId.put(option.getId(), 0);
         }
 
+        List<String> otherTexts = new ArrayList<>();
         for (Answer answer : answers) {
             for (Long optionId : ReportHandlerUtils.extractOptionIds(answer.getAnswer())) {
                 countByOptionId.merge(optionId, 1, Integer::sum);
             }
+            String otherText = (String) answer.getAnswer().get("otherText");
+            if (otherText != null) otherTexts.add(otherText);
         }
 
         int total = answers.size();
-        List<OptionResult> options = fiveSecond.getOptions().stream()
+        List<Map<String, Object>> options = fiveSecond.getOptions().stream()
                 .sorted(Comparator.comparingInt((FiveSecondOption o) -> countByOptionId.getOrDefault(o.getId(), 0)).reversed())
                 .map(option -> {
                     int count = countByOptionId.getOrDefault(option.getId(), 0);
-                    return new OptionResult(option.getId(), option.getContent(), count, ReportHandlerUtils.toPercentage(count, total));
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("optionId", option.getId());
+                    m.put("content", option.getContent());
+                    m.put("count", count);
+                    m.put("ratio", ReportHandlerUtils.toRatio(count, total));
+                    return m;
                 })
                 .toList();
 
-        return new ObjectiveReportResult(options);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("options", options);
+        if (Boolean.TRUE.equals(fiveSecond.getIsOther())) {
+            result.put("otherTexts", otherTexts);
+        }
+        return result;
     }
 
-    private SubjectiveReportResult computeSubjective(List<Answer> answers) {
-        List<String> responses = answers.stream()
+    private Map<String, Object> computeSubjective(List<Answer> answers) {
+        List<String> texts = answers.stream()
                 .sorted(Comparator.comparing(Answer::getCreatedAt))
-                .limit(MAX_RESPONSES)
                 .map(a -> (String) a.getAnswer().get("text"))
                 .toList();
-        return new SubjectiveReportResult(responses);
+        return Map.of("texts", texts);
     }
 }
