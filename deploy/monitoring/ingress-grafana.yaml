@@ -1,22 +1,21 @@
-# MATE API 전용 Ingress. grafana/argocd는 각 서브도메인 Ingress로 분리한다.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: mate
+  name: grafana
   labels:
-    app: mate
+    app: grafana
   annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
   rules:
-    - host: api.kusitms-mate.cloud
+    - host: grafana.kusitms-mate.cloud
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: mate
+                name: monitoring-grafana
                 port:
                   number: 80
