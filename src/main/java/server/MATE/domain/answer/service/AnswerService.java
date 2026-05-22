@@ -1,5 +1,6 @@
 package server.MATE.domain.answer.service;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.answer.dto.request.AnswerCreateItem;
@@ -13,6 +14,7 @@ import server.MATE.domain.participation.repository.ParticipationRepository;
 import server.MATE.domain.question.entity.*;
 import server.MATE.domain.question.repository.*;
 import server.MATE.domain.test.entity.Test;
+import server.MATE.domain.test.event.TestCompletedEvent;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
@@ -33,6 +35,7 @@ public class AnswerService {
     private final ScaleRepository scaleRepository;
     private final CardSortingRepository cardSortingRepository;
     private final TreeTestRepository treeTestRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final Map<QuestionType, AnswerCreateHandler> handlerMap;
 
     public AnswerService(TestRepository testRepository,
@@ -44,6 +47,7 @@ public class AnswerService {
                          ScaleRepository scaleRepository,
                          CardSortingRepository cardSortingRepository,
                          TreeTestRepository treeTestRepository,
+                         ApplicationEventPublisher eventPublisher,
                          List<AnswerCreateHandler> handlers) {
         this.testRepository = testRepository;
         this.participationRepository = participationRepository;
@@ -54,6 +58,7 @@ public class AnswerService {
         this.scaleRepository = scaleRepository;
         this.cardSortingRepository = cardSortingRepository;
         this.treeTestRepository = treeTestRepository;
+        this.eventPublisher = eventPublisher;
         this.handlerMap = buildHandlerMap(handlers);
     }
 
@@ -112,6 +117,11 @@ public class AnswerService {
 
         answerRepository.saveAll(answers);
         test.incrementPplCount();
+        if (test.getPplCount() >= test.getGoalPpl()) {
+            test.complete();
+            test.startReportAggregation();
+            eventPublisher.publishEvent(new TestCompletedEvent(testId));
+        }
         return AnswerBatchCreateResponse.from(participation);
     }
 

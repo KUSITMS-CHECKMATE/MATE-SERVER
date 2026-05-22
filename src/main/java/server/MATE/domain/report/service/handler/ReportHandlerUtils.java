@@ -9,9 +9,9 @@ final class ReportHandlerUtils {
     private ReportHandlerUtils() {
     }
 
-    static double toPercentage(int count, int total) {
+    static double toRatio(int count, int total) {
         if (total == 0) return 0.0;
-        return Math.round(count * 1000.0 / total) / 10.0;
+        return Math.round(count * 1000.0 / total) / 1000.0;
     }
 
     @SuppressWarnings("unchecked")
