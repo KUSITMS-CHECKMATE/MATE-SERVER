@@ -289,6 +289,18 @@ variable "cloudflare_api_record_name" {
   default     = "api"
 }
 
+variable "cloudflare_grafana_record_name" {
+  description = "Cloudflare에 만들 Grafana A 레코드 이름"
+  type        = string
+  default     = "grafana"
+}
+
+variable "cloudflare_argocd_record_name" {
+  description = "Cloudflare에 만들 ArgoCD A 레코드 이름"
+  type        = string
+  default     = "argocd"
+}
+
 variable "cloudflare_api_record_proxied" {
   description = "Cloudflare 프록시(주황 구름) 사용 여부. Ingress LB가 80/443 origin을 제공하므로 true 권장."
   type        = bool
