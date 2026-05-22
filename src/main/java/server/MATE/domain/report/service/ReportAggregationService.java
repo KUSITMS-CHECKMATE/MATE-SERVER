@@ -52,20 +52,19 @@ public class ReportAggregationService {
             noRetryFor = {BaseException.class, DataIntegrityViolationException.class})
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<Report> aggregate(Long testId) {
+        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
         if (reportRepository.existsByTestId(testId)) {
-            testRepository.findById(testId).ifPresent(test -> {
-                test.completeReportAggregation();
-                testRepository.save(test);
-            });
+            test.completeReportAggregation();
+            testRepository.save(test);
             return reportRepository.findAllByTestId(testId);
         }
 
         List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
         if (questions.isEmpty()) {
-            testRepository.findById(testId).ifPresent(test -> {
-                test.completeReportAggregation();
-                testRepository.save(test);
-            });
+            test.completeReportAggregation();
+            testRepository.save(test);
             return List.of();
         }
 
@@ -99,18 +98,24 @@ public class ReportAggregationService {
                 .toList();
 
         List<Report> saved = reportRepository.saveAll(reports);
-        testRepository.findById(testId).ifPresent(test -> {
-            test.completeReportAggregation();
-            testRepository.save(test);
-        });
+        test.completeReportAggregation();
+        testRepository.save(test);
         return saved;
     }
 
     @Recover
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<Report> recover(Exception e, Long testId) {
+        if (e instanceof DataIntegrityViolationException || reportRepository.existsByTestId(testId)) {
+            log.info("테스트 {} 리포트가 이미 존재합니다. 상태를 완료로 업데이트합니다.", testId);
+            testRepository.findByIdAndDeletedAtIsNull(testId).ifPresent(test -> {
+                test.completeReportAggregation();
+                testRepository.save(test);
+            });
+            return reportRepository.findAllByTestId(testId);
+        }
         log.error("테스트 {} 집계 3회 실패", testId, e);
-        testRepository.findById(testId).ifPresent(test -> {
+        testRepository.findByIdAndDeletedAtIsNull(testId).ifPresent(test -> {
             test.failReportAggregation();
             testRepository.save(test);
         });
