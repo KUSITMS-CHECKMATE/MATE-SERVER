@@ -1,7 +1,6 @@
 package server.MATE.domain.report.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.question.dto.response.QuestionSummaryItem;
@@ -11,6 +10,7 @@ import server.MATE.domain.report.dto.response.ReportItem;
 import server.MATE.domain.report.dto.response.ReportResponse;
 import server.MATE.domain.report.entity.Report;
 import server.MATE.domain.report.repository.ReportRepository;
+import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
@@ -29,7 +29,6 @@ public class ReportService {
     private final TestRepository testRepository;
     private final QuestionRepository questionRepository;
     private final ReportRepository reportRepository;
-    private final ReportAggregationService reportAggregationService;
 
     public ReportResponse getReport(Long testId, Long makerId) {
         Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
@@ -46,26 +45,33 @@ public class ReportService {
         if (test.getTestStatus() == TestStatus.IN_PROGRESS) {
             return new ReportResponse(
                     TestStatus.IN_PROGRESS,
+                    ReportStatus.PENDING,
                     questions.size(),
                     test.getPplCount(),
                     questionSummaries,
-                    List.of()  // stats
+                    List.of()
             );
         }
 
-        List<Report> reports = reportRepository.findAllByTestId(testId);
-        if (reports.isEmpty()) {
-            try {
-                reports = reportAggregationService.aggregate(testId);
-            } catch (DataIntegrityViolationException e) {
-                reports = reportRepository.findAllByTestId(testId);
-            }
+        ReportStatus reportStatus = test.getReportStatus() != null ? test.getReportStatus() : ReportStatus.PENDING;
+
+        if (reportStatus != ReportStatus.COMPLETED) {
+            return new ReportResponse(
+                    TestStatus.COMPLETED,
+                    reportStatus,
+                    questions.size(),
+                    test.getPplCount(),
+                    questionSummaries,
+                    List.of()
+            );
         }
 
-        Map<Long, Map<String, Object>> resultByQuestionId = reports.stream()
+        List<Report> aggregations = reportRepository.findAllByTestId(testId);
+
+        Map<Long, Map<String, Object>> resultByQuestionId = aggregations.stream()
                 .collect(Collectors.toMap(Report::getQuestionId, Report::getResult));
 
-        List<ReportItem> stats = questions.stream()
+        List<ReportItem> reports = questions.stream()
                 .map(q -> new ReportItem(
                         q.getId(),
                         q.getSequence(),
@@ -77,10 +83,11 @@ public class ReportService {
 
         return new ReportResponse(
                 TestStatus.COMPLETED,
+                ReportStatus.COMPLETED,
                 questions.size(),
                 test.getPplCount(),
                 questionSummaries,
-                stats
+                reports
         );
     }
 }
