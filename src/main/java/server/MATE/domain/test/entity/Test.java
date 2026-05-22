@@ -119,6 +119,10 @@ public class Test extends BaseEntity {
         }
     }
 
+    public void complete() {
+        this.testStatus = TestStatus.COMPLETED;
+    }
+
     public void delete(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
     }
