@@ -11,5 +11,5 @@ public interface ReportHandler {
 
     QuestionType supports();
 
-    Map<Long, Object> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId);
+    Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId);
 }

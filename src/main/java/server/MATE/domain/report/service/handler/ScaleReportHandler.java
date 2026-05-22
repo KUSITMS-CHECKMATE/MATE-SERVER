@@ -7,8 +7,6 @@ import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Scale;
 import server.MATE.domain.question.repository.ScaleRepository;
-import server.MATE.domain.report.dto.response.ScaleDistributionItem;
-import server.MATE.domain.report.dto.response.ScaleReportResult;
 import server.MATE.domain.report.service.ReportHandler;
 
 import java.util.ArrayList;
@@ -29,12 +27,12 @@ public class ScaleReportHandler implements ReportHandler {
     }
 
     @Override
-    public Map<Long, Object> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId) {
+    public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId) {
         List<Long> questionIds = questions.stream().map(Question::getId).toList();
         Map<Long, Scale> scaleMap = scaleRepository.findAllById(questionIds).stream()
                 .collect(Collectors.toMap(Scale::getId, s -> s));
 
-        Map<Long, Object> result = new LinkedHashMap<>();
+        Map<Long, Map<String, Object>> result = new LinkedHashMap<>();
         for (Question question : questions) {
             Scale scale = scaleMap.get(question.getId());
             List<Answer> answers = answersByQuestionId.getOrDefault(question.getId(), List.of());
@@ -43,12 +41,12 @@ public class ScaleReportHandler implements ReportHandler {
         return result;
     }
 
-    private ScaleReportResult computeForScale(Scale scale, List<Answer> answers) {
+    private Map<String, Object> computeForScale(Scale scale, List<Answer> answers) {
         int range = scale.getRange();
         int[] counts = new int[range + 1];
-
         int total = 0;
         long sum = 0;
+
         for (Answer answer : answers) {
             if (!(answer.getAnswer().get("value") instanceof Number number)) continue;
             int value = number.intValue();
@@ -61,11 +59,14 @@ public class ScaleReportHandler implements ReportHandler {
 
         double average = total == 0 ? 0.0 : Math.round(sum * 10.0 / total) / 10.0;
 
-        List<ScaleDistributionItem> distribution = new ArrayList<>();
+        List<Map<String, Object>> distribution = new ArrayList<>();
         for (int i = 1; i <= range; i++) {
-            distribution.add(new ScaleDistributionItem(i, counts[i]));
+            distribution.add(Map.of("score", i, "count", counts[i]));
         }
 
-        return new ScaleReportResult(average, distribution);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("average", average);
+        result.put("distribution", distribution);
+        return result;
     }
 }
