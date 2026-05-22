@@ -14,6 +14,8 @@ import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.report.entity.Report;
 import server.MATE.domain.report.repository.ReportRepository;
+import server.MATE.domain.test.entity.Test;
+import server.MATE.domain.test.repository.TestRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
@@ -31,15 +33,18 @@ public class ReportAggregationService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final ReportRepository reportRepository;
+    private final TestRepository testRepository;
     private final Map<QuestionType, ReportHandler> handlerMap;
 
     public ReportAggregationService(QuestionRepository questionRepository,
                                     AnswerRepository answerRepository,
                                     ReportRepository reportRepository,
+                                    TestRepository testRepository,
                                     List<ReportHandler> handlers) {
         this.questionRepository = questionRepository;
         this.answerRepository = answerRepository;
         this.reportRepository = reportRepository;
+        this.testRepository = testRepository;
         this.handlerMap = buildHandlerMap(handlers);
     }
 
@@ -48,11 +53,21 @@ public class ReportAggregationService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<Report> aggregate(Long testId) {
         if (reportRepository.existsByTestId(testId)) {
+            testRepository.findById(testId).ifPresent(test -> {
+                test.completeReportAggregation();
+                testRepository.save(test);
+            });
             return reportRepository.findAllByTestId(testId);
         }
 
         List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
-        if (questions.isEmpty()) return List.of();
+        if (questions.isEmpty()) {
+            testRepository.findById(testId).ifPresent(test -> {
+                test.completeReportAggregation();
+                testRepository.save(test);
+            });
+            return List.of();
+        }
 
         List<Long> questionIds = questions.stream().map(Question::getId).toList();
         List<Answer> allAnswers = answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(questionIds);
@@ -83,12 +98,22 @@ public class ReportAggregationService {
                         .build())
                 .toList();
 
-        return reportRepository.saveAll(reports);
+        List<Report> saved = reportRepository.saveAll(reports);
+        testRepository.findById(testId).ifPresent(test -> {
+            test.completeReportAggregation();
+            testRepository.save(test);
+        });
+        return saved;
     }
 
     @Recover
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<Report> recover(Exception e, Long testId) {
-        log.error("테스트 {} 집계 3회 실패 — lazy 재집계로 폴백됩니다", testId, e);
+        log.error("테스트 {} 집계 3회 실패", testId, e);
+        testRepository.findById(testId).ifPresent(test -> {
+            test.failReportAggregation();
+            testRepository.save(test);
+        });
         return List.of();
     }
 
