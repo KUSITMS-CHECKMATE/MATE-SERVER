@@ -39,6 +39,8 @@ management:
       exposure:
         include: health, prometheus
   metrics:
+    tags:
+      application: mate
     export:
       prometheus:
         enabled: true
