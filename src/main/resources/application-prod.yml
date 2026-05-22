@@ -16,6 +16,8 @@ spring:
       password: ${REDIS_PASSWORD:}
       ssl:
         enabled: ${REDIS_SSL_ENABLED:false}
+  cache:
+    type: redis
   ssl:
     bundle:
       pem:

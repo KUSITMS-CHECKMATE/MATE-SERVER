@@ -1,5 +1,7 @@
 package server.MATE.domain.question.service;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
+import server.MATE.global.config.CacheNames;
 import server.MATE.global.storage.event.FileCleanupEvent;
 
 import java.util.ArrayList;
@@ -54,6 +57,7 @@ public class QuestionService {
         this.fetcherMap = buildFetcherMap(fetchers);
     }
 
+    @CacheEvict(value = CacheNames.SURVEY, key = "#testId")
     public QuestionCreateResponse createQuestions(Long testId, Long makerId, QuestionCreateRequest request) {
 
         // 테스트 내 질문의 시퀀스 할당 시 경쟁을 방지하기 위해 부모 행을 잠금
@@ -100,6 +104,7 @@ public class QuestionService {
         return new QuestionCreateResponse(results);
     }
 
+    @Cacheable(value = CacheNames.SURVEY, key = "#testId")
     @Transactional(readOnly = true)
     public QuestionsDetailResponse getQuestionsDetails(Long testId) {
         testRepository.findByIdAndDeletedAtIsNull(testId)
@@ -111,6 +116,7 @@ public class QuestionService {
         return new QuestionsDetailResponse(testId, questionDetails);
     }
 
+    @Cacheable(value = CacheNames.SURVEY, key = "#testId + ':' + #questionId")
     @Transactional(readOnly = true)
     public QuestionDetailResponse getQuestionDetail(Long testId, Long questionId) {
         testRepository.findByIdAndDeletedAtIsNull(testId)
