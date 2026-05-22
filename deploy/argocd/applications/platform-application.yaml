@@ -1,0 +1,23 @@
+# ArgoCD/Grafana 외부 Ingress 및 ArgoCD server.insecure 설정.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/KUSITMS-CHECKMATE/MATE-SERVER.git
+    targetRevision: feat/ci
+    path: deploy/argocd/platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

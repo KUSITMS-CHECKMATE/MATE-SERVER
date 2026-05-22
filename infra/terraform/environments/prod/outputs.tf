@@ -256,6 +256,16 @@ output "cloudflare_api_record_hostname" {
   value       = try(cloudflare_record.api[0].hostname, null)
 }
 
+output "cloudflare_grafana_record_hostname" {
+  description = "Cloudflare Grafana DNS 레코드 이름. cloudflare_zone_id 미설정 시 null."
+  value       = try(cloudflare_record.grafana[0].hostname, null)
+}
+
+output "cloudflare_argocd_record_hostname" {
+  description = "Cloudflare ArgoCD DNS 레코드 이름. cloudflare_zone_id 미설정 시 null."
+  value       = try(cloudflare_record.argocd[0].hostname, null)
+}
+
 output "cloudflare_api_record_proxied" {
   description = "Cloudflare API DNS 레코드 프록시 여부."
   value       = try(cloudflare_record.api[0].proxied, null)
