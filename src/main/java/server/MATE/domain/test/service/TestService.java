@@ -1,6 +1,8 @@
 package server.MATE.domain.test.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
+import server.MATE.global.config.CacheNames;
 import server.MATE.global.storage.event.FileCleanupEvent;
 import server.MATE.global.storage.event.FileDeleteEvent;
 
@@ -47,6 +50,7 @@ public class TestService {
                 .toList();
     }
 
+    @Cacheable(value = CacheNames.LOOKUP, key = "#testId")
     @Transactional(readOnly = true)
     public TestDetailResponse getTest(Long testId) {
         Test test = testRepository.findByIdAndApprovalStatusAndDeletedAtIsNull(testId, ApprovalStatus.ACCEPTED)
@@ -73,6 +77,7 @@ public class TestService {
         return TestCreateResponse.from(test);
     }
 
+    @CacheEvict(value = CacheNames.LOOKUP, key = "#testId")
     public TestUpdateResponse updateTest(Long testId, TestUpdateRequest request, Long makerId) {
         Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
@@ -114,6 +119,7 @@ public class TestService {
         return TestUpdateResponse.from(test);
     }
 
+    @CacheEvict(value = CacheNames.LOOKUP, key = "#testId")
     public void deleteTest(Long testId, Long makerId) {
         Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
