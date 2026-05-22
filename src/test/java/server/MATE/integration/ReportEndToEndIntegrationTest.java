@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import server.MATE.domain.report.repository.ReportRepository;
 import server.MATE.domain.report.service.ReportAggregationService;
+import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.TestStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,8 +37,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         assertThat(data.path("testStatus").asText()).isEqualTo("IN_PROGRESS");
         assertThat(data.path("questionCount").asInt()).isEqualTo(1);
-        assertThat(data.path("stats").isArray()).isTrue();
-        assertThat(data.path("stats")).isEmpty();
+        assertThat(data.path("reports").isArray()).isTrue();
+        assertThat(data.path("reports")).isEmpty();
     }
 
     @Test
@@ -81,7 +82,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
                 """.formatted(questionId));
         completeTest(actors.testId());
 
-        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("stats").get(0);
+        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0);
         assertThat(result.path("type").asText()).isEqualTo("SUBJECTIVE");
         JsonNode texts = result.path("result").path("texts");
         assertThat(texts).hasSize(1);
@@ -107,7 +108,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode options = reportData(actors.testId(), actors.makerToken())
-                .path("stats").get(0).path("result").path("options");
+                .path("reports").get(0).path("result").path("options");
         assertThat(options.isArray()).isTrue();
         int totalCount = 0;
         for (JsonNode option : options) {
@@ -133,7 +134,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
                 """.formatted(questionId));
         completeTest(actors.testId());
 
-        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("stats").get(0).path("result");
+        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
         assertThat(result.path("average").asDouble()).isEqualTo(4.0);
         JsonNode distribution = result.path("distribution");
         assertThat(distribution).hasSize(5);
@@ -157,7 +158,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
                 """.formatted(questionId));
         completeTest(actors.testId());
 
-        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("stats").get(0);
+        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0);
         assertThat(result.path("type").asText()).isEqualTo("FIVE_SECOND");
         JsonNode texts = result.path("result").path("texts");
         assertThat(texts).hasSize(1);
@@ -183,7 +184,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode options = reportData(actors.testId(), actors.makerToken())
-                .path("stats").get(0).path("result").path("options");
+                .path("reports").get(0).path("result").path("options");
         assertThat(options.isArray()).isTrue();
         int totalCount = 0;
         for (JsonNode option : options) {
@@ -209,7 +210,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
                 """.formatted(questionId));
         completeTest(actors.testId());
 
-        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("stats").get(0).path("result");
+        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
         assertThat(result.path("A").path("count").asInt()).isEqualTo(1);
         assertThat(result.path("A").path("ratio").asDouble()).isEqualTo(1.0);
         assertThat(result.path("B").path("count").asInt()).isEqualTo(0);
@@ -240,7 +241,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode result = reportData(actors.testId(), actors.makerToken())
-                .path("stats").get(0).path("result");
+                .path("reports").get(0).path("result");
 
         JsonNode byCategory = result.path("byCategory");
         assertThat(byCategory).hasSize(2);
@@ -285,7 +286,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode result = reportData(actors.testId(), actors.makerToken())
-                .path("stats").get(0).path("result");
+                .path("reports").get(0).path("result");
 
         JsonNode nodeFrequency = result.path("nodeFrequency");
         assertThat(nodeFrequency.isArray()).isTrue();
@@ -308,7 +309,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         assertThat(data.path("testStatus").asText()).isEqualTo("COMPLETED");
         assertThat(data.path("questionCount").asInt()).isEqualTo(0);
         assertThat(data.path("questions")).isEmpty();
-        assertThat(data.path("stats")).isEmpty();
+        assertThat(data.path("reports")).isEmpty();
     }
 
     @Test
@@ -318,7 +319,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         createScaleQuestion(actors.testId(), actors.makerToken(), 5);
         completeTest(actors.testId());
 
-        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("stats").get(0).path("result");
+        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
         assertThat(result.path("average").asDouble()).isEqualTo(0.0);
         JsonNode distribution = result.path("distribution");
         assertThat(distribution).hasSize(5);
@@ -335,7 +336,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode options = reportData(actors.testId(), actors.makerToken())
-                .path("stats").get(0).path("result").path("options");
+                .path("reports").get(0).path("result").path("options");
         assertThat(options.isArray()).isTrue();
         for (JsonNode option : options) {
             assertThat(option.path("count").asInt()).isEqualTo(0);
@@ -405,23 +406,23 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
                 """.formatted(subjectiveId, scaleId, abTestId));
         completeTest(actors.testId());
 
-        JsonNode stats = reportData(actors.testId(), actors.makerToken()).path("stats");
-        assertThat(stats).hasSize(3);
+        JsonNode reports = reportData(actors.testId(), actors.makerToken()).path("reports");
+        assertThat(reports).hasSize(3);
 
-        JsonNode r0 = stats.get(0);
+        JsonNode r0 = reports.get(0);
         assertThat(r0.path("questionId").asLong()).isEqualTo(subjectiveId);
         assertThat(r0.path("sequence").asLong()).isEqualTo(1L);
         assertThat(r0.path("title").asText()).isEqualTo("주관식 질문");
         assertThat(r0.path("type").asText()).isEqualTo("SUBJECTIVE");
         assertThat(r0.path("result").path("texts").get(0).asText()).isEqualTo("응답");
 
-        JsonNode r1 = stats.get(1);
+        JsonNode r1 = reports.get(1);
         assertThat(r1.path("questionId").asLong()).isEqualTo(scaleId);
         assertThat(r1.path("sequence").asLong()).isEqualTo(2L);
         assertThat(r1.path("type").asText()).isEqualTo("SCALE");
         assertThat(r1.path("result").path("average").asDouble()).isEqualTo(3.0);
 
-        JsonNode r2 = stats.get(2);
+        JsonNode r2 = reports.get(2);
         assertThat(r2.path("questionId").asLong()).isEqualTo(abTestId);
         assertThat(r2.path("sequence").asLong()).isEqualTo(3L);
         assertThat(r2.path("type").asText()).isEqualTo("AB_TEST");
@@ -430,8 +431,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("pplCount가 goalPpl에 도달하면 테스트가 자동으로 COMPLETED 전환되고 리포트가 생성된다")
-    void getReport_whenPplCountReachesGoalPpl_autoCompletes() throws Exception {
+    @DisplayName("pplCount가 goalPpl에 도달하면 테스트가 자동으로 COMPLETED 전환되고 백그라운드 집계가 시작된다")
+    void getReport_whenPplCountReachesGoalPpl_autoCompletesAndAggregationStarts() throws Exception {
         TestActors actors = createActors();
         setGoalPpl(actors.testId(), 1);
         createSingleSubjectiveQuestion(actors.testId(), actors.makerToken());
@@ -447,9 +448,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         JsonNode data = reportData(actors.testId(), actors.makerToken());
         assertThat(data.path("testStatus").asText()).isEqualTo("COMPLETED");
-        assertThat(data.path("stats")).hasSize(1);
-        assertThat(data.path("stats").get(0).path("result").path("texts").get(0).asText())
-                .isEqualTo("자동완료 응답");
+        assertThat(data.path("reportStatus").asText()).isIn("IN_PROGRESS", "COMPLETED");
     }
 
     @Test
@@ -470,7 +469,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
                 """.formatted(questionId, otherOptionId));
         completeTest(actors.testId());
 
-        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("stats").get(0).path("result");
+        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
         JsonNode otherTexts = result.path("otherTexts");
         assertThat(otherTexts).hasSize(1);
         assertThat(otherTexts.get(0).asText()).isEqualTo("직접 입력 응답");
@@ -481,7 +480,6 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     void getReport_withMultipleParticipants_ratioCalculatedCorrectly() throws Exception {
         TestActors actors = createActors();
         String tester2Token = createAdditionalTester();
-        setGoalPpl(actors.testId(), 2);
         createAbTestQuestion(actors.testId(), actors.makerToken());
         Long questionId = getSingleQuestion(actors.testId(), actors.makerToken()).path("questionId").asLong();
 
@@ -491,8 +489,9 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         submitAnswer(actors.testId(), tester2Token, """
                 { "answers": [{ "type": "AB_TEST", "questionId": %d, "selected": "B" }] }
                 """.formatted(questionId));
+        completeTest(actors.testId());
 
-        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("stats").get(0).path("result");
+        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
         assertThat(result.path("A").path("count").asInt()).isEqualTo(1);
         assertThat(result.path("A").path("ratio").asDouble()).isEqualTo(0.5);
         assertThat(result.path("B").path("count").asInt()).isEqualTo(1);
@@ -520,7 +519,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode byCard = reportData(actors.testId(), actors.makerToken())
-                .path("stats").get(0).path("result").path("byCard");
+                .path("reports").get(0).path("result").path("byCard");
         assertThat(byCard).hasSize(4);
 
         JsonNode homeCard = null;
@@ -540,7 +539,6 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     void getReport_withSamePathSelectedByMultipleParticipants_pathFrequencyAccumulates() throws Exception {
         TestActors actors = createActors();
         String tester2Token = createAdditionalTester();
-        setGoalPpl(actors.testId(), 2);
 
         performCreateQuestion(actors.testId(), actors.makerToken(), """
                 {
@@ -559,9 +557,10 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
                 """.formatted(questionId, rootNodeId, rootNodeId);
         submitAnswer(actors.testId(), actors.testerToken(), answerPayload);
         submitAnswer(actors.testId(), tester2Token, answerPayload);
+        completeTest(actors.testId());
 
         JsonNode pathFrequency = reportData(actors.testId(), actors.makerToken())
-                .path("stats").get(0).path("result").path("pathFrequency");
+                .path("reports").get(0).path("result").path("pathFrequency");
         assertThat(pathFrequency).hasSize(1);
         assertThat(pathFrequency.get(0).path("count").asInt()).isEqualTo(2);
     }
@@ -586,7 +585,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode options = reportData(actors.testId(), actors.makerToken())
-                .path("stats").get(0).path("result").path("options");
+                .path("reports").get(0).path("result").path("options");
         int opt1Count = 0, opt2Count = 0;
         for (JsonNode opt : options) {
             long id = opt.path("optionId").asLong();
@@ -622,7 +621,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
                 """.formatted(questionId, otherOptionId));
         completeTest(actors.testId());
 
-        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("stats").get(0).path("result");
+        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
         JsonNode otherTexts = result.path("otherTexts");
         assertThat(otherTexts).hasSize(1);
         assertThat(otherTexts.get(0).asText()).isEqualTo("5초 기타 응답");
@@ -633,7 +632,6 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     void getReport_withScaleBoundaryValues_distributionCorrect() throws Exception {
         TestActors actors = createActors();
         String tester2Token = createAdditionalTester();
-        setGoalPpl(actors.testId(), 2);
         createScaleQuestion(actors.testId(), actors.makerToken(), 5);
         Long questionId = getSingleQuestion(actors.testId(), actors.makerToken()).path("questionId").asLong();
 
@@ -643,8 +641,9 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         submitAnswer(actors.testId(), tester2Token, """
                 { "answers": [{ "type": "SCALE", "questionId": %d, "value": 5 }] }
                 """.formatted(questionId));
+        completeTest(actors.testId());
 
-        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("stats").get(0).path("result");
+        JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
         assertThat(result.path("average").asDouble()).isEqualTo(3.0);
         JsonNode distribution = result.path("distribution");
         assertThat(distribution.get(0).path("score").asInt()).isEqualTo(1);
@@ -654,8 +653,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("COMPLETED인데 리포트가 없으면 getReport 호출 시 lazy 집계가 실행된다")
-    void getReport_whenCompletedButNoReport_lazyAggregates() throws Exception {
+    @DisplayName("리포트 집계 중이면 reportStatus가 IN_PROGRESS이고 reports는 빈 리스트다")
+    void getReport_whenReportAggregating_returnsInProgressStatus() throws Exception {
         TestActors actors = createActors();
         createSingleSubjectiveQuestion(actors.testId(), actors.makerToken());
         Long questionId = getSingleQuestion(actors.testId(), actors.makerToken()).path("questionId").asLong();
@@ -663,7 +662,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         submitAnswer(actors.testId(), actors.testerToken(), """
                 {
                   "answers": [
-                    { "type": "SUBJECTIVE", "questionId": %d, "text": "지연 집계 응답" }
+                    { "type": "SUBJECTIVE", "questionId": %d, "text": "응답" }
                   ]
                 }
                 """.formatted(questionId));
@@ -671,9 +670,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         JsonNode data = reportData(actors.testId(), actors.makerToken());
         assertThat(data.path("testStatus").asText()).isEqualTo("COMPLETED");
-        assertThat(data.path("stats")).hasSize(1);
-        assertThat(data.path("stats").get(0).path("result").path("texts").get(0).asText())
-                .isEqualTo("지연 집계 응답");
+        assertThat(data.path("reportStatus").asText()).isEqualTo("IN_PROGRESS");
+        assertThat(data.path("reports")).isEmpty();
     }
 
     private JsonNode reportData(Long testId, String token) throws Exception {
@@ -697,6 +695,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     private void completeTestStatusOnly(Long testId) {
         server.MATE.domain.test.entity.Test test = testRepository.findById(testId).orElseThrow();
         test.complete();
+        test.startReportAggregation();
         testRepository.save(test);
     }
 
