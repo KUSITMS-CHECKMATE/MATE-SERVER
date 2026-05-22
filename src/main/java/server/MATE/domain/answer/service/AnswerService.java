@@ -119,6 +119,7 @@ public class AnswerService {
         test.incrementPplCount();
         if (test.getPplCount() >= test.getGoalPpl()) {
             test.complete();
+            test.startReportAggregation();
             eventPublisher.publishEvent(new TestCompletedEvent(testId));
         }
         return AnswerBatchCreateResponse.from(participation);
