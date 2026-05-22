@@ -9,7 +9,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import server.MATE.domain.report.repository.ReportRepository;
 import server.MATE.domain.report.service.ReportAggregationService;
-import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.TestStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,7 +27,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     private ReportRepository reportRepository;
 
     @Test
-    @DisplayName("IN_PROGRESS 테스트의 리포트는 results가 빈 리스트다")
+    @DisplayName("IN_PROGRESS 테스트의 리포트는 reports가 빈 리스트다")
     void getReport_whenInProgress_returnsEmptyResults() throws Exception {
         TestActors actors = createActors();
         createSingleSubjectiveQuestion(actors.testId(), actors.makerToken());
@@ -299,7 +298,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("COMPLETED 테스트에 질문이 없으면 questions와 results가 모두 빈 리스트다")
+    @DisplayName("COMPLETED 테스트에 질문이 없으면 questions와 reports가 모두 빈 리스트다")
     void getReport_whenCompletedWithNoQuestions_returnsEmptyLists() throws Exception {
         TestActors actors = createActors();
         completeTest(actors.testId());
@@ -378,8 +377,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("여러 타입 질문이 혼재할 때 results가 sequence 순서로 조립되고 각 항목의 필드가 올바르다")
-    void getReport_withMultipleQuestionTypes_resultsAssembledInSequenceOrder() throws Exception {
+    @DisplayName("여러 타입 질문이 혼재할 때 reports가 sequence 순서로 조립되고 각 항목의 필드가 올바르다")
+    void getReport_withMultipleQuestionTypes_reportsAssembledInSequenceOrder() throws Exception {
         TestActors actors = createActors();
         performCreateQuestion(actors.testId(), actors.makerToken(), """
                 {
