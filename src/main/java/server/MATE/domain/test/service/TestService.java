@@ -119,7 +119,7 @@ public class TestService {
         return TestUpdateResponse.from(test);
     }
 
-    @CacheEvict(value = CacheNames.LOOKUP, key = "#testId")
+    @CacheEvict(value = {CacheNames.LOOKUP, CacheNames.SURVEY}, allEntries = true)
     public void deleteTest(Long testId, Long makerId) {
         Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
