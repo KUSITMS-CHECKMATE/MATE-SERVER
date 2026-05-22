@@ -1,6 +1,7 @@
 package server.MATE.domain.report.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.question.dto.response.QuestionSummaryItem;
@@ -54,7 +55,11 @@ public class ReportService {
 
         List<Report> reports = reportRepository.findAllByTestId(testId);
         if (reports.isEmpty()) {
-            reports = reportAggregationService.aggregate(testId);
+            try {
+                reports = reportAggregationService.aggregate(testId);
+            } catch (DataIntegrityViolationException e) {
+                reports = reportRepository.findAllByTestId(testId);
+            }
         }
 
         Map<Long, Map<String, Object>> resultByQuestionId = reports.stream()
