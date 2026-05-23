@@ -351,6 +351,114 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
+    @DisplayName("응답이 없는 SUBJECTIVE 질문의 리포트는 texts가 빈 리스트다")
+    void getReport_withNoSubjectiveAnswers_returnsEmptyTexts() throws Exception {
+        TestActors actors = createActors();
+        createSingleSubjectiveQuestion(actors.testId(), actors.makerToken());
+        completeTest(actors.testId());
+
+        JsonNode texts = reportData(actors.testId(), actors.makerToken())
+                .path("reports").get(0).path("result").path("texts");
+        assertThat(texts.isArray()).isTrue();
+        assertThat(texts).isEmpty();
+    }
+
+    @Test
+    @DisplayName("응답이 없는 FIVE_SECOND 주관식 질문의 리포트는 texts가 빈 리스트다")
+    void getReport_withNoFiveSecondSubjectiveAnswers_returnsEmptyTexts() throws Exception {
+        TestActors actors = createActors();
+        createFiveSecondSubjectiveQuestion(actors.testId(), actors.makerToken());
+        completeTest(actors.testId());
+
+        JsonNode texts = reportData(actors.testId(), actors.makerToken())
+                .path("reports").get(0).path("result").path("texts");
+        assertThat(texts.isArray()).isTrue();
+        assertThat(texts).isEmpty();
+    }
+
+    @Test
+    @DisplayName("응답이 없는 FIVE_SECOND 객관식 질문의 리포트는 모든 선택지 count와 ratio가 0이다")
+    void getReport_withNoFiveSecondObjectiveAnswers_returnsZeroCounts() throws Exception {
+        TestActors actors = createActors();
+        createFiveSecondObjectiveQuestion(actors.testId(), actors.makerToken(), false, null, null, false);
+        completeTest(actors.testId());
+
+        JsonNode options = reportData(actors.testId(), actors.makerToken())
+                .path("reports").get(0).path("result").path("options");
+        assertThat(options.isArray()).isTrue();
+        for (JsonNode option : options) {
+            assertThat(option.path("count").asInt()).isEqualTo(0);
+            assertThat(option.path("ratio").asDouble()).isEqualTo(0.0);
+        }
+    }
+
+    @Test
+    @DisplayName("응답이 없는 AB_TEST 질문의 리포트는 A/B count와 ratio가 모두 0이다")
+    void getReport_withNoAbTestAnswers_returnsZeroCountsAndRatios() throws Exception {
+        TestActors actors = createActors();
+        createAbTestQuestion(actors.testId(), actors.makerToken());
+        completeTest(actors.testId());
+
+        JsonNode result = reportData(actors.testId(), actors.makerToken())
+                .path("reports").get(0).path("result");
+        assertThat(result.path("A").path("count").asInt()).isEqualTo(0);
+        assertThat(result.path("A").path("ratio").asDouble()).isEqualTo(0.0);
+        assertThat(result.path("B").path("count").asInt()).isEqualTo(0);
+        assertThat(result.path("B").path("ratio").asDouble()).isEqualTo(0.0);
+    }
+
+    @Test
+    @DisplayName("응답이 없는 CARD_SORTING 질문의 리포트는 초기 구조를 유지하고 모든 count와 ratio가 0이다")
+    void getReport_withNoCardSortingAnswers_returnsInitialStructureWithZeroCounts() throws Exception {
+        TestActors actors = createActors();
+        createCardSortingQuestion(actors.testId(), actors.makerToken());
+        completeTest(actors.testId());
+
+        JsonNode result = reportData(actors.testId(), actors.makerToken())
+                .path("reports").get(0).path("result");
+
+        JsonNode byCategory = result.path("byCategory");
+        assertThat(byCategory).hasSize(2);
+        for (JsonNode category : byCategory) {
+            JsonNode cards = category.path("cards");
+            assertThat(cards).hasSize(4);
+            for (JsonNode card : cards) {
+                assertThat(card.path("count").asInt()).isEqualTo(0);
+                assertThat(card.path("ratio").asDouble()).isEqualTo(0.0);
+            }
+        }
+
+        JsonNode byCard = result.path("byCard");
+        assertThat(byCard).hasSize(4);
+        for (JsonNode card : byCard) {
+            JsonNode categories = card.path("categories");
+            assertThat(categories.path("쇼핑").asInt()).isEqualTo(0);
+            assertThat(categories.path("정보").asInt()).isEqualTo(0);
+        }
+    }
+
+    @Test
+    @DisplayName("응답이 없는 TREE_TEST 질문의 리포트는 pathFrequency가 빈 리스트고 leaf node count와 ratio가 0이다")
+    void getReport_withNoTreeTestAnswers_returnsEmptyPathFrequencyAndZeroLeafCounts() throws Exception {
+        TestActors actors = createActors();
+        createTreeTestQuestion(actors.testId(), actors.makerToken());
+        completeTest(actors.testId());
+
+        JsonNode result = reportData(actors.testId(), actors.makerToken())
+                .path("reports").get(0).path("result");
+
+        JsonNode nodeFrequency = result.path("nodeFrequency");
+        assertThat(nodeFrequency.isArray()).isTrue();
+        assertThat(nodeFrequency).hasSize(1);
+        assertThat(nodeFrequency.get(0).path("count").asInt()).isEqualTo(0);
+        assertThat(nodeFrequency.get(0).path("ratio").asDouble()).isEqualTo(0.0);
+
+        JsonNode pathFrequency = result.path("pathFrequency");
+        assertThat(pathFrequency.isArray()).isTrue();
+        assertThat(pathFrequency).isEmpty();
+    }
+
+    @Test
     @DisplayName("리포트의 questions 필드는 sequence 오름차순으로 질문 목록을 반환한다")
     void getReport_questions_returnedInSequenceOrder() throws Exception {
         TestActors actors = createActors();
