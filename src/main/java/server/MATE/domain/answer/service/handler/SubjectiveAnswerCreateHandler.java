@@ -18,6 +18,10 @@ public class SubjectiveAnswerCreateHandler implements AnswerCreateHandler {
     }
 
     @Override
+    public void validate(AnswerCreateItem item, AnswerCreateContext context) {
+    }
+
+    @Override
     public Answer build(Long participationId, AnswerCreateItem item, AnswerCreateContext context) {
         SubjectiveAnswerCreateRequest request = (SubjectiveAnswerCreateRequest) item;
         return Answer.builder()
