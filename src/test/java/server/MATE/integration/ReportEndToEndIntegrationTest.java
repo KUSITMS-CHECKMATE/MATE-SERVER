@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -1288,21 +1289,21 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         return body.path("data");
     }
 
-    private JsonNode awaitCompletedReportData(Long testId, String token) throws Exception {
-        long deadline = System.currentTimeMillis() + 5_000L;
-        JsonNode latest = null;
+    private JsonNode awaitCompletedReportData(Long testId, String token) {
+        return await("report should complete via async event flow")
+                .atMost(Duration.ofSeconds(5))
+                .pollInterval(Duration.ofMillis(100))
+                .ignoreExceptions()
+                .until(() -> reportDataUnchecked(testId, token),
+                        data -> "COMPLETED".equals(data.path("reportStatus").asText()));
+    }
 
-        while (System.currentTimeMillis() < deadline) {
-            latest = reportData(testId, token);
-            if ("COMPLETED".equals(latest.path("reportStatus").asText())) {
-                return latest;
-            }
-            Thread.sleep(100L);
+    private JsonNode reportDataUnchecked(Long testId, String token) {
+        try {
+            return reportData(testId, token);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        assertThat(latest).as("report should complete via async event flow").isNotNull();
-        assertThat(latest.path("reportStatus").asText()).isEqualTo("COMPLETED");
-        return latest;
     }
 
     private void completeTest(Long testId) {
