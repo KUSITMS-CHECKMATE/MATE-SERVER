@@ -16,6 +16,8 @@ public class ReportAggregationEventListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onTestCompleted(TestCompletedEvent event) {
+        // answer 저장 -> testStatus, reportStatus 변경 보장
+        // event 발행하면 report 집계를 시작
         reportAggregationService.aggregate(event.testId());
     }
 }

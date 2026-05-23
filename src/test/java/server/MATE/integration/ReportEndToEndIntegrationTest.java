@@ -7,9 +7,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import server.MATE.domain.question.entity.QuestionType;
+import server.MATE.domain.report.entity.Report;
 import server.MATE.domain.report.repository.ReportRepository;
 import server.MATE.domain.report.service.ReportAggregationService;
+import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.TestStatus;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -670,6 +675,52 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         JsonNode data = reportData(actors.testId(), actors.makerToken());
         assertThat(data.path("testStatus").asText()).isEqualTo("COMPLETED");
         assertThat(data.path("reportStatus").asText()).isEqualTo("IN_PROGRESS");
+        assertThat(data.path("reports")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("부분 생성된 리포트가 있으면 집계는 FAILED로 처리된다")
+    void aggregate_whenReportsPartiallyExist_marksFailed() throws Exception {
+        TestActors actors = createActors();
+        createTwoSubjectiveQuestions(actors.testId(), actors.makerToken());
+        JsonNode questions = getQuestionsArray(actors.testId(), actors.makerToken());
+
+        reportRepository.save(Report.builder()
+                .testId(actors.testId())
+                .questionId(questions.get(0).path("questionId").asLong())
+                .questionType(QuestionType.SUBJECTIVE)
+                .result(Map.of("texts", java.util.List.of("partial")))
+                .build());
+
+        completeTestStatusOnly(actors.testId());
+        reportAggregationService.aggregate(actors.testId());
+
+        server.MATE.domain.test.entity.Test updated = testRepository.findById(actors.testId()).orElseThrow();
+        assertThat(updated.getReportStatus()).isEqualTo(ReportStatus.FAILED);
+    }
+
+    @Test
+    @DisplayName("reportStatus가 COMPLETED여도 리포트 수가 질문 수와 다르면 조회 시 FAILED와 빈 reports를 반환한다")
+    void getReport_whenCompletedButReportsAreIncomplete_returnsFailedAndEmptyReports() throws Exception {
+        TestActors actors = createActors();
+        createTwoSubjectiveQuestions(actors.testId(), actors.makerToken());
+        JsonNode questions = getQuestionsArray(actors.testId(), actors.makerToken());
+
+        reportRepository.save(Report.builder()
+                .testId(actors.testId())
+                .questionId(questions.get(0).path("questionId").asLong())
+                .questionType(QuestionType.SUBJECTIVE)
+                .result(Map.of("texts", java.util.List.of("partial")))
+                .build());
+
+        server.MATE.domain.test.entity.Test test = testRepository.findById(actors.testId()).orElseThrow();
+        test.complete();
+        test.completeReportAggregation();
+        testRepository.save(test);
+
+        JsonNode data = reportData(actors.testId(), actors.makerToken());
+        assertThat(data.path("testStatus").asText()).isEqualTo("COMPLETED");
+        assertThat(data.path("reportStatus").asText()).isEqualTo("FAILED");
         assertThat(data.path("reports")).isEmpty();
     }
 
