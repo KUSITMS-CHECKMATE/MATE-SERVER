@@ -57,25 +57,33 @@ public class ReportAggregationService {
         Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
-        if (reportRepository.existsByTestId(testId)) {
+        long questionCount = questionRepository.countByTestIdAndDeletedAtIsNull(testId);
+        long reportCount = reportRepository.countByTestId(testId);
+
+        // 질문 수와 리포트 수가 같으면 이미 전체 집계가 끝난 상태로 처리
+        // 질문과 리포트가 모두 0개인 경우를 포함함
+        if (reportCount == questionCount) {
             test.completeReportAggregation();
             testRepository.save(test);
             return reportRepository.findAllByTestId(testId);
         }
 
-        List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
-        if (questions.isEmpty()) {
-            test.completeReportAggregation();
+        // 일부 리포트만 남아 있으면 불일치 상태이므로 실패 처리
+        if (reportCount > 0) {
+            log.error("테스트 {} 리포트 완전성 불일치 감지: questionCount={}, reportCount={}",
+                    testId, questionCount, reportCount);
+            test.failReportAggregation();
             testRepository.save(test);
             return List.of();
         }
 
+        List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
         List<Long> questionIds = questions.stream().map(Question::getId).toList();
         List<Answer> allAnswers = answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(questionIds);
 
+        // 질문별 집계 계산에 바로 쓸 수 있도록 응답을 questionId 기준으로 묶음
         Map<Long, List<Answer>> answersByQuestionId = allAnswers.stream()
                 .collect(Collectors.groupingBy(Answer::getQuestionId));
-
         Map<QuestionType, List<Question>> questionsByType = questions.stream()
                 .collect(Collectors.groupingBy(
                         Question::getQuestionType,
@@ -83,6 +91,7 @@ public class ReportAggregationService {
                         Collectors.toList()
                 ));
 
+        // 질문 유형별 핸들러로 부분 집계를 수행, questionId 기준으로 결과 맵 저
         Map<Long, Map<String, Object>> resultByQuestionId = new LinkedHashMap<>();
         for (Map.Entry<QuestionType, List<Question>> entry : questionsByType.entrySet()) {
             ReportHandler handler = handlerMap.get(entry.getKey());
@@ -108,11 +117,22 @@ public class ReportAggregationService {
     @Recover
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<Report> recover(Exception e, Long testId) {
-        if (e instanceof DataIntegrityViolationException || reportRepository.existsByTestId(testId)) {
-            log.info("테스트 {} 리포트가 이미 존재합니다. 상태를 완료로 업데이트합니다.", testId);
-            updateReportStatus(testId, Test::completeReportAggregation);
-            return reportRepository.findAllByTestId(testId);
+        long questionCount = questionRepository.countByTestIdAndDeletedAtIsNull(testId);
+        long reportCount = reportRepository.countByTestId(testId);
+
+        if (e instanceof DataIntegrityViolationException || reportCount > 0) {
+            if (reportCount == questionCount) {
+                log.info("테스트 {} 리포트가 이미 완전하게 존재합니다. 상태를 완료로 업데이트합니다.", testId);
+                updateReportStatus(testId, Test::completeReportAggregation);
+                return reportRepository.findAllByTestId(testId);
+            }
+
+            log.error("테스트 {} recover 중 리포트 완전성 불일치 감지: questionCount={}, reportCount={}",
+                    testId, questionCount, reportCount, e);
+            updateReportStatus(testId, Test::failReportAggregation);
+            return List.of();
         }
+
         log.error("테스트 {} 집계 3회 실패", testId, e);
         updateReportStatus(testId, Test::failReportAggregation);
         return List.of();
