@@ -35,7 +35,7 @@ public class ObjectiveQuestionCreateHandler extends AbstractQuestionCreateHandle
         int optionCount = item.options() == null ? 0 : item.options().size();
         int effectiveOptionCount = optionCount + (item.isOther() ? 1 : 0);
 
-        // 객관식은 기본 선택지를 최소 2개 이상 가져야 하며, 기타 포함 총 선택지는 10개를 초과할 수 없음
+        // 객관식은 기본 옵션(선지)을 최소 2개 이상 가져야 하며, 기타 포함 총 옵션(선지)은 10개를 초과할 수 없음
         if (optionCount < 2 || effectiveOptionCount > 10) {
             throw new BaseException(BaseErrorCode.COMMON_002);
         }
@@ -61,7 +61,7 @@ public class ObjectiveQuestionCreateHandler extends AbstractQuestionCreateHandle
             throw new BaseException(BaseErrorCode.QUESTION_002);
         }
 
-        // min/max 선택 개수는 전체 선택지 개수를 초과할 수 없음
+        // min/max 선택 개수는 전체 옵션(선지) 개수를 초과할 수 없음
         if (max != null && max > effectiveOptionCount) {
             throw new BaseException(BaseErrorCode.QUESTION_003);
         }

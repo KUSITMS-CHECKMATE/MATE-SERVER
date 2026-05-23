@@ -21,16 +21,21 @@ public class ScaleAnswerCreateHandler implements AnswerCreateHandler {
     }
 
     @Override
-    public Answer build(Long participationId, AnswerCreateItem item, AnswerCreateContext context) {
+    public void validate(AnswerCreateItem item, AnswerCreateContext context) {
         ScaleAnswerCreateRequest request = (ScaleAnswerCreateRequest) item;
 
         Scale scale = context.scales().get(request.questionId());
         if (scale == null) throw new BaseException(BaseErrorCode.QUESTION_005);
 
+        // 척도형 응답은 질문의 range 범위 안의 값만 허용함
         if (request.value() < 1 || request.value() > scale.getRange()) {
             throw new BaseException(BaseErrorCode.ANSWER_007);
         }
+    }
 
+    @Override
+    public Answer build(Long participationId, AnswerCreateItem item, AnswerCreateContext context) {
+        ScaleAnswerCreateRequest request = (ScaleAnswerCreateRequest) item;
         return Answer.builder()
                 .participationId(participationId)
                 .questionId(request.questionId())
