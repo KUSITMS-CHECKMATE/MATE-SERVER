@@ -435,8 +435,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("pplCount가 goalPpl에 도달하면 테스트가 자동으로 COMPLETED 전환되고 백그라운드 집계가 시작된다")
-    void getReport_whenPplCountReachesGoalPpl_autoCompletesAndAggregationStarts() throws Exception {
+    @DisplayName("goalPpl=1에서 응답 제출만으로 비동기 이벤트 경로를 통해 리포트가 완료된다")
+    void getReport_whenGoalPplIsOne_reportCompletesViaAsyncEventFlow() throws Exception {
         TestActors actors = createActors();
         setGoalPpl(actors.testId(), 1);
         createSingleSubjectiveQuestion(actors.testId(), actors.makerToken());
@@ -450,9 +450,14 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
                 }
                 """.formatted(questionId));
 
-        JsonNode data = reportData(actors.testId(), actors.makerToken());
+        JsonNode data = awaitCompletedReportData(actors.testId(), actors.makerToken());
         assertThat(data.path("testStatus").asText()).isEqualTo("COMPLETED");
-        assertThat(data.path("reportStatus").asText()).isIn("IN_PROGRESS", "COMPLETED");
+        assertThat(data.path("reportStatus").asText()).isEqualTo("COMPLETED");
+        assertThat(data.path("reports")).hasSize(1);
+        assertThat(data.path("reports").get(0).path("type").asText()).isEqualTo("SUBJECTIVE");
+        assertThat(data.path("reports").get(0).path("result").path("texts")).hasSize(1);
+        assertThat(data.path("reports").get(0).path("result").path("texts").get(0).asText())
+                .isEqualTo("자동완료 응답");
     }
 
     @Test
@@ -733,6 +738,23 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         JsonNode body = parseBody(result);
         assertThat(body.path("success").asBoolean()).isTrue();
         return body.path("data");
+    }
+
+    private JsonNode awaitCompletedReportData(Long testId, String token) throws Exception {
+        long deadline = System.currentTimeMillis() + 5_000L;
+        JsonNode latest = null;
+
+        while (System.currentTimeMillis() < deadline) {
+            latest = reportData(testId, token);
+            if ("COMPLETED".equals(latest.path("reportStatus").asText())) {
+                return latest;
+            }
+            Thread.sleep(100L);
+        }
+
+        assertThat(latest).as("report should complete via async event flow").isNotNull();
+        assertThat(latest.path("reportStatus").asText()).isEqualTo("COMPLETED");
+        return latest;
     }
 
     private void completeTest(Long testId) {
