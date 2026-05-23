@@ -57,8 +57,7 @@ public class ReportAggregationService {
         Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
-        List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
-        int questionCount = questions.size();
+        long questionCount = questionRepository.countByTestIdAndDeletedAtIsNull(testId);
         long reportCount = reportRepository.countByTestId(testId);
 
         // 질문 수와 리포트 수가 같으면 이미 전체 집계가 끝난 상태
@@ -78,12 +77,13 @@ public class ReportAggregationService {
         }
 
         // 질문이 없으면 생성할 리포트도 없으므로 빈 리스트르 반환
-        if (questions.isEmpty()) {
+        if (questionCount == 0) {
             test.completeReportAggregation();
             testRepository.save(test);
             return List.of();
         }
 
+        List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
         List<Long> questionIds = questions.stream().map(Question::getId).toList();
         List<Answer> allAnswers = answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(questionIds);
 
@@ -123,7 +123,7 @@ public class ReportAggregationService {
     @Recover
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<Report> recover(Exception e, Long testId) {
-        int questionCount = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId).size();
+        long questionCount = questionRepository.countByTestIdAndDeletedAtIsNull(testId);
         long reportCount = reportRepository.countByTestId(testId);
 
         if (e instanceof DataIntegrityViolationException || reportCount > 0) {

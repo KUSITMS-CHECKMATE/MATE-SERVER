@@ -15,6 +15,8 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     Optional<Question> findByIdAndTestIdAndDeletedAtIsNull(Long id, Long testId);
 
+    long countByTestIdAndDeletedAtIsNull(Long testId);
+
     List<Question> findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(Long testId);
 
     @Query("""
