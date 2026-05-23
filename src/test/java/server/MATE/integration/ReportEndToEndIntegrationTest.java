@@ -4,8 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.ActiveProfiles;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.report.entity.Report;
@@ -13,7 +17,11 @@ import server.MATE.domain.report.repository.ReportRepository;
 import server.MATE.domain.report.service.ReportAggregationService;
 import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.TestStatus;
+import server.MATE.support.time.MutableClock;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
@@ -24,13 +32,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(ReportEndToEndIntegrationTest.TestClockConfig.class)
 class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
+
+    private static final Instant DEFAULT_TEST_INSTANT = Instant.parse("2026-01-01T00:00:00Z");
 
     @Autowired
     private ReportAggregationService reportAggregationService;
 
     @Autowired
     private ReportRepository reportRepository;
+
+    @Autowired
+    private MutableClock mutableClock;
 
     @Test
     @DisplayName("IN_PROGRESS 테스트의 리포트는 reports가 빈 리스트다")
@@ -969,6 +983,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     @Test
     @DisplayName("SUBJECTIVE와 FIVE_SECOND 주관식 리포트의 texts는 createdAt 오름차순으로 정렬된다")
     void getReport_withSubjectiveTexts_returnsCreatedAtAscendingOrder() throws Exception {
+        mutableClock.setInstant(DEFAULT_TEST_INSTANT);
+
         TestActors actors = createActors();
         String tester2Token = createAdditionalTester();
         performCreateQuestion(actors.testId(), actors.makerToken(), """
@@ -1003,7 +1019,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
                   ]
                 }
                 """.formatted(subjectiveQuestionId, fiveSecondQuestionId));
-        Thread.sleep(20L);
+        mutableClock.advance(Duration.ofSeconds(1));
         submitAnswer(actors.testId(), tester2Token, """
                 {
                   "answers": [
@@ -1026,6 +1042,16 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         assertThat(fiveSecondTexts).hasSize(2);
         assertThat(fiveSecondTexts.get(0).asText()).isEqualTo("빠른 5초 응답");
         assertThat(fiveSecondTexts.get(1).asText()).isEqualTo("늦은 5초 응답");
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class TestClockConfig {
+
+        @Bean
+        @Primary
+        MutableClock mutableClock() {
+            return new MutableClock(DEFAULT_TEST_INSTANT, ZoneId.systemDefault());
+        }
     }
 
     @Test

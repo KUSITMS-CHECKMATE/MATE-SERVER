@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
+import server.MATE.domain.answer.repository.AnswerRepository;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.report.entity.Report;
@@ -29,7 +30,7 @@ class ReportAggregationServiceTest {
     private QuestionRepository questionRepository;
 
     @Mock
-    private server.MATE.domain.answer.repository.AnswerRepository answerRepository;
+    private AnswerRepository answerRepository;
 
     @Mock
     private ReportRepository reportRepository;
