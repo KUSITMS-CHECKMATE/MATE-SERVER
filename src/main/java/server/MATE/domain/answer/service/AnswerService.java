@@ -82,12 +82,7 @@ public class AnswerService {
             throw new BaseException(BaseErrorCode.ANSWER_008);
         }
 
-        Participation participation = Participation.builder()
-                .testId(testId)
-                .testerId(testerId)
-                .build();
-        participationRepository.save(participation);
-
+        Map<QuestionType, List<Long>> idsByType = new EnumMap<>(QuestionType.class);
         Set<Long> processedQuestionIds = new HashSet<>();
         for (AnswerCreateItem item : request.answers()) {
             if (!processedQuestionIds.add(item.questionId())) {
@@ -106,9 +101,20 @@ public class AnswerService {
             if (!handlerMap.containsKey(item.type())) {
                 throw new BaseException(BaseErrorCode.COMMON_999);
             }
+
+            idsByType.computeIfAbsent(item.type(), key -> new ArrayList<>()).add(item.questionId());
         }
 
-        AnswerCreateContext context = buildContext(request.answers());
+        AnswerCreateContext context = buildContext(idsByType);
+        for (AnswerCreateItem item : request.answers()) {
+            handlerMap.get(item.type()).validate(item, context);
+        }
+
+        Participation participation = Participation.builder()
+                .testId(testId)
+                .testerId(testerId)
+                .build();
+        participationRepository.save(participation);
 
         List<Answer> answers = new ArrayList<>();
         for (AnswerCreateItem item : request.answers()) {
@@ -125,12 +131,7 @@ public class AnswerService {
         return AnswerBatchCreateResponse.from(participation);
     }
 
-    private AnswerCreateContext buildContext(List<AnswerCreateItem> items) {
-        Map<QuestionType, List<Long>> idsByType = new EnumMap<>(QuestionType.class);
-        for (AnswerCreateItem item : items) {
-            idsByType.computeIfAbsent(item.type(), k -> new ArrayList<>()).add(item.questionId());
-        }
-
+    private AnswerCreateContext buildContext(Map<QuestionType, List<Long>> idsByType) {
         Map<Long, Objective> objectives = fetchByType(idsByType, QuestionType.OBJECTIVE,
                 ids -> objectiveRepository.findAllByIdIn(ids), Objective::getId);
 
