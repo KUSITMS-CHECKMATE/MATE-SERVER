@@ -40,7 +40,9 @@ public class TreeTestAnswerCreateHandler implements AnswerCreateHandler {
                 .collect(Collectors.toMap(TreeTest::getId, n -> n));
 
         // path가 루트부터 부모-자식 관계를 올바르게 이어져야 함
-        validatePath(path, nodeMap);
+        if (!isValidPath(path, nodeMap)) {
+            throw new BaseException(BaseErrorCode.ANSWER_004);
+        }
 
         TreeTest node = nodeMap.get(request.nodeId());
         boolean isLeaf = nodes.stream()
@@ -62,18 +64,19 @@ public class TreeTestAnswerCreateHandler implements AnswerCreateHandler {
                 .build();
     }
 
-    private void validatePath(List<Long> path, Map<Long, TreeTest> nodeMap) {
+    private boolean isValidPath(List<Long> path, Map<Long, TreeTest> nodeMap) {
         for (int i = 0; i < path.size(); i++) {
             TreeTest current = nodeMap.get(path.get(i));
-            if (current == null) throw new BaseException(BaseErrorCode.ANSWER_004);
+            if (current == null) return false;
 
             if (i == 0) {
-                if (current.getParent() != null) throw new BaseException(BaseErrorCode.ANSWER_004);
+                if (current.getParent() != null) return false;
             } else {
                 if (current.getParent() == null || !current.getParent().getId().equals(path.get(i - 1))) {
-                    throw new BaseException(BaseErrorCode.ANSWER_004);
+                    return false;
                 }
             }
         }
+        return true;
     }
 }
