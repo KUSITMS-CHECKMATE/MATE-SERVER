@@ -435,6 +435,209 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
+    @DisplayName("전체 질문 유형이 혼재할 때 reports가 sequence 순서로 조립되고 각 유형별 핵심 집계 필드를 포함한다")
+    void getReport_withAllQuestionTypes_reportsAssembledInSequenceOrder() throws Exception {
+        TestActors actors = createActors();
+        performCreateQuestion(actors.testId(), actors.makerToken(), """
+                {
+                  "questions": [
+                    { "type": "SUBJECTIVE", "title": "주관식 질문", "description": "설명", "imageKey": null },
+                    {
+                      "type": "OBJECTIVE",
+                      "title": "객관식 질문",
+                      "description": "설명",
+                      "isDuplicate": false,
+                      "maxSelect": null,
+                      "minSelect": null,
+                      "isOther": false,
+                      "options": [
+                        { "content": "검색", "imageKey": null },
+                        { "content": "결제", "imageKey": null }
+                      ]
+                    },
+                    {
+                      "type": "FIVE_SECOND",
+                      "title": "5초 주관식",
+                      "description": "설명",
+                      "imageKey": "five-second-image",
+                      "imageRatio": "9:16",
+                      "isObjective": false,
+                      "isDuplicate": null,
+                      "minSelect": null,
+                      "maxSelect": null,
+                      "isOther": null,
+                      "options": []
+                    },
+                    {
+                      "type": "FIVE_SECOND",
+                      "title": "5초 객관식",
+                      "description": "설명",
+                      "imageKey": "five-second-image",
+                      "imageRatio": "9:16",
+                      "isObjective": true,
+                      "isDuplicate": false,
+                      "minSelect": null,
+                      "maxSelect": null,
+                      "isOther": false,
+                      "options": [
+                        { "content": "검색창" },
+                        { "content": "배너" }
+                      ]
+                    },
+                    {
+                      "type": "SCALE",
+                      "title": "척도 질문",
+                      "description": "설명",
+                      "imageKey": null,
+                      "minLabel": "낮음",
+                      "maxLabel": "높음",
+                      "range": 5
+                    },
+                    {
+                      "type": "AB_TEST",
+                      "title": "AB 질문",
+                      "description": "설명",
+                      "aImageKey": "a-image",
+                      "bImageKey": "b-image",
+                      "imageRatio": "9:16"
+                    },
+                    {
+                      "type": "CARD_SORTING",
+                      "title": "카드 소팅",
+                      "description": "설명",
+                      "cards": ["홈", "검색", "장바구니", "공지사항"],
+                      "categories": ["쇼핑", "정보"]
+                    },
+                    {
+                      "type": "TREE_TEST",
+                      "title": "트리 질문",
+                      "description": "설명",
+                      "features": [
+                        {
+                          "label": "마이페이지",
+                          "children": [
+                            {
+                              "label": "설정",
+                              "children": [
+                                {
+                                  "label": "알림 설정",
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+                """);
+
+        JsonNode questions = getQuestionsArray(actors.testId(), actors.makerToken());
+        assertThat(questions).hasSize(8);
+
+        JsonNode objectiveQuestion = questions.get(1);
+        Long objectiveOptionId = objectiveQuestion.path("options").get(0).path("objectiveOptionId").asLong();
+
+        JsonNode fiveSecondObjectiveQuestion = questions.get(3);
+        Long fiveSecondOptionId = fiveSecondObjectiveQuestion.path("options").get(0).path("fiveSecondOptionId").asLong();
+
+        JsonNode treeQuestion = questions.get(7);
+        Long treeQuestionId = treeQuestion.path("questionId").asLong();
+        Long rootNodeId = treeQuestion.path("features").get(0).path("treeTestId").asLong();
+        Long childNodeId = treeQuestion.path("features").get(0).path("children").get(0).path("treeTestId").asLong();
+        Long leafNodeId = treeQuestion.path("features").get(0).path("children").get(0)
+                .path("children").get(0).path("treeTestId").asLong();
+
+        submitAnswer(actors.testId(), actors.testerToken(), """
+                {
+                  "answers": [
+                    { "type": "SUBJECTIVE", "questionId": %d, "text": "주관식 응답" },
+                    { "type": "OBJECTIVE", "questionId": %d, "optionIds": [%d] },
+                    { "type": "FIVE_SECOND", "questionId": %d, "text": "5초 주관 응답" },
+                    { "type": "FIVE_SECOND", "questionId": %d, "optionIds": [%d] },
+                    { "type": "SCALE", "questionId": %d, "value": 4 },
+                    { "type": "AB_TEST", "questionId": %d, "selected": "A" },
+                    {
+                      "type": "CARD_SORTING",
+                      "questionId": %d,
+                      "groups": [
+                        { "category": "쇼핑", "cardNames": ["홈", "장바구니"] },
+                        { "category": "정보", "cardNames": ["검색", "공지사항"] }
+                      ]
+                    },
+                    { "type": "TREE_TEST", "questionId": %d, "nodeId": %d, "path": [%d, %d, %d] }
+                  ]
+                }
+                """.formatted(
+                questions.get(0).path("questionId").asLong(),
+                objectiveQuestion.path("questionId").asLong(),
+                objectiveOptionId,
+                questions.get(2).path("questionId").asLong(),
+                fiveSecondObjectiveQuestion.path("questionId").asLong(),
+                fiveSecondOptionId,
+                questions.get(4).path("questionId").asLong(),
+                questions.get(5).path("questionId").asLong(),
+                questions.get(6).path("questionId").asLong(),
+                treeQuestionId,
+                leafNodeId,
+                rootNodeId,
+                childNodeId,
+                leafNodeId
+        ));
+        completeTest(actors.testId());
+
+        JsonNode data = reportData(actors.testId(), actors.makerToken());
+        JsonNode reports = data.path("reports");
+
+        assertThat(data.path("questionCount").asInt()).isEqualTo(8);
+        assertThat(reports).hasSize(8);
+
+        for (int i = 0; i < reports.size(); i++) {
+            assertThat(reports.get(i).path("sequence").asInt()).isEqualTo(i + 1);
+        }
+
+        JsonNode subjectiveReport = reports.get(0);
+        assertThat(subjectiveReport.path("type").asText()).isEqualTo("SUBJECTIVE");
+        assertThat(subjectiveReport.path("result").path("texts").get(0).asText()).isEqualTo("주관식 응답");
+
+        JsonNode objectiveReport = reports.get(1);
+        assertThat(objectiveReport.path("type").asText()).isEqualTo("OBJECTIVE");
+        assertThat(objectiveReport.path("result").path("options").isArray()).isTrue();
+        assertThat(objectiveReport.path("result").path("options").get(0).path("count").asInt()).isEqualTo(1);
+
+        JsonNode fiveSecondSubjectiveReport = reports.get(2);
+        assertThat(fiveSecondSubjectiveReport.path("type").asText()).isEqualTo("FIVE_SECOND");
+        assertThat(fiveSecondSubjectiveReport.path("result").path("texts").get(0).asText()).isEqualTo("5초 주관 응답");
+
+        JsonNode fiveSecondObjectiveReport = reports.get(3);
+        assertThat(fiveSecondObjectiveReport.path("type").asText()).isEqualTo("FIVE_SECOND");
+        assertThat(fiveSecondObjectiveReport.path("result").path("options").isArray()).isTrue();
+        assertThat(fiveSecondObjectiveReport.path("result").path("options").get(0).path("count").asInt()).isEqualTo(1);
+
+        JsonNode scaleReport = reports.get(4);
+        assertThat(scaleReport.path("type").asText()).isEqualTo("SCALE");
+        assertThat(scaleReport.path("result").path("average").asDouble()).isEqualTo(4.0);
+        assertThat(scaleReport.path("result").path("distribution").isArray()).isTrue();
+
+        JsonNode abTestReport = reports.get(5);
+        assertThat(abTestReport.path("type").asText()).isEqualTo("AB_TEST");
+        assertThat(abTestReport.path("result").path("A").path("count").asInt()).isEqualTo(1);
+        assertThat(abTestReport.path("result").path("A").path("ratio").asDouble()).isEqualTo(1.0);
+
+        JsonNode cardSortingReport = reports.get(6);
+        assertThat(cardSortingReport.path("type").asText()).isEqualTo("CARD_SORTING");
+        assertThat(cardSortingReport.path("result").path("byCategory").isArray()).isTrue();
+        assertThat(cardSortingReport.path("result").path("byCard").isArray()).isTrue();
+
+        JsonNode treeTestReport = reports.get(7);
+        assertThat(treeTestReport.path("type").asText()).isEqualTo("TREE_TEST");
+        assertThat(treeTestReport.path("result").path("nodeFrequency").isArray()).isTrue();
+        assertThat(treeTestReport.path("result").path("pathFrequency").isArray()).isTrue();
+        assertThat(treeTestReport.path("result").path("pathFrequency").get(0).path("count").asInt()).isEqualTo(1);
+    }
+
+    @Test
     @DisplayName("goalPpl=1에서 응답 제출만으로 비동기 이벤트 경로를 통해 리포트가 완료된다")
     void getReport_whenGoalPplIsOne_reportCompletesViaAsyncEventFlow() throws Exception {
         TestActors actors = createActors();
