@@ -60,7 +60,8 @@ public class ReportAggregationService {
         long questionCount = questionRepository.countByTestIdAndDeletedAtIsNull(testId);
         long reportCount = reportRepository.countByTestId(testId);
 
-        // 질문 수와 리포트 수가 같으면 이미 전체 집계가 끝난 상태
+        // 질문 수와 리포트 수가 같으면 이미 전체 집계가 끝난 상태로 처리
+        // 질문과 리포트가 모두 0개인 경우를 포함함
         if (reportCount == questionCount) {
             test.completeReportAggregation();
             testRepository.save(test);
@@ -72,13 +73,6 @@ public class ReportAggregationService {
             log.error("테스트 {} 리포트 완전성 불일치 감지: questionCount={}, reportCount={}",
                     testId, questionCount, reportCount);
             test.failReportAggregation();
-            testRepository.save(test);
-            return List.of();
-        }
-
-        // 질문이 없으면 생성할 리포트도 없으므로 빈 리스트르 반환
-        if (questionCount == 0) {
-            test.completeReportAggregation();
             testRepository.save(test);
             return List.of();
         }
@@ -97,7 +91,7 @@ public class ReportAggregationService {
                         Collectors.toList()
                 ));
 
-        // 질문 유형별 핸들러로 부분 집계를 수행, questionId 기준으로 결과 맵 저장
+        // 질문 유형별 핸들러로 부분 집계를 수행, questionId 기준으로 결과 맵 저
         Map<Long, Map<String, Object>> resultByQuestionId = new LinkedHashMap<>();
         for (Map.Entry<QuestionType, List<Question>> entry : questionsByType.entrySet()) {
             ReportHandler handler = handlerMap.get(entry.getKey());
