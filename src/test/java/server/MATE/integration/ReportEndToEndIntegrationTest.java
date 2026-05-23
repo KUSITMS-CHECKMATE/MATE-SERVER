@@ -857,6 +857,86 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
+    @DisplayName("CARD_SORTING byCategory.cards는 count 내림차순으로 정렬되고 동점 rank와 ratio를 유지한다")
+    void getReport_withCardSortingAnswers_byCategoryCardsSortedWithTieRankAndRatio() throws Exception {
+        TestActors actors = createActors();
+        String tester2Token = createAdditionalTester();
+        String tester3Token = createAdditionalTester();
+        createCardSortingQuestion(actors.testId(), actors.makerToken());
+        Long questionId = getSingleQuestion(actors.testId(), actors.makerToken()).path("questionId").asLong();
+
+        submitAnswer(actors.testId(), actors.testerToken(), """
+                {
+                  "answers": [{
+                    "type": "CARD_SORTING", "questionId": %d,
+                    "groups": [
+                      { "category": "쇼핑", "cardNames": ["홈", "검색", "장바구니"] },
+                      { "category": "정보", "cardNames": ["공지사항"] }
+                    ]
+                  }]
+                }
+                """.formatted(questionId));
+        submitAnswer(actors.testId(), tester2Token, """
+                {
+                  "answers": [{
+                    "type": "CARD_SORTING", "questionId": %d,
+                    "groups": [
+                      { "category": "쇼핑", "cardNames": ["홈", "장바구니", "공지사항"] },
+                      { "category": "정보", "cardNames": ["검색"] }
+                    ]
+                  }]
+                }
+                """.formatted(questionId));
+        submitAnswer(actors.testId(), tester3Token, """
+                {
+                  "answers": [{
+                    "type": "CARD_SORTING", "questionId": %d,
+                    "groups": [
+                      { "category": "쇼핑", "cardNames": ["홈", "검색", "공지사항"] },
+                      { "category": "정보", "cardNames": ["장바구니"] }
+                    ]
+                  }]
+                }
+                """.formatted(questionId));
+        completeTest(actors.testId());
+
+        JsonNode byCategory = reportData(actors.testId(), actors.makerToken())
+                .path("reports").get(0).path("result").path("byCategory");
+
+        JsonNode shopping = null;
+        for (JsonNode category : byCategory) {
+            if ("쇼핑".equals(category.path("category").asText())) {
+                shopping = category;
+                break;
+            }
+        }
+
+        assertThat(shopping).isNotNull();
+        JsonNode cards = shopping.path("cards");
+        assertThat(cards).hasSize(4);
+
+        assertThat(cards.get(0).path("cardName").asText()).isEqualTo("홈");
+        assertThat(cards.get(0).path("rank").asInt()).isEqualTo(1);
+        assertThat(cards.get(0).path("count").asInt()).isEqualTo(3);
+        assertThat(cards.get(0).path("ratio").asDouble()).isEqualTo(1.0);
+
+        assertThat(cards.get(1).path("cardName").asText()).isEqualTo("검색");
+        assertThat(cards.get(1).path("rank").asInt()).isEqualTo(2);
+        assertThat(cards.get(1).path("count").asInt()).isEqualTo(2);
+        assertThat(cards.get(1).path("ratio").asDouble()).isEqualTo(0.667);
+
+        assertThat(cards.get(2).path("cardName").asText()).isEqualTo("장바구니");
+        assertThat(cards.get(2).path("rank").asInt()).isEqualTo(2);
+        assertThat(cards.get(2).path("count").asInt()).isEqualTo(2);
+        assertThat(cards.get(2).path("ratio").asDouble()).isEqualTo(0.667);
+
+        assertThat(cards.get(3).path("cardName").asText()).isEqualTo("공지사항");
+        assertThat(cards.get(3).path("rank").asInt()).isEqualTo(2);
+        assertThat(cards.get(3).path("count").asInt()).isEqualTo(2);
+        assertThat(cards.get(3).path("ratio").asDouble()).isEqualTo(0.667);
+    }
+
+    @Test
     @DisplayName("TREE_TEST에서 동일 경로를 여러 참여자가 선택하면 pathFrequency count가 누적된다")
     void getReport_withSamePathSelectedByMultipleParticipants_pathFrequencyAccumulates() throws Exception {
         TestActors actors = createActors();
