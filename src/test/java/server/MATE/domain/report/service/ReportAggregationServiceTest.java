@@ -1,6 +1,7 @@
 package server.MATE.domain.report.service;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -63,7 +64,8 @@ class ReportAggregationServiceTest {
     }
 
     @Test
-    void recover_완전한_리포트가_이미_존재하면_COMPLETED로_복구하고_기존_리포트를_반환한다() {
+    @DisplayName("완전한 리포트가 이미 존재하면 COMPLETED로 복구하고 기존 리포트를 반환한다")
+    void recover_whenCompleteReportsAlreadyExist_returnsExistingReportsAndMarksCompleted() {
         Report report1 = report(101L);
         Report report2 = report(102L);
 
@@ -80,7 +82,8 @@ class ReportAggregationServiceTest {
     }
 
     @Test
-    void recover_일반_예외여도_완전한_리포트가_이미_존재하면_COMPLETED로_복구하고_기존_리포트를_반환한다() {
+    @DisplayName("일반 예외여도 완전한 리포트가 이미 존재하면 COMPLETED로 복구하고 기존 리포트를 반환한다")
+    void recover_whenGenericExceptionButReportsAreComplete_returnsExistingReportsAndMarksCompleted() {
         Report report1 = report(101L);
         Report report2 = report(102L);
 
@@ -97,7 +100,8 @@ class ReportAggregationServiceTest {
     }
 
     @Test
-    void recover_부분_생성된_리포트만_존재하면_FAILED로_복구하고_빈_리스트를_반환한다() {
+    @DisplayName("부분 생성된 리포트만 존재하면 FAILED로 복구하고 빈 리스트를 반환한다")
+    void recover_whenReportsArePartiallyCreated_returnsEmptyListAndMarksFailed() {
         given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(3L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(1L);
         given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
@@ -110,7 +114,8 @@ class ReportAggregationServiceTest {
     }
 
     @Test
-    void recover_일반_예외이고_리포트가_없으면_FAILED로_복구하고_빈_리스트를_반환한다() {
+    @DisplayName("일반 예외이고 리포트가 없으면 FAILED로 복구하고 빈 리스트를 반환한다")
+    void recover_whenGenericExceptionAndNoReportsExist_returnsEmptyListAndMarksFailed() {
         given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(2L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
         given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
