@@ -62,7 +62,12 @@ public class ObjectiveAnswerCreateHandler implements AnswerCreateHandler {
         }
 
         // 질문의 옵션(선지)만 중복 없이 선택해야 함
-        validateSelectedOptions(selectedOptionIds, validOptionIds);
+        if (selectedOptionIds.size() != Set.copyOf(selectedOptionIds).size()) {
+            throw new BaseException(BaseErrorCode.ANSWER_004);
+        }
+        if (!validOptionIds.containsAll(selectedOptionIds)) {
+            throw new BaseException(BaseErrorCode.ANSWER_004);
+        }
 
         int selectedCount = selectedOptionIds.size();
 
@@ -90,16 +95,5 @@ public class ObjectiveAnswerCreateHandler implements AnswerCreateHandler {
                 .questionType(QuestionType.OBJECTIVE)
                 .answer(answerMap)
                 .build();
-    }
-
-    private void validateSelectedOptions(List<Long> selectedOptionIds, Set<Long> validOptionIds) {
-        // 동일한 선택지를 중복 선택할 수 없음
-        if (selectedOptionIds.size() != Set.copyOf(selectedOptionIds).size()) {
-            throw new BaseException(BaseErrorCode.ANSWER_004);
-        }
-        // 현재 문항에 존재하지 않는 선택지는 응답할 수 없음
-        if (!validOptionIds.containsAll(selectedOptionIds)) {
-            throw new BaseException(BaseErrorCode.ANSWER_004);
-        }
     }
 }
