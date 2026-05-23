@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.context.ActiveProfiles;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.report.entity.Report;
@@ -14,6 +15,7 @@ import server.MATE.domain.report.service.ReportAggregationService;
 import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.TestStatus;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -932,6 +934,43 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         assertThat(data.path("reports")).isEmpty();
     }
 
+    @Test
+    @DisplayName("soft delete 된 질문은 questionCount, questions, reports에서 모두 제외된다")
+    void getReport_whenQuestionSoftDeleted_excludesDeletedQuestionEverywhere() throws Exception {
+        TestActors actors = createActors();
+        createTwoSubjectiveQuestions(actors.testId(), actors.makerToken());
+        JsonNode questions = getQuestionsArray(actors.testId(), actors.makerToken());
+        Long activeQuestionId = questions.get(0).path("questionId").asLong();
+        Long deletedQuestionId = questions.get(1).path("questionId").asLong();
+
+        softDeleteQuestion(deletedQuestionId);
+
+        submitAnswer(actors.testId(), actors.testerToken(), """
+                {
+                  "answers": [
+                    { "type": "SUBJECTIVE", "questionId": %d, "text": "남은 질문 응답" }
+                  ]
+                }
+                """.formatted(activeQuestionId));
+        completeTest(actors.testId());
+
+        JsonNode data = reportData(actors.testId(), actors.makerToken());
+        JsonNode questionItems = data.path("questions");
+        JsonNode reports = data.path("reports");
+
+        assertThat(data.path("questionCount").asInt()).isEqualTo(1);
+        assertThat(questionItems).hasSize(1);
+        assertThat(questionItems.get(0).path("questionId").asLong()).isEqualTo(activeQuestionId);
+        assertThat(questionItems.get(0).path("sequence").asLong()).isEqualTo(1L);
+
+        assertThat(reports).hasSize(1);
+        assertThat(reports.get(0).path("questionId").asLong()).isEqualTo(activeQuestionId);
+        assertThat(reports.get(0).path("sequence").asLong()).isEqualTo(1L);
+        assertThat(reports.get(0).path("result").path("texts").get(0).asText()).isEqualTo("남은 질문 응답");
+        assertThat(reports).allSatisfy(report ->
+                assertThat(report.path("questionId").asLong()).isNotEqualTo(deletedQuestionId));
+    }
+
     private JsonNode reportData(Long testId, String token) throws Exception {
         var result = mockMvc.perform(
                         get("/api/v1/tests/{testId}/report", testId)
@@ -984,6 +1023,12 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
             throw new RuntimeException(e);
         }
         testRepository.save(test);
+    }
+
+    private void softDeleteQuestion(Long questionId) {
+        server.MATE.domain.question.entity.Question question = questionRepository.findById(questionId).orElseThrow();
+        ReflectionTestUtils.setField(question, "deletedAt", LocalDateTime.now());
+        questionRepository.save(question);
     }
 
     private String createAdditionalTester() {
