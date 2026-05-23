@@ -80,6 +80,23 @@ class ReportAggregationServiceTest {
     }
 
     @Test
+    void recover_일반_예외여도_완전한_리포트가_이미_존재하면_COMPLETED로_복구하고_기존_리포트를_반환한다() {
+        Report report1 = report(101L);
+        Report report2 = report(102L);
+
+        given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(2L);
+        given(reportRepository.countByTestId(TEST_ID)).willReturn(2L);
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report1, report2));
+
+        List<Report> recovered = reportAggregationService.recover(
+                new RuntimeException("aggregate failed"), TEST_ID);
+
+        assertThat(recovered).containsExactly(report1, report2);
+        assertThat(test.getReportStatus()).isEqualTo(ReportStatus.COMPLETED);
+    }
+
+    @Test
     void recover_부분_생성된_리포트만_존재하면_FAILED로_복구하고_빈_리스트를_반환한다() {
         given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(3L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(1L);
