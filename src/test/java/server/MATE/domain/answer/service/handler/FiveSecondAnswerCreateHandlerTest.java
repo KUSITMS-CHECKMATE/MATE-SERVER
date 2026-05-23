@@ -34,6 +34,7 @@ class FiveSecondAnswerCreateHandlerTest {
         FiveSecondAnswerCreateRequest request =
                 new FiveSecondAnswerCreateRequest(1L, null, List.of(2001L, 2099L), "하단 CTA 버튼");
 
+        handler.validate(request, context(fiveSecond));
         Answer answer = handler.build(10L, request, context(fiveSecond));
 
         assertThat(answer.getQuestionType()).isEqualTo(QuestionType.FIVE_SECOND);
@@ -51,7 +52,7 @@ class FiveSecondAnswerCreateHandlerTest {
         FiveSecondAnswerCreateRequest request =
                 new FiveSecondAnswerCreateRequest(1L, null, List.of(2001L), "하단 CTA 버튼");
 
-        assertThatThrownBy(() -> handler.build(10L, request, context(fiveSecond)))
+        assertThatThrownBy(() -> handler.validate(request, context(fiveSecond)))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.ANSWER_004);
@@ -66,7 +67,7 @@ class FiveSecondAnswerCreateHandlerTest {
         FiveSecondAnswerCreateRequest request =
                 new FiveSecondAnswerCreateRequest(1L, null, List.of(2099L), null);
 
-        assertThatThrownBy(() -> handler.build(10L, request, context(fiveSecond)))
+        assertThatThrownBy(() -> handler.validate(request, context(fiveSecond)))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.ANSWER_004);
@@ -80,7 +81,7 @@ class FiveSecondAnswerCreateHandlerTest {
         FiveSecondAnswerCreateRequest request =
                 new FiveSecondAnswerCreateRequest(1L, "첫 인상", null, "불필요한 기타 텍스트");
 
-        assertThatThrownBy(() -> handler.build(10L, request, context(fiveSecond)))
+        assertThatThrownBy(() -> handler.validate(request, context(fiveSecond)))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.ANSWER_004);

@@ -32,6 +32,7 @@ class ObjectiveAnswerCreateHandlerTest {
 
         ObjectiveAnswerCreateRequest request = new ObjectiveAnswerCreateRequest(1L, List.of(1001L, 1999L), "직접 입력");
 
+        handler.validate(request, context(objective));
         Answer answer = handler.build(10L, request, context(objective));
 
         assertThat(answer.getQuestionType()).isEqualTo(QuestionType.OBJECTIVE);
@@ -48,7 +49,7 @@ class ObjectiveAnswerCreateHandlerTest {
 
         ObjectiveAnswerCreateRequest request = new ObjectiveAnswerCreateRequest(1L, List.of(1001L), "직접 입력");
 
-        assertThatThrownBy(() -> handler.build(10L, request, context(objective)))
+        assertThatThrownBy(() -> handler.validate(request, context(objective)))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.ANSWER_004);
@@ -62,7 +63,7 @@ class ObjectiveAnswerCreateHandlerTest {
 
         ObjectiveAnswerCreateRequest request = new ObjectiveAnswerCreateRequest(1L, List.of(1999L), null);
 
-        assertThatThrownBy(() -> handler.build(10L, request, context(objective)))
+        assertThatThrownBy(() -> handler.validate(request, context(objective)))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.ANSWER_004);
