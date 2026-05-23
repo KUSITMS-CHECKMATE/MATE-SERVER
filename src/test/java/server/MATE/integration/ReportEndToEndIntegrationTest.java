@@ -16,6 +16,7 @@ import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.TestStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -965,6 +966,136 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
                 .path("reports").get(0).path("result").path("pathFrequency");
         assertThat(pathFrequency).hasSize(1);
         assertThat(pathFrequency.get(0).path("count").asInt()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("SUBJECTIVE와 FIVE_SECOND 주관식 리포트의 texts는 createdAt 오름차순으로 정렬된다")
+    void getReport_withSubjectiveTexts_returnsCreatedAtAscendingOrder() throws Exception {
+        TestActors actors = createActors();
+        String tester2Token = createAdditionalTester();
+        performCreateQuestion(actors.testId(), actors.makerToken(), """
+                {
+                  "questions": [
+                    { "type": "SUBJECTIVE", "title": "주관식 질문", "description": "설명", "imageKey": null },
+                    {
+                      "type": "FIVE_SECOND",
+                      "title": "5초 주관식",
+                      "description": "설명",
+                      "imageKey": "five-second-image",
+                      "imageRatio": "9:16",
+                      "isObjective": false,
+                      "isDuplicate": null,
+                      "minSelect": null,
+                      "maxSelect": null,
+                      "isOther": null,
+                      "options": []
+                    }
+                  ]
+                }
+                """);
+        JsonNode questions = getQuestionsArray(actors.testId(), actors.makerToken());
+        Long subjectiveQuestionId = questions.get(0).path("questionId").asLong();
+        Long fiveSecondQuestionId = questions.get(1).path("questionId").asLong();
+
+        submitAnswer(actors.testId(), actors.testerToken(), """
+                {
+                  "answers": [
+                    { "type": "SUBJECTIVE", "questionId": %d, "text": "빠른 주관식 응답" },
+                    { "type": "FIVE_SECOND", "questionId": %d, "text": "빠른 5초 응답" }
+                  ]
+                }
+                """.formatted(subjectiveQuestionId, fiveSecondQuestionId));
+        Thread.sleep(20L);
+        submitAnswer(actors.testId(), tester2Token, """
+                {
+                  "answers": [
+                    { "type": "SUBJECTIVE", "questionId": %d, "text": "늦은 주관식 응답" },
+                    { "type": "FIVE_SECOND", "questionId": %d, "text": "늦은 5초 응답" }
+                  ]
+                }
+                """.formatted(subjectiveQuestionId, fiveSecondQuestionId));
+
+        completeTest(actors.testId());
+
+        JsonNode reports = reportData(actors.testId(), actors.makerToken()).path("reports");
+        JsonNode subjectiveTexts = reports.get(0).path("result").path("texts");
+        JsonNode fiveSecondTexts = reports.get(1).path("result").path("texts");
+
+        assertThat(subjectiveTexts).hasSize(2);
+        assertThat(subjectiveTexts.get(0).asText()).isEqualTo("빠른 주관식 응답");
+        assertThat(subjectiveTexts.get(1).asText()).isEqualTo("늦은 주관식 응답");
+
+        assertThat(fiveSecondTexts).hasSize(2);
+        assertThat(fiveSecondTexts.get(0).asText()).isEqualTo("빠른 5초 응답");
+        assertThat(fiveSecondTexts.get(1).asText()).isEqualTo("늦은 5초 응답");
+    }
+
+    @Test
+    @DisplayName("TREE_TEST 리포트는 path와 pathLabels를 함께 조립한다")
+    void getReport_withTreeTestAnswers_returnsPathAndPathLabels() throws Exception {
+        TestActors actors = createActors();
+        createTreeTestQuestion(actors.testId(), actors.makerToken());
+        JsonNode questionNode = getSingleQuestion(actors.testId(), actors.makerToken());
+        Long questionId = questionNode.path("questionId").asLong();
+        Long rootNodeId = questionNode.path("features").get(0).path("treeTestId").asLong();
+        Long childNodeId = questionNode.path("features").get(0).path("children").get(0).path("treeTestId").asLong();
+        Long leafNodeId = questionNode.path("features").get(0).path("children").get(0)
+                .path("children").get(0).path("treeTestId").asLong();
+
+        submitAnswer(actors.testId(), actors.testerToken(), """
+                {
+                  "answers": [
+                    { "type": "TREE_TEST", "questionId": %d, "nodeId": %d, "path": [%d, %d, %d] }
+                  ]
+                }
+                """.formatted(questionId, leafNodeId, rootNodeId, childNodeId, leafNodeId));
+        completeTest(actors.testId());
+
+        JsonNode pathFrequency = reportData(actors.testId(), actors.makerToken())
+                .path("reports").get(0).path("result").path("pathFrequency");
+
+        assertThat(pathFrequency).hasSize(1);
+        assertThat(pathFrequency.get(0).path("path")).hasSize(3);
+        assertThat(pathFrequency.get(0).path("path").get(0).asLong()).isEqualTo(rootNodeId);
+        assertThat(pathFrequency.get(0).path("path").get(1).asLong()).isEqualTo(childNodeId);
+        assertThat(pathFrequency.get(0).path("path").get(2).asLong()).isEqualTo(leafNodeId);
+        assertThat(pathFrequency.get(0).path("pathLabels")).hasSize(3);
+        assertThat(pathFrequency.get(0).path("pathLabels").get(0).asText()).isEqualTo("마이페이지");
+        assertThat(pathFrequency.get(0).path("pathLabels").get(1).asText()).isEqualTo("설정");
+        assertThat(pathFrequency.get(0).path("pathLabels").get(2).asText()).isEqualTo("알림 설정");
+    }
+
+    @Test
+    @DisplayName("완전한 리포트가 이미 있으면 aggregate 재호출 시 상태와 결과를 그대로 유지한다")
+    void aggregate_whenReportAlreadyCompleted_keepsStatusAndExistingReports() throws Exception {
+        TestActors actors = createActors();
+        createSingleSubjectiveQuestion(actors.testId(), actors.makerToken());
+        Long questionId = getSingleQuestion(actors.testId(), actors.makerToken()).path("questionId").asLong();
+
+        submitAnswer(actors.testId(), actors.testerToken(), """
+                {
+                  "answers": [
+                    { "type": "SUBJECTIVE", "questionId": %d, "text": "기존 응답" }
+                  ]
+                }
+                """.formatted(questionId));
+        completeTest(actors.testId());
+
+        List<Report> existingReports = reportRepository.findAllByTestId(actors.testId());
+        JsonNode before = reportData(actors.testId(), actors.makerToken());
+
+        List<Report> reusedReports = reportAggregationService.aggregate(actors.testId());
+
+        server.MATE.domain.test.entity.Test updated = testRepository.findById(actors.testId()).orElseThrow();
+        JsonNode after = reportData(actors.testId(), actors.makerToken());
+
+        assertThat(updated.getReportStatus()).isEqualTo(ReportStatus.COMPLETED);
+        assertThat(reusedReports).hasSize(1);
+        assertThat(existingReports).hasSize(1);
+        assertThat(reusedReports.get(0).getId()).isEqualTo(existingReports.get(0).getId());
+        assertThat(reusedReports.get(0).getResult()).isEqualTo(existingReports.get(0).getResult());
+        assertThat(reportRepository.findAllByTestId(actors.testId())).hasSize(1);
+        assertThat(after).isEqualTo(before);
     }
 
     @Test
