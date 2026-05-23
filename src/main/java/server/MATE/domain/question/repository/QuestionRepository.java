@@ -2,6 +2,7 @@ package server.MATE.domain.question.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import server.MATE.domain.question.dto.response.AnswerQuestionTypeView;
 import server.MATE.domain.question.dto.response.QuestionSummaryItem;
 import server.MATE.domain.question.entity.Question;
 
@@ -18,6 +19,17 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     long countByTestIdAndDeletedAtIsNull(Long testId);
 
     List<Question> findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(Long testId);
+
+    @Query("""
+            select new server.MATE.domain.question.dto.response.AnswerQuestionTypeView(
+                q.id,
+                q.questionType
+            )
+            from Question q
+            where q.testId = :testId
+              and q.deletedAt is null
+            """)
+    List<AnswerQuestionTypeView> findAnswerQuestionTypeViewsByTestId(Long testId);
 
     @Query("""
             select new server.MATE.domain.question.dto.response.QuestionSummaryItem(
