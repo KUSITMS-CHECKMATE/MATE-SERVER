@@ -10,4 +10,6 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     List<Report> findAllByTestId(Long testId);
 
     boolean existsByTestId(Long testId);
+
+    long countByTestId(Long testId);
 }
