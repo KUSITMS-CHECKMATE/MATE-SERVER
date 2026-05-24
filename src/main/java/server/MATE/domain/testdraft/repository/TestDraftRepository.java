@@ -1,0 +1,19 @@
+package server.MATE.domain.testdraft.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import server.MATE.domain.testdraft.entity.TestDraft;
+import server.MATE.domain.testdraft.entity.TestDraftStatus;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface TestDraftRepository extends JpaRepository<TestDraft, Long> {
+
+    Optional<TestDraft> findByIdAndDeletedAtIsNull(Long id);
+
+    List<TestDraft> findAllByMakerIdAndDeletedAtIsNullOrderByUpdatedAtDesc(Long makerId);
+
+    List<TestDraft> findAllByStatusAndDeletedAtIsNull(TestDraftStatus status);
+
+    Optional<TestDraft> findByOrderNoAndDeletedAtIsNull(String orderNo);
+}
