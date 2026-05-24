@@ -199,6 +199,6 @@ public class MockPaymentService {
     }
 
     private String generateOrderNo(Long draftId) {
-        return "draft-" + draftId + "-" + UUID.randomUUID();
+        return "d-" + draftId + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
     }
 }
