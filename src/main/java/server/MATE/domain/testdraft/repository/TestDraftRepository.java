@@ -9,11 +9,11 @@ import java.util.Optional;
 
 public interface TestDraftRepository extends JpaRepository<TestDraft, Long> {
 
-    Optional<TestDraft> findByIdAndDeletedAtIsNull(Long id);
+    Optional<TestDraft> findById(Long id);
 
-    List<TestDraft> findAllByMakerIdAndDeletedAtIsNullOrderByUpdatedAtDesc(Long makerId);
+    List<TestDraft> findAllByMakerIdOrderByUpdatedAtDesc(Long makerId);
 
-    List<TestDraft> findAllByStatusAndDeletedAtIsNull(TestDraftStatus status);
+    List<TestDraft> findAllByStatus(TestDraftStatus status);
 
-    Optional<TestDraft> findByOrderNoAndDeletedAtIsNull(String orderNo);
+    Optional<TestDraft> findByOrderNo(String orderNo);
 }
