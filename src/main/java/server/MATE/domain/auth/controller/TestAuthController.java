@@ -19,7 +19,7 @@ import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.response.ApiResponse;
 
-@Hidden
+//@Hidden
 @Profile("local")
 @Validated
 @RestController
