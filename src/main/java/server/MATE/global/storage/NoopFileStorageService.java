@@ -20,7 +20,7 @@ public class NoopFileStorageService implements FileStorageService {
 
     @Override
     public String generateDownloadUrl(String key) {
-        throw new BaseException(BaseErrorCode.COMMON_999, STORAGE_NOT_CONFIGURED_MESSAGE);
+        return key;
     }
 
     @Override
