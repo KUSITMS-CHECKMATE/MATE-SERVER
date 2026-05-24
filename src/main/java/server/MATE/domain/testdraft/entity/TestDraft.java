@@ -120,6 +120,26 @@ public class TestDraft extends BaseEntity {
         }
     }
 
+    public void markPaymentCreated(String orderNo, Integer expectedAmount, String payToken) {
+        this.orderNo = orderNo;
+        this.expectedAmount = expectedAmount;
+        this.payToken = payToken;
+        this.status = TestDraftStatus.PAYMENT_CREATED;
+    }
+
+    public void markPaymentFailed() {
+        this.status = TestDraftStatus.PAYMENT_FAILED;
+    }
+
+    public void validateReadyForPayment() {
+        if (this.status == TestDraftStatus.PUBLISHED || this.status == TestDraftStatus.PUBLISHING) {
+            throw new BaseException(BaseErrorCode.DRAFT_003);
+        }
+        if (this.goalPpl == null || this.reward == null) {
+            throw new BaseException(BaseErrorCode.PAYMENT_005);
+        }
+    }
+
     @Builder
     public TestDraft(Long makerId,
                      String title,
