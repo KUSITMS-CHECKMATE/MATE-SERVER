@@ -79,7 +79,7 @@ class TestDraftControllerTest {
 
         mockMvc.perform(post("/api/v1/test-drafts").with(authenticationPrincipal()))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.message").value("테스트 초안을 생성했습니다."))
+                .andExpect(jsonPath("$.message").value("테스트 초안을 등록했습니다."))
                 .andExpect(jsonPath("$.data.draftId").value(10L))
                 .andExpect(jsonPath("$.data.status").value("DRAFT"));
     }
@@ -114,7 +114,7 @@ class TestDraftControllerTest {
     @Test
     @DisplayName("테스트 초안 수정 요청을 정상 처리한다")
     void updatesDraftSuccessfully() throws Exception {
-        given(testDraftService.updateDraft(eq(10L), eq(1L), any())).willReturn(sampleDraftResponse());
+        given(testDraftService.updateDraft(eq(10L), eq(1L), any())).willReturn(sampleDraftResponse("수정된 테스트"));
 
         String request = """
                 {
@@ -139,7 +139,7 @@ class TestDraftControllerTest {
                         .content(request))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("테스트 초안을 수정했습니다."))
-                .andExpect(jsonPath("$.data.title").value("초안 제목"));
+                .andExpect(jsonPath("$.data.title").value("수정된 테스트"));
     }
 
     @Test
@@ -153,6 +153,10 @@ class TestDraftControllerTest {
     }
 
     private TestDraftResponse sampleDraftResponse() {
+        return sampleDraftResponse("초안 제목");
+    }
+
+    private TestDraftResponse sampleDraftResponse(String title) {
         JsonNode payload = objectMapper.valueToTree(
                 java.util.Map.of(
                         "questions", List.of(
@@ -163,7 +167,7 @@ class TestDraftControllerTest {
         return new TestDraftResponse(
                 10L,
                 1L,
-                "초안 제목",
+                title,
                 "초안 설명",
                 "서비스",
                 "서비스 설명",
