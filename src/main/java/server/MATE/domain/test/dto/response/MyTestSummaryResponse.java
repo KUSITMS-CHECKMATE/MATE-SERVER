@@ -1,23 +1,17 @@
 package server.MATE.domain.test.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import server.MATE.domain.test.entity.Test;
-import server.MATE.domain.test.entity.TestStatus;
 
-@Schema(description = "내가 생성한 테스트 목록 노출용 요약")
+import java.util.List;
+
+@Schema(description = "내가 생성한 테스트 목록 조회 응답")
 public record MyTestSummaryResponse(
-        @Schema(description = "진행 상태", example = "IN_PROGRESS")
-        TestStatus testStatus,
-        @Schema(description = "테스트 제목", example = "승인된테스트1")
-        String title,
-        @Schema(description = "현재 참여 인원", example = "12")
-        Long pplCount
+        @Schema(description = "테스트 개수", example = "3")
+        int testCount,
+        @Schema(description = "테스트 목록")
+        List<MyTestSummaryItem> tests
 ) {
-    public static MyTestSummaryResponse from(Test test) {
-        return new MyTestSummaryResponse(
-                test.getTestStatus(),
-                test.getTitle(),
-                test.getPplCount()
-        );
+    public static MyTestSummaryResponse from(List<MyTestSummaryItem> tests) {
+        return new MyTestSummaryResponse(tests.size(), tests);
     }
 }
