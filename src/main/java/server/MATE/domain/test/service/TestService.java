@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
-import server.MATE.domain.test.dto.response.ImageInfo;
+import server.MATE.global.storage.dto.ImageResponse;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
@@ -70,7 +70,7 @@ public class TestService {
     public TestDetailResponse getTest(Long testId) {
         Test test = testRepository.findByIdAndApprovalStatusAndDeletedAtIsNull(testId, ApprovalStatus.ACCEPTED)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
-        return TestDetailResponse.from(test, toImageInfos(test.getImageKeys()));
+        return TestDetailResponse.from(test, toImageResponses(test.getImageKeys()));
     }
 
     public TestCreateResponse createTest(TestCreateRequest request, Long makerId) {
@@ -89,7 +89,7 @@ public class TestService {
         eventPublisher.publishEvent(new FileCleanupEvent(imageKeys));
         testRepository.save(test);
 
-        return TestCreateResponse.from(test, toImageInfos(test.getImageKeys()));
+        return TestCreateResponse.from(test, toImageResponses(test.getImageKeys()));
     }
 
     public TestUpdateResponse updateTest(Long testId, TestUpdateRequest request, Long makerId) {
@@ -130,7 +130,7 @@ public class TestService {
         );
 
         testRepository.saveAndFlush(test);
-        return TestUpdateResponse.from(test, toImageInfos(test.getImageKeys()));
+        return TestUpdateResponse.from(test, toImageResponses(test.getImageKeys()));
     }
 
     public void deleteTest(Long testId, Long makerId) {
@@ -177,9 +177,9 @@ public class TestService {
         return new TestLikeResponse(test.getId(), false, test.getLikeCount());
     }
 
-    private List<ImageInfo> toImageInfos(List<String> keys) {
+    private List<ImageResponse> toImageResponses(List<String> keys) {
         return keys.stream()
-                .map(key -> new ImageInfo(key, fileStorageService.generateDownloadUrl(key)))
+                .map(key -> new ImageResponse(key, fileStorageService.generateDownloadUrl(key)))
                 .toList();
     }
 

@@ -1,9 +1,9 @@
-package server.MATE.domain.test.dto.response;
+package server.MATE.global.storage.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "이미지 키와 렌더링용 URL 쌍")
-public record ImageInfo(
+public record ImageResponse(
         @Schema(description = "파일 키 (이미지 수정/삭제 요청 시 사용)", example = "media/uuid.jpg")
         String imageKey,
 
