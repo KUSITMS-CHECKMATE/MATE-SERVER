@@ -104,7 +104,10 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0);
         assertThat(result.path("type").asText()).isEqualTo("SUBJECTIVE");
-        JsonNode texts = result.path("result").path("texts");
+        JsonNode resultData = result.path("result");
+        assertThat(resultData.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
+        assertThat(resultData.path("topAnswers").isArray()).isTrue();
+        JsonNode texts = resultData.path("texts");
         assertThat(texts).hasSize(1);
         assertThat(texts.get(0).asText()).isEqualTo("주관식 응답");
     }
@@ -156,6 +159,10 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
         assertThat(result.path("average").asDouble()).isEqualTo(4.0);
+        assertThat(result.path("mostVoted").asInt()).isEqualTo(4);
+        JsonNode endValue = result.path("endValue");
+        assertThat(endValue.path("minLabel").asText()).isNotBlank();
+        assertThat(endValue.path("maxLabel").asText()).isNotBlank();
         JsonNode distribution = result.path("distribution");
         assertThat(distribution).hasSize(5);
         assertThat(distribution.get(3).path("score").asInt()).isEqualTo(4);
@@ -180,7 +187,10 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0);
         assertThat(result.path("type").asText()).isEqualTo("FIVE_SECOND");
-        JsonNode texts = result.path("result").path("texts");
+        JsonNode resultData = result.path("result");
+        assertThat(resultData.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
+        assertThat(resultData.path("topAnswers").isArray()).isTrue();
+        JsonNode texts = resultData.path("texts");
         assertThat(texts).hasSize(1);
         assertThat(texts.get(0).asText()).isEqualTo("5초 주관 응답");
     }
@@ -806,6 +816,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
+        assertThat(result.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
+        assertThat(result.path("topAnswers").isArray()).isTrue();
         JsonNode otherTexts = result.path("otherTexts");
         assertThat(otherTexts).hasSize(1);
         assertThat(otherTexts.get(0).asText()).isEqualTo("직접 입력 응답");
@@ -1180,6 +1192,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
+        assertThat(result.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
+        assertThat(result.path("topAnswers").isArray()).isTrue();
         JsonNode otherTexts = result.path("otherTexts");
         assertThat(otherTexts).hasSize(1);
         assertThat(otherTexts.get(0).asText()).isEqualTo("5초 기타 응답");
