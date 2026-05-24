@@ -9,5 +9,7 @@ public interface AnswerCreateHandler {
 
     QuestionType supports();
 
+    void validate(AnswerCreateItem item, AnswerCreateContext context);
+
     Answer build(Long participationId, AnswerCreateItem item, AnswerCreateContext context);
 }

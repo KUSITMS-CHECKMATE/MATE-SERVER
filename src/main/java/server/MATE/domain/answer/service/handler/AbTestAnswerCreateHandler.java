@@ -18,6 +18,10 @@ public class AbTestAnswerCreateHandler implements AnswerCreateHandler {
     }
 
     @Override
+    public void validate(AnswerCreateItem item, AnswerCreateContext context) {
+    }
+
+    @Override
     public Answer build(Long participationId, AnswerCreateItem item, AnswerCreateContext context) {
         AbTestAnswerCreateRequest request = (AbTestAnswerCreateRequest) item;
 

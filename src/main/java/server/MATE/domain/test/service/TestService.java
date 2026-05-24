@@ -10,6 +10,8 @@ import server.MATE.domain.test.dto.response.ImageInfo;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
+import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
+import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestUpdateResponse;
 import server.MATE.domain.test.entity.ApprovalStatus;
@@ -43,10 +45,22 @@ public class TestService {
     @Transactional(readOnly = true)
     public List<TestSummaryResponse> listTests(Long userId) {
         List<Test> tests = testRepository.findAllByApprovalStatusAndDeletedAtIsNullOrderByCreatedAtDesc(ApprovalStatus.ACCEPTED);
-        Set<Long> likedTestIds = findLikedTestIds(userId, tests);
+        return toSummaryResponses(userId, tests);
+    }
 
+    @Transactional(readOnly = true)
+    public List<MyTestSummaryResponse> listMyTests(Long makerId) {
+        List<Test> tests = testRepository.findAllByMakerIdAndDeletedAtIsNullOrderByCreatedAtDesc(makerId);
         return tests.stream()
-                .map(test -> TestSummaryResponse.from(test, likedTestIds.contains(test.getId()), toThumbnailUrl(test.getImageKeys())))
+                .map(MyTestSummaryResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<LikedTestSummaryResponse> listLikedTests(Long userId) {
+        List<Test> tests = testRepository.findLikedTestsByUserId(userId, ApprovalStatus.ACCEPTED);
+        return tests.stream()
+                .map(LikedTestSummaryResponse::from)
                 .toList();
     }
 
@@ -170,6 +184,15 @@ public class TestService {
     private String toThumbnailUrl(List<String> keys) {
         return keys.isEmpty() ? null : fileStorageService.generateDownloadUrl(keys.getFirst());
     }
+
+    private List<TestSummaryResponse> toSummaryResponses(Long userId, List<Test> tests) {
+        Set<Long> likedTestIds = findLikedTestIds(userId, tests);
+
+        return tests.stream()
+                .map(test -> TestSummaryResponse.from(test, likedTestIds.contains(test.getId()), toThumbnailUrl(test.getImageKeys())))
+                .toList();
+    }
+
 
     private Set<Long> findLikedTestIds(Long userId, List<Test> tests) {
         if (tests.isEmpty()) {

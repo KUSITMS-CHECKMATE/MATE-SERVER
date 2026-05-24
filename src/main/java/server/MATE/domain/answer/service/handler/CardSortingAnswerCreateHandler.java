@@ -23,9 +23,10 @@ public class CardSortingAnswerCreateHandler implements AnswerCreateHandler {
     }
 
     @Override
-    public Answer build(Long participationId, AnswerCreateItem item, AnswerCreateContext context) {
+    public void validate(AnswerCreateItem item, AnswerCreateContext context) {
         CardSortingAnswerCreateRequest request = (CardSortingAnswerCreateRequest) item;
 
+        // 최소 1개 이상의 groups를 요청해야 함
         if (request.groups() == null || request.groups().isEmpty()) throw new BaseException(BaseErrorCode.ANSWER_005);
 
         CardSorting cardSorting = context.cardSortings().get(request.questionId());
@@ -37,19 +38,28 @@ public class CardSortingAnswerCreateHandler implements AnswerCreateHandler {
         Set<String> assignedCards = new HashSet<>();
         Set<String> usedCategories = new HashSet<>();
         for (CardSortingAnswerCreateRequest.GroupItem group : request.groups()) {
+
+            // 카테고리는 질문의 category만 사용할 수 있고 중복을 허용하지 않음
             if (group == null || group.category() == null || !validCategories.contains(group.category())) {
                 throw new BaseException(BaseErrorCode.ANSWER_004);
             }
             if (!usedCategories.add(group.category())) throw new BaseException(BaseErrorCode.ANSWER_004);
             if (group.cardNames() == null) throw new BaseException(BaseErrorCode.ANSWER_004);
             for (String cardName : group.cardNames()) {
+
+                // 카드는 질문의 card만 사용할 수 있고 한 번만 배치 허용
                 if (!validCards.contains(cardName)) throw new BaseException(BaseErrorCode.ANSWER_004);
                 if (!assignedCards.add(cardName)) throw new BaseException(BaseErrorCode.ANSWER_004);
             }
         }
 
+        // 모든 카드는 예외없이 한 번씩 배치되어야 함
         if (assignedCards.size() != validCards.size()) throw new BaseException(BaseErrorCode.ANSWER_005);
+    }
 
+    @Override
+    public Answer build(Long participationId, AnswerCreateItem item, AnswerCreateContext context) {
+        CardSortingAnswerCreateRequest request = (CardSortingAnswerCreateRequest) item;
         return Answer.builder()
                 .participationId(participationId)
                 .questionId(request.questionId())

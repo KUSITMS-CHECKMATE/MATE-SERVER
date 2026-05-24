@@ -13,8 +13,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.Clock;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
+import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
+import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
+import server.MATE.domain.test.entity.ApprovalStatus;
 import server.MATE.domain.test.entity.Category;
 import server.MATE.domain.test.entity.TestLike;
+import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.storage.FileStorageService;
@@ -105,6 +109,43 @@ class TestServiceTest {
         testService.updateTest(TEST_ID, request, MAKER_ID);
 
         verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    void 내가_생성한_테스트_목록을_조회한다() {
+        server.MATE.domain.test.entity.Test myTest = server.MATE.domain.test.entity.Test.builder()
+                .makerId(MAKER_ID)
+                .title("내 테스트")
+                .description("소개")
+                .serviceName("서비스")
+                .serviceDescription("서비스 소개")
+                .imageKeys(List.of())
+                .build();
+        ReflectionTestUtils.setField(myTest, "id", TEST_ID);
+
+        given(testRepository.findAllByMakerIdAndDeletedAtIsNullOrderByCreatedAtDesc(MAKER_ID))
+                .willReturn(List.of(myTest));
+
+        List<MyTestSummaryResponse> responses = testService.listMyTests(MAKER_ID);
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.getFirst().title()).isEqualTo("내 테스트");
+        assertThat(responses.getFirst().testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+        assertThat(responses.getFirst().pplCount()).isZero();
+    }
+
+    @Test
+    void 내가_찜한_테스트_목록을_조회한다() {
+        given(testRepository.findLikedTestsByUserId(MAKER_ID, ApprovalStatus.ACCEPTED))
+                .willReturn(List.of(test));
+
+        List<LikedTestSummaryResponse> responses = testService.listLikedTests(MAKER_ID);
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.getFirst().title()).isEqualTo("기존 제목");
+        assertThat(responses.getFirst().description()).isEqualTo("기존 소개");
+        assertThat(responses.getFirst().reward()).isEqualTo(300);
+        assertThat(responses.getFirst().thumbnailKey()).isEqualTo("old-key-1");
     }
 
     @Test
