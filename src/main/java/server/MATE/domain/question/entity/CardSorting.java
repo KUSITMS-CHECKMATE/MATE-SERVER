@@ -11,12 +11,13 @@ import org.hibernate.type.SqlTypes;
 
 import java.util.ArrayList;
 import java.util.List;
+import server.MATE.global.common.entity.BaseEntity;
 
 @Getter
 @Entity
 @Table(name = "card_sorting")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CardSorting {
+public class CardSorting extends BaseEntity {
 
     @Id
     private Long id;
