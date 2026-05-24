@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public interface PaymentRefundRepository extends JpaRepository<PaymentRefund, Long> {
 
-    List<PaymentRefund> findAllByPaymentIdOrderByRefundedAtDesc(Long paymentId);
+    List<PaymentRefund> findAllByPaymentIdOrderByApprovalTimeDesc(Long paymentId);
 
     Optional<PaymentRefund> findByRefundNo(String refundNo);
 }
