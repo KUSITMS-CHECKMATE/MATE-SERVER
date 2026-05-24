@@ -8,11 +8,9 @@ import server.MATE.domain.payment.dto.response.PaymentExecuteResponse;
 import server.MATE.domain.payment.dto.response.PaymentRefundResponse;
 import server.MATE.domain.payment.dto.response.PaymentStatusResponse;
 import server.MATE.domain.payment.entity.Payment;
-import server.MATE.domain.payment.entity.PaymentRefund;
-import server.MATE.domain.payment.repository.PaymentRefundRepository;
 import server.MATE.domain.payment.repository.PaymentRepository;
-import server.MATE.domain.testdraft.entity.TestDraft;
-import server.MATE.domain.testdraft.repository.TestDraftRepository;
+import server.MATE.domain.test.service.TestPublishService;
+import server.MATE.domain.testdraft.service.TestDraftPublishStateService;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.toss.dto.request.TossPaymentCreateRequest;
@@ -23,73 +21,67 @@ import server.MATE.toss.dto.response.TossPaymentExecuteResponse;
 import server.MATE.toss.dto.response.TossPaymentRefundResponse;
 import server.MATE.toss.gateway.TossPaymentGateway;
 
-import java.util.UUID;
-
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class MockPaymentService {
 
-    private final TestDraftRepository testDraftRepository;
     private final PaymentRepository paymentRepository;
-    private final PaymentRefundRepository paymentRefundRepository;
     private final TossPaymentGateway mockPaymentGateway;
-    private final PaymentAmountCalculator paymentAmountCalculator;
+    private final PaymentPrepareService paymentPrepareService;
+    private final PaymentCreateStateService paymentCreateStateService;
+    private final PaymentExecuteStateService paymentExecuteStateService;
+    private final PaymentRefundStateService paymentRefundStateService;
+    private final TestPublishService testPublishService;
+    private final TestDraftPublishStateService testDraftPublishStateService;
 
     public PaymentCreateResponse createPayment(Long draftId, Long makerId, boolean isTestPayment) {
-        TestDraft draft = getOwnedDraft(draftId, makerId);
-        draft.validateReadyForPayment();
-
-        int amount = paymentAmountCalculator.calculate(draft.getGoalPpl(), draft.getReward());
-        Payment existingPayment = paymentRepository.findByDraftId(draftId).orElse(null);
-        if (existingPayment != null) {
-            if (existingPayment.getPayStatus() == server.MATE.domain.payment.entity.PayStatus.PAY_CREATED) {
-                return new PaymentCreateResponse(
-                        existingPayment.getId(),
-                        draft.getId(),
-                        existingPayment.getOrderNo(),
-                        existingPayment.getAmount(),
-                        existingPayment.getPayToken(),
-                        existingPayment.getIsTestPayment()
-                );
-            }
-            if (existingPayment.getPayStatus() == server.MATE.domain.payment.entity.PayStatus.PAY_SUCCEEDED) {
-                throw new BaseException(BaseErrorCode.PAYMENT_002);
-            }
+        PaymentPrepareService.PaymentPreparation preparation =
+                paymentPrepareService.prepare(draftId, makerId, isTestPayment);
+        if (preparation.hasExistingResponse()) {
+            return preparation.existingResponse();
         }
 
-        String orderNo = generateOrderNo(draft.getId());
-        Payment payment = existingPayment == null
-                ? paymentRepository.save(Payment.builder()
-                .draftId(draft.getId())
-                .makerId(makerId)
-                .orderNo(orderNo)
-                .goalPpl(draft.getGoalPpl())
-                .reward(draft.getReward())
-                .amount(amount)
-                .isTestPayment(isTestPayment)
-                .build())
-                : resetPaymentForRetry(existingPayment, orderNo, draft.getGoalPpl(), draft.getReward(), amount, isTestPayment);
+        try {
+            TossPaymentCreateResponse result = mockPaymentGateway.createPayment(
+                    new TossPaymentCreateRequest(
+                            preparation.orderNo(),
+                            preparation.amount(),
+                            preparation.isTestPayment()
+                    )
+            );
 
-        TossPaymentCreateResponse result = mockPaymentGateway.createPayment(
-                new TossPaymentCreateRequest(orderNo, amount, isTestPayment)
-        );
+            paymentCreateStateService.markCreated(
+                    preparation.paymentId(),
+                    preparation.draftId(),
+                    preparation.orderNo(),
+                    preparation.amount(),
+                    result.payToken()
+            );
 
-        payment.markCreated(result.payToken());
-        draft.markPaymentCreated(orderNo, amount, result.payToken());
-
-        return new PaymentCreateResponse(
-                payment.getId(),
-                draft.getId(),
-                orderNo,
-                amount,
-                result.payToken(),
-                isTestPayment
-        );
+            return new PaymentCreateResponse(
+                    preparation.paymentId(),
+                    preparation.draftId(),
+                    preparation.orderNo(),
+                    preparation.amount(),
+                    result.payToken(),
+                    preparation.isTestPayment()
+            );
+        } catch (RuntimeException e) {
+            paymentCreateStateService.markFailed(preparation.paymentId(), preparation.draftId());
+            throw e;
+        }
     }
 
+    @Transactional(readOnly = true)
     public PaymentExecuteResponse executePayment(Long paymentId, Long makerId) {
         Payment payment = getOwnedPayment(paymentId, makerId);
+        if (payment.getPayStatus() == server.MATE.domain.payment.entity.PayStatus.PAY_SUCCEEDED) {
+            if (payment.getTestId() != null) {
+                return toExecuteResponse(payment, payment.getTestId());
+            }
+            Long testId = publishAfterExecution(payment);
+            return toExecuteResponse(payment, testId);
+        }
         payment.validateReadyToExecute();
 
         TossPaymentExecuteResponse result = mockPaymentGateway.executePayment(
@@ -98,7 +90,9 @@ public class MockPaymentService {
 
         int paidAmount = result.paidAmount() > 0 ? result.paidAmount() : payment.getAmount();
 
-        payment.markSucceeded(
+        Payment succeededPayment = paymentExecuteStateService.markSucceeded(
+                payment.getId(),
+                makerId,
                 result.transactionId(),
                 paidAmount,
                 result.payMethod(),
@@ -107,18 +101,8 @@ public class MockPaymentService {
                 result.approvalTime()
         );
 
-        return new PaymentExecuteResponse(
-                payment.getId(),
-                payment.getDraftId(),
-                payment.getPayStatus(),
-                payment.getOrderNo(),
-                payment.getAmount(),
-                payment.getPaidAmount(),
-                payment.getPayToken(),
-                payment.getTransactionId(),
-                payment.getPayMethod(),
-                payment.getApprovalTime()
-        );
+        Long testId = publishAfterExecution(succeededPayment);
+        return toExecuteResponse(succeededPayment, testId);
     }
 
     @Transactional(readOnly = true)
@@ -142,41 +126,27 @@ public class MockPaymentService {
     public PaymentRefundResponse refundPayment(Long paymentId, Long makerId, String reason) {
         Payment payment = getOwnedPayment(paymentId, makerId);
         payment.validateRefundable();
-        payment.markRefundPending();
+        paymentRefundStateService.markRefundPending(paymentId, makerId);
 
-        TossPaymentRefundResponse result = mockPaymentGateway.refundPayment(
-                new TossPaymentRefundRequest(payment.getPayToken(), reason, payment.getIsTestPayment())
-        );
+        try {
+            TossPaymentRefundResponse result = mockPaymentGateway.refundPayment(
+                    new TossPaymentRefundRequest(payment.getPayToken(), reason, payment.getIsTestPayment())
+            );
 
-        paymentRefundRepository.save(PaymentRefund.builder()
-                .paymentId(payment.getId())
-                .refundNo(result.refundNo())
-                .reason(reason)
-                .refundedAmount(result.refundedAmount())
-                .transactionId(result.transactionId())
-                .approvalTime(result.approvalTime())
-                .build());
-
-        payment.markRefunded();
-
-        return new PaymentRefundResponse(
-                payment.getId(),
-                result.refundNo(),
-                result.refundedAmount(),
-                result.transactionId(),
-                result.payToken(),
-                payment.getPayStatus(),
-                result.approvalTime()
-        );
-    }
-
-    private TestDraft getOwnedDraft(Long draftId, Long makerId) {
-        TestDraft draft = testDraftRepository.findById(draftId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.DRAFT_001));
-        if (!draft.getMakerId().equals(makerId)) {
-            throw new BaseException(BaseErrorCode.DRAFT_002);
+            Payment refundedPayment = paymentRefundStateService.markRefunded(paymentId, makerId, reason, result);
+            return new PaymentRefundResponse(
+                    refundedPayment.getId(),
+                    result.refundNo(),
+                    result.refundedAmount(),
+                    result.transactionId(),
+                    result.payToken(),
+                    refundedPayment.getPayStatus(),
+                    result.approvalTime()
+            );
+        } catch (RuntimeException e) {
+            paymentRefundStateService.markRefundFailed(paymentId, makerId);
+            throw e;
         }
-        return draft;
     }
 
     private Payment getOwnedPayment(Long paymentId, Long makerId) {
@@ -184,21 +154,28 @@ public class MockPaymentService {
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_001));
     }
 
-    private Payment resetPaymentForRetry(Payment payment,
-                                         String orderNo,
-                                         Integer goalPpl,
-                                         Integer reward,
-                                         Integer amount,
-                                         boolean isTestPayment) {
-        if (payment.getPayStatus() != server.MATE.domain.payment.entity.PayStatus.PAY_FAILED
-                && payment.getPayStatus() != server.MATE.domain.payment.entity.PayStatus.REFUND_FAILED) {
-            throw new BaseException(BaseErrorCode.PAYMENT_002);
+    private Long publishAfterExecution(Payment payment) {
+        try {
+            return testPublishService.publish(payment.getId());
+        } catch (RuntimeException e) {
+            testDraftPublishStateService.markPublishFailed(payment.getDraftId());
+            throw e;
         }
-        payment.prepareForRetry(orderNo, goalPpl, reward, amount, isTestPayment);
-        return payment;
     }
 
-    private String generateOrderNo(Long draftId) {
-        return "d-" + draftId + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+    private PaymentExecuteResponse toExecuteResponse(Payment payment, Long testId) {
+        return new PaymentExecuteResponse(
+                payment.getId(),
+                payment.getDraftId(),
+                testId,
+                payment.getPayStatus(),
+                payment.getOrderNo(),
+                payment.getAmount(),
+                payment.getPaidAmount(),
+                payment.getPayToken(),
+                payment.getTransactionId(),
+                payment.getPayMethod(),
+                payment.getApprovalTime()
+        );
     }
 }
