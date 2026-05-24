@@ -5,13 +5,10 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
-import server.MATE.domain.test.dto.response.TestCreateResponse;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
@@ -24,7 +21,7 @@ import server.MATE.global.security.principal.AuthenticatedUser;
 
 import java.util.List;
 
-@Tag(name = "[TEST] 테스트 API", description = "테스트 등록 관련 API")
+@Tag(name = "[TEST] 테스트 API", description = "테스트 조회/수정 관련 API")
 @RestController
 @RequestMapping("/api/v1/tests")
 @SecurityRequirement(name = "JWT")
@@ -126,29 +123,6 @@ public class TestController {
     ) {
         TestLikeResponse response = testService.unlikeTest(testId, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트 찜을 취소했습니다.", response));
-    }
-
-    @Operation(summary = "테스트 등록", description = """
-            새로운 테스트를 등록합니다. MKTT_02-1 ~ MKTT_02-3 (테스트 기본 정보) 화면에 해당하는 api 입니다.
-            현재 목표 인원 수(`goalPpl`), 보상 포인트(`reward`)는 Default 값으로 저장됩니다.
-
-            카테고리
-            - DAILY, FINANCE, HEALTH, SHOPPING, FOOD, GAME, CONTENT, COMMUNITY,
-            AI, EDUCATION, TRAVEL, SOCIAL, CONVENIENCE, INFORMATION, BUSINESS, TRANSPORT, PUBLIC_ADMIN
-            - 최소 1개 ~ 최대 3개 선택 필수
-
-            이미지 처리
-            - `imageKeys`는 이미지 업로드 URL 발급 api로 먼저 업로드한 뒤 반환된 imageKey 목록입니다.
-            - 트랜잭션 실패(롤백) 시 업로드된 이미지는 Azure Blob Storage에서 자동 삭제됩니다.
-            """)
-    @PostMapping
-    public ResponseEntity<ApiResponse<TestCreateResponse>> createTest(
-            @RequestBody @Valid TestCreateRequest request,
-            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
-    ) {
-        TestCreateResponse response = testService.createTest(request, authenticatedUser.getId());
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created("테스트가 등록되었습니다.", response));
     }
 
     @Operation(summary = "테스트 수정", description = """
