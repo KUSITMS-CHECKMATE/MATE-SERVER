@@ -17,6 +17,7 @@ import server.MATE.domain.test.entity.Category;
 import server.MATE.domain.test.entity.TestLike;
 import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
+import server.MATE.global.storage.FileStorageService;
 import server.MATE.global.storage.event.FileCleanupEvent;
 import server.MATE.global.storage.event.FileDeleteEvent;
 
@@ -26,6 +27,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -40,6 +42,9 @@ class TestServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private FileStorageService fileStorageService;
 
     @Mock
     private Clock clock;
@@ -63,6 +68,7 @@ class TestServiceTest {
                 .build();
         ReflectionTestUtils.setField(test, "id", TEST_ID);
         test.addCategories(List.of(Category.FOOD));
+        lenient().when(fileStorageService.generateDownloadUrl(anyString())).thenReturn("https://example.com/url");
     }
 
     @Test

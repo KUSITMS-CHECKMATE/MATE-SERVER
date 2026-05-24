@@ -49,7 +49,6 @@ public class Test extends BaseEntity {
     private TestStatus testStatus;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "varchar(20) default 'PENDING'")
     private ReportStatus reportStatus = ReportStatus.PENDING;
 
     @Enumerated(EnumType.STRING)
