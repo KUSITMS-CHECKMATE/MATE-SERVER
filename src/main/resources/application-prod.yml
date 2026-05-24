@@ -47,7 +47,8 @@ discord:
 azure:
   storage:
     connection-string: ${AZURE_CONNECTION:}
-    container-name: ${AZURE_CONTAINER_NAME:}
+    public-container-name: ${AZURE_PUBLIC_CONTAINER_NAME:}
+    private-container-name: ${AZURE_PRIVATE_CONTAINER_NAME:}
     upload-sas-expiry-minutes: ${AZURE_UPLOAD_SAS_EXPIRY_MINUTES:10}
     download-sas-expiry-minutes: ${AZURE_DOWNLOAD_SAS_EXPIRY_MINUTES:30}
 

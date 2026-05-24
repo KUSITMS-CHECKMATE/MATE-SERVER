@@ -6,11 +6,12 @@ import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 import server.MATE.global.config.properties.AzureBlobProperties;
 import server.MATE.global.storage.condition.AzureStorageConfiguredCondition;
-import org.springframework.context.annotation.Conditional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -21,12 +22,25 @@ import java.util.List;
 public class AzureBlobFileStorageService implements FileStorageService {
 
     private final AzureBlobProperties properties;
-    private volatile BlobContainerClient containerClient;
+    private BlobContainerClient publicContainerClient;
+    private BlobContainerClient privateContainerClient;
+
+    @PostConstruct
+    public void init() {
+        BlobServiceClient serviceClient = new BlobServiceClientBuilder()
+                .connectionString(properties.getConnectionString())
+                .buildClient();
+
+        publicContainerClient = serviceClient.getBlobContainerClient(properties.getPublicContainerName());
+        publicContainerClient.createIfNotExists();
+
+        privateContainerClient = serviceClient.getBlobContainerClient(properties.getPrivateContainerName());
+        privateContainerClient.createIfNotExists();
+    }
 
     @Override
     public String generatePresignedUrl(String key) {
-        BlobContainerClient containerClient = getContainerClient();
-        BlobClient blobClient = containerClient.getBlobClient(key);
+        BlobClient blobClient = getContainerClient(key).getBlobClient(key);
         BlobSasPermission permission = new BlobSasPermission()
                 .setCreatePermission(true)
                 .setWritePermission(true)
@@ -39,10 +53,11 @@ public class AzureBlobFileStorageService implements FileStorageService {
 
     @Override
     public String generateDownloadUrl(String key) {
-        BlobContainerClient containerClient = getContainerClient();
-        BlobClient blobClient = containerClient.getBlobClient(key);
-        BlobSasPermission permission = new BlobSasPermission()
-                .setReadPermission(true);
+        BlobClient blobClient = getContainerClient(key).getBlobClient(key);
+        if (isPublic(key)) {
+            return blobClient.getBlobUrl();
+        }
+        BlobSasPermission permission = new BlobSasPermission().setReadPermission(true);
         BlobServiceSasSignatureValues values = new BlobServiceSasSignatureValues(
                 OffsetDateTime.now().plusMinutes(properties.getDownloadSasExpiryMinutes()), permission);
         return blobClient.getBlobUrl() + "?" + blobClient.generateSas(values);
@@ -50,27 +65,15 @@ public class AzureBlobFileStorageService implements FileStorageService {
 
     @Override
     public void deleteFiles(List<String> keys) {
-        BlobContainerClient containerClient = getContainerClient();
-        keys.forEach(key -> containerClient.getBlobClient(key).deleteIfExists());
+        keys.forEach(key -> getContainerClient(key).getBlobClient(key).deleteIfExists());
     }
 
-    private BlobContainerClient getContainerClient() {
-        BlobContainerClient current = containerClient;
-        if (current != null) {
-            return current;
-        }
+    private BlobContainerClient getContainerClient(String key) {
+        return isPublic(key) ? publicContainerClient : privateContainerClient;
+    }
 
-        synchronized (this) {
-            if (containerClient == null) {
-                BlobServiceClient serviceClient = new BlobServiceClientBuilder()
-                        .connectionString(properties.getConnectionString())
-                        .buildClient();
-                BlobContainerClient created = serviceClient.getBlobContainerClient(properties.getContainerName());
-                created.createIfNotExists();
-                containerClient = created;
-            }
-            return containerClient;
-        }
+    private boolean isPublic(String key) {
+        return key.startsWith("media/");
     }
 
     private String resolveContentType(String key) {
