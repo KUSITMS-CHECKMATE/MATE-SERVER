@@ -136,7 +136,46 @@ class MockPaymentServiceTest {
         assertThat(response.payStatus()).isEqualTo(PayStatus.PAY_SUCCEEDED);
         assertThat(response.transactionId()).isEqualTo("tx-1");
         assertThat(payment.getPayStatus()).isEqualTo(PayStatus.PAY_SUCCEEDED);
+        assertThat(payment.getPaidAmount()).isEqualTo(30000);
         assertThat(payment.getApprovalTime()).isEqualTo(approvalTime);
+    }
+
+    @Test
+    @DisplayName("mock gateway가 0원을 반환해도 내부 payment 금액으로 paidAmount를 보정한다")
+    void executesPaymentWithFallbackPaidAmount() {
+        Payment payment = Payment.builder()
+                .draftId(10L)
+                .makerId(1L)
+                .orderNo("order-no")
+                .payToken("pay-token")
+                .goalPpl(100)
+                .reward(300)
+                .amount(30000)
+                .isTestPayment(true)
+                .build();
+        ReflectionTestUtils.setField(payment, "id", 20L);
+        payment.markCreated("pay-token");
+
+        LocalDateTime approvalTime = LocalDateTime.parse("2026-05-25T12:00:00");
+
+        given(paymentRepository.findByIdAndMakerId(20L, 1L)).willReturn(Optional.of(payment));
+        given(mockPaymentGateway.executePayment(any(TossPaymentExecuteRequest.class)))
+                .willReturn(new TossPaymentExecuteResponse(
+                        "order-no",
+                        0,
+                        approvalTime,
+                        0,
+                        PayMethod.TOSS_MONEY,
+                        "pay-token",
+                        "tx-1",
+                        "092",
+                        null
+                ));
+
+        PaymentExecuteResponse response = mockPaymentService.executePayment(20L, 1L);
+
+        assertThat(response.paidAmount()).isEqualTo(30000);
+        assertThat(payment.getPaidAmount()).isEqualTo(30000);
     }
 
     @Test

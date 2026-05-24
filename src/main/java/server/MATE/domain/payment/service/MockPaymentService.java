@@ -78,9 +78,11 @@ public class MockPaymentService {
                 new TossPaymentExecuteRequest(payment.getPayToken(), payment.getOrderNo(), payment.getIsTestPayment())
         );
 
+        int paidAmount = result.paidAmount() > 0 ? result.paidAmount() : payment.getAmount();
+
         payment.markSucceeded(
                 result.transactionId(),
-                result.paidAmount(),
+                paidAmount,
                 result.payMethod(),
                 result.accountBankCode(),
                 result.cardCompanyCode(),
