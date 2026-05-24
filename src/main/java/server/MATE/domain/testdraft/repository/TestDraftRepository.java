@@ -1,5 +1,9 @@
 package server.MATE.domain.testdraft.repository;
 
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import server.MATE.domain.testdraft.entity.TestDraft;
 import server.MATE.domain.testdraft.entity.TestDraftStatus;
@@ -16,4 +20,12 @@ public interface TestDraftRepository extends JpaRepository<TestDraft, Long> {
     List<TestDraft> findAllByStatus(TestDraftStatus status);
 
     Optional<TestDraft> findByOrderNo(String orderNo);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select td
+            from TestDraft td
+            where td.id = :id
+            """)
+    Optional<TestDraft> findByIdForUpdate(@Param("id") Long id);
 }

@@ -131,6 +131,19 @@ public class TestDraft extends BaseEntity {
         this.status = TestDraftStatus.PAYMENT_FAILED;
     }
 
+    public void markPublishing() {
+        this.status = TestDraftStatus.PUBLISHING;
+    }
+
+    public void markPublished(Long testId) {
+        this.publishedTestId = testId;
+        this.status = TestDraftStatus.PUBLISHED;
+    }
+
+    public void markPublishFailed() {
+        this.status = TestDraftStatus.PUBLISH_FAILED;
+    }
+
     public void validateReadyForPayment() {
         if (this.status == TestDraftStatus.PUBLISHED || this.status == TestDraftStatus.PUBLISHING) {
             throw new BaseException(BaseErrorCode.DRAFT_003);
@@ -138,6 +151,31 @@ public class TestDraft extends BaseEntity {
         if (this.goalPpl == null || this.reward == null) {
             throw new BaseException(BaseErrorCode.PAYMENT_005);
         }
+    }
+
+    public void validateReadyForPublish() {
+        if (this.publishedTestId != null && this.status == TestDraftStatus.PUBLISHED) {
+            return;
+        }
+        if (this.status != TestDraftStatus.PAYMENT_CREATED && this.status != TestDraftStatus.PUBLISH_FAILED) {
+            throw new BaseException(BaseErrorCode.DRAFT_004);
+        }
+        if (this.goalPpl == null || this.reward == null) {
+            throw new BaseException(BaseErrorCode.DRAFT_004);
+        }
+        if (isBlank(this.title) || isBlank(this.description)) {
+            throw new BaseException(BaseErrorCode.DRAFT_004);
+        }
+        if (this.categories == null || this.categories.isEmpty()) {
+            throw new BaseException(BaseErrorCode.DRAFT_004);
+        }
+        if (this.questionsPayload == null || !(this.questionsPayload.get("questions") instanceof List<?> questions) || questions.isEmpty()) {
+            throw new BaseException(BaseErrorCode.DRAFT_004);
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     @Builder
