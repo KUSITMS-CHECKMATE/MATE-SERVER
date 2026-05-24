@@ -7,9 +7,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import server.MATE.domain.payment.dto.PaymentCreateResponse;
-import server.MATE.domain.payment.dto.PaymentExecuteResponse;
-import server.MATE.domain.payment.dto.PaymentRefundResponse;
+import server.MATE.domain.payment.dto.response.PaymentCreateResponse;
+import server.MATE.domain.payment.dto.response.PaymentExecuteResponse;
+import server.MATE.domain.payment.dto.response.PaymentRefundResponse;
 import server.MATE.domain.payment.entity.PayMethod;
 import server.MATE.domain.payment.entity.PayStatus;
 import server.MATE.domain.payment.entity.Payment;
@@ -131,7 +131,6 @@ class MockPaymentServiceTest {
                         "092",
                         null
                 ));
-
         PaymentExecuteResponse response = mockPaymentService.executePayment(20L, 1L);
 
         assertThat(response.payStatus()).isEqualTo(PayStatus.PAY_SUCCEEDED);
