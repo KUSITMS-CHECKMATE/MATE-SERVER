@@ -17,6 +17,22 @@ public interface TestRepository extends JpaRepository<Test, Long> {
     @EntityGraph(attributePaths = {"categories"})
     List<Test> findAllByApprovalStatusAndDeletedAtIsNullOrderByCreatedAtDesc(ApprovalStatus approvalStatus);
 
+    List<Test> findAllByMakerIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long makerId);
+
+    @Query("""
+            select t
+            from Test t
+            join TestLike tl on tl.testId = t.id
+            where tl.userId = :userId
+              and t.deletedAt is null
+              and t.approvalStatus = :approvalStatus
+            order by tl.createdAt desc
+            """)
+    List<Test> findLikedTestsByUserId(
+            @Param("userId") Long userId,
+            @Param("approvalStatus") ApprovalStatus approvalStatus
+    );
+
     Optional<Test> findByIdAndDeletedAtIsNull(Long id);
 
     Optional<Test> findByIdAndApprovalStatusAndDeletedAtIsNull(Long id, ApprovalStatus approvalStatus);
