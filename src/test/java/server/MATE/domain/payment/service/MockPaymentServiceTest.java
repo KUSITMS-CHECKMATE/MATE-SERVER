@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -87,6 +88,7 @@ class MockPaymentServiceTest {
 
         given(testDraftRepository.findById(10L)).willReturn(Optional.of(draft));
         given(paymentAmountCalculator.calculate(100, 300)).willReturn(30000);
+        given(paymentRepository.findByDraftId(10L)).willReturn(Optional.empty());
         given(paymentRepository.save(any(Payment.class))).willReturn(payment);
         given(mockPaymentGateway.createPayment(any(TossPaymentCreateRequest.class)))
                 .willReturn(new TossPaymentCreateResponse("mock-pay-token"));
@@ -98,6 +100,105 @@ class MockPaymentServiceTest {
         assertThat(response.payToken()).isEqualTo("mock-pay-token");
         assertThat(draft.getStatus()).isEqualTo(server.MATE.domain.testdraft.entity.TestDraftStatus.PAYMENT_CREATED);
         assertThat(payment.getPayStatus()).isEqualTo(PayStatus.PAY_CREATED);
+    }
+
+    @Test
+    @DisplayName("이미 PAY_CREATED 상태인 결제가 있으면 기존 결제를 재사용한다")
+    void reusesCreatedPayment() {
+        TestDraft draft = TestDraft.builder()
+                .makerId(1L)
+                .goalPpl(100)
+                .reward(300)
+                .build();
+        ReflectionTestUtils.setField(draft, "id", 10L);
+
+        Payment payment = Payment.builder()
+                .draftId(10L)
+                .makerId(1L)
+                .orderNo("order-no")
+                .goalPpl(100)
+                .reward(300)
+                .amount(30000)
+                .isTestPayment(true)
+                .build();
+        ReflectionTestUtils.setField(payment, "id", 20L);
+        payment.markCreated("mock-pay-token");
+
+        given(testDraftRepository.findById(10L)).willReturn(Optional.of(draft));
+        given(paymentAmountCalculator.calculate(100, 300)).willReturn(30000);
+        given(paymentRepository.findByDraftId(10L)).willReturn(Optional.of(payment));
+
+        PaymentCreateResponse response = mockPaymentService.createPayment(10L, 1L, true);
+
+        assertThat(response.paymentId()).isEqualTo(20L);
+        assertThat(response.orderNo()).isEqualTo("order-no");
+        assertThat(response.payToken()).isEqualTo("mock-pay-token");
+    }
+
+    @Test
+    @DisplayName("이미 PAY_SUCCEEDED 상태인 결제가 있으면 새 결제 생성을 막는다")
+    void blocksSucceededPaymentRecreation() {
+        TestDraft draft = TestDraft.builder()
+                .makerId(1L)
+                .goalPpl(100)
+                .reward(300)
+                .build();
+        ReflectionTestUtils.setField(draft, "id", 10L);
+
+        Payment payment = Payment.builder()
+                .draftId(10L)
+                .makerId(1L)
+                .orderNo("order-no")
+                .goalPpl(100)
+                .reward(300)
+                .amount(30000)
+                .isTestPayment(true)
+                .build();
+        payment.markSucceeded("tx-1", 30000, PayMethod.TOSS_MONEY, "092", null, LocalDateTime.parse("2026-05-25T12:00:00"));
+
+        given(testDraftRepository.findById(10L)).willReturn(Optional.of(draft));
+        given(paymentAmountCalculator.calculate(100, 300)).willReturn(30000);
+        given(paymentRepository.findByDraftId(10L)).willReturn(Optional.of(payment));
+
+        assertThatThrownBy(() -> mockPaymentService.createPayment(10L, 1L, true))
+                .isInstanceOf(server.MATE.global.common.exception.BaseException.class)
+                .hasMessageContaining("결제를 생성할 수 없는 상태입니다.");
+    }
+
+    @Test
+    @DisplayName("PAY_FAILED 상태인 결제가 있으면 같은 row를 재사용해 재생성한다")
+    void recreatesFailedPayment() {
+        TestDraft draft = TestDraft.builder()
+                .makerId(1L)
+                .goalPpl(100)
+                .reward(300)
+                .build();
+        ReflectionTestUtils.setField(draft, "id", 10L);
+
+        Payment payment = Payment.builder()
+                .draftId(10L)
+                .makerId(1L)
+                .orderNo("old-order")
+                .goalPpl(100)
+                .reward(300)
+                .amount(30000)
+                .isTestPayment(true)
+                .build();
+        ReflectionTestUtils.setField(payment, "id", 20L);
+        payment.markFailed();
+
+        given(testDraftRepository.findById(10L)).willReturn(Optional.of(draft));
+        given(paymentAmountCalculator.calculate(100, 300)).willReturn(30000);
+        given(paymentRepository.findByDraftId(10L)).willReturn(Optional.of(payment));
+        given(mockPaymentGateway.createPayment(any(TossPaymentCreateRequest.class)))
+                .willReturn(new TossPaymentCreateResponse("new-mock-pay-token"));
+
+        PaymentCreateResponse response = mockPaymentService.createPayment(10L, 1L, true);
+
+        assertThat(response.paymentId()).isEqualTo(20L);
+        assertThat(response.payToken()).isEqualTo("new-mock-pay-token");
+        assertThat(payment.getPayStatus()).isEqualTo(PayStatus.PAY_CREATED);
+        assertThat(payment.getOrderNo()).isNotEqualTo("old-order");
     }
 
     @Test

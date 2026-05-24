@@ -84,6 +84,26 @@ public class Payment extends BaseEntity {
         this.payStatus = PayStatus.PAY_CREATED;
     }
 
+    public void prepareForRetry(String orderNo,
+                                Integer goalPpl,
+                                Integer reward,
+                                Integer amount,
+                                Boolean isTestPayment) {
+        this.orderNo = orderNo;
+        this.goalPpl = goalPpl;
+        this.reward = reward;
+        this.amount = amount;
+        this.isTestPayment = isTestPayment;
+        this.payToken = null;
+        this.transactionId = null;
+        this.paidAmount = null;
+        this.payMethod = null;
+        this.accountBankCode = null;
+        this.cardCompanyCode = null;
+        this.approvalTime = null;
+        this.payStatus = PayStatus.PAY_STANDBY;
+    }
+
     public void markFailed() {
         this.payStatus = PayStatus.PAY_FAILED;
     }
