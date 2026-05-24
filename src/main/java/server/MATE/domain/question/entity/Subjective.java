@@ -5,12 +5,13 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import server.MATE.global.common.entity.BaseEntity;
 
 @Getter
 @Entity
 @Table(name = "subjective")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Subjective {
+public class Subjective extends BaseEntity {
 
     @Id
     private Long id;

@@ -7,12 +7,13 @@ import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
+import server.MATE.global.common.entity.BaseEntity;
 
 @Getter
 @Entity
 @Table(name = "tree_test")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class TreeTest {
+public class TreeTest extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
