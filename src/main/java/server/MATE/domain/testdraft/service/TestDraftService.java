@@ -83,7 +83,7 @@ public class TestDraftService {
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> toMap(JsonNode payload) {
-        return payload == null || payload.isNull()
+        return payload == null || !payload.isObject()
                 ? null
                 : objectMapper.convertValue(payload, Map.class);
     }
