@@ -11,8 +11,19 @@ import server.MATE.domain.answer.repository.AnswerRepository;
 import server.MATE.domain.answer.service.handler.AnswerCreateHandler;
 import server.MATE.domain.participation.entity.Participation;
 import server.MATE.domain.participation.repository.ParticipationRepository;
-import server.MATE.domain.question.entity.*;
-import server.MATE.domain.question.repository.*;
+import server.MATE.domain.question.dto.response.AnswerQuestionTypeView;
+import server.MATE.domain.question.entity.CardSorting;
+import server.MATE.domain.question.entity.FiveSecond;
+import server.MATE.domain.question.entity.Objective;
+import server.MATE.domain.question.entity.QuestionType;
+import server.MATE.domain.question.entity.Scale;
+import server.MATE.domain.question.entity.TreeTest;
+import server.MATE.domain.question.repository.CardSortingRepository;
+import server.MATE.domain.question.repository.FiveSecondRepository;
+import server.MATE.domain.question.repository.ObjectiveRepository;
+import server.MATE.domain.question.repository.QuestionRepository;
+import server.MATE.domain.question.repository.ScaleRepository;
+import server.MATE.domain.question.repository.TreeTestRepository;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.event.TestCompletedEvent;
 import server.MATE.domain.test.repository.TestRepository;
@@ -73,48 +84,58 @@ public class AnswerService {
             throw new BaseException(BaseErrorCode.PARTICIPATION_003);
         }
 
-        Map<Long, Question> questionMap = questionRepository
-                .findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId)
+        Map<Long, AnswerQuestionTypeView> questionMap = questionRepository
+                .findAnswerQuestionTypeViewsByTestId(testId)
                 .stream()
-                .collect(Collectors.toMap(Question::getId, q -> q));
+                .collect(Collectors.toMap(AnswerQuestionTypeView::questionId, view -> view));
 
         if (questionMap.size() != request.answers().size()) {
             throw new BaseException(BaseErrorCode.ANSWER_008);
         }
 
-        Participation participation = Participation.builder()
-                .testId(testId)
-                .testerId(testerId)
-                .build();
-        participationRepository.save(participation);
-
+        // 요청한 answer들을 질문 기준으로 검증하고 유형별 questionId를 수집
+        Map<QuestionType, List<Long>> idsByType = new EnumMap<>(QuestionType.class);
         Set<Long> processedQuestionIds = new HashSet<>();
         for (AnswerCreateItem item : request.answers()) {
             if (!processedQuestionIds.add(item.questionId())) {
                 throw new BaseException(BaseErrorCode.ANSWER_003);
             }
 
-            Question question = questionMap.get(item.questionId());
+            AnswerQuestionTypeView question = questionMap.get(item.questionId());
             if (question == null) {
                 throw new BaseException(BaseErrorCode.ANSWER_002);
             }
 
-            if (question.getQuestionType() != item.type()) {
+            if (question.questionType() != item.type()) {
                 throw new BaseException(BaseErrorCode.ANSWER_001);
             }
 
             if (!handlerMap.containsKey(item.type())) {
                 throw new BaseException(BaseErrorCode.COMMON_999);
             }
+
+            idsByType.computeIfAbsent(item.type(), key -> new ArrayList<>()).add(item.questionId());
         }
 
-        AnswerCreateContext context = buildContext(request.answers());
+        // 질문 유형별 상세 검증에 필요한 context를 만들고 handler validate를 실행
+        AnswerCreateContext context = buildContext(idsByType);
+        for (AnswerCreateItem item : request.answers()) {
+            handlerMap.get(item.type()).validate(item, context);
+        }
+
+        // 모든 검증 완료 시 participation과 answer를 저장
+        Participation participation = Participation.builder()
+                .testId(testId)
+                .testerId(testerId)
+                .build();
+        participationRepository.save(participation);
 
         List<Answer> answers = new ArrayList<>();
         for (AnswerCreateItem item : request.answers()) {
             answers.add(handlerMap.get(item.type()).build(participation.getId(), item, context));
         }
 
+        // 응답 저장 후 참여자 수를 갱신하고, 목표 인원 도달 시 테스트 완료 및 리포트 집계 이벤트 발행
         answerRepository.saveAll(answers);
         test.incrementPplCount();
         if (test.getPplCount() >= test.getGoalPpl()) {
@@ -125,12 +146,7 @@ public class AnswerService {
         return AnswerBatchCreateResponse.from(participation);
     }
 
-    private AnswerCreateContext buildContext(List<AnswerCreateItem> items) {
-        Map<QuestionType, List<Long>> idsByType = new EnumMap<>(QuestionType.class);
-        for (AnswerCreateItem item : items) {
-            idsByType.computeIfAbsent(item.type(), k -> new ArrayList<>()).add(item.questionId());
-        }
-
+    private AnswerCreateContext buildContext(Map<QuestionType, List<Long>> idsByType) {
         Map<Long, Objective> objectives = fetchByType(idsByType, QuestionType.OBJECTIVE,
                 ids -> objectiveRepository.findAllByIdIn(ids), Objective::getId);
 

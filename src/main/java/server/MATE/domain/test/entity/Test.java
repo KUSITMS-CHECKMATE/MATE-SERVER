@@ -49,6 +49,7 @@ public class Test extends BaseEntity {
     private TestStatus testStatus;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
     private ReportStatus reportStatus = ReportStatus.PENDING;
 
     @Enumerated(EnumType.STRING)

@@ -14,6 +14,8 @@ import server.MATE.domain.test.dto.request.TestUpdateRequest;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
+import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
+import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestUpdateResponse;
 import server.MATE.domain.test.service.TestService;
@@ -48,6 +50,45 @@ public class TestController {
     ) {
         List<TestSummaryResponse> data = testService.listTests(authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트 목록을 조회했습니다.", data));
+    }
+
+    @Operation(
+            summary = "내가 생성한 테스트 목록 조회",
+            description = """
+                    현재 로그인한 사용자가 생성한 테스트 목록을 최신순으로 조회합니다.
+                    승인 상태와 관계없이 삭제되지 않은 테스트를 모두 반환합니다.
+
+                    - **testStatus**: `IN_PROGRESS`(진행 중), `COMPLETED`(완료)
+                    - **title**: 테스트 제목
+                    - **pplCount**: 현재 참여 인원
+                    """
+    )
+    @GetMapping("/mine")
+    public ResponseEntity<ApiResponse<List<MyTestSummaryResponse>>> listMyTests(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        List<MyTestSummaryResponse> data = testService.listMyTests(authenticatedUser.getId());
+        return ResponseEntity.ok(ApiResponse.ok("내가 생성한 테스트 목록을 조회했습니다.", data));
+    }
+
+    @Operation(
+            summary = "내가 찜한 테스트 목록 조회",
+            description = """
+                    현재 로그인한 사용자가 찜한 테스트 목록을 찜한 시각 최신순으로 조회합니다.
+                    삭제되지 않았고 관리자 승인(`ACCEPTED`)이 완료된 테스트만 반환합니다.
+
+                    - **thumbnailKey**: 썸네일 이미지 키
+                    - **title**: 테스트명
+                    - **description**: 테스트 한 줄 소개
+                    - **reward**: 보상 금액(머니)
+                    """
+    )
+    @GetMapping("/likes")
+    public ResponseEntity<ApiResponse<List<LikedTestSummaryResponse>>> listLikedTests(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        List<LikedTestSummaryResponse> data = testService.listLikedTests(authenticatedUser.getId());
+        return ResponseEntity.ok(ApiResponse.ok("내가 찜한 테스트 목록을 조회했습니다.", data));
     }
 
     @Operation(
