@@ -15,9 +15,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import server.MATE.global.common.exception.BaseErrorCode;
+import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.entity.BaseEntity;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -53,11 +54,11 @@ public class TestDraft extends BaseEntity {
     private String serviceDescription;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "json")
+    @Column(columnDefinition = "jsonb")
     private List<String> imageKeys = new ArrayList<>();
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "json")
+    @Column(nullable = false, columnDefinition = "jsonb")
     private List<String> categories = new ArrayList<>();
 
     private Integer goalPpl;
@@ -81,9 +82,43 @@ public class TestDraft extends BaseEntity {
 
     private String payToken;
 
-    private LocalDateTime expiresAt;
-
-    private LocalDateTime deletedAt;
+    public void update(String title,
+                       String description,
+                       String serviceName,
+                       String serviceDescription,
+                       List<String> imageKeys,
+                       List<String> categories,
+                       Integer goalPpl,
+                       Integer reward,
+                       Map<String, Object> questionsPayload) {
+        if (title != null) {
+            this.title = title;
+        }
+        if (description != null) {
+            this.description = description;
+        }
+        if (serviceName != null) {
+            this.serviceName = serviceName;
+        }
+        if (serviceDescription != null) {
+            this.serviceDescription = serviceDescription;
+        }
+        if (imageKeys != null) {
+            this.imageKeys = new ArrayList<>(imageKeys);
+        }
+        if (categories != null) {
+            this.categories = new ArrayList<>(categories);
+        }
+        if (goalPpl != null) {
+            this.goalPpl = goalPpl;
+        }
+        if (reward != null) {
+            this.reward = reward;
+        }
+        if (questionsPayload != null) {
+            this.questionsPayload = questionsPayload;
+        }
+    }
 
     @Builder
     public TestDraft(Long makerId,
@@ -100,9 +135,7 @@ public class TestDraft extends BaseEntity {
                      Long publishedTestId,
                      String orderNo,
                      Integer expectedAmount,
-                     String payToken,
-                     LocalDateTime expiresAt,
-                     LocalDateTime deletedAt) {
+                     String payToken) {
         this.makerId = makerId;
         this.title = title;
         this.description = description;
@@ -122,7 +155,5 @@ public class TestDraft extends BaseEntity {
         this.orderNo = orderNo;
         this.expectedAmount = expectedAmount;
         this.payToken = payToken;
-        this.expiresAt = expiresAt;
-        this.deletedAt = deletedAt;
     }
 }
