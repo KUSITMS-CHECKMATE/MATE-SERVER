@@ -26,6 +26,8 @@ public class FileController {
 
     private final FileStorageService fileStorageService;
 
+    private static final long MAX_FILE_SIZE_BYTES = 50L * 1024 * 1024;
+
     @Operation(summary = "파일 업로드 URL 발급", description = """
             파일 업로드용 Presigned URL을 발급합니다. 클라이언트는 서버를 경유하지 않고 Azure Blob Storage에 직접 업로드합니다.
 
@@ -41,17 +43,25 @@ public class FileController {
 
             **[URL 유효시간]** 10분
 
+            **[파일 크기 제한]** 최대 50MB
+
             **[에러 코드]**
             | 코드 | HTTP | 설명 |
             |------|------|------|
-            | COMMON_004 | 400 | extension 파라미터 누락 |
+            | COMMON_004 | 400 | extension 또는 fileSizeBytes 파라미터 누락 |
             | FILE_002 | 400 | 지원하지 않는 파일 형식 |
+            | FILE_003 | 400 | 파일 크기 50MB 초과 |
             """)
     @PostMapping("/presigned-url/upload")
     public ResponseEntity<ApiResponse<UploadUrlResponse>> generateUploadUrl(
             @Parameter(description = "파일 확장자 (점 없이 입력, 예: jpg, pdf)", example = "jpg")
-            @RequestParam String extension
+            @RequestParam String extension,
+            @Parameter(description = "파일 크기 (bytes)", example = "1048576")
+            @RequestParam long fileSizeBytes
     ) {
+        if (fileSizeBytes > MAX_FILE_SIZE_BYTES) {
+            throw new BaseException(BaseErrorCode.FILE_003);
+        }
         String ext = extension.toLowerCase();
         String fileKey = switch (ext) {
             case "jpg", "jpeg", "png" -> "media/" + UUID.randomUUID() + "." + ext;

@@ -9,8 +9,8 @@ import java.util.List;
 public record TestSummaryResponse(
         @Schema(description = "테스트 ID", example = "1")
         Long id,
-        /** 등록된 이미지 중 첫 번째 키. 없으면 null */
-        String thumbnailKey,
+        @Schema(description = "썸네일 Public URL (만료 없음, 이미지 없으면 null)")
+        String thumbnailUrl,
         String title,
         String description,
         Integer reward,
@@ -18,16 +18,14 @@ public record TestSummaryResponse(
         Boolean isLiked,
         List<String> categories
 ) {
-    public static TestSummaryResponse from(Test test, boolean isLiked) {
-        List<String> keys = test.getImageKeys();
-        String thumbnailKey = keys.isEmpty() ? null : keys.getFirst();
+    public static TestSummaryResponse from(Test test, boolean isLiked, String thumbnailUrl) {
         List<String> categories = test.getCategories().stream()
                 .filter(testCategory -> testCategory.getDeletedAt() == null)
                 .map(testCategory -> testCategory.getCategory().name())
                 .toList();
         return new TestSummaryResponse(
                 test.getId(),
-                thumbnailKey,
+                thumbnailUrl,
                 test.getTitle(),
                 test.getDescription(),
                 test.getReward(),
