@@ -2,6 +2,7 @@ package server.MATE.domain.test.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import server.MATE.domain.test.entity.*;
+import server.MATE.global.storage.dto.ImageResponse;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,14 +16,14 @@ public record TestCreateResponse(
         String serviceName,
         String serviceDescription,
         @Schema(description = "이미지 키·URL 쌍 목록 (key: 수정 요청용, url: 렌더링용, 30분 만료)")
-        List<ImageInfo> images,
+        List<ImageResponse> images,
         TestStatus testStatus,
         ApprovalStatus approvalStatus,
         Integer goalPpl,
         Integer reward,
         LocalDateTime createdAt
 ) {
-    public static TestCreateResponse from(Test test, List<ImageInfo> images) {
+    public static TestCreateResponse from(Test test, List<ImageResponse> images) {
         return new TestCreateResponse(
                 test.getId(),
                 test.getMakerId(),
