@@ -3,6 +3,8 @@ package server.MATE.domain.test.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import server.MATE.domain.test.entity.Test;
 
+import java.util.List;
+
 @Schema(description = "내가 찜한 테스트 목록 노출용 요약")
 public record LikedTestSummaryResponse(
         @Schema(description = "첫 번째 이미지 키. 없으면 null")
@@ -15,7 +17,8 @@ public record LikedTestSummaryResponse(
         Integer reward
 ) {
     public static LikedTestSummaryResponse from(Test test) {
-        String thumbnailKey = test.getImageKeys().isEmpty() ? null : test.getImageKeys().getFirst();
+        List<String> imageKeys = test.getImageKeys();
+        String thumbnailKey = (imageKeys == null || imageKeys.isEmpty()) ? null : imageKeys.getFirst();
         return new LikedTestSummaryResponse(
                 thumbnailKey,
                 test.getTitle(),
