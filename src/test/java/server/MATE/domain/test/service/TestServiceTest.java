@@ -126,12 +126,13 @@ class TestServiceTest {
         given(testRepository.findAllByMakerIdAndDeletedAtIsNullOrderByCreatedAtDesc(MAKER_ID))
                 .willReturn(List.of(myTest));
 
-        List<MyTestSummaryResponse> responses = testService.listMyTests(MAKER_ID);
+        MyTestSummaryResponse response = testService.listMyTests(MAKER_ID);
 
-        assertThat(responses).hasSize(1);
-        assertThat(responses.getFirst().title()).isEqualTo("내 테스트");
-        assertThat(responses.getFirst().testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
-        assertThat(responses.getFirst().pplCount()).isZero();
+        assertThat(response.testCount()).isEqualTo(1);
+        assertThat(response.tests()).hasSize(1);
+        assertThat(response.tests().getFirst().title()).isEqualTo("내 테스트");
+        assertThat(response.tests().getFirst().testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+        assertThat(response.tests().getFirst().pplCount()).isZero();
     }
 
     @Test
