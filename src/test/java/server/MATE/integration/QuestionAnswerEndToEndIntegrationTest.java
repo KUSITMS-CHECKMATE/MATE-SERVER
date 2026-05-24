@@ -29,7 +29,7 @@ class QuestionAnswerEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTe
     void createsObjectiveQuestionThenSubmitsAnswerAndPersistsJson() throws Exception {
         TestActors actors = createActors();
 
-        JsonNode createResponse = createQuestion(actors.testId(), actors.makerToken(), """
+        JsonNode createResponse = seedQuestion(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     {
@@ -83,7 +83,7 @@ class QuestionAnswerEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTe
     void createsSubjectiveQuestionThenSubmitsAnswerAndPersistsJson() throws Exception {
         TestActors actors = createActors();
 
-        JsonNode createResponse = createQuestion(actors.testId(), actors.makerToken(), """
+        JsonNode createResponse = seedQuestion(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     {
@@ -126,7 +126,7 @@ class QuestionAnswerEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTe
     void createsFiveSecondSubjectiveQuestionThenSubmitsAnswerAndPersistsJson() throws Exception {
         TestActors actors = createActors();
 
-        JsonNode createResponse = createQuestion(actors.testId(), actors.makerToken(), """
+        JsonNode createResponse = seedQuestion(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     {
@@ -179,7 +179,7 @@ class QuestionAnswerEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTe
     void createsFiveSecondObjectiveQuestionThenSubmitsAnswerAndPersistsJson() throws Exception {
         TestActors actors = createActors();
 
-        JsonNode createResponse = createQuestion(actors.testId(), actors.makerToken(), """
+        JsonNode createResponse = seedQuestion(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     {
@@ -236,7 +236,7 @@ class QuestionAnswerEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTe
     void createsScaleQuestionThenSubmitsAnswerAndPersistsJson() throws Exception {
         TestActors actors = createActors();
 
-        JsonNode createResponse = createQuestion(actors.testId(), actors.makerToken(), """
+        JsonNode createResponse = seedQuestion(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     {
@@ -282,7 +282,7 @@ class QuestionAnswerEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTe
     void createsAbTestQuestionThenSubmitsAnswerAndPersistsJson() throws Exception {
         TestActors actors = createActors();
 
-        JsonNode createResponse = createQuestion(actors.testId(), actors.makerToken(), """
+        JsonNode createResponse = seedQuestion(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     {
@@ -327,7 +327,7 @@ class QuestionAnswerEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTe
     void createsCardSortingQuestionThenSubmitsAnswerAndPersistsJson() throws Exception {
         TestActors actors = createActors();
 
-        JsonNode createResponse = createQuestion(actors.testId(), actors.makerToken(), """
+        JsonNode createResponse = seedQuestion(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     {
@@ -386,7 +386,7 @@ class QuestionAnswerEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTe
     void createsTreeTestQuestionThenSubmitsAnswerAndPersistsJson() throws Exception {
         TestActors actors = createActors();
 
-        JsonNode createResponse = createQuestion(actors.testId(), actors.makerToken(), """
+        JsonNode createResponse = seedQuestion(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     {
