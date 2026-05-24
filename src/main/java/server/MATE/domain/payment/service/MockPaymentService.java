@@ -41,9 +41,26 @@ public class MockPaymentService {
         draft.validateReadyForPayment();
 
         int amount = paymentAmountCalculator.calculate(draft.getGoalPpl(), draft.getReward());
-        String orderNo = generateOrderNo(draft.getId());
+        Payment existingPayment = paymentRepository.findByDraftId(draftId).orElse(null);
+        if (existingPayment != null) {
+            if (existingPayment.getPayStatus() == server.MATE.domain.payment.entity.PayStatus.PAY_CREATED) {
+                return new PaymentCreateResponse(
+                        existingPayment.getId(),
+                        draft.getId(),
+                        existingPayment.getOrderNo(),
+                        existingPayment.getAmount(),
+                        existingPayment.getPayToken(),
+                        existingPayment.getIsTestPayment()
+                );
+            }
+            if (existingPayment.getPayStatus() == server.MATE.domain.payment.entity.PayStatus.PAY_SUCCEEDED) {
+                throw new BaseException(BaseErrorCode.PAYMENT_002);
+            }
+        }
 
-        Payment payment = paymentRepository.save(Payment.builder()
+        String orderNo = generateOrderNo(draft.getId());
+        Payment payment = existingPayment == null
+                ? paymentRepository.save(Payment.builder()
                 .draftId(draft.getId())
                 .makerId(makerId)
                 .orderNo(orderNo)
@@ -51,7 +68,8 @@ public class MockPaymentService {
                 .reward(draft.getReward())
                 .amount(amount)
                 .isTestPayment(isTestPayment)
-                .build());
+                .build())
+                : resetPaymentForRetry(existingPayment, orderNo, draft.getGoalPpl(), draft.getReward(), amount, isTestPayment);
 
         TossPaymentCreateResponse result = mockPaymentGateway.createPayment(
                 new TossPaymentCreateRequest(orderNo, amount, isTestPayment)
@@ -164,6 +182,20 @@ public class MockPaymentService {
     private Payment getOwnedPayment(Long paymentId, Long makerId) {
         return paymentRepository.findByIdAndMakerId(paymentId, makerId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_001));
+    }
+
+    private Payment resetPaymentForRetry(Payment payment,
+                                         String orderNo,
+                                         Integer goalPpl,
+                                         Integer reward,
+                                         Integer amount,
+                                         boolean isTestPayment) {
+        if (payment.getPayStatus() != server.MATE.domain.payment.entity.PayStatus.PAY_FAILED
+                && payment.getPayStatus() != server.MATE.domain.payment.entity.PayStatus.REFUND_FAILED) {
+            throw new BaseException(BaseErrorCode.PAYMENT_002);
+        }
+        payment.prepareForRetry(orderNo, goalPpl, reward, amount, isTestPayment);
+        return payment;
     }
 
     private String generateOrderNo(Long draftId) {
