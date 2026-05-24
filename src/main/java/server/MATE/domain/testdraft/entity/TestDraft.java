@@ -15,6 +15,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import server.MATE.global.common.exception.BaseErrorCode;
+import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.entity.BaseEntity;
 
 import java.util.ArrayList;
@@ -144,8 +146,6 @@ public class TestDraft extends BaseEntity {
         }
         if (categories != null) {
             this.categories = new ArrayList<>(categories);
-        } else {
-            this.categories = new ArrayList<>();
         }
         this.goalPpl = goalPpl;
         this.reward = reward;
