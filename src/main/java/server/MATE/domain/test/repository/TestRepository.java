@@ -17,7 +17,6 @@ public interface TestRepository extends JpaRepository<Test, Long> {
     @EntityGraph(attributePaths = {"categories"})
     List<Test> findAllByApprovalStatusAndDeletedAtIsNullOrderByCreatedAtDesc(ApprovalStatus approvalStatus);
 
-    @EntityGraph(attributePaths = {"categories"})
     List<Test> findAllByMakerIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long makerId);
 
     @Query("""
@@ -29,7 +28,6 @@ public interface TestRepository extends JpaRepository<Test, Long> {
               and t.approvalStatus = :approvalStatus
             order by tl.createdAt desc
             """)
-    @EntityGraph(attributePaths = {"categories"})
     List<Test> findLikedTestsByUserId(
             @Param("userId") Long userId,
             @Param("approvalStatus") ApprovalStatus approvalStatus

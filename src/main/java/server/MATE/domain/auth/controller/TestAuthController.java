@@ -1,6 +1,5 @@
 package server.MATE.domain.auth.controller;
 
-import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
@@ -19,7 +18,6 @@ import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.response.ApiResponse;
 
-//@Hidden
 @Profile("local")
 @Validated
 @RestController
