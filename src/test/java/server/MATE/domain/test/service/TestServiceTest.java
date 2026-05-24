@@ -130,6 +130,7 @@ class TestServiceTest {
 
         assertThat(response.testCount()).isEqualTo(1);
         assertThat(response.tests()).hasSize(1);
+        assertThat(response.tests().getFirst().id()).isEqualTo(TEST_ID);
         assertThat(response.tests().getFirst().title()).isEqualTo("내 테스트");
         assertThat(response.tests().getFirst().testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
         assertThat(response.tests().getFirst().pplCount()).isZero();
