@@ -5,12 +5,13 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import server.MATE.global.common.entity.BaseEntity;
 
 @Getter
 @Entity
 @Table(name = "objective_option")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ObjectiveOption {
+public class ObjectiveOption extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

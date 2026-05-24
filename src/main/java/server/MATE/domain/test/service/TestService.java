@@ -11,6 +11,7 @@ import server.MATE.domain.test.dto.response.TestCreateResponse;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
+import server.MATE.domain.test.dto.response.MyTestSummaryItem;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestUpdateResponse;
@@ -49,11 +50,12 @@ public class TestService {
     }
 
     @Transactional(readOnly = true)
-    public List<MyTestSummaryResponse> listMyTests(Long makerId) {
+    public MyTestSummaryResponse listMyTests(Long makerId) {
         List<Test> tests = testRepository.findAllByMakerIdAndDeletedAtIsNullOrderByCreatedAtDesc(makerId);
-        return tests.stream()
-                .map(MyTestSummaryResponse::from)
+        List<MyTestSummaryItem> items = tests.stream()
+                .map(MyTestSummaryItem::from)
                 .toList();
+        return MyTestSummaryResponse.from(items);
     }
 
     @Transactional(readOnly = true)

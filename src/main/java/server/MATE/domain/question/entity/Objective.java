@@ -8,12 +8,13 @@ import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
+import server.MATE.global.common.entity.BaseEntity;
 
 @Getter
 @Entity
 @Table(name = "objective")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Objective {
+public class Objective extends BaseEntity {
 
     @Id
     private Long id;
