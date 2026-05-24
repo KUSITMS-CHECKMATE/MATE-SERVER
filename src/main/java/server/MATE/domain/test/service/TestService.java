@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
+import server.MATE.domain.test.dto.response.ImageInfo;
 import server.MATE.domain.test.dto.response.TestCreateResponse;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
@@ -20,6 +21,7 @@ import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
+import server.MATE.global.storage.FileStorageService;
 import server.MATE.global.storage.event.FileCleanupEvent;
 import server.MATE.global.storage.event.FileDeleteEvent;
 
@@ -37,6 +39,7 @@ public class TestService {
     private final TestRepository testRepository;
     private final TestLikeRepository testLikeRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final FileStorageService fileStorageService;
     private final Clock clock;
 
     @Transactional(readOnly = true)
@@ -57,7 +60,7 @@ public class TestService {
     public List<LikedTestSummaryResponse> listLikedTests(Long userId) {
         List<Test> tests = testRepository.findLikedTestsByUserId(userId, ApprovalStatus.ACCEPTED);
         return tests.stream()
-                .map(LikedTestSummaryResponse::from)
+                .map(test -> LikedTestSummaryResponse.from(test, toThumbnailUrl(test.getImageKeys())))
                 .toList();
     }
 
@@ -65,7 +68,7 @@ public class TestService {
     public TestDetailResponse getTest(Long testId) {
         Test test = testRepository.findByIdAndApprovalStatusAndDeletedAtIsNull(testId, ApprovalStatus.ACCEPTED)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
-        return TestDetailResponse.from(test);
+        return TestDetailResponse.from(test, toImageInfos(test.getImageKeys()));
     }
 
     public TestCreateResponse createTest(TestCreateRequest request, Long makerId) {
@@ -84,7 +87,7 @@ public class TestService {
         eventPublisher.publishEvent(new FileCleanupEvent(imageKeys));
         testRepository.save(test);
 
-        return TestCreateResponse.from(test);
+        return TestCreateResponse.from(test, toImageInfos(test.getImageKeys()));
     }
 
     public TestUpdateResponse updateTest(Long testId, TestUpdateRequest request, Long makerId) {
@@ -125,7 +128,7 @@ public class TestService {
         );
 
         testRepository.saveAndFlush(test);
-        return TestUpdateResponse.from(test);
+        return TestUpdateResponse.from(test, toImageInfos(test.getImageKeys()));
     }
 
     public void deleteTest(Long testId, Long makerId) {
@@ -172,13 +175,24 @@ public class TestService {
         return new TestLikeResponse(test.getId(), false, test.getLikeCount());
     }
 
+    private List<ImageInfo> toImageInfos(List<String> keys) {
+        return keys.stream()
+                .map(key -> new ImageInfo(key, fileStorageService.generateDownloadUrl(key)))
+                .toList();
+    }
+
+    private String toThumbnailUrl(List<String> keys) {
+        return keys.isEmpty() ? null : fileStorageService.generateDownloadUrl(keys.getFirst());
+    }
+
     private List<TestSummaryResponse> toSummaryResponses(Long userId, List<Test> tests) {
         Set<Long> likedTestIds = findLikedTestIds(userId, tests);
 
         return tests.stream()
-                .map(test -> TestSummaryResponse.from(test, likedTestIds.contains(test.getId())))
+                .map(test -> TestSummaryResponse.from(test, likedTestIds.contains(test.getId()), toThumbnailUrl(test.getImageKeys())))
                 .toList();
     }
+
 
     private Set<Long> findLikedTestIds(Long userId, List<Test> tests) {
         if (tests.isEmpty()) {

@@ -39,7 +39,7 @@ public class TestController {
                     전체 테스트 요약 목록을 최신순으로 조회합니다. 발견 탭 HM_01 57 화면에 해당하는 api 입니다.
                     테스트 등록 후 관리자 승인(`approvalStatus`)이 완료(`ACCEPTED`)되어야 조회됩니다.
 
-                    - **thumbnailKey**: 업로드된 이미지 키 목록 중 첫 번째, 없으면 null을 반환
+                    - **thumbnailUrl**: 업로드된 이미지 중 첫 번째의 Public URL, 없으면 null을 반환
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
                     """
@@ -77,7 +77,7 @@ public class TestController {
                     현재 로그인한 사용자가 찜한 테스트 목록을 찜한 시각 최신순으로 조회합니다.
                     삭제되지 않았고 관리자 승인(`ACCEPTED`)이 완료된 테스트만 반환합니다.
 
-                    - **thumbnailKey**: 썸네일 이미지 키
+                    - **thumbnailUrl**: 썸네일 Public URL (만료 없음, 이미지 없으면 null)
                     - **title**: 테스트명
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
@@ -155,7 +155,7 @@ public class TestController {
 
             이미지 처리
             - `imageKeys`를 전달하면 기존 이미지 목록이 전체 교체됩니다.
-            - 기존 목록에서 제거된 이미지는 트랜잭션 커밋 후 S3에서 영구 삭제됩니다.
+            - 기존 목록에서 제거된 이미지는 트랜잭션 커밋 후 Azure Blob Storage에서 영구 삭제됩니다.
             - `imageKeys`를 `null`로 보내면 이미지는 변경되지 않습니다.
             """)
     @PatchMapping("/{testId}")
