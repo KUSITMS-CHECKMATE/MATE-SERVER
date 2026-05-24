@@ -1,4 +1,4 @@
-package server.MATE.domain.payment.dto;
+package server.MATE.domain.payment.dto.response;
 
 public record PaymentCreateResponse(
         Long paymentId,

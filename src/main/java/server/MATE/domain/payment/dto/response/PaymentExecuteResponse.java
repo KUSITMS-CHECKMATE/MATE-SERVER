@@ -1,21 +1,20 @@
-package server.MATE.domain.payment.dto;
+package server.MATE.domain.payment.dto.response;
 
 import server.MATE.domain.payment.entity.PayMethod;
 import server.MATE.domain.payment.entity.PayStatus;
 
 import java.time.LocalDateTime;
 
-public record PaymentStatusResponse(
+public record PaymentExecuteResponse(
         Long paymentId,
         Long draftId,
-        Long testId,
-        String orderNo,
-        String payToken,
         PayStatus payStatus,
-        PayMethod payMethod,
-        Integer amount,
-        Integer paidAmount,
+        String orderNo,
+        int amount,
+        int paidAmount,
+        String payToken,
         String transactionId,
+        PayMethod payMethod,
         LocalDateTime approvalTime
 ) {
 }
