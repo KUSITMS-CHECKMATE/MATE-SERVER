@@ -145,7 +145,7 @@ class TestServiceTest {
         assertThat(responses.getFirst().title()).isEqualTo("기존 제목");
         assertThat(responses.getFirst().description()).isEqualTo("기존 소개");
         assertThat(responses.getFirst().reward()).isEqualTo(300);
-        assertThat(responses.getFirst().thumbnailKey()).isEqualTo("old-key-1");
+        assertThat(responses.getFirst().thumbnailUrl()).isEqualTo("https://example.com/url");
     }
 
     @Test

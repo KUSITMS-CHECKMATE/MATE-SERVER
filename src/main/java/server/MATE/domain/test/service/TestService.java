@@ -60,7 +60,7 @@ public class TestService {
     public List<LikedTestSummaryResponse> listLikedTests(Long userId) {
         List<Test> tests = testRepository.findLikedTestsByUserId(userId, ApprovalStatus.ACCEPTED);
         return tests.stream()
-                .map(LikedTestSummaryResponse::from)
+                .map(test -> LikedTestSummaryResponse.from(test, toThumbnailUrl(test.getImageKeys())))
                 .toList();
     }
 
