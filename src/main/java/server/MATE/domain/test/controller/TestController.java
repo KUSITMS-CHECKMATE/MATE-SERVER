@@ -77,7 +77,7 @@ public class TestController {
                     현재 로그인한 사용자가 찜한 테스트 목록을 찜한 시각 최신순으로 조회합니다.
                     삭제되지 않았고 관리자 승인(`ACCEPTED`)이 완료된 테스트만 반환합니다.
 
-                    - **thumbnailKey**: 썸네일 이미지 키
+                    - **thumbnailUrl**: 썸네일 Public URL (만료 없음, 이미지 없으면 null)
                     - **title**: 테스트명
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
