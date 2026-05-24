@@ -72,6 +72,7 @@ public enum BaseErrorCode implements ErrorCode {
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
     FILE_002(HttpStatus.BAD_REQUEST, "FILE_002", "지원하지 않는 파일 형식입니다. 허용되는 확장자를 확인해주세요."),
+    FILE_003(HttpStatus.BAD_REQUEST, "FILE_003", "파일 크기가 허용 범위를 초과했습니다. 최대 50MB까지 업로드할 수 있습니다."),
 
     ;
 
