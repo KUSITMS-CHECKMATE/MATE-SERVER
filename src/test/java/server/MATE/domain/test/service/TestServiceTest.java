@@ -12,6 +12,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
+import server.MATE.domain.test.dto.response.LikedTestSummaryItem;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
@@ -141,13 +142,17 @@ class TestServiceTest {
         given(testRepository.findLikedTestsByUserId(MAKER_ID, ApprovalStatus.ACCEPTED))
                 .willReturn(List.of(test));
 
-        List<LikedTestSummaryResponse> responses = testService.listLikedTests(MAKER_ID);
+        LikedTestSummaryResponse response = testService.listLikedTests(MAKER_ID);
 
-        assertThat(responses).hasSize(1);
-        assertThat(responses.getFirst().title()).isEqualTo("기존 제목");
-        assertThat(responses.getFirst().description()).isEqualTo("기존 소개");
-        assertThat(responses.getFirst().reward()).isEqualTo(300);
-        assertThat(responses.getFirst().thumbnailUrl()).isEqualTo("https://example.com/url");
+        assertThat(response.testCount()).isEqualTo(1);
+        assertThat(response.tests()).hasSize(1);
+
+        LikedTestSummaryItem item = response.tests().getFirst();
+        assertThat(item.id()).isEqualTo(TEST_ID);
+        assertThat(item.title()).isEqualTo("기존 제목");
+        assertThat(item.description()).isEqualTo("기존 소개");
+        assertThat(item.reward()).isEqualTo(300);
+        assertThat(item.thumbnailUrl()).isEqualTo("https://example.com/url");
     }
 
     @Test
