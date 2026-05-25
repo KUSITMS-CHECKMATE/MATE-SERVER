@@ -175,7 +175,7 @@ class DraftPaymentPublishEndToEndIntegrationTest {
         assertThat(savedTest.getTitle()).isEqualTo("신규 테스트");
         assertThat(savedTest.getGoalPpl()).isEqualTo(5);
         assertThat(savedTest.getReward()).isEqualTo(300);
-        assertThat(savedTest.getTestStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+        assertThat(savedTest.getTestStatus()).isEqualTo(TestStatus.WAITING);
         assertThat(questionRepository.countByTestIdAndDeletedAtIsNull(testId)).isEqualTo(1);
 
         JsonNode questions = getQuestions(testId, makerToken);
@@ -377,6 +377,9 @@ class DraftPaymentPublishEndToEndIntegrationTest {
         updateDraft(draftId, makerToken, draftPayload());
         Long paymentId = createPayment(draftId, makerToken);
         long testId = executePayment(paymentId, makerToken).path("testId").asLong();
+        var publishedTest = testRepository.findById(testId).orElseThrow();
+        publishedTest.start();
+        testRepository.saveAndFlush(publishedTest);
 
         JsonNode listBody = parseBody(mockMvc.perform(get("/api/v1/tests")
                         .header("Authorization", testerToken))
@@ -421,8 +424,8 @@ class DraftPaymentPublishEndToEndIntegrationTest {
                 .andReturn());
 
         assertThat(answerBody.path("message").asText()).isEqualTo("응답이 등록되었습니다.");
-        var publishedTest = testRepository.findById(testId).orElseThrow();
-        assertThat(publishedTest.getPplCount()).isEqualTo(1L);
+        var answeredTest = testRepository.findById(testId).orElseThrow();
+        assertThat(answeredTest.getPplCount()).isEqualTo(1L);
         assertThat(participationRepository.count()).isEqualTo(1L);
         assertThat(answerRepository.count()).isEqualTo(1L);
     }
