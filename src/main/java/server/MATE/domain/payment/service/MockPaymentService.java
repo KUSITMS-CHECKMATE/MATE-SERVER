@@ -7,6 +7,7 @@ import server.MATE.domain.payment.dto.response.PaymentCreateResponse;
 import server.MATE.domain.payment.dto.response.PaymentExecuteResponse;
 import server.MATE.domain.payment.dto.response.PaymentRefundResponse;
 import server.MATE.domain.payment.dto.response.PaymentStatusResponse;
+import server.MATE.domain.payment.entity.PayStatus;
 import server.MATE.domain.payment.entity.Payment;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.test.service.TestPublishService;
@@ -74,7 +75,7 @@ public class MockPaymentService {
 
     public PaymentExecuteResponse executePayment(Long paymentId, Long makerId) {
         Payment payment = getOwnedPayment(paymentId, makerId);
-        if (payment.getPayStatus() == server.MATE.domain.payment.entity.PayStatus.PAY_SUCCEEDED) {
+        if (payment.getPayStatus() == PayStatus.PAY_SUCCEEDED) {
             if (payment.getTestId() != null) {
                 return toExecuteResponse(payment, payment.getTestId());
             }
