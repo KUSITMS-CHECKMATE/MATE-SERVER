@@ -47,6 +47,7 @@ public enum BaseErrorCode implements ErrorCode {
     DRAFT_001(HttpStatus.NOT_FOUND, "DRAFT_001", "테스트 초안을 찾을 수 없습니다."),
     DRAFT_002(HttpStatus.FORBIDDEN, "DRAFT_002", "테스트 초안에 접근할 권한이 없습니다."),
     DRAFT_003(HttpStatus.BAD_REQUEST, "DRAFT_003", "결제를 생성할 수 없는 테스트 초안입니다."),
+    DRAFT_004(HttpStatus.BAD_REQUEST, "DRAFT_004", "게시할 수 없는 테스트 초안입니다."),
 
     // Question
     QUESTION_001(HttpStatus.BAD_REQUEST, "QUESTION_001", "최소 선택 개수는 1 이상이어야 합니다."),

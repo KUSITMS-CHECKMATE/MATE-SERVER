@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public record PaymentExecuteResponse(
         Long paymentId,
         Long draftId,
+        Long testId,
         PayStatus payStatus,
         String orderNo,
         int amount,

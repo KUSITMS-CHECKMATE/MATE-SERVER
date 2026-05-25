@@ -325,7 +325,7 @@ class QuestionAnswerEndToEndFailureIntegrationTest extends BaseQuestionAnswerEnd
     @DisplayName("OBJECTIVE 복수 선택 문항에서 max 초과 선택이면 ANSWER_006을 반환한다")
     void returnsAnswer006WhenObjectiveSelectCountExceedsMax() throws Exception {
         TestActors actors = createActors();
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     {
@@ -622,19 +622,6 @@ class QuestionAnswerEndToEndFailureIntegrationTest extends BaseQuestionAnswerEnd
     }
 
     @Test
-    @DisplayName("인증 없이 질문 생성하면 COMMON_008을 반환한다")
-    void returnsCommon008WhenCreatingQuestionWithoutAuthentication() throws Exception {
-        TestActors actors = createActors();
-
-        JsonNode error = performExpectingError(post("/api/v1/tests/{testId}/questions", actors.testId())
-                        .contentType(APPLICATION_JSON)
-                        .content(singleSubjectiveQuestionPayload()),
-                401, "COMMON_008");
-
-        assertThat(error.path("message").asText()).isEqualTo("인증이 필요합니다.");
-    }
-
-    @Test
     @DisplayName("인증 없이 질문 조회하면 COMMON_008을 반환한다")
     void returnsCommon008WhenGettingQuestionsWithoutAuthentication() throws Exception {
         TestActors actors = createActors();
@@ -666,18 +653,6 @@ class QuestionAnswerEndToEndFailureIntegrationTest extends BaseQuestionAnswerEnd
                 401, "COMMON_008");
 
         assertNoSideEffects(actors.testId(), 0L, 0L);
-    }
-
-    @Test
-    @DisplayName("maker가 아닌 사용자가 질문 생성하면 TEST_005를 반환한다")
-    void returnsTest005WhenNonMakerCreatesQuestion() throws Exception {
-        TestActors actors = createActors();
-
-        performExpectingError(post("/api/v1/tests/{testId}/questions", actors.testId())
-                        .header("Authorization", actors.testerToken())
-                        .contentType(APPLICATION_JSON)
-                        .content(singleSubjectiveQuestionPayload()),
-                403, "TEST_005");
     }
 
     @Test
@@ -758,24 +733,6 @@ class QuestionAnswerEndToEndFailureIntegrationTest extends BaseQuestionAnswerEnd
 
         assertThat(error.path("field").asText()).contains("answers");
         assertNoSideEffects(actors.testId(), 0L, 0L);
-    }
-
-    @Test
-    @DisplayName("질문 생성에서 questions가 빈 배열이면 COMMON_002를 반환한다")
-    void returnsCommon002WhenQuestionsArrayIsEmpty() throws Exception {
-        TestActors actors = createActors();
-
-        JsonNode error = performExpectingError(post("/api/v1/tests/{testId}/questions", actors.testId())
-                        .header("Authorization", actors.makerToken())
-                        .contentType(APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "questions": []
-                                }
-                                """),
-                400, "COMMON_002");
-
-        assertThat(error.path("field").asText()).contains("questions");
     }
 
     private Long extractOtherOptionId(JsonNode question, String idField) {
