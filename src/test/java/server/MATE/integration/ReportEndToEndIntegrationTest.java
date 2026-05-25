@@ -328,7 +328,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("COMPLETED 테스트에 질문이 없으면 questions와 reports가 모두 빈 리스트다")
+    @DisplayName("COMPLETED 테스트에 질문이 없으면 reports가 빈 리스트다")
     void getReport_whenCompletedWithNoQuestions_returnsEmptyLists() throws Exception {
         TestActors actors = createActors();
         completeTest(actors.testId());
@@ -337,7 +337,6 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         assertThat(data.path("testStatus").asText()).isEqualTo("COMPLETED");
         assertThat(data.path("questionCount").asInt()).isEqualTo(0);
-        assertThat(data.path("questions")).isEmpty();
         assertThat(data.path("reports")).isEmpty();
     }
 
@@ -482,16 +481,16 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("리포트의 questions 필드는 sequence 오름차순으로 질문 목록을 반환한다")
-    void getReport_questions_returnedInSequenceOrder() throws Exception {
+    @DisplayName("리포트의 reports 필드는 sequence 오름차순으로 질문별 결과를 반환한다")
+    void getReport_reports_returnedInSequenceOrder() throws Exception {
         TestActors actors = createActors();
         createTwoSubjectiveQuestions(actors.testId(), actors.makerToken());
         completeTest(actors.testId());
 
-        JsonNode questions = reportData(actors.testId(), actors.makerToken()).path("questions");
-        assertThat(questions).hasSize(2);
-        assertThat(questions.get(0).path("sequence").asLong()).isEqualTo(1L);
-        assertThat(questions.get(1).path("sequence").asLong()).isEqualTo(2L);
+        JsonNode reports = reportData(actors.testId(), actors.makerToken()).path("reports");
+        assertThat(reports).hasSize(2);
+        assertThat(reports.get(0).path("sequence").asLong()).isEqualTo(1L);
+        assertThat(reports.get(1).path("sequence").asLong()).isEqualTo(2L);
     }
 
     @Test

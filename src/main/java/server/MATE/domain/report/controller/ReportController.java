@@ -17,7 +17,7 @@ import server.MATE.domain.report.service.ReportService;
 import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
-@Tag(name = "[REPORT] 통계 API", description = "테스트 결과 통계 관련 API")
+@Tag(name = "[REPORT] 리포트 API", description = "테스트 리포트 관련 API")
 @RestController
 @RequestMapping("/api/v1/tests/{testId}/report")
 @SecurityRequirement(name = "JWT")
@@ -27,15 +27,14 @@ public class ReportController {
     private final ReportService reportService;
 
     @Operation(
-            summary = "⚠️ 리포트 전체 조회",
+            summary = "✔️ 리포트 전체 조회",
             description = """
-                    메이커가 자신의 테스트에 대한 질문 목록 및 질문 유형별 응답 리포트를 조회합니다. MKST_02 화면에 해당하는 api 입니다.
+                    메이커가 자신의 테스트에 대한 질문 유형별 응답 리포트를 조회합니다. MKST_02 화면에 해당하는 api 입니다.
                     - 테스트 소유자(메이커)만 조회할 수 있습니다.
                     - `testStatus`가 `COMPLETED`가 아니면 `reports`는 빈 리스트를 반환합니다.
                     - `testStatus`가 `COMPLETED`이고 `reportStatus`가 `IN_PROGRESS`이면 집계 중으로 `reports`는 빈 리스트입니다.
                     - `reportStatus`가 `COMPLETED`이면 `reports`를 반환합니다.
                     - `reports[].result` 구조는 질문 유형(`type`)마다 다릅니다. 아래 예시 응답을 참고해주세요.
-                    - 버그 사항: questions 필드 삭제
                     """
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -56,10 +55,6 @@ public class ReportController {
                                                 "reportStatus": "PENDING",
                                                 "questionCount": 2,
                                                 "participantCount": 3,
-                                                "questions": [
-                                                  { "questionId": 1, "sequence": 1, "title": "첫 번째 질문", "type": "SUBJECTIVE" },
-                                                  { "questionId": 2, "sequence": 2, "title": "두 번째 질문", "type": "SCALE" }
-                                                ],
                                                 "reports": []
                                               }
                                             }
@@ -78,9 +73,6 @@ public class ReportController {
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 5,
-                                                "questions": [
-                                                  { "questionId": 1, "sequence": 1, "title": "서비스에서 불편한 점은?", "type": "SUBJECTIVE" }
-                                                ],
                                                 "reports": [
                                                   {
                                                     "questionId": 1,
@@ -118,9 +110,6 @@ public class ReportController {
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 10,
-                                                "questions": [
-                                                  { "questionId": 2, "sequence": 1, "title": "자주 사용하는 기능은?", "type": "OBJECTIVE" }
-                                                ],
                                                 "reports": [
                                                   {
                                                     "questionId": 2,
@@ -158,9 +147,6 @@ public class ReportController {
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 4,
-                                                "questions": [
-                                                  { "questionId": 3, "sequence": 1, "title": "화면에서 가장 먼저 눈에 띈 것은?", "type": "FIVE_SECOND" }
-                                                ],
                                                 "reports": [
                                                   {
                                                     "questionId": 3,
@@ -197,9 +183,6 @@ public class ReportController {
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 6,
-                                                "questions": [
-                                                  { "questionId": 4, "sequence": 1, "title": "어떤 요소가 먼저 보였나요?", "type": "FIVE_SECOND" }
-                                                ],
                                                 "reports": [
                                                   {
                                                     "questionId": 4,
@@ -236,9 +219,6 @@ public class ReportController {
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 5,
-                                                "questions": [
-                                                  { "questionId": 5, "sequence": 1, "title": "전반적인 만족도는?", "type": "SCALE" }
-                                                ],
                                                 "reports": [
                                                   {
                                                     "questionId": 5,
@@ -279,9 +259,6 @@ public class ReportController {
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 8,
-                                                "questions": [
-                                                  { "questionId": 6, "sequence": 1, "title": "어떤 디자인이 더 마음에 드시나요?", "type": "AB_TEST" }
-                                                ],
                                                 "reports": [
                                                   {
                                                     "questionId": 6,
@@ -311,9 +288,6 @@ public class ReportController {
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 4,
-                                                "questions": [
-                                                  { "questionId": 7, "sequence": 1, "title": "카드를 분류해 주세요.", "type": "CARD_SORTING" }
-                                                ],
                                                 "reports": [
                                                   {
                                                     "questionId": 7,
@@ -361,9 +335,6 @@ public class ReportController {
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 6,
-                                                "questions": [
-                                                  { "questionId": 8, "sequence": 1, "title": "고객센터를 찾아보세요.", "type": "TREE_TEST" }
-                                                ],
                                                 "reports": [
                                                   {
                                                     "questionId": 8,
