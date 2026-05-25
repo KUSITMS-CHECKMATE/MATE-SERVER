@@ -48,7 +48,6 @@ public class ReportService {
                         reportStatus,
                         questionCount,
                         test.getPplCount(),
-                        questionSummaries,
                         List.of()
                 );
             }
@@ -60,7 +59,6 @@ public class ReportService {
                             reportStatus,
                             questionCount,
                             test.getPplCount(),
-                            questionSummaries,
                             List.of()
                     );
                 }
@@ -78,7 +76,6 @@ public class ReportService {
                     ReportStatus.FAILED,
                     questionCount,
                     test.getPplCount(),
-                    questionSummaries,
                     List.of()
             );
         }
@@ -102,7 +99,6 @@ public class ReportService {
                 ReportStatus.COMPLETED,
                 questionCount,
                 test.getPplCount(),
-                questionSummaries,
                 reports
         );
     }
