@@ -30,14 +30,14 @@ public class SubjectiveReportHandler implements ReportHandler {
     }
 
     private Map<String, Object> computeForSubjective(List<Answer> answers) {
-        List<String> allTexts = answers.stream()
+        List<String> texts = answers.stream()
                 .sorted(Comparator.comparing(Answer::getCreatedAt))
                 .map(a -> (String) a.getAnswer().get("text"))
                 .toList();
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("aiSummary", "AI 요약 준비 중입니다.");
-        result.put("clusters", ReportHandlerUtils.buildClusters(allTexts));
-        result.put("texts", ReportHandlerUtils.sampleTexts(allTexts));
+        result.put("topAnswers", ReportHandlerUtils.topAnswers(texts));
+        result.put("texts", texts);
         return result;
     }
 }

@@ -67,7 +67,7 @@ public class ReportController {
                             ),
                             @ExampleObject(
                                     name = "COMPLETED - SUBJECTIVE",
-                                    summary = "주관식 (SUBJECTIVE) — aiSummary: AI 요약, clusters: 그룹핑된 응답 목록, texts: 앱 미리보기용 최대 15개 샘플",
+                                    summary = "주관식 (SUBJECTIVE) — aiSummary: AI 3줄 요약, topAnswers: 많이 언급된 답변 최대 6개, texts: 전체 응답 텍스트 목록",
                                     value = """
                                             {
                                               "success": true,
@@ -89,10 +89,7 @@ public class ReportController {
                                                     "type": "SUBJECTIVE",
                                                     "result": {
                                                       "aiSummary": "AI 요약 준비 중입니다.",
-                                                      "clusters": [
-                                                        { "representative": "버튼이 너무 작아요.", "count": 2, "responses": ["버튼이 너무 작아요.", "버튼이 너무 작아요."] },
-                                                        { "representative": "로딩이 느립니다.", "count": 1, "responses": ["로딩이 느립니다."] }
-                                                      ],
+                                                      "topAnswers": ["로딩이 느립니다.", "버튼이 너무 작아요."],
                                                       "texts": [
                                                         "로딩이 느립니다.",
                                                         "버튼이 너무 작아요.",
@@ -107,7 +104,7 @@ public class ReportController {
                             ),
                             @ExampleObject(
                                     name = "COMPLETED - OBJECTIVE",
-                                    summary = "객관식 (OBJECTIVE) — options: 선택지별 count/ratio, isOther=true 시 aiSummary/clusters/texts 포함",
+                                    summary = "객관식 (OBJECTIVE) — options: 선택지별 count/ratio, isOther=true 시 aiSummary/topAnswers/otherTexts 포함",
                                     value = """
                                             {
                                               "success": true,
@@ -134,10 +131,8 @@ public class ReportController {
                                                         { "optionId": 103, "content": "기타", "count": 1, "ratio": 0.1 }
                                                       ],
                                                       "aiSummary": "AI 요약 준비 중입니다.",
-                                                      "clusters": [
-                                                        { "representative": "알림 기능을 자주 씁니다.", "count": 1, "responses": ["알림 기능을 자주 씁니다."] }
-                                                      ],
-                                                      "texts": ["알림 기능을 자주 씁니다."]
+                                                      "topAnswers": ["알림 기능을 자주 씁니다."],
+                                                      "otherTexts": ["알림 기능을 자주 씁니다."]
                                                     }
                                                   }
                                                 ]
@@ -147,7 +142,7 @@ public class ReportController {
                             ),
                             @ExampleObject(
                                     name = "COMPLETED - FIVE_SECOND (주관식)",
-                                    summary = "5초 테스트 주관식 (FIVE_SECOND, isObjective=false) — aiSummary/clusters/texts 포함",
+                                    summary = "5초 테스트 주관식 (FIVE_SECOND, isObjective=false) — aiSummary/topAnswers/texts 포함",
                                     value = """
                                             {
                                               "success": true,
@@ -169,10 +164,7 @@ public class ReportController {
                                                     "type": "FIVE_SECOND",
                                                     "result": {
                                                       "aiSummary": "AI 요약 준비 중입니다.",
-                                                      "clusters": [
-                                                        { "representative": "상단 배너가 눈에 들어왔어요.", "count": 1, "responses": ["상단 배너가 눈에 들어왔어요."] },
-                                                        { "representative": "검색창이 먼저 보였습니다.", "count": 1, "responses": ["검색창이 먼저 보였습니다."] }
-                                                      ],
+                                                      "topAnswers": ["상단 배너가 눈에 들어왔어요."],
                                                       "texts": [
                                                         "상단 배너가 눈에 들어왔어요.",
                                                         "검색창이 먼저 보였습니다."
@@ -186,7 +178,7 @@ public class ReportController {
                             ),
                             @ExampleObject(
                                     name = "COMPLETED - FIVE_SECOND (객관식)",
-                                    summary = "5초 테스트 객관식 (FIVE_SECOND, isObjective=true) — options: 선택지별 count/ratio, isOther=true 시 aiSummary/clusters/texts 포함",
+                                    summary = "5초 테스트 객관식 (FIVE_SECOND, isObjective=true) — options: 선택지별 count/ratio, isOther=true 시 aiSummary/topAnswers/otherTexts 포함",
                                     value = """
                                             {
                                               "success": true,
@@ -212,10 +204,8 @@ public class ReportController {
                                                         { "optionId": 202, "content": "배너", "count": 2, "ratio": 0.333 }
                                                       ],
                                                       "aiSummary": "AI 요약 준비 중입니다.",
-                                                      "clusters": [
-                                                        { "representative": "하단 버튼이요", "count": 1, "responses": ["하단 버튼이요"] }
-                                                      ],
-                                                      "texts": ["하단 버튼이요"]
+                                                      "topAnswers": ["하단 버튼이요"],
+                                                      "otherTexts": ["하단 버튼이요"]
                                                     }
                                                   }
                                                 ]
