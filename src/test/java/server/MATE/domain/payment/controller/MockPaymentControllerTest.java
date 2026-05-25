@@ -97,6 +97,7 @@ class MockPaymentControllerTest {
                 .willReturn(new PaymentExecuteResponse(
                         20L,
                         10L,
+                        99L,
                         PayStatus.PAY_SUCCEEDED,
                         "order-1",
                         30000,
@@ -111,6 +112,7 @@ class MockPaymentControllerTest {
                         .with(authenticationPrincipal()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("결제를 실행했습니다."))
+                .andExpect(jsonPath("$.data.testId").value(99L))
                 .andExpect(jsonPath("$.data.payStatus").value("PAY_SUCCEEDED"))
                 .andExpect(jsonPath("$.data.transactionId").value("tx-1"));
     }
