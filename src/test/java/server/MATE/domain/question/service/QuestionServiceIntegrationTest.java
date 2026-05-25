@@ -57,6 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -311,6 +312,9 @@ class QuestionServiceIntegrationTest {
                 )
         )));
 
+        given(fileStorageService.generateDownloadUrl("five-second-image"))
+                .willReturn("https://example.com/five-second-image");
+
         QuestionsDetailResponse response = questionService.getQuestionsDetails(savedTest.getId());
 
         FiveSecondDetailResponse fiveSecondResponse = (FiveSecondDetailResponse) response.questions().getFirst();
@@ -322,7 +326,7 @@ class QuestionServiceIntegrationTest {
         assertThat(fiveSecondResponse.maxSelect()).isNull();
         assertThat(fiveSecondResponse.isOther()).isNull();
         assertThat(fiveSecondResponse.options()).isEmpty();
-        assertThat(fiveSecondResponse.imageUrl()).isNull();
+        assertThat(fiveSecondResponse.imageUrl()).isEqualTo("https://example.com/five-second-image");
     }
 
     @Test
