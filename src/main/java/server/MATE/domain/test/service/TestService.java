@@ -1,10 +1,8 @@
 package server.MATE.domain.test.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import server.MATE.domain.test.dto.request.TestUpdateRequest;
 import server.MATE.global.storage.dto.ImageResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryItem;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
@@ -13,7 +11,6 @@ import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryItem;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
-import server.MATE.domain.test.dto.response.TestUpdateResponse;
 import server.MATE.domain.test.entity.ApprovalStatus;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestLike;
@@ -22,11 +19,7 @@ import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.storage.FileStorageService;
-import server.MATE.global.storage.event.FileCleanupEvent;
-import server.MATE.global.storage.event.FileDeleteEvent;
 
-import java.time.Clock;
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -38,9 +31,7 @@ public class TestService {
 
     private final TestRepository testRepository;
     private final TestLikeRepository testLikeRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final FileStorageService fileStorageService;
-    private final Clock clock;
 
     @Transactional(readOnly = true)
     public List<TestSummaryResponse> listTests(Long userId) {
@@ -71,63 +62,6 @@ public class TestService {
         Test test = testRepository.findByIdAndApprovalStatusAndDeletedAtIsNull(testId, ApprovalStatus.ACCEPTED)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         return TestDetailResponse.from(test, toImageResponses(test.getImageKeys()));
-    }
-
-    public TestUpdateResponse updateTest(Long testId, TestUpdateRequest request, Long makerId) {
-        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
-
-        if (!test.getMakerId().equals(makerId)) {
-            throw new BaseException(BaseErrorCode.TEST_005);
-        }
-
-        List<String> newImageKeys = request.imageKeys();
-        if (newImageKeys != null) {
-            Set<String> oldKeySet = Set.copyOf(test.getImageKeys());
-            Set<String> newKeySet = Set.copyOf(newImageKeys);
-
-            List<String> addedKeys = newKeySet.stream()
-                    .filter(key -> !oldKeySet.contains(key))
-                    .toList();
-            List<String> removedKeys = oldKeySet.stream()
-                    .filter(key -> !newKeySet.contains(key))
-                    .toList();
-
-            if (!addedKeys.isEmpty()) {
-                eventPublisher.publishEvent(new FileCleanupEvent(addedKeys));
-            }
-            if (!removedKeys.isEmpty()) {
-                eventPublisher.publishEvent(new FileDeleteEvent(removedKeys));
-            }
-        }
-
-        test.update(
-                request.title(),
-                request.description(),
-                request.categories(),
-                request.serviceName(),
-                request.serviceDescription(),
-                newImageKeys
-        );
-
-        testRepository.saveAndFlush(test);
-        return TestUpdateResponse.from(test, toImageResponses(test.getImageKeys()));
-    }
-
-    public void deleteTest(Long testId, Long makerId) {
-        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
-
-        if (!test.getMakerId().equals(makerId)) {
-            throw new BaseException(BaseErrorCode.TEST_005);
-        }
-
-        List<String> imageKeys = List.copyOf(test.getImageKeys());
-        if (!imageKeys.isEmpty()) {
-            eventPublisher.publishEvent(new FileDeleteEvent(imageKeys));
-        }
-
-        test.delete(LocalDateTime.now(clock));
     }
 
     public TestLikeResponse likeTest(Long testId, Long userId) {
