@@ -1,6 +1,8 @@
 package server.MATE.domain.test.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.storage.event.FileCleanupEvent;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -34,6 +37,7 @@ public class TestPublishService {
     private final QuestionService questionService;
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
+    private final Validator validator;
 
     public Long publish(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
@@ -73,10 +77,7 @@ public class TestPublishService {
             eventPublisher.publishEvent(new FileCleanupEvent(draft.getImageKeys()));
         }
 
-        QuestionCreateRequest questionCreateRequest = objectMapper.convertValue(
-                draft.getQuestionsPayload(),
-                QuestionCreateRequest.class
-        );
+        QuestionCreateRequest questionCreateRequest = toQuestionCreateRequest(draft);
         questionService.createQuestions(test.getId(), draft.getMakerId(), questionCreateRequest);
 
         payment.linkTest(test.getId());
@@ -88,5 +89,23 @@ public class TestPublishService {
         return categoryNames.stream()
                 .map(Category::valueOf)
                 .toList();
+    }
+
+    private QuestionCreateRequest toQuestionCreateRequest(TestDraft draft) {
+        final QuestionCreateRequest questionCreateRequest;
+        try {
+            questionCreateRequest = objectMapper.convertValue(
+                    draft.getQuestionsPayload(),
+                    QuestionCreateRequest.class
+            );
+        } catch (IllegalArgumentException e) {
+            throw new BaseException(BaseErrorCode.DRAFT_004);
+        }
+
+        Set<ConstraintViolation<QuestionCreateRequest>> violations = validator.validate(questionCreateRequest);
+        if (!violations.isEmpty()) {
+            throw new BaseException(BaseErrorCode.DRAFT_004);
+        }
+        return questionCreateRequest;
     }
 }
