@@ -26,7 +26,7 @@ import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.question.repository.ScaleRepository;
 import server.MATE.domain.question.repository.TreeTestRepository;
 import server.MATE.domain.test.entity.Test;
-import server.MATE.domain.test.event.TestCompletedEvent;
+import server.MATE.domain.test.event.TestCompleteEvent;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
@@ -149,7 +149,7 @@ public class AnswerService {
         if (test.getPplCount() >= test.getGoalPpl()) {
             test.complete();
             test.startReportAggregation();
-            eventPublisher.publishEvent(new TestCompletedEvent(testId));
+            eventPublisher.publishEvent(new TestCompleteEvent(testId));
         }
         return AnswerBatchCreateResponse.from(participation);
     }
