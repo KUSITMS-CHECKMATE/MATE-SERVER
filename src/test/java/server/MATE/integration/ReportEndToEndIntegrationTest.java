@@ -818,9 +818,9 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
         assertThat(result.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
         assertThat(result.path("clusters").isArray()).isTrue();
-        JsonNode texts = result.path("texts");
-        assertThat(texts).hasSize(1);
-        assertThat(texts.get(0).asText()).isEqualTo("직접 입력 응답");
+        JsonNode otherTexts = result.path("otherTexts");
+        assertThat(otherTexts).hasSize(1);
+        assertThat(otherTexts.get(0).asText()).isEqualTo("직접 입력 응답");
     }
 
     @Test
@@ -1194,9 +1194,9 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
         assertThat(result.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
         assertThat(result.path("clusters").isArray()).isTrue();
-        JsonNode texts = result.path("texts");
-        assertThat(texts).hasSize(1);
-        assertThat(texts.get(0).asText()).isEqualTo("5초 기타 응답");
+        JsonNode otherTexts = result.path("otherTexts");
+        assertThat(otherTexts).hasSize(1);
+        assertThat(otherTexts.get(0).asText()).isEqualTo("5초 기타 응답");
     }
 
     @Test
