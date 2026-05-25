@@ -41,7 +41,6 @@ import server.MATE.global.discord.DiscordWebhookNotifier;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
 import java.util.List;
-import server.MATE.global.storage.dto.ImageResponse;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -99,7 +98,7 @@ class QuestionControllerTest {
                                 true,
                                 List.of(
                                         new ObjectiveOptionDetailResponse(1001L, "A", null, 1, false),
-                                        new ObjectiveOptionDetailResponse(1002L, "B", new ImageResponse("image-b", "https://example.com/image-b"), 2, false),
+                                        new ObjectiveOptionDetailResponse(1002L, "B", "https://example.com/image-b", 2, false),
                                         new ObjectiveOptionDetailResponse(1099L, "기타 (직접 입력)", null, 3, true)
                                 )
                         )
@@ -205,15 +204,15 @@ class QuestionControllerTest {
                                 false, null, null, true,
                                 List.of(new ObjectiveOptionDetailResponse(1001L, "A", null, 1, false))
                         ),
-                        new SubjectiveDetailResponse(102L, 200L, QuestionType.SUBJECTIVE, 2L, "주관식", "설명", new ImageResponse("subjective-image", "https://example.com/subjective-image")),
+                        new SubjectiveDetailResponse(102L, 200L, QuestionType.SUBJECTIVE, 2L, "주관식", "설명", "https://example.com/subjective-image"),
                         new FiveSecondDetailResponse(
                                 103L, 300L, QuestionType.FIVE_SECOND, 3L, "5초", "설명",
-                                new ImageResponse("five-second-image", "https://example.com/five-second-image"),
+                                "https://example.com/five-second-image",
                                 ImageRatio.RATIO_9_16, true, true, 1, 2, true,
                                 List.of(new FiveSecondOptionDetailResponse(3001L, "검색창", 1, false))
                         ),
                         new ScaleDetailResponse(104L, 400L, QuestionType.SCALE, 4L, "척도", "설명", null, "낮음", "높음", 5),
-                        new AbTestDetailResponse(105L, 500L, QuestionType.AB_TEST, 5L, "AB", "설명", new ImageResponse("a.jpg", "https://example.com/a.jpg"), new ImageResponse("b.jpg", "https://example.com/b.jpg"), ImageRatio.RATIO_9_16),
+                        new AbTestDetailResponse(105L, 500L, QuestionType.AB_TEST, 5L, "AB", "설명", "https://example.com/a.jpg", "https://example.com/b.jpg", ImageRatio.RATIO_9_16),
                         new CardSortingDetailResponse(106L, 600L, QuestionType.CARD_SORTING, 6L, "카드", "설명", List.of("A", "B", "C", "D"), List.of("cat")),
                         new TreeTestDetailResponse(
                                 107L, QuestionType.TREE_TEST, 7L, "트리", "설명",
@@ -256,7 +255,7 @@ class QuestionControllerTest {
                         new SubjectiveDetailResponse(101L, 201L, QuestionType.SUBJECTIVE, 1L, "주관식", "설명", null),
                         new FiveSecondDetailResponse(
                                 102L, 202L, QuestionType.FIVE_SECOND, 2L, "5초 주관식", "설명",
-                                new ImageResponse("five-second-image", "https://example.com/five-second-image"),
+                                "https://example.com/five-second-image",
                                 ImageRatio.RATIO_9_16, false, null, null, null, null, List.of()
                         ),
                         new ScaleDetailResponse(103L, 203L, QuestionType.SCALE, 3L, "척도", "설명", null, null, null, 5),
@@ -271,7 +270,7 @@ class QuestionControllerTest {
         mockMvc.perform(get("/api/v1/tests/10/questions")
                         .with(authenticationPrincipal()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.questions[0].image").value((String) null))
+                .andExpect(jsonPath("$.data.questions[0].imageUrl").value((String) null))
                 .andExpect(jsonPath("$.data.questions[1].isDuplicate").value((String) null))
                 .andExpect(jsonPath("$.data.questions[1].imageRatio").value("9:16"))
                 .andExpect(jsonPath("$.data.questions[1].minSelect").value((String) null))
@@ -279,7 +278,7 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.data.questions[1].isOther").value((String) null))
                 .andExpect(jsonPath("$.data.questions[1].options").isArray())
                 .andExpect(jsonPath("$.data.questions[1].options.length()").value(0))
-                .andExpect(jsonPath("$.data.questions[2].image").value((String) null))
+                .andExpect(jsonPath("$.data.questions[2].imageUrl").value((String) null))
                 .andExpect(jsonPath("$.data.questions[2].minLabel").value((String) null))
                 .andExpect(jsonPath("$.data.questions[2].maxLabel").value((String) null))
                 .andExpect(jsonPath("$.data.questions[3].features[0].children").isArray())
@@ -299,7 +298,7 @@ class QuestionControllerTest {
                         ),
                         new FiveSecondDetailResponse(
                                 102L, 202L, QuestionType.FIVE_SECOND, 2L, "5초", "설명",
-                                new ImageResponse("five-second-image", "https://example.com/five-second-image"),
+                                "https://example.com/five-second-image",
                                 ImageRatio.RATIO_9_16, true, true, 1, 2, true,
                                 List.of(new FiveSecondOptionDetailResponse(2001L, "검색창", 1, false))
                         )
