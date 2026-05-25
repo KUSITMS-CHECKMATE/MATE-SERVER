@@ -169,6 +169,11 @@ public class TestDraft extends BaseEntity {
         if (this.categories == null || this.categories.isEmpty()) {
             throw new BaseException(BaseErrorCode.DRAFT_004);
         }
+        boolean hasInvalidCategory = this.categories.stream()
+                .anyMatch(category -> !isValidCategory(category));
+        if (hasInvalidCategory) {
+            throw new BaseException(BaseErrorCode.DRAFT_004);
+        }
         if (this.questionsPayload == null || !(this.questionsPayload.get("questions") instanceof List<?> questions) || questions.isEmpty()) {
             throw new BaseException(BaseErrorCode.DRAFT_004);
         }
@@ -176,6 +181,15 @@ public class TestDraft extends BaseEntity {
 
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private boolean isValidCategory(String category) {
+        try {
+            server.MATE.domain.test.entity.Category.valueOf(category);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     @Builder
