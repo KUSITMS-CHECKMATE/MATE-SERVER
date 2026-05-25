@@ -38,7 +38,7 @@ public class TestController {
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
                     - ui상 사용하지 않는 필드: likeCount, categories
-                    - 버그 사항: 관리자 승인 상태별 조회 필터링
+                    - 버그 사항: 전체 테스트 개수 필드 누락. testStatus(진행 중, 검수 중)이고 마감기한(당일까지 조회)이 지나지 않았고 삭제되지 않은 테스트를 필터링.
                     """
     )
     @GetMapping
@@ -50,16 +50,15 @@ public class TestController {
     }
 
     @Operation(
-            summary = "⚠️ 내 테스트 목록 조회",
+            summary = "️✔️ 내 테스트 목록 조회",
             description = """
                     현재 로그인한 사용자가 생성한 테스트 목록을 최신순으로 조회합니다. 테스트 탭 MKTT_01 화면에 해당하는 api 입니다.<br>
-                    승인 상태와 관계없이 삭제되지 않은 테스트를 모두 반환합니다.
+                    삭제되지 않은 테스트를 모두 반환합니다.
                     
                     - **testCount**: 테스트 개수
                     - **testStatus**: `WAITING`(검수 중), `IN_PROGRESS`(진행 중), `COMPLETED`(종료), `REJECTED`(반려)
                     - **title**: 테스트 제목
                     - **pplCount**: 현재 참여 인원
-                    - 버그 사항: 관리자 승인 상태별 조회 필터링
                     """
     )
     @GetMapping("/me")
@@ -83,7 +82,8 @@ public class TestController {
                     - **title**: 테스트명
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
-                    - 버그 사항: 관리자 승인 상태별 조회 필터링
+                    - 버그 사항: testStatus(진행 중, 검수 중, 종료)이고 삭제되지 않은 테스트를 필터링.
+                    
                     """
     )
     @GetMapping("/likes")
