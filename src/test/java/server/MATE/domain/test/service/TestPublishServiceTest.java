@@ -1,6 +1,7 @@
 package server.MATE.domain.test.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.Validation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -60,7 +61,8 @@ class TestPublishServiceTest {
                 testRepository,
                 questionService,
                 eventPublisher,
-                new ObjectMapper().findAndRegisterModules()
+                new ObjectMapper().findAndRegisterModules(),
+                Validation.buildDefaultValidatorFactory().getValidator()
         );
     }
 
@@ -172,6 +174,43 @@ class TestPublishServiceTest {
                         "questions", List.of(
                                 Map.of("type", "SUBJECTIVE", "title", "질문 제목", "description", "질문 설명")
                         )
+                ))
+                .status(TestDraftStatus.PAYMENT_CREATED)
+                .build();
+        ReflectionTestUtils.setField(draft, "id", 10L);
+
+        Payment payment = Payment.builder()
+                .draftId(10L)
+                .makerId(1L)
+                .payStatus(PayStatus.PAY_SUCCEEDED)
+                .goalPpl(100)
+                .reward(300)
+                .amount(30000)
+                .build();
+        ReflectionTestUtils.setField(payment, "id", 20L);
+
+        given(paymentRepository.findById(20L)).willReturn(Optional.of(payment));
+        given(testDraftRepository.findByIdForUpdate(10L)).willReturn(Optional.of(draft));
+
+        assertThatThrownBy(() -> testPublishService.publish(20L))
+                .isInstanceOf(server.MATE.global.common.exception.BaseException.class)
+                .hasMessageContaining("게시할 수 없는 테스트 초안입니다.");
+    }
+
+    @Test
+    @DisplayName("질문 payload가 QuestionCreateRequest로 변환되거나 검증되지 못하면 DRAFT_004 예외가 발생한다")
+    void throwsDraft004WhenQuestionPayloadIsInvalid() {
+        TestDraft draft = TestDraft.builder()
+                .makerId(1L)
+                .title("테스트 제목")
+                .description("테스트 설명")
+                .serviceName("서비스명")
+                .serviceDescription("서비스 설명")
+                .categories(List.of("DAILY"))
+                .goalPpl(100)
+                .reward(300)
+                .questionsPayload(Map.of(
+                        "questions", "invalid-payload"
                 ))
                 .status(TestDraftStatus.PAYMENT_CREATED)
                 .build();
