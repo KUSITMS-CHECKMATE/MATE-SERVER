@@ -106,7 +106,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         assertThat(result.path("type").asText()).isEqualTo("SUBJECTIVE");
         JsonNode resultData = result.path("result");
         assertThat(resultData.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
-        assertThat(resultData.path("topAnswers").isArray()).isTrue();
+        assertThat(resultData.path("clusters").isArray()).isTrue();
         JsonNode texts = resultData.path("texts");
         assertThat(texts).hasSize(1);
         assertThat(texts.get(0).asText()).isEqualTo("주관식 응답");
@@ -189,7 +189,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         assertThat(result.path("type").asText()).isEqualTo("FIVE_SECOND");
         JsonNode resultData = result.path("result");
         assertThat(resultData.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
-        assertThat(resultData.path("topAnswers").isArray()).isTrue();
+        assertThat(resultData.path("clusters").isArray()).isTrue();
         JsonNode texts = resultData.path("texts");
         assertThat(texts).hasSize(1);
         assertThat(texts.get(0).asText()).isEqualTo("5초 주관 응답");
@@ -798,8 +798,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("OBJECTIVE isOther=true 응답 시 리포트에 otherTexts가 포함된다")
-    void getReport_withObjectiveOtherText_returnsOtherTexts() throws Exception {
+    @DisplayName("OBJECTIVE isOther=true 응답 시 리포트에 clusters와 texts가 포함된다")
+    void getReport_withObjectiveOtherText_returnsClustersAndTexts() throws Exception {
         TestActors actors = createActors();
         createObjectiveQuestion(actors.testId(), actors.makerToken(), false, null, null, true);
         JsonNode questionNode = getSingleQuestion(actors.testId(), actors.makerToken());
@@ -817,10 +817,10 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
         assertThat(result.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
-        assertThat(result.path("topAnswers").isArray()).isTrue();
-        JsonNode otherTexts = result.path("otherTexts");
-        assertThat(otherTexts).hasSize(1);
-        assertThat(otherTexts.get(0).asText()).isEqualTo("직접 입력 응답");
+        assertThat(result.path("clusters").isArray()).isTrue();
+        JsonNode texts = result.path("texts");
+        assertThat(texts).hasSize(1);
+        assertThat(texts.get(0).asText()).isEqualTo("직접 입력 응답");
     }
 
     @Test
@@ -994,8 +994,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("SUBJECTIVE와 FIVE_SECOND 주관식 리포트의 texts는 createdAt 오름차순으로 정렬된다")
-    void getReport_withSubjectiveTexts_returnsCreatedAtAscendingOrder() throws Exception {
+    @DisplayName("SUBJECTIVE와 FIVE_SECOND 주관식 리포트의 texts는 미리보기 샘플을 포함한다")
+    void getReport_withSubjectiveTexts_returnsPreviewSample() throws Exception {
         mutableClock.setInstant(DEFAULT_TEST_INSTANT);
 
         TestActors actors = createActors();
@@ -1049,12 +1049,12 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         JsonNode fiveSecondTexts = reports.get(1).path("result").path("texts");
 
         assertThat(subjectiveTexts).hasSize(2);
-        assertThat(subjectiveTexts.get(0).asText()).isEqualTo("빠른 주관식 응답");
-        assertThat(subjectiveTexts.get(1).asText()).isEqualTo("늦은 주관식 응답");
+        assertThat(subjectiveTexts).extracting(JsonNode::asText)
+                .containsExactlyInAnyOrder("빠른 주관식 응답", "늦은 주관식 응답");
 
         assertThat(fiveSecondTexts).hasSize(2);
-        assertThat(fiveSecondTexts.get(0).asText()).isEqualTo("빠른 5초 응답");
-        assertThat(fiveSecondTexts.get(1).asText()).isEqualTo("늦은 5초 응답");
+        assertThat(fiveSecondTexts).extracting(JsonNode::asText)
+                .containsExactlyInAnyOrder("빠른 5초 응답", "늦은 5초 응답");
     }
 
     @TestConfiguration(proxyBeanMethods = false)
@@ -1167,8 +1167,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("FIVE_SECOND isOther=true 응답 시 리포트에 otherTexts가 포함된다")
-    void getReport_withFiveSecondOtherText_returnsOtherTexts() throws Exception {
+    @DisplayName("FIVE_SECOND isOther=true 응답 시 리포트에 clusters와 texts가 포함된다")
+    void getReport_withFiveSecondOtherText_returnsClustersAndTexts() throws Exception {
         TestActors actors = createActors();
         createFiveSecondObjectiveQuestion(actors.testId(), actors.makerToken(), false, null, null, true);
         JsonNode questionNode = getSingleQuestion(actors.testId(), actors.makerToken());
@@ -1193,10 +1193,10 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
         assertThat(result.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
-        assertThat(result.path("topAnswers").isArray()).isTrue();
-        JsonNode otherTexts = result.path("otherTexts");
-        assertThat(otherTexts).hasSize(1);
-        assertThat(otherTexts.get(0).asText()).isEqualTo("5초 기타 응답");
+        assertThat(result.path("clusters").isArray()).isTrue();
+        JsonNode texts = result.path("texts");
+        assertThat(texts).hasSize(1);
+        assertThat(texts.get(0).asText()).isEqualTo("5초 기타 응답");
     }
 
     @Test
