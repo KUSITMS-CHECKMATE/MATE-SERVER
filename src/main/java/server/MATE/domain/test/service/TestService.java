@@ -10,9 +10,9 @@ import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryItem;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
-import server.MATE.domain.test.entity.ApprovalStatus;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestLike;
+import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
@@ -34,7 +34,7 @@ public class TestService {
 
     @Transactional(readOnly = true)
     public List<TestSummaryResponse> listTests(Long userId) {
-        List<Test> tests = testRepository.findAllByApprovalStatusAndDeletedAtIsNullOrderByCreatedAtDesc(ApprovalStatus.ACCEPTED);
+        List<Test> tests = testRepository.findAllByTestStatusAndDeletedAtIsNullOrderByCreatedAtDesc(TestStatus.IN_PROGRESS);
         return toSummaryResponses(userId, tests);
     }
 
@@ -49,7 +49,7 @@ public class TestService {
 
     @Transactional(readOnly = true)
     public LikedTestSummaryResponse listLikedTests(Long userId) {
-        List<Test> tests = testRepository.findLikedTestsByUserId(userId, ApprovalStatus.ACCEPTED);
+        List<Test> tests = testRepository.findLikedTestsByUserId(userId, TestStatus.IN_PROGRESS);
         List<LikedTestSummaryItem> items = tests.stream()
                 .map(test -> LikedTestSummaryItem.from(test, toThumbnailUrl(test.getImageKeys())))
                 .toList();
@@ -58,7 +58,7 @@ public class TestService {
 
     @Transactional(readOnly = true)
     public TestDetailResponse getTest(Long testId) {
-        Test test = testRepository.findByIdAndApprovalStatusAndDeletedAtIsNull(testId, ApprovalStatus.ACCEPTED)
+        Test test = testRepository.findByIdAndTestStatusAndDeletedAtIsNull(testId, TestStatus.IN_PROGRESS)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         return TestDetailResponse.from(test, toImageUrls(test.getImageKeys()));
     }

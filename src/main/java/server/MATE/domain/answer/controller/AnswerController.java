@@ -28,7 +28,7 @@ public class AnswerController {
 
     @Operation(summary = "응답 전체 등록", description = """
             참여자가 테스트의 모든 문항에 대한 응답을 한 번에 제출합니다.
-            - 테스트가 진행 중(`IN_PROGRESS`)이고 승인(`ACCEPTED`) 상태여야 합니다.
+            - 테스트가 진행 중(`IN_PROGRESS`) 상태여야 합니다.
             - 목표 인원 수(`goalPpl`)이 초과된 경우 참여 불가합니다.
             - 이미 참여한 테스트에 중복 제출 불가합니다.
             - 응답(`answers`) 배열의 각 항목은 질문 유형(`type`) 필드로 구분합니다.

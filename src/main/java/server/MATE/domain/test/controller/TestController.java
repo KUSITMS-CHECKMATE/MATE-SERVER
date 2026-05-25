@@ -31,7 +31,7 @@ public class TestController {
             summary = "⚠️ 테스트 목록 조회",
             description = """
                     전체 테스트 요약 목록을 최신순으로 조회합니다. 발견 탭 HM_01 57 화면에 해당하는 api 입니다.
-                    테스트 등록 후 관리자 승인(`approvalStatus`)이 완료(`ACCEPTED`)되어야 조회됩니다.<br>
+                    `IN_PROGRESS`(진행 중) 이거나, `WAITING`(검수 중) 인 테스트를 반환합니다.
                     추후 페이지네이션 적용하여 무한 스크롤 지원하도록 리팩토링이 필요합니다.
 
                     - **thumbnailUrl**: 업로드된 이미지 중 첫 번째의 Public URL, 없으면 null을 반환
@@ -56,7 +56,7 @@ public class TestController {
                     승인 상태와 관계없이 삭제되지 않은 테스트를 모두 반환합니다.
                     
                     - **testCount**: 테스트 개수
-                    - **testStatus**: `IN_PROGRESS`(진행 중), `COMPLETED`(완료)
+                    - **testStatus**: `WAITING`(검수 중), `IN_PROGRESS`(진행 중), `COMPLETED`(종료), `REJECTED`(반려)
                     - **title**: 테스트 제목
                     - **pplCount**: 현재 참여 인원
                     - 버그 사항: 관리자 승인 상태별 조회 필터링
@@ -74,7 +74,7 @@ public class TestController {
             summary = "⚠️ 찜한 테스트 목록 조회",
             description = """
                     현재 로그인한 사용자가 찜한 테스트 목록을 찜한 시각 최신순으로 조회합니다. 관심 탭 HM_01 19 화면에 해당하는 api 입니다.<br>
-                    삭제되지 않았고 관리자 승인(`ACCEPTED`)이 완료된 테스트만 반환합니다.<br>
+                    삭제되지 않았고 진행 중(`IN_PROGRESS`)인 테스트만 반환합니다.<br>
                     추후 페이지네이션 적용하여 무한 스크롤 지원하도록 리팩토링이 필요합니다.
                     
                     - **testCount**: 테스트 개수
