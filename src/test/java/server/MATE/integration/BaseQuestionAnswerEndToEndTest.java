@@ -25,6 +25,7 @@ import server.MATE.domain.question.repository.ScaleRepository;
 import server.MATE.domain.question.repository.SubjectiveRepository;
 import server.MATE.domain.question.repository.TreeTestRepository;
 import server.MATE.domain.question.service.QuestionService;
+import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.domain.users.entity.Users;
 import server.MATE.domain.users.repository.UsersRepository;
@@ -126,6 +127,7 @@ abstract class BaseQuestionAnswerEndToEndTest {
                 .serviceName("서비스")
                 .serviceDescription("서비스 설명")
                 .imageKeys(List.of())
+                .testStatus(TestStatus.IN_PROGRESS)
                 .build());
         return new TestActors(
                 maker.getId(),
