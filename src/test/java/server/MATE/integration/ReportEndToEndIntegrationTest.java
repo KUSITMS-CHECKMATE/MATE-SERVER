@@ -14,9 +14,8 @@ import org.springframework.test.context.ActiveProfiles;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.report.entity.Report;
 import server.MATE.domain.report.repository.ReportRepository;
-import server.MATE.domain.report.service.ReportAggregationService;
+import server.MATE.domain.report.event.ReportAggregateService;
 import server.MATE.domain.test.entity.ReportStatus;
-import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.support.time.MutableClock;
 
 import java.time.Duration;
@@ -39,7 +38,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     private static final Instant DEFAULT_TEST_INSTANT = Instant.parse("2026-01-01T00:00:00Z");
 
     @Autowired
-    private ReportAggregationService reportAggregationService;
+    private ReportAggregateService reportAggregateService;
 
     @Autowired
     private ReportRepository reportRepository;
@@ -1121,7 +1120,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         List<Report> existingReports = reportRepository.findAllByTestId(actors.testId());
         JsonNode before = reportData(actors.testId(), actors.makerToken());
 
-        List<Report> reusedReports = reportAggregationService.aggregate(actors.testId());
+        List<Report> reusedReports = reportAggregateService.aggregate(actors.testId());
 
         server.MATE.domain.test.entity.Test updated = testRepository.findById(actors.testId()).orElseThrow();
         JsonNode after = reportData(actors.testId(), actors.makerToken());
@@ -1261,7 +1260,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
                 .build());
 
         completeTestStatusOnly(actors.testId());
-        reportAggregationService.aggregate(actors.testId());
+        reportAggregateService.aggregate(actors.testId());
 
         server.MATE.domain.test.entity.Test updated = testRepository.findById(actors.testId()).orElseThrow();
         assertThat(updated.getReportStatus()).isEqualTo(ReportStatus.FAILED);
@@ -1324,7 +1323,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         server.MATE.domain.test.entity.Test test = testRepository.findById(testId).orElseThrow();
         test.complete();
         testRepository.save(test);
-        reportAggregationService.aggregate(testId);
+        reportAggregateService.aggregate(testId);
     }
 
     private void completeTestStatusOnly(Long testId) {
