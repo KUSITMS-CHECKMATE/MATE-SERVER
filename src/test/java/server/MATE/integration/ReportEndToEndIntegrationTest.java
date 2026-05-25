@@ -278,7 +278,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     @DisplayName("TREE_TEST 응답 제출 후 리포트에 nodeFrequency와 pathFrequency가 반환된다")
     void getReport_withTreeTestAnswers_returnsNodeFrequencyAndPathFrequency() throws Exception {
         TestActors actors = createActors();
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     {
@@ -509,7 +509,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     @DisplayName("여러 타입 질문이 혼재할 때 reports가 sequence 순서로 조립되고 각 항목의 필드가 올바르다")
     void getReport_withMultipleQuestionTypes_reportsAssembledInSequenceOrder() throws Exception {
         TestActors actors = createActors();
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     { "type": "SUBJECTIVE", "title": "주관식 질문", "description": "설명", "imageKey": null },
@@ -562,7 +562,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     @DisplayName("전체 질문 유형이 혼재할 때 reports가 sequence 순서로 조립되고 각 유형별 핵심 집계 필드를 포함한다")
     void getReport_withAllQuestionTypes_reportsAssembledInSequenceOrder() throws Exception {
         TestActors actors = createActors();
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     { "type": "SUBJECTIVE", "title": "주관식 질문", "description": "설명", "imageKey": null },
@@ -956,7 +956,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         TestActors actors = createActors();
         String tester2Token = createAdditionalTester();
 
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [{
                     "type": "TREE_TEST", "title": "트리 질문", "description": "설명",
@@ -988,7 +988,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         TestActors actors = createActors();
         String tester2Token = createAdditionalTester();
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     { "type": "SUBJECTIVE", "title": "주관식 질문", "description": "설명", "imageKey": null },
