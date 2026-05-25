@@ -11,6 +11,7 @@ import server.MATE.domain.answer.repository.AnswerRepository;
 import server.MATE.domain.answer.service.handler.AnswerCreateHandler;
 import server.MATE.domain.participation.entity.Participation;
 import server.MATE.domain.participation.repository.ParticipationRepository;
+import server.MATE.domain.promotion.event.PromotionRewardRequestEvent;
 import server.MATE.domain.question.dto.response.AnswerQuestionTypeView;
 import server.MATE.domain.question.entity.CardSorting;
 import server.MATE.domain.question.entity.FiveSecond;
@@ -135,8 +136,15 @@ public class AnswerService {
             answers.add(handlerMap.get(item.type()).build(participation.getId(), item, context));
         }
 
-        // 응답 저장 후 참여자 수를 갱신하고, 목표 인원 도달 시 테스트 완료 및 리포트 집계 이벤트 발행
+        // 응답 저장 후 참여자 수를 갱신하고, 리워드 지급 이벤트 발행
+        // 목표 인원을 만족한다면, 리포트 집계 이벤트 발행
         answerRepository.saveAll(answers);
+        eventPublisher.publishEvent(new PromotionRewardRequestEvent(
+                participation.getId(),
+                testId,
+                testerId,
+                test.getReward()
+        ));
         test.incrementPplCount();
         if (test.getPplCount() >= test.getGoalPpl()) {
             test.complete();
