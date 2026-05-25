@@ -38,40 +38,43 @@ public class ReportService {
 
         List<QuestionSummaryItem> questionSummaries = questionRepository.findQuestionSummariesByTestId(testId);
         int questionCount = questionSummaries.size();
-
-        // 테스트가 진행 중이고, 리포트 집계가 시작되지 않은 상태. reports를 빈 리스트로 반환
-        if (test.getTestStatus() == TestStatus.IN_PROGRESS) {
-            return new ReportResponse(
-                    TestStatus.IN_PROGRESS,
-                    ReportStatus.PENDING,
-                    questionCount,
-                    test.getPplCount(),
-                    questionSummaries,
-                    List.of()
-            );
-        }
-
-        // 테스트가 완료이지만, 리포트 집계가 끝나지 않음. reportStatus를 업데이트하고 reports를 빈 리스트로 반환
         ReportStatus reportStatus = test.getReportStatus() != null ? test.getReportStatus() : ReportStatus.PENDING;
-        if (reportStatus != ReportStatus.COMPLETED) {
-            return new ReportResponse(
-                    TestStatus.COMPLETED,
-                    reportStatus,
-                    questionCount,
-                    test.getPplCount(),
-                    questionSummaries,
-                    List.of()
-            );
+
+        switch (test.getTestStatus()) {
+            case WAITING, IN_PROGRESS, REJECTED -> {
+                // 완료 전 상태이므로 집계 결과 없이 현재 리포트 상태만 반환함
+                return new ReportResponse(
+                        test.getTestStatus(),
+                        reportStatus,
+                        questionCount,
+                        test.getPplCount(),
+                        questionSummaries,
+                        List.of()
+                );
+            }
+            case COMPLETED -> {
+                // 테스트는 종료됐지만 집계가 끝나지 않았으면 빈 결과를 반환함
+                if (reportStatus != ReportStatus.COMPLETED) {
+                    return new ReportResponse(
+                            TestStatus.COMPLETED,
+                            reportStatus,
+                            questionCount,
+                            test.getPplCount(),
+                            questionSummaries,
+                            List.of()
+                    );
+                }
+            }
         }
 
-        // 테스트가 완료이고, 리포트 집계가 끝난 상태. 질문별 집계 결과를 반환
+        // 테스트가 종료됐고 리포트 집계가 끝났다면 리포트를 반환함
         List<Report> aggregations = reportRepository.findAllByTestId(testId);
 
         if (aggregations.size() != questionCount) {
             log.error("테스트 {} 리포트 조회 중 완전성 불일치 감지: questionCount={}, reportCount={}",
                     testId, questionCount, aggregations.size());
             return new ReportResponse(
-                    TestStatus.COMPLETED,
+                    test.getTestStatus(),
                     ReportStatus.FAILED,
                     questionCount,
                     test.getPplCount(),
