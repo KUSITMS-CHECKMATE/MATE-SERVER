@@ -4,10 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import server.MATE.domain.test.dto.request.TestCreateRequest;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
 import server.MATE.global.storage.dto.ImageResponse;
-import server.MATE.domain.test.dto.response.TestCreateResponse;
+import server.MATE.domain.test.dto.response.LikedTestSummaryItem;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
@@ -59,11 +58,12 @@ public class TestService {
     }
 
     @Transactional(readOnly = true)
-    public List<LikedTestSummaryResponse> listLikedTests(Long userId) {
+    public LikedTestSummaryResponse listLikedTests(Long userId) {
         List<Test> tests = testRepository.findLikedTestsByUserId(userId, ApprovalStatus.ACCEPTED);
-        return tests.stream()
-                .map(test -> LikedTestSummaryResponse.from(test, toThumbnailUrl(test.getImageKeys())))
+        List<LikedTestSummaryItem> items = tests.stream()
+                .map(test -> LikedTestSummaryItem.from(test, toThumbnailUrl(test.getImageKeys())))
                 .toList();
+        return LikedTestSummaryResponse.from(items);
     }
 
     @Transactional(readOnly = true)
@@ -71,25 +71,6 @@ public class TestService {
         Test test = testRepository.findByIdAndApprovalStatusAndDeletedAtIsNull(testId, ApprovalStatus.ACCEPTED)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         return TestDetailResponse.from(test, toImageResponses(test.getImageKeys()));
-    }
-
-    public TestCreateResponse createTest(TestCreateRequest request, Long makerId) {
-        List<String> imageKeys = request.imageKeys() != null ? request.imageKeys() : List.of();
-
-        Test test = Test.builder()
-                .makerId(makerId)
-                .title(request.title())
-                .description(request.description())
-                .serviceName(request.serviceName())
-                .serviceDescription(request.serviceDescription())
-                .imageKeys(imageKeys)
-                .build();
-
-        test.addCategories(request.categories());
-        eventPublisher.publishEvent(new FileCleanupEvent(imageKeys));
-        testRepository.save(test);
-
-        return TestCreateResponse.from(test, toImageResponses(test.getImageKeys()));
     }
 
     public TestUpdateResponse updateTest(Long testId, TestUpdateRequest request, Long makerId) {
