@@ -3,8 +3,10 @@ package server.MATE.domain.question.dto.response;
 import server.MATE.domain.question.entity.Objective;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
+import server.MATE.global.storage.dto.ImageResponse;
 
 import java.util.List;
+import java.util.function.Function;
 
 public record ObjectiveDetailResponse(
         Long questionId,
@@ -20,7 +22,7 @@ public record ObjectiveDetailResponse(
         List<ObjectiveOptionDetailResponse> options
 ) implements QuestionDetailItem {
 
-    public static ObjectiveDetailResponse of(Question question, Objective objective) {
+    public static ObjectiveDetailResponse of(Question question, Objective objective, Function<String, ImageResponse> keyToImage) {
         return new ObjectiveDetailResponse(
                 question.getId(),
                 objective.getId(),
@@ -33,7 +35,10 @@ public record ObjectiveDetailResponse(
                 objective.getMaxSelect(),
                 objective.isOther(),
                 objective.getOptions().stream()
-                        .map(ObjectiveOptionDetailResponse::from)
+                        .map(option -> ObjectiveOptionDetailResponse.from(
+                                option,
+                                keyToImage.apply(option.getImageKey())
+                        ))
                         .toList()
         );
     }

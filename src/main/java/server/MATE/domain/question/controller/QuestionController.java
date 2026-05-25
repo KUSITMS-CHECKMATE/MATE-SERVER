@@ -64,9 +64,9 @@ public class QuestionController {
                                                             "maxSelect": null,
                                                             "isOther": true,
                                                             "options": [
-                                                              { "objectiveOptionId": 1001, "content": "검색", "imageKey": null, "sequence": 1, "isOtherOption": false },
-                                                              { "objectiveOptionId": 1002, "content": "결제", "imageKey": "objective-option-image-key", "sequence": 2, "isOtherOption": false },
-                                                              { "objectiveOptionId": 1099, "content": "기타 (직접 입력)", "imageKey": null, "sequence": 3, "isOtherOption": true }
+                                                              { "objectiveOptionId": 1001, "content": "검색", "image": null, "sequence": 1, "isOtherOption": false },
+                                                              { "objectiveOptionId": 1002, "content": "결제", "image": { "imageKey": "objective-option-image-key", "imageUrl": "https://storage.example.com/objective-option-image-key" }, "sequence": 2, "isOtherOption": false },
+                                                              { "objectiveOptionId": 1099, "content": "기타 (직접 입력)", "image": null, "sequence": 3, "isOtherOption": true }
                                                             ]
                                                           }
                                                         ]
@@ -92,7 +92,7 @@ public class QuestionController {
                                                             "sequence": 2,
                                                             "title": "개선이 필요한 점은 무엇인가요?",
                                                             "description": "자유롭게 작성해주세요.",
-                                                            "imageKey": "subjective-image-key"
+                                                            "image": { "imageKey": "subjective-image-key", "imageUrl": "https://storage.example.com/subjective-image-key" }
                                                           }
                                                         ]
                                                       }
@@ -117,7 +117,7 @@ public class QuestionController {
                                                             "sequence": 3,
                                                             "title": "첫 화면에서 눈에 띄는 요소는 무엇인가요?",
                                                             "description": "이미지를 5초간 본 뒤 답변해주세요.",
-                                                            "imageKey": "five-second-image-key",
+                                                            "image": { "imageKey": "five-second-image-key", "imageUrl": "https://storage.example.com/five-second-image-key" },
                                                             "imageRatio": "9:16",
                                                             "isObjective": true,
                                                             "isDuplicate": true,
@@ -153,7 +153,7 @@ public class QuestionController {
                                                             "sequence": 3,
                                                             "title": "첫 화면에서 가장 먼저 떠오른 점은 무엇인가요?",
                                                             "description": "이미지를 5초간 본 뒤 자유롭게 작성해주세요.",
-                                                            "imageKey": "five-second-image-key",
+                                                            "image": { "imageKey": "five-second-image-key", "imageUrl": "https://storage.example.com/five-second-image-key" },
                                                             "imageRatio": "9:16",
                                                             "isObjective": false,
                                                             "isDuplicate": null,
@@ -185,7 +185,7 @@ public class QuestionController {
                                                             "sequence": 4,
                                                             "title": "전반적인 만족도를 평가해주세요.",
                                                             "description": "5점 척도로 응답해주세요.",
-                                                            "imageKey": null,
+                                                            "image": null,
                                                             "minLabel": "매우 불만족",
                                                             "maxLabel": "매우 만족",
                                                             "range": 5
@@ -213,8 +213,8 @@ public class QuestionController {
                                                             "sequence": 5,
                                                             "title": "어느 시안이 더 마음에 드시나요?",
                                                             "description": "두 시안을 비교하고 더 선호하는 쪽을 선택해주세요.",
-                                                            "aImageKey": "image-a.jpg",
-                                                            "bImageKey": "image-b.jpg",
+                                                            "aImage": { "imageKey": "image-a.jpg", "imageUrl": "https://storage.example.com/image-a.jpg" },
+                                                            "bImage": { "imageKey": "image-b.jpg", "imageUrl": "https://storage.example.com/image-b.jpg" },
                                                             "imageRatio": "9:16"
                                                           }
                                                         ]
@@ -335,9 +335,9 @@ public class QuestionController {
                                                           "maxSelect": null,
                                                           "isOther": true,
                                                           "options": [
-                                                            { "objectiveOptionId": 1001, "content": "검색", "imageKey": null, "sequence": 1, "isOtherOption": false },
-                                                            { "objectiveOptionId": 1002, "content": "결제", "imageKey": "objective-option-image-key", "sequence": 2, "isOtherOption": false },
-                                                            { "objectiveOptionId": 1099, "content": "기타 (직접 입력)", "imageKey": null, "sequence": 3, "isOtherOption": true }
+                                                            { "objectiveOptionId": 1001, "content": "검색", "image": null, "sequence": 1, "isOtherOption": false },
+                                                            { "objectiveOptionId": 1002, "content": "결제", "image": { "imageKey": "objective-option-image-key", "imageUrl": "https://storage.example.com/objective-option-image-key" }, "sequence": 2, "isOtherOption": false },
+                                                            { "objectiveOptionId": 1099, "content": "기타 (직접 입력)", "image": null, "sequence": 3, "isOtherOption": true }
                                                           ]
                                                         }
                                                       }
@@ -361,7 +361,7 @@ public class QuestionController {
                                                           "sequence": 2,
                                                           "title": "개선이 필요한 점은 무엇인가요?",
                                                           "description": "자유롭게 작성해주세요.",
-                                                          "imageKey": "subjective-image-key"
+                                                          "image": { "imageKey": "subjective-image-key", "imageUrl": "https://storage.example.com/subjective-image-key" }
                                                         }
                                                       }
                                                     }
@@ -384,7 +384,7 @@ public class QuestionController {
                                                           "sequence": 3,
                                                           "title": "첫 화면에서 눈에 띄는 요소는 무엇인가요?",
                                                           "description": "이미지를 5초간 본 뒤 답변해주세요.",
-                                                          "imageKey": "five-second-image-key",
+                                                          "image": { "imageKey": "five-second-image-key", "imageUrl": "https://storage.example.com/five-second-image-key" },
                                                           "imageRatio": "9:16",
                                                           "isObjective": true,
                                                           "isDuplicate": true,
@@ -418,7 +418,7 @@ public class QuestionController {
                                                           "sequence": 4,
                                                           "title": "전반적인 만족도를 평가해주세요.",
                                                           "description": "5점 척도로 응답해주세요.",
-                                                          "imageKey": null,
+                                                          "image": null,
                                                           "minLabel": "매우 불만족",
                                                           "maxLabel": "매우 만족",
                                                           "range": 5
@@ -444,8 +444,8 @@ public class QuestionController {
                                                           "sequence": 5,
                                                           "title": "어느 시안이 더 마음에 드시나요?",
                                                           "description": "두 시안을 비교하고 더 선호하는 쪽을 선택해주세요.",
-                                                          "aImageKey": "image-a.jpg",
-                                                          "bImageKey": "image-b.jpg",
+                                                          "aImage": { "imageKey": "image-a.jpg", "imageUrl": "https://storage.example.com/image-a.jpg" },
+                                                          "bImage": { "imageKey": "image-b.jpg", "imageUrl": "https://storage.example.com/image-b.jpg" },
                                                           "imageRatio": "9:16"
                                                         }
                                                       }
