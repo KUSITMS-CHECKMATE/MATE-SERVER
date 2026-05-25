@@ -107,7 +107,7 @@ public class ReportController {
                             ),
                             @ExampleObject(
                                     name = "COMPLETED - OBJECTIVE",
-                                    summary = "객관식 (OBJECTIVE) — options: 선택지별 count/ratio, isOther=true 시 aiSummary/clusters/texts 포함",
+                                    summary = "객관식 (OBJECTIVE) — options: 선택지별 count/ratio, isOther=true 시 aiSummary/clusters/otherTexts 포함",
                                     value = """
                                             {
                                               "success": true,
@@ -137,7 +137,7 @@ public class ReportController {
                                                       "clusters": [
                                                         { "representative": "알림 기능을 자주 씁니다.", "count": 1, "responses": ["알림 기능을 자주 씁니다."] }
                                                       ],
-                                                      "texts": ["알림 기능을 자주 씁니다."]
+                                                      "otherTexts": ["알림 기능을 자주 씁니다."]
                                                     }
                                                   }
                                                 ]
@@ -186,7 +186,7 @@ public class ReportController {
                             ),
                             @ExampleObject(
                                     name = "COMPLETED - FIVE_SECOND (객관식)",
-                                    summary = "5초 테스트 객관식 (FIVE_SECOND, isObjective=true) — options: 선택지별 count/ratio, isOther=true 시 aiSummary/clusters/texts 포함",
+                                    summary = "5초 테스트 객관식 (FIVE_SECOND, isObjective=true) — options: 선택지별 count/ratio, isOther=true 시 aiSummary/clusters/otherTexts 포함",
                                     value = """
                                             {
                                               "success": true,
@@ -215,7 +215,7 @@ public class ReportController {
                                                       "clusters": [
                                                         { "representative": "하단 버튼이요", "count": 1, "responses": ["하단 버튼이요"] }
                                                       ],
-                                                      "texts": ["하단 버튼이요"]
+                                                      "otherTexts": ["하단 버튼이요"]
                                                     }
                                                   }
                                                 ]

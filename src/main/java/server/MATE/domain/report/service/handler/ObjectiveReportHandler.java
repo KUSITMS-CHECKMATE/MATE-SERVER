@@ -77,7 +77,7 @@ public class ObjectiveReportHandler implements ReportHandler {
         if (objective.isOther()) {
             result.put("aiSummary", "AI 요약 준비 중입니다.");
             result.put("clusters", ReportHandlerUtils.buildClusters(otherTexts));
-            result.put("texts", ReportHandlerUtils.sampleTexts(otherTexts));
+            result.put("otherTexts", ReportHandlerUtils.sampleTexts(otherTexts));
         }
         return result;
     }
