@@ -35,6 +35,7 @@ import server.MATE.domain.question.dto.response.TreeTestNodeDetailResponse;
 import server.MATE.domain.question.entity.ImageRatio;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.service.QuestionService;
+import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.users.entity.Role;
 import server.MATE.global.common.exception.GlobalExceptionHandler;
 import server.MATE.global.discord.DiscordWebhookNotifier;
@@ -167,6 +168,7 @@ class QuestionControllerTest {
     @DisplayName("질문 목록 조회 요청을 정상 처리한다")
     void handlesQuestionSummaryRequestSuccessfully() throws Exception {
         QuestionSummaryResponse response = new QuestionSummaryResponse(
+                TestStatus.IN_PROGRESS,
                 2,
                 17L,
                 List.of(
@@ -182,6 +184,7 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("200"))
                 .andExpect(jsonPath("$.message").value("질문 목록을 조회했습니다."))
+                .andExpect(jsonPath("$.data.testStatus").value("IN_PROGRESS"))
                 .andExpect(jsonPath("$.data.questionCount").value(2))
                 .andExpect(jsonPath("$.data.participantCount").value(17))
                 .andExpect(jsonPath("$.data.questions.length()").value(2))
