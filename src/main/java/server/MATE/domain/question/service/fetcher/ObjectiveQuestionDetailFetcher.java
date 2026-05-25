@@ -9,7 +9,6 @@ import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.ObjectiveRepository;
 import server.MATE.global.storage.FileStorageService;
-import server.MATE.global.storage.dto.ImageResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -40,13 +39,13 @@ public class ObjectiveQuestionDetailFetcher implements QuestionDetailFetcher {
                         objective -> ObjectiveDetailResponse.of(
                                 questionMap.get(objective.getId()),
                                 objective,
-                                this::toImageResponse
+                                this::toImageUrl
                         )
                 ));
     }
 
-    private ImageResponse toImageResponse(String key) {
+    private String toImageUrl(String key) {
         if (key == null) return null;
-        return new ImageResponse(key, fileStorageService.generateDownloadUrl(key));
+        return fileStorageService.generateDownloadUrl(key);
     }
 }

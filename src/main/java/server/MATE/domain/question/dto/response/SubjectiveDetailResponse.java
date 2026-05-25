@@ -3,7 +3,6 @@ package server.MATE.domain.question.dto.response;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Subjective;
-import server.MATE.global.storage.dto.ImageResponse;
 
 public record SubjectiveDetailResponse(
         Long questionId,
@@ -12,10 +11,10 @@ public record SubjectiveDetailResponse(
         Long sequence,
         String title,
         String description,
-        ImageResponse image
+        String imageUrl
 ) implements QuestionDetailItem {
 
-    public static SubjectiveDetailResponse of(Question question, Subjective subjective, ImageResponse image) {
+    public static SubjectiveDetailResponse of(Question question, Subjective subjective, String imageUrl) {
         return new SubjectiveDetailResponse(
                 question.getId(),
                 subjective.getId(),
@@ -23,7 +22,7 @@ public record SubjectiveDetailResponse(
                 question.getSequence(),
                 question.getTitle(),
                 question.getDescription(),
-                image
+                imageUrl
         );
     }
 }
