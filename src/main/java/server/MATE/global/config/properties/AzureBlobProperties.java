@@ -11,7 +11,8 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "azure.storage")
 public class AzureBlobProperties {
     private String connectionString;
-    private String containerName;
+    private String publicContainerName;
+    private String privateContainerName;
     private int uploadSasExpiryMinutes = 10;
     private int downloadSasExpiryMinutes = 30;
 }

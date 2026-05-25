@@ -10,13 +10,14 @@ import org.hibernate.type.SqlTypes;
 import server.MATE.domain.question.entity.QuestionType;
 
 import java.util.Map;
+import server.MATE.global.common.entity.BaseEntity;
 
 @Getter
 @Entity
 @Table(name = "report",
         uniqueConstraints = @UniqueConstraint(columnNames = {"test_id", "question_id"}))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Report {
+public class Report extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

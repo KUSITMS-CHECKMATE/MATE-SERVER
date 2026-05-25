@@ -67,7 +67,7 @@ public class ReportController {
                             ),
                             @ExampleObject(
                                     name = "COMPLETED - SUBJECTIVE",
-                                    summary = "주관식 (SUBJECTIVE) — texts: 응답 텍스트 목록",
+                                    summary = "주관식 (SUBJECTIVE) — aiSummary: AI 3줄 요약, topAnswers: 많이 언급된 답변 최대 6개, texts: 전체 응답 텍스트 목록",
                                     value = """
                                             {
                                               "success": true,
@@ -88,6 +88,8 @@ public class ReportController {
                                                     "title": "서비스에서 불편한 점은?",
                                                     "type": "SUBJECTIVE",
                                                     "result": {
+                                                      "aiSummary": "AI 요약 준비 중입니다.",
+                                                      "topAnswers": ["로딩이 느립니다.", "버튼이 너무 작아요."],
                                                       "texts": [
                                                         "로딩이 느립니다.",
                                                         "버튼이 너무 작아요.",
@@ -102,7 +104,7 @@ public class ReportController {
                             ),
                             @ExampleObject(
                                     name = "COMPLETED - OBJECTIVE",
-                                    summary = "객관식 (OBJECTIVE) — options: 선택지별 count/ratio, otherTexts: 기타 응답 (isOther=true 시)",
+                                    summary = "객관식 (OBJECTIVE) — options: 선택지별 count/ratio, isOther=true 시 aiSummary/topAnswers/otherTexts 포함",
                                     value = """
                                             {
                                               "success": true,
@@ -128,6 +130,8 @@ public class ReportController {
                                                         { "optionId": 102, "content": "검색", "count": 3, "ratio": 0.3 },
                                                         { "optionId": 103, "content": "기타", "count": 1, "ratio": 0.1 }
                                                       ],
+                                                      "aiSummary": "AI 요약 준비 중입니다.",
+                                                      "topAnswers": ["알림 기능을 자주 씁니다."],
                                                       "otherTexts": ["알림 기능을 자주 씁니다."]
                                                     }
                                                   }
@@ -138,7 +142,7 @@ public class ReportController {
                             ),
                             @ExampleObject(
                                     name = "COMPLETED - FIVE_SECOND (주관식)",
-                                    summary = "5초 테스트 주관식 (FIVE_SECOND, isObjective=false) — texts: 응답 텍스트 목록",
+                                    summary = "5초 테스트 주관식 (FIVE_SECOND, isObjective=false) — aiSummary/topAnswers/texts 포함",
                                     value = """
                                             {
                                               "success": true,
@@ -159,6 +163,8 @@ public class ReportController {
                                                     "title": "화면에서 가장 먼저 눈에 띈 것은?",
                                                     "type": "FIVE_SECOND",
                                                     "result": {
+                                                      "aiSummary": "AI 요약 준비 중입니다.",
+                                                      "topAnswers": ["상단 배너가 눈에 들어왔어요."],
                                                       "texts": [
                                                         "상단 배너가 눈에 들어왔어요.",
                                                         "검색창이 먼저 보였습니다."
@@ -172,7 +178,7 @@ public class ReportController {
                             ),
                             @ExampleObject(
                                     name = "COMPLETED - FIVE_SECOND (객관식)",
-                                    summary = "5초 테스트 객관식 (FIVE_SECOND, isObjective=true) — options: 선택지별 count/ratio, otherTexts: 기타 응답 (isOther=true 시)",
+                                    summary = "5초 테스트 객관식 (FIVE_SECOND, isObjective=true) — options: 선택지별 count/ratio, isOther=true 시 aiSummary/topAnswers/otherTexts 포함",
                                     value = """
                                             {
                                               "success": true,
@@ -196,7 +202,10 @@ public class ReportController {
                                                       "options": [
                                                         { "optionId": 201, "content": "검색창", "count": 4, "ratio": 0.667 },
                                                         { "optionId": 202, "content": "배너", "count": 2, "ratio": 0.333 }
-                                                      ]
+                                                      ],
+                                                      "aiSummary": "AI 요약 준비 중입니다.",
+                                                      "topAnswers": ["하단 버튼이요"],
+                                                      "otherTexts": ["하단 버튼이요"]
                                                     }
                                                   }
                                                 ]
@@ -206,7 +215,7 @@ public class ReportController {
                             ),
                             @ExampleObject(
                                     name = "COMPLETED - SCALE",
-                                    summary = "척도 (SCALE) — average: 평균, distribution: 점수별 응답 수",
+                                    summary = "척도 (SCALE) — average: 평균, mostVoted: 최다 득표 점수, endValue: 양 끝 라벨, distribution: 점수별 응답 수",
                                     value = """
                                             {
                                               "success": true,
@@ -228,6 +237,11 @@ public class ReportController {
                                                     "type": "SCALE",
                                                     "result": {
                                                       "average": 3.8,
+                                                      "mostVoted": 4,
+                                                      "endValue": {
+                                                        "minLabel": "전혀 아니다",
+                                                        "maxLabel": "매우 그렇다"
+                                                      },
                                                       "distribution": [
                                                         { "score": 1, "count": 0 },
                                                         { "score": 2, "count": 1 },

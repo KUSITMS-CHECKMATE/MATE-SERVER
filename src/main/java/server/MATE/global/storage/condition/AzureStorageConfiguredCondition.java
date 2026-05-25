@@ -10,8 +10,11 @@ public class AzureStorageConfiguredCondition implements Condition {
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
         String connectionString = context.getEnvironment().getProperty("azure.storage.connection-string");
-        String containerName = context.getEnvironment().getProperty("azure.storage.container-name");
+        String publicContainerName = context.getEnvironment().getProperty("azure.storage.public-container-name");
+        String privateContainerName = context.getEnvironment().getProperty("azure.storage.private-container-name");
 
-        return StringUtils.hasText(connectionString) && StringUtils.hasText(containerName);
+        return StringUtils.hasText(connectionString)
+                && StringUtils.hasText(publicContainerName)
+                && StringUtils.hasText(privateContainerName);
     }
 }

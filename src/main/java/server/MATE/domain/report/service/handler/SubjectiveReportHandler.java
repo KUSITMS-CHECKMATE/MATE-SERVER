@@ -34,6 +34,10 @@ public class SubjectiveReportHandler implements ReportHandler {
                 .sorted(Comparator.comparing(Answer::getCreatedAt))
                 .map(a -> (String) a.getAnswer().get("text"))
                 .toList();
-        return Map.of("texts", texts);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("aiSummary", "AI 요약 준비 중입니다.");
+        result.put("topAnswers", ReportHandlerUtils.topAnswers(texts));
+        result.put("texts", texts);
+        return result;
     }
 }

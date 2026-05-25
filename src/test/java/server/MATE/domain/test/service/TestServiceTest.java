@@ -3,15 +3,12 @@ package server.MATE.domain.test.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.Clock;
-import server.MATE.domain.test.dto.request.TestUpdateRequest;
+import server.MATE.domain.test.dto.response.LikedTestSummaryItem;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
@@ -21,8 +18,7 @@ import server.MATE.domain.test.entity.TestLike;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
-import server.MATE.global.storage.event.FileCleanupEvent;
-import server.MATE.global.storage.event.FileDeleteEvent;
+import server.MATE.global.storage.FileStorageService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +26,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -43,10 +40,7 @@ class TestServiceTest {
     private TestLikeRepository testLikeRepository;
 
     @Mock
-    private ApplicationEventPublisher eventPublisher;
-
-    @Mock
-    private Clock clock;
+    private FileStorageService fileStorageService;
 
     @InjectMocks
     private TestService testService;
@@ -67,42 +61,7 @@ class TestServiceTest {
                 .build();
         ReflectionTestUtils.setField(test, "id", TEST_ID);
         test.addCategories(List.of(Category.FOOD));
-    }
-
-    @Test
-    void 이미지_교체_시_추가된_키는_CleanupEvent_제거된_키는_DeleteEvent_발행() {
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
-
-        // old: [old-key-1, old-key-2] → new: [old-key-1, new-key-1]
-        TestUpdateRequest request = new TestUpdateRequest(null, null, null, null, null,
-                List.of("old-key-1", "new-key-1"));
-        testService.updateTest(TEST_ID, request, MAKER_ID);
-
-        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
-        verify(eventPublisher, times(2)).publishEvent(captor.capture());
-
-        List<Object> events = captor.getAllValues();
-        FileCleanupEvent cleanupEvent = events.stream()
-                .filter(e -> e instanceof FileCleanupEvent)
-                .map(e -> (FileCleanupEvent) e)
-                .findFirst().orElseThrow();
-        FileDeleteEvent deleteEvent = events.stream()
-                .filter(e -> e instanceof FileDeleteEvent)
-                .map(e -> (FileDeleteEvent) e)
-                .findFirst().orElseThrow();
-
-        assertThat(cleanupEvent.fileKeys()).containsExactly("new-key-1");
-        assertThat(deleteEvent.fileKeys()).containsExactly("old-key-2");
-    }
-
-    @Test
-    void 이미지_필드_생략_시_이벤트_미발행() {
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
-
-        TestUpdateRequest request = new TestUpdateRequest("새 제목", null, null, null, null, null);
-        testService.updateTest(TEST_ID, request, MAKER_ID);
-
-        verify(eventPublisher, never()).publishEvent(any());
+        lenient().when(fileStorageService.generateDownloadUrl(anyString())).thenReturn("https://example.com/url");
     }
 
     @Test
@@ -120,12 +79,14 @@ class TestServiceTest {
         given(testRepository.findAllByMakerIdAndDeletedAtIsNullOrderByCreatedAtDesc(MAKER_ID))
                 .willReturn(List.of(myTest));
 
-        List<MyTestSummaryResponse> responses = testService.listMyTests(MAKER_ID);
+        MyTestSummaryResponse response = testService.listMyTests(MAKER_ID);
 
-        assertThat(responses).hasSize(1);
-        assertThat(responses.getFirst().title()).isEqualTo("내 테스트");
-        assertThat(responses.getFirst().testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
-        assertThat(responses.getFirst().pplCount()).isZero();
+        assertThat(response.testCount()).isEqualTo(1);
+        assertThat(response.tests()).hasSize(1);
+        assertThat(response.tests().getFirst().id()).isEqualTo(TEST_ID);
+        assertThat(response.tests().getFirst().title()).isEqualTo("내 테스트");
+        assertThat(response.tests().getFirst().testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+        assertThat(response.tests().getFirst().pplCount()).isZero();
     }
 
     @Test
@@ -133,13 +94,17 @@ class TestServiceTest {
         given(testRepository.findLikedTestsByUserId(MAKER_ID, ApprovalStatus.ACCEPTED))
                 .willReturn(List.of(test));
 
-        List<LikedTestSummaryResponse> responses = testService.listLikedTests(MAKER_ID);
+        LikedTestSummaryResponse response = testService.listLikedTests(MAKER_ID);
 
-        assertThat(responses).hasSize(1);
-        assertThat(responses.getFirst().title()).isEqualTo("기존 제목");
-        assertThat(responses.getFirst().description()).isEqualTo("기존 소개");
-        assertThat(responses.getFirst().reward()).isEqualTo(300);
-        assertThat(responses.getFirst().thumbnailKey()).isEqualTo("old-key-1");
+        assertThat(response.testCount()).isEqualTo(1);
+        assertThat(response.tests()).hasSize(1);
+
+        LikedTestSummaryItem item = response.tests().getFirst();
+        assertThat(item.id()).isEqualTo(TEST_ID);
+        assertThat(item.title()).isEqualTo("기존 제목");
+        assertThat(item.description()).isEqualTo("기존 소개");
+        assertThat(item.reward()).isEqualTo(300);
+        assertThat(item.thumbnailUrl()).isEqualTo("https://example.com/url");
     }
 
     @Test
