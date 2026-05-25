@@ -72,7 +72,6 @@ public class MockPaymentService {
         }
     }
 
-    @Transactional(readOnly = true)
     public PaymentExecuteResponse executePayment(Long paymentId, Long makerId) {
         Payment payment = getOwnedPayment(paymentId, makerId);
         if (payment.getPayStatus() == server.MATE.domain.payment.entity.PayStatus.PAY_SUCCEEDED) {
