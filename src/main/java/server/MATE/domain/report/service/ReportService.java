@@ -36,8 +36,7 @@ public class ReportService {
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         if (!test.getMakerId().equals(makerId)) throw new BaseException(BaseErrorCode.TEST_005);
 
-        List<QuestionSummaryItem> questionSummaries = questionRepository.findQuestionSummariesByTestId(testId);
-        int questionCount = questionSummaries.size();
+        int questionCount = Math.toIntExact(questionRepository.countByTestIdAndDeletedAtIsNull(testId));
         ReportStatus reportStatus = test.getReportStatus() != null ? test.getReportStatus() : ReportStatus.PENDING;
 
         switch (test.getTestStatus()) {
@@ -83,7 +82,9 @@ public class ReportService {
         Map<Long, Map<String, Object>> resultByQuestionId = aggregations.stream()
                 .collect(Collectors.toMap(Report::getQuestionId, Report::getResult));
 
-        // questions에서 사용한 projection을 reports에서 재사용
+        List<QuestionSummaryItem> questionSummaries = questionRepository.findQuestionSummariesByTestId(testId);
+
+        // 질문 요약 projection을 reports 조립에 재사용
         List<ReportItem> reports = questionSummaries.stream()
                 .map(question -> new ReportItem(
                         question.questionId(),
