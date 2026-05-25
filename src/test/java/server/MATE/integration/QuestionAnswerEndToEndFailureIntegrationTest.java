@@ -7,7 +7,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
-import server.MATE.domain.test.entity.ApprovalStatus;
+import server.MATE.domain.test.entity.TestStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -675,7 +675,7 @@ class QuestionAnswerEndToEndFailureIntegrationTest extends BaseQuestionAnswerEnd
         long questionId = getSingleQuestion(actors.testId(), actors.makerToken()).path("questionId").asLong();
 
         server.MATE.domain.test.entity.Test test = testRepository.findById(actors.testId()).orElseThrow();
-        ReflectionTestUtils.setField(test, "approvalStatus", ApprovalStatus.WAITING);
+        ReflectionTestUtils.setField(test, "testStatus", TestStatus.WAITING);
         testRepository.saveAndFlush(test);
 
         submitAnswerExpectingError(actors.testId(), actors.testerToken(), """
