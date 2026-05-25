@@ -145,17 +145,18 @@ public class Test extends BaseEntity {
 
     @Builder
     public Test(Long makerId, String title, String description, String serviceName,
-                String serviceDescription, List<String> imageKeys) {
+                String serviceDescription, List<String> imageKeys, Integer goalPpl, Integer reward,
+                TestStatus testStatus, ApprovalStatus approvalStatus) {
         this.makerId = makerId;
         this.title = title;
         this.description = description;
         this.serviceName = serviceName;
         this.serviceDescription = serviceDescription;
         if (imageKeys != null) this.imageKeys.addAll(imageKeys);
-        this.testStatus = TestStatus.IN_PROGRESS;
-        this.approvalStatus = ApprovalStatus.ACCEPTED; // Todo. 관리자 api 개발 후 WAITING으로 수정
-        this.goalPpl = 100;
-        this.reward = 300;
+        this.testStatus = testStatus == null ? TestStatus.IN_PROGRESS : testStatus;
+        this.approvalStatus = approvalStatus == null ? ApprovalStatus.ACCEPTED : approvalStatus; // Todo. 관리자 api 개발 후 WAITING으로 수정
+        this.goalPpl = goalPpl == null ? 100 : goalPpl;
+        this.reward = reward == null ? 300 : reward;
         this.pplCount = 0L;
         this.likeCount = 0L;
     }

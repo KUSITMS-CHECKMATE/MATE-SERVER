@@ -43,6 +43,12 @@ public enum BaseErrorCode implements ErrorCode {
     TEST_005(HttpStatus.FORBIDDEN, "TEST_005", "테스트 메이커만 조회할 수 있습니다."),
     TEST_006(HttpStatus.BAD_REQUEST, "TEST_006", "테스트가 종료된 후에 조회할 수 있습니다."),
 
+    // Test Draft
+    DRAFT_001(HttpStatus.NOT_FOUND, "DRAFT_001", "테스트 초안을 찾을 수 없습니다."),
+    DRAFT_002(HttpStatus.FORBIDDEN, "DRAFT_002", "테스트 초안에 접근할 권한이 없습니다."),
+    DRAFT_003(HttpStatus.BAD_REQUEST, "DRAFT_003", "결제를 생성할 수 없는 테스트 초안입니다."),
+    DRAFT_004(HttpStatus.BAD_REQUEST, "DRAFT_004", "게시할 수 없는 테스트 초안입니다."),
+
     // Question
     QUESTION_001(HttpStatus.BAD_REQUEST, "QUESTION_001", "최소 선택 개수는 1 이상이어야 합니다."),
     QUESTION_002(HttpStatus.BAD_REQUEST, "QUESTION_002", "최대 선택 개수는 최소 선택 개수 이상이어야 합니다."),
@@ -69,9 +75,17 @@ public enum BaseErrorCode implements ErrorCode {
     ANSWER_007(HttpStatus.BAD_REQUEST, "ANSWER_007", "점수가 허용 범위를 벗어났습니다."),
     ANSWER_008(HttpStatus.BAD_REQUEST, "ANSWER_008", "모든 문항에 응답해야 합니다."),
 
+    // Payment
+    PAYMENT_001(HttpStatus.NOT_FOUND, "PAYMENT_001", "결제 정보를 찾을 수 없습니다."),
+    PAYMENT_002(HttpStatus.BAD_REQUEST, "PAYMENT_002", "결제를 생성할 수 없는 상태입니다."),
+    PAYMENT_003(HttpStatus.BAD_REQUEST, "PAYMENT_003", "결제를 실행할 수 없는 상태입니다."),
+    PAYMENT_004(HttpStatus.BAD_REQUEST, "PAYMENT_004", "환불할 수 없는 상태입니다."),
+    PAYMENT_005(HttpStatus.BAD_REQUEST, "PAYMENT_005", "결제 금액 계산에 필요한 값이 누락되었습니다."),
+
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
     FILE_002(HttpStatus.BAD_REQUEST, "FILE_002", "지원하지 않는 파일 형식입니다. 허용되는 확장자를 확인해주세요."),
+    FILE_003(HttpStatus.BAD_REQUEST, "FILE_003", "파일 크기가 허용 범위를 초과했습니다. 최대 50MB까지 업로드할 수 있습니다."),
 
     ;
 

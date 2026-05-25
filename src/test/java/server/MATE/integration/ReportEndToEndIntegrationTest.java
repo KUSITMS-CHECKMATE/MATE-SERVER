@@ -104,7 +104,10 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0);
         assertThat(result.path("type").asText()).isEqualTo("SUBJECTIVE");
-        JsonNode texts = result.path("result").path("texts");
+        JsonNode resultData = result.path("result");
+        assertThat(resultData.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
+        assertThat(resultData.path("topAnswers").isArray()).isTrue();
+        JsonNode texts = resultData.path("texts");
         assertThat(texts).hasSize(1);
         assertThat(texts.get(0).asText()).isEqualTo("주관식 응답");
     }
@@ -156,6 +159,10 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
         assertThat(result.path("average").asDouble()).isEqualTo(4.0);
+        assertThat(result.path("mostVoted").asInt()).isEqualTo(4);
+        JsonNode endValue = result.path("endValue");
+        assertThat(endValue.path("minLabel").asText()).isNotBlank();
+        assertThat(endValue.path("maxLabel").asText()).isNotBlank();
         JsonNode distribution = result.path("distribution");
         assertThat(distribution).hasSize(5);
         assertThat(distribution.get(3).path("score").asInt()).isEqualTo(4);
@@ -180,7 +187,10 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0);
         assertThat(result.path("type").asText()).isEqualTo("FIVE_SECOND");
-        JsonNode texts = result.path("result").path("texts");
+        JsonNode resultData = result.path("result");
+        assertThat(resultData.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
+        assertThat(resultData.path("topAnswers").isArray()).isTrue();
+        JsonNode texts = resultData.path("texts");
         assertThat(texts).hasSize(1);
         assertThat(texts.get(0).asText()).isEqualTo("5초 주관 응답");
     }
@@ -278,7 +288,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     @DisplayName("TREE_TEST 응답 제출 후 리포트에 nodeFrequency와 pathFrequency가 반환된다")
     void getReport_withTreeTestAnswers_returnsNodeFrequencyAndPathFrequency() throws Exception {
         TestActors actors = createActors();
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     {
@@ -509,7 +519,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     @DisplayName("여러 타입 질문이 혼재할 때 reports가 sequence 순서로 조립되고 각 항목의 필드가 올바르다")
     void getReport_withMultipleQuestionTypes_reportsAssembledInSequenceOrder() throws Exception {
         TestActors actors = createActors();
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     { "type": "SUBJECTIVE", "title": "주관식 질문", "description": "설명", "imageKey": null },
@@ -562,7 +572,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     @DisplayName("전체 질문 유형이 혼재할 때 reports가 sequence 순서로 조립되고 각 유형별 핵심 집계 필드를 포함한다")
     void getReport_withAllQuestionTypes_reportsAssembledInSequenceOrder() throws Exception {
         TestActors actors = createActors();
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     { "type": "SUBJECTIVE", "title": "주관식 질문", "description": "설명", "imageKey": null },
@@ -806,6 +816,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
+        assertThat(result.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
+        assertThat(result.path("topAnswers").isArray()).isTrue();
         JsonNode otherTexts = result.path("otherTexts");
         assertThat(otherTexts).hasSize(1);
         assertThat(otherTexts.get(0).asText()).isEqualTo("직접 입력 응답");
@@ -956,7 +968,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         TestActors actors = createActors();
         String tester2Token = createAdditionalTester();
 
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [{
                     "type": "TREE_TEST", "title": "트리 질문", "description": "설명",
@@ -988,7 +1000,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         TestActors actors = createActors();
         String tester2Token = createAdditionalTester();
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     { "type": "SUBJECTIVE", "title": "주관식 질문", "description": "설명", "imageKey": null },
@@ -1180,6 +1192,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
+        assertThat(result.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
+        assertThat(result.path("topAnswers").isArray()).isTrue();
         JsonNode otherTexts = result.path("otherTexts");
         assertThat(otherTexts).hasSize(1);
         assertThat(otherTexts.get(0).asText()).isEqualTo("5초 기타 응답");
