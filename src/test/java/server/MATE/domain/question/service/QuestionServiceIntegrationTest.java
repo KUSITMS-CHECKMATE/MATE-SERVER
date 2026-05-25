@@ -322,8 +322,7 @@ class QuestionServiceIntegrationTest {
         assertThat(fiveSecondResponse.maxSelect()).isNull();
         assertThat(fiveSecondResponse.isOther()).isNull();
         assertThat(fiveSecondResponse.options()).isEmpty();
-        assertThat(fiveSecondResponse.image()).isNotNull();
-        assertThat(fiveSecondResponse.image().imageKey()).isEqualTo("five-second-image");
+        assertThat(fiveSecondResponse.imageUrl()).isNull();
     }
 
     @Test
