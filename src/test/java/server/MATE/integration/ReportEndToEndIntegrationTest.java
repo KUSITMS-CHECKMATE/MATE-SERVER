@@ -1050,11 +1050,11 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         assertThat(subjectiveTexts).hasSize(2);
         assertThat(subjectiveTexts).extracting(JsonNode::asText)
-                .containsExactlyInAnyOrder("빠른 주관식 응답", "늦은 주관식 응답");
+                .containsExactly("빠른 주관식 응답", "늦은 주관식 응답");
 
         assertThat(fiveSecondTexts).hasSize(2);
         assertThat(fiveSecondTexts).extracting(JsonNode::asText)
-                .containsExactlyInAnyOrder("빠른 5초 응답", "늦은 5초 응답");
+                .containsExactly("빠른 5초 응답", "늦은 5초 응답");
     }
 
     @TestConfiguration(proxyBeanMethods = false)

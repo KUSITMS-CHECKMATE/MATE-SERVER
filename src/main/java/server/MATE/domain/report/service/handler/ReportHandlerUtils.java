@@ -40,8 +40,10 @@ final class ReportHandlerUtils {
     }
 
     static List<String> sampleTexts(List<String> texts) {
-        if (texts.size() <= TEXT_SAMPLE_SIZE) return texts;
-        return List.copyOf(texts.subList(0, TEXT_SAMPLE_SIZE));
+        return texts.stream()
+                .filter(t -> t != null && !t.isBlank())
+                .limit(TEXT_SAMPLE_SIZE)
+                .toList();
     }
 
     @SuppressWarnings("unchecked")
