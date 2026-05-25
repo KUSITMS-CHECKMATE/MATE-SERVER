@@ -78,21 +78,21 @@ public class FiveSecondReportHandler implements ReportHandler {
         result.put("options", options);
         if (Boolean.TRUE.equals(fiveSecond.getIsOther())) {
             result.put("aiSummary", "AI 요약 준비 중입니다.");
-            result.put("topAnswers", ReportHandlerUtils.topAnswers(otherTexts));
-            result.put("otherTexts", otherTexts);
+            result.put("clusters", ReportHandlerUtils.buildClusters(otherTexts));
+            result.put("otherTexts", ReportHandlerUtils.sampleTexts(otherTexts));
         }
         return result;
     }
 
     private Map<String, Object> computeSubjective(List<Answer> answers) {
-        List<String> texts = answers.stream()
+        List<String> allTexts = answers.stream()
                 .sorted(Comparator.comparing(Answer::getCreatedAt))
                 .map(a -> (String) a.getAnswer().get("text"))
                 .toList();
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("aiSummary", "AI 요약 준비 중입니다.");
-        result.put("topAnswers", ReportHandlerUtils.topAnswers(texts));
-        result.put("texts", texts);
+        result.put("clusters", ReportHandlerUtils.buildClusters(allTexts));
+        result.put("texts", ReportHandlerUtils.sampleTexts(allTexts));
         return result;
     }
 }
