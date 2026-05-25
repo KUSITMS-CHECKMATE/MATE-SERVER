@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.test.dto.request.TestUpdateRequest;
 import server.MATE.domain.test.dto.response.ImageInfo;
+import server.MATE.domain.test.dto.response.LikedTestSummaryItem;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
@@ -57,11 +58,12 @@ public class TestService {
     }
 
     @Transactional(readOnly = true)
-    public List<LikedTestSummaryResponse> listLikedTests(Long userId) {
+    public LikedTestSummaryResponse listLikedTests(Long userId) {
         List<Test> tests = testRepository.findLikedTestsByUserId(userId, ApprovalStatus.ACCEPTED);
-        return tests.stream()
-                .map(test -> LikedTestSummaryResponse.from(test, toThumbnailUrl(test.getImageKeys())))
+        List<LikedTestSummaryItem> items = tests.stream()
+                .map(test -> LikedTestSummaryItem.from(test, toThumbnailUrl(test.getImageKeys())))
                 .toList();
+        return LikedTestSummaryResponse.from(items);
     }
 
     @Transactional(readOnly = true)

@@ -70,11 +70,13 @@ public class TestController {
     }
 
     @Operation(
-            summary = "내가 찜한 테스트 목록 조회",
+            summary = "찜한 테스트 목록 조회",
             description = """
-                    현재 로그인한 사용자가 찜한 테스트 목록을 찜한 시각 최신순으로 조회합니다.
+                    현재 로그인한 사용자가 찜한 테스트 목록을 찜한 시각 최신순으로 조회합니다. 관심 탭 HM_01 19 화면에 해당하는 api 입니다.<br>
                     삭제되지 않았고 관리자 승인(`ACCEPTED`)이 완료된 테스트만 반환합니다.
 
+                    - **testCount**: 테스트 개수
+                    - **id**: 테스트 ID
                     - **thumbnailUrl**: 썸네일 Public URL (만료 없음, 이미지 없으면 null)
                     - **title**: 테스트명
                     - **description**: 테스트 한 줄 소개
@@ -82,10 +84,10 @@ public class TestController {
                     """
     )
     @GetMapping("/likes")
-    public ResponseEntity<ApiResponse<List<LikedTestSummaryResponse>>> listLikedTests(
+    public ResponseEntity<ApiResponse<LikedTestSummaryResponse>> listLikedTests(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        List<LikedTestSummaryResponse> data = testService.listLikedTests(authenticatedUser.getId());
+        LikedTestSummaryResponse data = testService.listLikedTests(authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("내가 찜한 테스트 목록을 조회했습니다.", data));
     }
 
