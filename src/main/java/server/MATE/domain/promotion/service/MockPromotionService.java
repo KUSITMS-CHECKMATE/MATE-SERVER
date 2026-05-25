@@ -3,7 +3,6 @@ package server.MATE.domain.promotion.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import server.MATE.toss.dto.request.TossPromotionExecuteRequest;
 import server.MATE.toss.dto.request.TossPromotionGetKeyRequest;
 import server.MATE.toss.dto.request.TossPromotionResultRequest;
@@ -26,7 +25,6 @@ public class MockPromotionService {
     private final PromotionFailureStateService promotionFailureStateService;
     private final TossPromotionGateway tossPromotionGateway;
 
-    @Transactional
     public void grant(Long participationId, Long testId, Long testerId, Integer rewardAmount) {
         PromotionPrepareService.PromotionPreparation preparation =
                 promotionPrepareService.prepare(participationId, testId, testerId, rewardAmount);
