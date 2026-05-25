@@ -9,7 +9,6 @@ import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Scale;
 import server.MATE.domain.question.repository.ScaleRepository;
 import server.MATE.global.storage.FileStorageService;
-import server.MATE.global.storage.dto.ImageResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -40,13 +39,13 @@ public class ScaleQuestionDetailFetcher implements QuestionDetailFetcher {
                         scale -> ScaleDetailResponse.of(
                                 questionMap.get(scale.getId()),
                                 scale,
-                                toImageResponse(scale.getImageKey())
+                                toImageUrl(scale.getImageKey())
                         )
                 ));
     }
 
-    private ImageResponse toImageResponse(String key) {
+    private String toImageUrl(String key) {
         if (key == null) return null;
-        return new ImageResponse(key, fileStorageService.generateDownloadUrl(key));
+        return fileStorageService.generateDownloadUrl(key);
     }
 }
