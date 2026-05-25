@@ -24,6 +24,10 @@ jwt:
 toss:
   api:
     enabled: false
+  promotion:
+    answer:
+      enabled: false
+      promotion-code: test-answer-promotion
   crypto:
     decryption-key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
     aad: test-aad
