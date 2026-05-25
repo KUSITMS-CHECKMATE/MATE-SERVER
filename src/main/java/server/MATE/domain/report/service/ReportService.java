@@ -66,10 +66,19 @@ public class ReportService {
 
         // 테스트가 종료됐고 리포트 집계가 끝났다면 리포트를 반환함
         List<Report> aggregations = reportRepository.findAllByTestId(testId);
+        List<QuestionSummaryItem> questionSummaries = questionRepository.findQuestionSummariesByTestId(testId);
 
-        if (aggregations.size() != questionCount) {
-            log.error("테스트 {} 리포트 조회 중 완전성 불일치 감지: questionCount={}, reportCount={}",
-                    testId, questionCount, aggregations.size());
+        Map<Long, Map<String, Object>> resultByQuestionId = aggregations.stream()
+                .collect(Collectors.toMap(Report::getQuestionId, Report::getResult));
+
+        List<Long> missingQuestionIds = questionSummaries.stream()
+                .map(QuestionSummaryItem::questionId)
+                .filter(questionId -> !resultByQuestionId.containsKey(questionId))
+                .toList();
+
+        if (!missingQuestionIds.isEmpty()) {
+            log.error("테스트 {} 리포트 조회 중 활성 질문 리포트 누락 감지: questionCount={}, reportCount={}, missingQuestionIds={}",
+                    testId, questionCount, aggregations.size(), missingQuestionIds);
             return new ReportResponse(
                     test.getTestStatus(),
                     ReportStatus.FAILED,
@@ -78,11 +87,6 @@ public class ReportService {
                     List.of()
             );
         }
-
-        Map<Long, Map<String, Object>> resultByQuestionId = aggregations.stream()
-                .collect(Collectors.toMap(Report::getQuestionId, Report::getResult));
-
-        List<QuestionSummaryItem> questionSummaries = questionRepository.findQuestionSummariesByTestId(testId);
 
         // 질문 요약 projection을 reports 조립에 재사용
         List<ReportItem> reports = questionSummaries.stream()
