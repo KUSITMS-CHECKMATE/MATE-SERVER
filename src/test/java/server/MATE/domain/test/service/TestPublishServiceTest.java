@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -153,5 +154,44 @@ class TestPublishServiceTest {
 
         assertThat(testId).isEqualTo(99L);
         assertThat(payment.getTestId()).isEqualTo(99L);
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 카테고리가 포함된 draft는 publish 단계에서 DRAFT_004 예외가 발생한다")
+    void throwsDraft004WhenDraftContainsInvalidCategory() {
+        TestDraft draft = TestDraft.builder()
+                .makerId(1L)
+                .title("테스트 제목")
+                .description("테스트 설명")
+                .serviceName("서비스명")
+                .serviceDescription("서비스 설명")
+                .categories(List.of("INVALID_CATEGORY"))
+                .goalPpl(100)
+                .reward(300)
+                .questionsPayload(Map.of(
+                        "questions", List.of(
+                                Map.of("type", "SUBJECTIVE", "title", "질문 제목", "description", "질문 설명")
+                        )
+                ))
+                .status(TestDraftStatus.PAYMENT_CREATED)
+                .build();
+        ReflectionTestUtils.setField(draft, "id", 10L);
+
+        Payment payment = Payment.builder()
+                .draftId(10L)
+                .makerId(1L)
+                .payStatus(PayStatus.PAY_SUCCEEDED)
+                .goalPpl(100)
+                .reward(300)
+                .amount(30000)
+                .build();
+        ReflectionTestUtils.setField(payment, "id", 20L);
+
+        given(paymentRepository.findById(20L)).willReturn(Optional.of(payment));
+        given(testDraftRepository.findByIdForUpdate(10L)).willReturn(Optional.of(draft));
+
+        assertThatThrownBy(() -> testPublishService.publish(20L))
+                .isInstanceOf(server.MATE.global.common.exception.BaseException.class)
+                .hasMessageContaining("게시할 수 없는 테스트 초안입니다.");
     }
 }
