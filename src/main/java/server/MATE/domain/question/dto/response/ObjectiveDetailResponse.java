@@ -3,7 +3,6 @@ package server.MATE.domain.question.dto.response;
 import server.MATE.domain.question.entity.Objective;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.global.storage.dto.ImageResponse;
 
 import java.util.List;
 import java.util.function.Function;
@@ -22,7 +21,7 @@ public record ObjectiveDetailResponse(
         List<ObjectiveOptionDetailResponse> options
 ) implements QuestionDetailItem {
 
-    public static ObjectiveDetailResponse of(Question question, Objective objective, Function<String, ImageResponse> keyToImage) {
+    public static ObjectiveDetailResponse of(Question question, Objective objective, Function<String, String> keyToUrl) {
         return new ObjectiveDetailResponse(
                 question.getId(),
                 objective.getId(),
@@ -37,7 +36,7 @@ public record ObjectiveDetailResponse(
                 objective.getOptions().stream()
                         .map(option -> ObjectiveOptionDetailResponse.from(
                                 option,
-                                keyToImage.apply(option.getImageKey())
+                                keyToUrl.apply(option.getImageKey())
                         ))
                         .toList()
         );

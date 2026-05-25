@@ -4,7 +4,6 @@ import server.MATE.domain.question.entity.FiveSecond;
 import server.MATE.domain.question.entity.ImageRatio;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.global.storage.dto.ImageResponse;
 
 import java.util.List;
 
@@ -15,7 +14,7 @@ public record FiveSecondDetailResponse(
         Long sequence,
         String title,
         String description,
-        ImageResponse image,
+        String imageUrl,
         ImageRatio imageRatio,
         boolean isObjective,
         Boolean isDuplicate,
@@ -25,7 +24,7 @@ public record FiveSecondDetailResponse(
         List<FiveSecondOptionDetailResponse> options
 ) implements QuestionDetailItem {
 
-    public static FiveSecondDetailResponse of(Question question, FiveSecond fiveSecond, ImageResponse image) {
+    public static FiveSecondDetailResponse of(Question question, FiveSecond fiveSecond, String imageUrl) {
         return new FiveSecondDetailResponse(
                 question.getId(),
                 fiveSecond.getId(),
@@ -33,7 +32,7 @@ public record FiveSecondDetailResponse(
                 question.getSequence(),
                 question.getTitle(),
                 question.getDescription(),
-                image,
+                imageUrl,
                 fiveSecond.getImageRatio(),
                 fiveSecond.isObjective(),
                 fiveSecond.getIsDuplicate(),
