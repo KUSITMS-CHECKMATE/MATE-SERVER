@@ -12,6 +12,7 @@ import server.MATE.domain.answer.repository.AnswerRepository;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.report.entity.Report;
+import server.MATE.domain.report.event.ReportAggregateService;
 import server.MATE.domain.report.repository.ReportRepository;
 import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.repository.TestRepository;
@@ -24,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
-class ReportAggregationServiceTest {
+class ReportAggregateServiceTest {
 
     @Mock
     private QuestionRepository questionRepository;
@@ -38,14 +39,14 @@ class ReportAggregationServiceTest {
     @Mock
     private TestRepository testRepository;
 
-    private ReportAggregationService reportAggregationService;
+    private ReportAggregateService reportAggregateService;
 
     private server.MATE.domain.test.entity.Test test;
     private final Long TEST_ID = 10L;
 
     @BeforeEach
     void setUp() {
-        reportAggregationService = new ReportAggregationService(
+        reportAggregateService = new ReportAggregateService(
                 questionRepository,
                 answerRepository,
                 reportRepository,
@@ -75,7 +76,7 @@ class ReportAggregationServiceTest {
         given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
         given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report1, report2));
 
-        List<Report> recovered = reportAggregationService.recover(
+        List<Report> recovered = reportAggregateService.recover(
                 new DataIntegrityViolationException("duplicate key"), TEST_ID);
 
         assertThat(recovered).containsExactly(report1, report2);
@@ -93,7 +94,7 @@ class ReportAggregationServiceTest {
         given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
         given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report1, report2));
 
-        List<Report> recovered = reportAggregationService.recover(
+        List<Report> recovered = reportAggregateService.recover(
                 new RuntimeException("aggregate failed"), TEST_ID);
 
         assertThat(recovered).containsExactly(report1, report2);
@@ -107,7 +108,7 @@ class ReportAggregationServiceTest {
         given(reportRepository.countByTestId(TEST_ID)).willReturn(1L);
         given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
 
-        List<Report> recovered = reportAggregationService.recover(
+        List<Report> recovered = reportAggregateService.recover(
                 new DataIntegrityViolationException("duplicate key"), TEST_ID);
 
         assertThat(recovered).isEmpty();
@@ -121,7 +122,7 @@ class ReportAggregationServiceTest {
         given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
         given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
 
-        List<Report> recovered = reportAggregationService.recover(
+        List<Report> recovered = reportAggregateService.recover(
                 new RuntimeException("aggregate failed"), TEST_ID);
 
         assertThat(recovered).isEmpty();
