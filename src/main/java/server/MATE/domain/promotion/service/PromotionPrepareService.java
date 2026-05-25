@@ -1,7 +1,5 @@
 package server.MATE.domain.promotion.service;
 
-import java.util.Optional;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -50,9 +48,10 @@ public class PromotionPrepareService {
             );
         }
 
-        Optional<TossAccount> tossAccount = tossAccountRepository.findByUserId(testerId)
-                .filter(TossAccount::isLinked);
-        if (tossAccount.isEmpty()) {
+        TossAccount tossAccount = tossAccountRepository.findByUserId(testerId)
+                .filter(TossAccount::isLinked)
+                .orElse(null);
+        if (tossAccount == null) {
             return PromotionPreparation.failure(
                     reward.getId(),
                     LOCAL_ERROR_CODE_NOT_LINKED,
@@ -60,8 +59,8 @@ public class PromotionPrepareService {
             );
         }
 
-        reward.assignTossUserKey(tossAccount.get().getTossUserKey());
-        return PromotionPreparation.ready(reward.getId(), tossAccount.get().getTossUserKey(), promotionCode, rewardAmount);
+        reward.assignTossUserKey(tossAccount.getTossUserKey());
+        return PromotionPreparation.ready(reward.getId(), tossAccount.getTossUserKey(), promotionCode, rewardAmount);
     }
 
     public record PromotionPreparation(
