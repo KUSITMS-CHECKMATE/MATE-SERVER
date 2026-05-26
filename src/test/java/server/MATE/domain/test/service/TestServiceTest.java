@@ -10,10 +10,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import server.MATE.domain.participation.repository.ParticipationRepository;
 import server.MATE.domain.test.dto.response.LikedTestSummaryItem;
-import server.MATE.domain.test.dto.response.TestDetailResponse;
-import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
+import server.MATE.domain.test.dto.response.TestDetailResponse;
+import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.TestSummaryListResponse;
 import server.MATE.domain.test.entity.Category;
 import server.MATE.domain.test.entity.TestLike;
@@ -22,7 +22,9 @@ import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.storage.FileStorageService;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +50,9 @@ class TestServiceTest {
     @Mock
     private FileStorageService fileStorageService;
 
+    @Mock
+    private Clock clock;
+
     @InjectMocks
     private TestService testService;
 
@@ -68,6 +73,7 @@ class TestServiceTest {
         ReflectionTestUtils.setField(test, "id", TEST_ID);
         test.addCategories(List.of(Category.FOOD));
         lenient().when(fileStorageService.generateDownloadUrl(anyString())).thenReturn("https://example.com/url");
+        lenient().when(clock.withZone(ZoneId.of("Asia/Seoul"))).thenReturn(Clock.system(ZoneId.of("Asia/Seoul")));
     }
 
     @Test
@@ -78,12 +84,10 @@ class TestServiceTest {
         server.MATE.domain.test.entity.Test waitingTest = createListTest(11L, "검수 중 테스트", TestStatus.WAITING);
         ReflectionTestUtils.setField(waitingTest, "createdAt", LocalDateTime.now().minusDays(5));
 
-        server.MATE.domain.test.entity.Test expiredTest = createListTest(12L, "마감 테스트", TestStatus.IN_PROGRESS);
-        ReflectionTestUtils.setField(expiredTest, "createdAt", LocalDateTime.now().minusMonths(2));
-
-        given(testRepository.findAllByTestStatusInAndDeletedAtIsNullOrderByCreatedAtDesc(
-                List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING)
-        )).willReturn(List.of(inProgressTest, waitingTest, expiredTest));
+        given(testRepository.findAllByTestStatusInAndDeletedAtIsNullAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
+                any(),
+                any()
+        )).willReturn(List.of(inProgressTest, waitingTest));
         given(testLikeRepository.findLikedTestIds(MAKER_ID, List.of(10L, 11L)))
                 .willReturn(List.of());
 

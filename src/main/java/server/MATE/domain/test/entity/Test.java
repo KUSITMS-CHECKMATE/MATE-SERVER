@@ -159,10 +159,9 @@ public class Test extends BaseEntity {
     }
 
     public boolean isParticipationPeriodOpen(LocalDate today) {
+        if (today == null) return false;
         LocalDate deadline = participationDeadlineDate();
-        if (deadline == null) {
-            return false;
-        }
+        if (deadline == null) return false;
         return !deadline.isBefore(today);
     }
 
