@@ -10,11 +10,12 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
+
+import static server.MATE.domain.report.excel.common.ReportExcelMergeSupport.mergeRow;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -55,7 +56,7 @@ public class MasterTemplateReportExcelWriter {
         headerRow.setHeightInPoints(8f);
         Cell headerCell = headerRow.createCell(0);
         headerCell.setCellStyle(headerStyle);
-        mergeRow(sheet, startRowIndex, 0, LAST_COLUMN, headerStyle);
+        mergeRow(headerRow, 0, LAST_COLUMN, headerStyle);
 
         return startRowIndex + 2;
     }
@@ -72,20 +73,5 @@ public class MasterTemplateReportExcelWriter {
         font.setColor(IndexedColors.WHITE.getIndex());
         style.setFont(font);
         return style;
-    }
-
-    private void mergeRow(Sheet sheet, int rowIndex, int firstCol, int lastCol, CellStyle style) {
-        if (firstCol == lastCol) {
-            return;
-        }
-        sheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, firstCol, lastCol));
-        Row row = sheet.getRow(rowIndex);
-        for (int columnIndex = firstCol + 1; columnIndex <= lastCol; columnIndex++) {
-            Cell cell = row.getCell(columnIndex);
-            if (cell == null) {
-                cell = row.createCell(columnIndex);
-            }
-            cell.setCellStyle(style);
-        }
     }
 }

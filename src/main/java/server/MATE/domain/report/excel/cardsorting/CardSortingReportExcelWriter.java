@@ -9,6 +9,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
 import server.MATE.domain.report.excel.common.ReportExcelWriteMode;
 
+import static server.MATE.domain.report.excel.common.ReportExcelMergeSupport.mergeRow;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -82,7 +84,7 @@ public class CardSortingReportExcelWriter {
         Row row = sheet.createRow(rowIndex);
         row.setHeightInPoints(24f);
         createCell(row, 0, questionNumberLabel + " - 질문 설정", styles.questionSettingHeader());
-        mergeRow(sheet, rowIndex, 0, LAST_COLUMN, styles.questionSettingHeader());
+        mergeRow(row, 0, LAST_COLUMN, styles.questionSettingHeader());
         return rowIndex + 1;
     }
 
@@ -97,10 +99,10 @@ public class CardSortingReportExcelWriter {
 
         createCell(row, 0, "질문 유형", styles.label());
         createCell(row, 1, "카드소팅", styles.value());
-        mergeRow(sheet, rowIndex, 1, LEFT_LAST_COLUMN, styles.value());
+        mergeRow(row, 1, LEFT_LAST_COLUMN, styles.value());
         createCell(row, STAT_CATEGORY_COLUMN, "질문 제목", styles.label());
         createCell(row, STAT_CARD_COLUMN, questionTitle == null ? "" : questionTitle, styles.value());
-        mergeRow(sheet, rowIndex, STAT_CARD_COLUMN, LAST_COLUMN, styles.value());
+        mergeRow(row, STAT_CARD_COLUMN, LAST_COLUMN, styles.value());
         return rowIndex + 1;
     }
 
@@ -109,10 +111,10 @@ public class CardSortingReportExcelWriter {
         row.setHeightInPoints(24f);
 
         createCell(row, 0, "카드소팅", styles.sectionHeader());
-        mergeRow(sheet, rowIndex, 0, LEFT_LAST_COLUMN, styles.sectionHeader());
+        mergeRow(row, 0, LEFT_LAST_COLUMN, styles.sectionHeader());
 
         createCell(row, STAT_CATEGORY_COLUMN, "카드소팅 - 통계", styles.sectionHeader());
-        mergeRow(sheet, rowIndex, STAT_CATEGORY_COLUMN, LAST_COLUMN, styles.sectionHeader());
+        mergeRow(row, STAT_CATEGORY_COLUMN, LAST_COLUMN, styles.sectionHeader());
         return rowIndex + 1;
     }
 
@@ -121,7 +123,7 @@ public class CardSortingReportExcelWriter {
         row.setHeightInPoints(22f);
 
         createCell(row, 0, "질문", styles.questionLabel());
-        mergeRow(sheet, rowIndex, 0, LEFT_LAST_COLUMN, styles.questionLabel());
+        mergeRow(row, 0, LEFT_LAST_COLUMN, styles.questionLabel());
 
         createCell(row, STAT_CATEGORY_COLUMN, "카테고리명", styles.tableHeader());
         createCell(row, STAT_CARD_COLUMN, "카드", styles.tableHeader());
@@ -211,14 +213,6 @@ public class CardSortingReportExcelWriter {
         Cell cell = row.createCell(columnIndex);
         cell.setCellValue(value);
         cell.setCellStyle(style);
-    }
-
-    private void mergeRow(Sheet sheet, int rowIndex, int firstCol, int lastCol, CellStyle style) {
-        if (firstCol == lastCol) {
-            return;
-        }
-        sheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, firstCol, lastCol));
-        applyStyleToMergedRegion(sheet, rowIndex, rowIndex, firstCol, lastCol, style);
     }
 
     private void mergeColumn(Sheet sheet, int firstRow, int lastRow, int columnIndex, CellStyle style) {
