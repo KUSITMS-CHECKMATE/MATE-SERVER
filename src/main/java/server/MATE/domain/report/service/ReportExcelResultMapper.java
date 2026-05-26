@@ -4,6 +4,7 @@ import server.MATE.domain.question.entity.ObjectiveOption;
 import server.MATE.domain.report.excel.CardSortingCategoryStatRow;
 import server.MATE.domain.report.excel.ObjectiveOptionStatRow;
 import server.MATE.domain.report.excel.ScaleValueStatRow;
+import server.MATE.domain.report.excel.TreeTestPathStatRow;
 import server.MATE.domain.report.service.handler.ReportHandlerUtils;
 
 import java.util.ArrayList;
@@ -112,6 +113,70 @@ final class ReportExcelResultMapper {
             }
         }
         return rows;
+    }
+
+    static List<TreeTestPathStatRow> toTreeTestPathStats(Map<String, Object> reportResult) {
+        Object pathFrequencyObject = reportResult.get("pathFrequency");
+        if (!(pathFrequencyObject instanceof List<?> pathFrequency)) {
+            return List.of();
+        }
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (Object itemObject : pathFrequency) {
+            if (itemObject instanceof Map<?, ?> itemMap) {
+                items.add(toStringObjectMap(itemMap));
+            }
+        }
+
+        int total = items.stream().mapToInt(item -> readInt(item.get("count"))).sum();
+        List<TreeTestPathStatRow> rows = new ArrayList<>();
+        for (Map<String, Object> item : items) {
+            int count = readInt(item.get("count"));
+            rows.add(new TreeTestPathStatRow(
+                    formatTreeTestPathLabel(item.get("pathLabels")),
+                    count,
+                    formatTreeTestRatioPercent(count, total)
+            ));
+        }
+        return rows;
+    }
+
+    static int readTreeTestTotalResponseCount(Map<String, Object> reportResult) {
+        Object pathFrequencyObject = reportResult.get("pathFrequency");
+        if (!(pathFrequencyObject instanceof List<?> pathFrequency)) {
+            return 0;
+        }
+        int total = 0;
+        for (Object itemObject : pathFrequency) {
+            if (itemObject instanceof Map<?, ?> itemMap) {
+                total += readInt(itemMap.get("count"));
+            }
+        }
+        return total;
+    }
+
+    private static String formatTreeTestPathLabel(Object pathLabelsObject) {
+        if (!(pathLabelsObject instanceof List<?> pathLabels)) {
+            return "";
+        }
+        List<String> labels = new ArrayList<>();
+        for (Object labelObject : pathLabels) {
+            if (labelObject != null) {
+                labels.add(String.valueOf(labelObject));
+            }
+        }
+        return String.join(" > ", labels);
+    }
+
+    private static String formatTreeTestRatioPercent(int count, int total) {
+        if (total == 0) {
+            return "-";
+        }
+        double percent = count * 100.0 / total;
+        if (percent == Math.rint(percent)) {
+            return String.valueOf((long) percent);
+        }
+        return String.format("%.2f", percent);
     }
 
     private static List<Map<String, Object>> readOptionStats(Map<String, Object> reportResult) {
