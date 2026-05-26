@@ -47,6 +47,7 @@ public final class ReportHandlerUtils {
 
     @SuppressWarnings("unchecked")
     public static List<Long> extractOptionIds(Map<String, Object> answerMap) {
+        if (answerMap == null) return List.of();
         List<Object> raw = (List<Object>) answerMap.get("optionIds");
         if (raw == null) return List.of();
         List<Long> ids = new ArrayList<>();

@@ -4,10 +4,11 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
 import server.MATE.domain.report.excel.common.ReportExcelWriteMode;
+
+import static server.MATE.domain.report.excel.common.ReportExcelMergeSupport.mergeRow;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -84,7 +85,7 @@ public class ScaleReportExcelWriter {
         Row row = sheet.createRow(rowIndex);
         row.setHeightInPoints(24f);
         createCell(row, 0, questionNumberLabel + " - 질문 설정", styles.questionSettingHeader());
-        mergeRow(sheet, rowIndex, 0, LAST_COLUMN, styles.questionSettingHeader());
+        mergeRow(row, 0, LAST_COLUMN, styles.questionSettingHeader());
         return rowIndex + 1;
     }
 
@@ -101,7 +102,7 @@ public class ScaleReportExcelWriter {
         createCell(row, 1, "척도", styles.value());
         createCell(row, STAT_VALUE_COLUMN, "질문 제목", styles.label());
         createCell(row, STAT_COUNT_COLUMN, questionTitle == null ? "" : questionTitle, styles.value());
-        mergeRow(sheet, rowIndex, STAT_COUNT_COLUMN, LAST_COLUMN, styles.value());
+        mergeRow(row, STAT_COUNT_COLUMN, LAST_COLUMN, styles.value());
         return rowIndex + 1;
     }
 
@@ -110,10 +111,10 @@ public class ScaleReportExcelWriter {
         row.setHeightInPoints(24f);
 
         createCell(row, 0, "척도 테스트", styles.sectionHeader());
-        mergeRow(sheet, rowIndex, 0, LEFT_LAST_COLUMN, styles.sectionHeader());
+        mergeRow(row, 0, LEFT_LAST_COLUMN, styles.sectionHeader());
 
         createCell(row, STAT_VALUE_COLUMN, "척도 테스트 - 통계", styles.sectionHeader());
-        mergeRow(sheet, rowIndex, STAT_VALUE_COLUMN, LAST_COLUMN, styles.sectionHeader());
+        mergeRow(row, STAT_VALUE_COLUMN, LAST_COLUMN, styles.sectionHeader());
         return rowIndex + 1;
     }
 
@@ -128,7 +129,7 @@ public class ScaleReportExcelWriter {
 
         createCell(row, 0, "질문", styles.questionLabel());
         createCell(row, 1, questionTitle == null ? "" : questionTitle, styles.questionText());
-        mergeRow(sheet, rowIndex, QUESTION_TEXT_FIRST_COLUMN, QUESTION_TEXT_LAST_COLUMN, styles.questionText());
+        mergeRow(row, QUESTION_TEXT_FIRST_COLUMN, QUESTION_TEXT_LAST_COLUMN, styles.questionText());
         return rowIndex + 1;
     }
 
@@ -197,20 +198,5 @@ public class ScaleReportExcelWriter {
         Cell cell = row.createCell(columnIndex);
         cell.setCellValue(value);
         cell.setCellStyle(style);
-    }
-
-    private void mergeRow(Sheet sheet, int rowIndex, int firstCol, int lastCol, CellStyle style) {
-        if (firstCol == lastCol) {
-            return;
-        }
-        sheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, firstCol, lastCol));
-        Row row = sheet.getRow(rowIndex);
-        for (int columnIndex = firstCol + 1; columnIndex <= lastCol; columnIndex++) {
-            Cell cell = row.getCell(columnIndex);
-            if (cell == null) {
-                cell = row.createCell(columnIndex);
-            }
-            cell.setCellStyle(style);
-        }
     }
 }
