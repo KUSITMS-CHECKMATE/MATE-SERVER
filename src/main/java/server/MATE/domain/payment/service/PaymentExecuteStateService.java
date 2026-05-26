@@ -26,7 +26,7 @@ public class PaymentExecuteStateService {
                                  PayMethod payMethod,
                                  String accountBankCode,
                                  String cardCompanyCode,
-                                 LocalDateTime approvalTime) {
+                                 LocalDateTime approvedAt) {
         Payment payment = paymentRepository.findByIdAndMakerId(paymentId, makerId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_001));
 
@@ -36,7 +36,7 @@ public class PaymentExecuteStateService {
                 payMethod,
                 accountBankCode,
                 cardCompanyCode,
-                approvalTime
+                approvedAt
         );
         return payment;
     }

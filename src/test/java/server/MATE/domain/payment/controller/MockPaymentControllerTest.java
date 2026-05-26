@@ -114,7 +114,11 @@ class MockPaymentControllerTest {
                 .andExpect(jsonPath("$.message").value("결제를 실행했습니다."))
                 .andExpect(jsonPath("$.data.testId").value(99L))
                 .andExpect(jsonPath("$.data.payStatus").value("PAY_SUCCEEDED"))
-                .andExpect(jsonPath("$.data.transactionId").value("tx-1"));
+                .andExpect(jsonPath("$.data.transactionId").value("tx-1"))
+                .andExpect(jsonPath("$.data.approvedAt").isArray())
+                .andExpect(jsonPath("$.data.approvedAt[0]").value(2026))
+                .andExpect(jsonPath("$.data.approvedAt[1]").value(5))
+                .andExpect(jsonPath("$.data.approvedAt[2]").value(25));
     }
 
     @Test
@@ -167,7 +171,11 @@ class MockPaymentControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("결제를 환불했습니다."))
                 .andExpect(jsonPath("$.data.refundNo").value("refund-1"))
-                .andExpect(jsonPath("$.data.payStatus").value("REFUNDED"));
+                .andExpect(jsonPath("$.data.payStatus").value("REFUNDED"))
+                .andExpect(jsonPath("$.data.approvedAt").isArray())
+                .andExpect(jsonPath("$.data.approvedAt[0]").value(2026))
+                .andExpect(jsonPath("$.data.approvedAt[1]").value(5))
+                .andExpect(jsonPath("$.data.approvedAt[2]").value(26));
 
         verify(mockPaymentService).refundPayment(20L, 1L, "테스트 환불");
     }
