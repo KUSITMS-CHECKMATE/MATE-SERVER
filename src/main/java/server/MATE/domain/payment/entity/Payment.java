@@ -77,7 +77,8 @@ public class Payment extends BaseEntity {
     @Column(nullable = false)
     private Boolean isTestPayment;
 
-    private LocalDateTime approvalTime;
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
 
     public void markCreated(String payToken) {
         this.payToken = payToken;
@@ -100,7 +101,7 @@ public class Payment extends BaseEntity {
         this.payMethod = null;
         this.accountBankCode = null;
         this.cardCompanyCode = null;
-        this.approvalTime = null;
+        this.approvedAt = null;
         this.payStatus = PayStatus.PAY_STANDBY;
     }
 
@@ -113,13 +114,13 @@ public class Payment extends BaseEntity {
                               PayMethod payMethod,
                               String accountBankCode,
                               String cardCompanyCode,
-                              LocalDateTime approvalTime) {
+                              LocalDateTime approvedAt) {
         this.transactionId = transactionId;
         this.paidAmount = paidAmount;
         this.payMethod = payMethod;
         this.accountBankCode = accountBankCode;
         this.cardCompanyCode = cardCompanyCode;
-        this.approvalTime = approvalTime;
+        this.approvedAt = approvedAt;
         this.payStatus = PayStatus.PAY_SUCCEEDED;
     }
 
@@ -167,7 +168,7 @@ public class Payment extends BaseEntity {
                    String accountBankCode,
                    String cardCompanyCode,
                    Boolean isTestPayment,
-                   LocalDateTime approvalTime) {
+                   LocalDateTime approvedAt) {
         this.draftId = draftId;
         this.testId = testId;
         this.makerId = makerId;
@@ -183,6 +184,6 @@ public class Payment extends BaseEntity {
         this.accountBankCode = accountBankCode;
         this.cardCompanyCode = cardCompanyCode;
         this.isTestPayment = isTestPayment == null ? Boolean.TRUE : isTestPayment;
-        this.approvalTime = approvalTime;
+        this.approvedAt = approvedAt;
     }
 }

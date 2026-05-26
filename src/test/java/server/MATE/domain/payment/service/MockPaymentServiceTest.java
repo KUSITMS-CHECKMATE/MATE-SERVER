@@ -158,14 +158,14 @@ class MockPaymentServiceTest {
         ReflectionTestUtils.setField(payment, "id", 20L);
         payment.markCreated("pay-token");
 
-        LocalDateTime approvalTime = LocalDateTime.parse("2026-05-25T12:00:00");
+        LocalDateTime approvedAt = LocalDateTime.parse("2026-05-25T12:00:00");
 
         given(paymentRepository.findByIdAndMakerId(20L, 1L)).willReturn(Optional.of(payment));
         given(mockPaymentGateway.executePayment(any(TossPaymentExecuteRequest.class)))
                 .willReturn(new TossPaymentExecuteResponse(
                         "order-no",
                         30000,
-                        approvalTime,
+                        approvedAt,
                         30000,
                         PayMethod.TOSS_MONEY,
                         "pay-token",
@@ -184,9 +184,9 @@ class MockPaymentServiceTest {
                 .isTestPayment(true)
                 .build();
         ReflectionTestUtils.setField(succeededPayment, "id", 20L);
-        succeededPayment.markSucceeded("tx-1", 30000, PayMethod.TOSS_MONEY, "092", null, approvalTime);
+        succeededPayment.markSucceeded("tx-1", 30000, PayMethod.TOSS_MONEY, "092", null, approvedAt);
         given(paymentExecuteStateService.markSucceeded(
-                20L, 1L, "tx-1", 30000, PayMethod.TOSS_MONEY, "092", null, approvalTime
+                20L, 1L, "tx-1", 30000, PayMethod.TOSS_MONEY, "092", null, approvedAt
         )).willReturn(succeededPayment);
         given(testPublishService.publish(20L)).willReturn(99L);
         PaymentExecuteResponse response = mockPaymentService.executePayment(20L, 1L);
@@ -195,7 +195,7 @@ class MockPaymentServiceTest {
         assertThat(response.payStatus()).isEqualTo(PayStatus.PAY_SUCCEEDED);
         assertThat(response.transactionId()).isEqualTo("tx-1");
         assertThat(response.paidAmount()).isEqualTo(30000);
-        assertThat(response.approvalTime()).isEqualTo(approvalTime);
+        assertThat(response.approvedAt()).isEqualTo(approvedAt);
         verify(testPublishService).publish(20L);
     }
 
@@ -215,14 +215,14 @@ class MockPaymentServiceTest {
         ReflectionTestUtils.setField(payment, "id", 20L);
         payment.markCreated("pay-token");
 
-        LocalDateTime approvalTime = LocalDateTime.parse("2026-05-25T12:00:00");
+        LocalDateTime approvedAt = LocalDateTime.parse("2026-05-25T12:00:00");
 
         given(paymentRepository.findByIdAndMakerId(20L, 1L)).willReturn(Optional.of(payment));
         given(mockPaymentGateway.executePayment(any(TossPaymentExecuteRequest.class)))
                 .willReturn(new TossPaymentExecuteResponse(
                         "order-no",
                         0,
-                        approvalTime,
+                        approvedAt,
                         0,
                         PayMethod.TOSS_MONEY,
                         "pay-token",
@@ -241,9 +241,9 @@ class MockPaymentServiceTest {
                 .isTestPayment(true)
                 .build();
         ReflectionTestUtils.setField(succeededPayment, "id", 20L);
-        succeededPayment.markSucceeded("tx-1", 30000, PayMethod.TOSS_MONEY, "092", null, approvalTime);
+        succeededPayment.markSucceeded("tx-1", 30000, PayMethod.TOSS_MONEY, "092", null, approvedAt);
         given(paymentExecuteStateService.markSucceeded(
-                20L, 1L, "tx-1", 30000, PayMethod.TOSS_MONEY, "092", null, approvalTime
+                20L, 1L, "tx-1", 30000, PayMethod.TOSS_MONEY, "092", null, approvedAt
         )).willReturn(succeededPayment);
         given(testPublishService.publish(20L)).willReturn(99L);
 
@@ -270,7 +270,7 @@ class MockPaymentServiceTest {
                 .transactionId("tx-1")
                 .payStatus(PayStatus.PAY_SUCCEEDED)
                 .isTestPayment(true)
-                .approvalTime(LocalDateTime.parse("2026-05-25T12:00:00"))
+                .approvedAt(LocalDateTime.parse("2026-05-25T12:00:00"))
                 .build();
         ReflectionTestUtils.setField(payment, "id", 20L);
 
@@ -298,7 +298,7 @@ class MockPaymentServiceTest {
                 .transactionId("tx-1")
                 .payStatus(PayStatus.PAY_SUCCEEDED)
                 .isTestPayment(true)
-                .approvalTime(LocalDateTime.parse("2026-05-25T12:00:00"))
+                .approvedAt(LocalDateTime.parse("2026-05-25T12:00:00"))
                 .build();
         ReflectionTestUtils.setField(payment, "id", 20L);
 

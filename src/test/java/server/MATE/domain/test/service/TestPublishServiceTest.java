@@ -100,7 +100,7 @@ class TestPublishServiceTest {
                 .payMethod(PayMethod.TOSS_MONEY)
                 .transactionId("tx-1")
                 .isTestPayment(true)
-                .approvalTime(LocalDateTime.parse("2026-05-25T12:00:00"))
+                .approvedAt(LocalDateTime.parse("2026-05-25T12:00:00"))
                 .build();
 
         ReflectionTestUtils.setField(payment, "id", 20L);
