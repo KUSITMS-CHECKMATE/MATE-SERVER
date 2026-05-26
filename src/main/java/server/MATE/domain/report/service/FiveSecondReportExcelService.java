@@ -42,46 +42,64 @@ public class FiveSecondReportExcelService {
         Question question = reportExcelExportSupport.requireQuestion(
                 testId, questionId, QuestionType.FIVE_SECOND, BaseErrorCode.REPORT_009
         );
-
         FiveSecond fiveSecond = fiveSecondRepository.findWithOptionsById(questionId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
-
-        List<Answer> answers = reportExcelExportSupport.loadAnswers(questionId);
-        String questionNumberLabel = String.format("Q%02d", question.getSequence());
         String filename = buildFilename(testId, question.getSequence());
 
         if (fiveSecond.isObjective()) {
-            Map<String, Object> reportResult = reportExcelExportSupport.requireReportResult(testId, questionId);
-            List<FiveSecondOption> options = fiveSecond.getOptions().stream()
-                    .sorted(Comparator.comparingInt(FiveSecondOption::getSequence))
-                    .toList();
-            Map<Long, String> optionContentById = options.stream()
-                    .collect(Collectors.toMap(
-                            FiveSecondOption::getId,
-                            FiveSecondOption::getContent,
-                            (a, b) -> a,
-                            LinkedHashMap::new
-                    ));
-
-            FiveSecondObjectiveReportExcelData data = new FiveSecondObjectiveReportExcelData(
-                    questionNumberLabel,
-                    question.getTitle(),
-                    buildObjectiveRespondentRows(answers, optionContentById),
-                    ReportExcelResultMapper.toFiveSecondOptionStats(options, reportResult),
-                    answers.size()
-            );
+            FiveSecondObjectiveReportExcelData data = prepareObjectiveData(testId, questionId, makerId);
             byte[] content = fiveSecondObjectiveReportExcelWriter.write(data);
             return new TestReportExcelDownload(content, filename);
         }
 
+        FiveSecondSubjectiveReportExcelData data = prepareSubjectiveData(testId, questionId, makerId);
+        byte[] content = fiveSecondSubjectiveReportExcelWriter.write(data);
+        return new TestReportExcelDownload(content, filename);
+    }
+
+    public FiveSecondObjectiveReportExcelData prepareObjectiveData(Long testId, Long questionId, Long makerId) {
+        reportExcelExportSupport.requireExportReadyTest(testId, makerId);
+        Question question = reportExcelExportSupport.requireQuestion(
+                testId, questionId, QuestionType.FIVE_SECOND, BaseErrorCode.REPORT_009
+        );
+        FiveSecond fiveSecond = fiveSecondRepository.findWithOptionsById(questionId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
+        Map<String, Object> reportResult = reportExcelExportSupport.requireReportResult(testId, questionId);
+
+        List<FiveSecondOption> options = fiveSecond.getOptions().stream()
+                .sorted(Comparator.comparingInt(FiveSecondOption::getSequence))
+                .toList();
+        Map<Long, String> optionContentById = options.stream()
+                .collect(Collectors.toMap(
+                        FiveSecondOption::getId,
+                        FiveSecondOption::getContent,
+                        (a, b) -> a,
+                        LinkedHashMap::new
+                ));
+
+        List<Answer> answers = reportExcelExportSupport.loadAnswers(questionId);
+        return new FiveSecondObjectiveReportExcelData(
+                String.format("Q%02d", question.getSequence()),
+                question.getTitle(),
+                buildObjectiveRespondentRows(answers, optionContentById),
+                ReportExcelResultMapper.toFiveSecondOptionStats(options, reportResult),
+                answers.size()
+        );
+    }
+
+    public FiveSecondSubjectiveReportExcelData prepareSubjectiveData(Long testId, Long questionId, Long makerId) {
+        reportExcelExportSupport.requireExportReadyTest(testId, makerId);
+        Question question = reportExcelExportSupport.requireQuestion(
+                testId, questionId, QuestionType.FIVE_SECOND, BaseErrorCode.REPORT_009
+        );
         reportExcelExportSupport.requireReportResult(testId, questionId);
-        FiveSecondSubjectiveReportExcelData data = new FiveSecondSubjectiveReportExcelData(
-                questionNumberLabel,
+
+        List<Answer> answers = reportExcelExportSupport.loadAnswers(questionId);
+        return new FiveSecondSubjectiveReportExcelData(
+                String.format("Q%02d", question.getSequence()),
                 question.getTitle(),
                 buildSubjectiveRespondentRows(answers)
         );
-        byte[] content = fiveSecondSubjectiveReportExcelWriter.write(data);
-        return new TestReportExcelDownload(content, filename);
     }
 
     private List<FiveSecondRespondentRow> buildObjectiveRespondentRows(
