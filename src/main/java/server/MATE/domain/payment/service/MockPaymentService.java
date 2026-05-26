@@ -119,7 +119,7 @@ public class MockPaymentService {
                 payment.getAmount(),
                 payment.getPaidAmount(),
                 payment.getTransactionId(),
-                payment.getApprovalTime()
+                payment.getApprovedAt()
         );
     }
 
@@ -175,7 +175,7 @@ public class MockPaymentService {
                 payment.getPayToken(),
                 payment.getTransactionId(),
                 payment.getPayMethod(),
-                payment.getApprovalTime()
+                payment.getApprovedAt()
         );
     }
 }

@@ -64,6 +64,9 @@ public class Test extends BaseEntity {
     @Column(nullable = false, columnDefinition = "bigint default 0")
     private Long likeCount = 0L;
 
+    @Column(nullable = false)
+    private LocalDateTime closedAt;
+
     private LocalDateTime deletedAt;
 
     @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -150,7 +153,7 @@ public class Test extends BaseEntity {
     @Builder
     public Test(Long makerId, String title, String description, String serviceName,
                 String serviceDescription, List<String> imageKeys, Integer goalPpl, Integer reward,
-                TestStatus testStatus) {
+                TestStatus testStatus, LocalDateTime closedAt) {
         this.makerId = makerId;
         this.title = title;
         this.description = description;
@@ -162,5 +165,6 @@ public class Test extends BaseEntity {
         this.reward = reward == null ? 300 : reward;
         this.pplCount = 0L;
         this.likeCount = 0L;
+        this.closedAt = closedAt;
     }
 }

@@ -39,7 +39,7 @@ public class PaymentRefundStateService {
                 .reason(reason)
                 .refundedAmount(result.refundedAmount())
                 .transactionId(result.transactionId())
-                .approvalTime(result.approvalTime())
+                .approvedAt(result.approvalTime())
                 .build());
         return payment;
     }

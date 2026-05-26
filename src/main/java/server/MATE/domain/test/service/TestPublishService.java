@@ -65,6 +65,7 @@ public class TestPublishService {
                 .imageKeys(draft.getImageKeys())
                 .goalPpl(payment.getGoalPpl())
                 .reward(payment.getReward())
+                .closedAt(draft.getClosedAt())
                 .testStatus(TestStatus.WAITING)
                 .build());
 
