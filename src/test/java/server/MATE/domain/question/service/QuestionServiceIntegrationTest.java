@@ -48,6 +48,7 @@ import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.storage.FileStorageService;
+import server.MATE.support.TestEntityFixtures;
 
 import java.util.Comparator;
 import java.time.LocalDateTime;
@@ -211,6 +212,7 @@ class QuestionServiceIntegrationTest {
                 .serviceName("서비스")
                 .serviceDescription("서비스 설명")
                 .imageKeys(List.of())
+                .closedAt(TestEntityFixtures.DEFAULT_CLOSED_AT)
                 .build());
 
         QuestionCreateResponse createResponse = questionService.createQuestions(secondTest.getId(), 2L, new QuestionCreateRequest(List.of(
@@ -762,6 +764,7 @@ class QuestionServiceIntegrationTest {
                 .serviceName("서비스")
                 .serviceDescription("서비스 설명")
                 .imageKeys(List.of())
+                .closedAt(TestEntityFixtures.DEFAULT_CLOSED_AT)
                 .build());
     }
 }
