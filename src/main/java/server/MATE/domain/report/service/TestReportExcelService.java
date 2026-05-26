@@ -9,8 +9,6 @@ import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.excel.MateReportExcelWriter;
 import server.MATE.domain.report.excel.TestReportExcelData;
 import server.MATE.domain.test.entity.Test;
-import server.MATE.domain.test.entity.TestStatus;
-import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
@@ -24,16 +22,12 @@ public class TestReportExcelService {
 
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM.dd");
 
-    private final TestRepository testRepository;
+    private final ReportExcelExportSupport reportExcelExportSupport;
     private final QuestionRepository questionRepository;
     private final MateReportExcelWriter mateReportExcelWriter;
 
     public TestReportExcelDownload export(Long testId, Long makerId) {
-        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
-        if (!test.getMakerId().equals(makerId)) {
-            throw new BaseException(BaseErrorCode.TEST_005);
-        }
+        Test test = reportExcelExportSupport.requireExportReadyTest(testId, makerId);
 
         List<QuestionSummaryItem> questions = questionRepository.findQuestionSummariesByTestId(testId);
         if (questions.size() > MateReportExcelWriter.MAX_QUESTION_ROWS) {
@@ -58,10 +52,10 @@ public class TestReportExcelService {
         }
 
         String start = DATE_FORMAT.format(test.getCreatedAt());
-        if (test.getTestStatus() == TestStatus.COMPLETED && test.getUpdatedAt() != null) {
+        if (test.getUpdatedAt() != null) {
             return start + " ~ " + DATE_FORMAT.format(test.getUpdatedAt());
         }
-        return start + " ~ 진행 중";
+        return start;
     }
 
     private String buildFilename(Long testId) {
