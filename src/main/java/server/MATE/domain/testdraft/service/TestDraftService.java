@@ -15,6 +15,7 @@ import server.MATE.domain.testdraft.repository.TestDraftRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -83,7 +84,7 @@ public class TestDraftService {
         return payload == null ? null : objectMapper.valueToTree(payload);
     }
 
-    private java.time.LocalDateTime parseClosedAt(String closedAt) {
+    private LocalDateTime parseClosedAt(String closedAt) {
         if (closedAt == null || closedAt.isBlank()) {
             return null;
         }
