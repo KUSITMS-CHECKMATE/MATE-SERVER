@@ -375,7 +375,7 @@ public class ReportController {
     }
 
     @Operation(
-            summary = "통합 엑셀 보고서 다운로드",
+            summary = "➰ 리포트 통계 xlsx 파일 다운로드",
             description = """
                     테스트 전체 리포트를 하나의 엑셀 파일(다중 시트)로 다운로드합니다.
                     - 테스트 메이커만 다운로드할 수 있습니다.
