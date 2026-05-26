@@ -102,7 +102,8 @@ public class TestController {
                     특정 테스트의 상세 정보를 조회합니다. TT_01 화면에 해당하는 api 입니다.
                     삭제된 테스트는 조회되지 않습니다.<br>
                     
-                    - 버그 사항: 로그인한 사용자의 테스트 응답 여부, testStatus 필드 누락
+                    - **testStatus**: `WAITING`(검수 중), `IN_PROGRESS`(진행 중), `COMPLETED`(종료), `REJECTED`(반려). 종료(`COMPLETED`) 시 참여 버튼 비활성화
+                    - **hasResponded**: 현재 로그인한 사용자가 이미 응답했으면 true. true면 참여 버튼 비활성화
                     """
     )
     @GetMapping("/{testId}")
@@ -110,7 +111,7 @@ public class TestController {
             @PathVariable Long testId,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        TestDetailResponse data = testService.getTest(testId);
+        TestDetailResponse data = testService.getTest(testId, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트를 조회했습니다.", data));
     }
 
