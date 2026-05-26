@@ -3,12 +3,14 @@ package server.MATE.domain.test.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import server.MATE.domain.participation.repository.ParticipationRepository;
 import server.MATE.domain.test.dto.response.LikedTestSummaryItem;
-import server.MATE.domain.test.dto.response.TestDetailResponse;
-import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryItem;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
+import server.MATE.domain.test.dto.response.TestDetailResponse;
+import server.MATE.domain.test.dto.response.TestLikeResponse;
+import server.MATE.domain.test.dto.response.TestSummaryListResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestLike;
@@ -19,6 +21,10 @@ import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.storage.FileStorageService;
 
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,14 +34,22 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class TestService {
 
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+
     private final TestRepository testRepository;
     private final TestLikeRepository testLikeRepository;
+    private final ParticipationRepository participationRepository;
     private final FileStorageService fileStorageService;
+    private final Clock clock;
 
     @Transactional(readOnly = true)
-    public List<TestSummaryResponse> listTests(Long userId) {
-        List<Test> tests = testRepository.findAllByTestStatusAndDeletedAtIsNullOrderByCreatedAtDesc(TestStatus.IN_PROGRESS);
-        return toSummaryResponses(userId, tests);
+    public TestSummaryListResponse listTests(Long userId) {
+        LocalDateTime threshold = LocalDate.now(clock.withZone(KST)).atStartOfDay();
+        List<Test> tests = testRepository.findAllByTestStatusInAndDeletedAtIsNullAndClosedAtGreaterThanEqualOrderByCreatedAtDesc(
+                List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING),
+                threshold
+        );
+        return TestSummaryListResponse.from(toSummaryResponses(userId, tests));
     }
 
     @Transactional(readOnly = true)
@@ -49,7 +63,10 @@ public class TestService {
 
     @Transactional(readOnly = true)
     public LikedTestSummaryResponse listLikedTests(Long userId) {
-        List<Test> tests = testRepository.findLikedTestsByUserId(userId, TestStatus.IN_PROGRESS);
+        List<Test> tests = testRepository.findLikedTestsByUserId(
+                userId,
+                List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING, TestStatus.COMPLETED)
+        );
         List<LikedTestSummaryItem> items = tests.stream()
                 .map(test -> LikedTestSummaryItem.from(test, toThumbnailUrl(test.getImageKeys())))
                 .toList();
@@ -57,10 +74,11 @@ public class TestService {
     }
 
     @Transactional(readOnly = true)
-    public TestDetailResponse getTest(Long testId) {
-        Test test = testRepository.findByIdAndTestStatusAndDeletedAtIsNull(testId, TestStatus.IN_PROGRESS)
+    public TestDetailResponse getTest(Long testId, Long userId) {
+        Test test = testRepository.findWithCategoriesByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
-        return TestDetailResponse.from(test, toImageUrls(test.getImageKeys()));
+        boolean hasResponded = participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(testId, userId);
+        return TestDetailResponse.from(test, toImageUrls(test.getImageKeys()), hasResponded);
     }
 
     public TestLikeResponse likeTest(Long testId, Long userId) {

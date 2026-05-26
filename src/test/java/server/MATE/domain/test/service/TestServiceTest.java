@@ -8,10 +8,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import server.MATE.domain.participation.repository.ParticipationRepository;
 import server.MATE.domain.test.dto.response.LikedTestSummaryItem;
-import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
+import server.MATE.domain.test.dto.response.TestDetailResponse;
+import server.MATE.domain.test.dto.response.TestLikeResponse;
+import server.MATE.domain.test.dto.response.TestSummaryListResponse;
 import server.MATE.domain.test.entity.Category;
 import server.MATE.domain.test.entity.TestLike;
 import server.MATE.domain.test.entity.TestStatus;
@@ -19,6 +22,9 @@ import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.storage.FileStorageService;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +45,13 @@ class TestServiceTest {
     private TestLikeRepository testLikeRepository;
 
     @Mock
+    private ParticipationRepository participationRepository;
+
+    @Mock
     private FileStorageService fileStorageService;
+
+    @Mock
+    private Clock clock;
 
     @InjectMocks
     private TestService testService;
@@ -61,6 +73,57 @@ class TestServiceTest {
         ReflectionTestUtils.setField(test, "id", TEST_ID);
         test.addCategories(List.of(Category.FOOD));
         lenient().when(fileStorageService.generateDownloadUrl(anyString())).thenReturn("https://example.com/url");
+        lenient().when(clock.withZone(ZoneId.of("Asia/Seoul"))).thenReturn(Clock.system(ZoneId.of("Asia/Seoul")));
+    }
+
+    @Test
+    void 진행_중이거나_검수_중이고_마감일_이내인_테스트_목록을_조회한다() {
+        server.MATE.domain.test.entity.Test inProgressTest = createListTest(10L, "진행 중 테스트", TestStatus.IN_PROGRESS);
+        ReflectionTestUtils.setField(inProgressTest, "createdAt", LocalDateTime.now().minusDays(10));
+
+        server.MATE.domain.test.entity.Test waitingTest = createListTest(11L, "검수 중 테스트", TestStatus.WAITING);
+        ReflectionTestUtils.setField(waitingTest, "createdAt", LocalDateTime.now().minusDays(5));
+
+        given(testRepository.findAllByTestStatusInAndDeletedAtIsNullAndClosedAtGreaterThanEqualOrderByCreatedAtDesc(
+                any(),
+                any()
+        )).willReturn(List.of(inProgressTest, waitingTest));
+        given(testLikeRepository.findLikedTestIds(MAKER_ID, List.of(10L, 11L)))
+                .willReturn(List.of());
+
+        TestSummaryListResponse response = testService.listTests(MAKER_ID);
+
+        assertThat(response.testCount()).isEqualTo(2);
+        assertThat(response.tests()).hasSize(2);
+        assertThat(response.tests()).extracting("title")
+                .containsExactly("진행 중 테스트", "검수 중 테스트");
+    }
+
+    @Test
+    void 테스트_상세_조회_시_상태와_응답_여부를_반환한다() {
+        ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
+        given(testRepository.findWithCategoriesByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(TEST_ID, MAKER_ID))
+                .willReturn(true);
+
+        TestDetailResponse response = testService.getTest(TEST_ID, MAKER_ID);
+
+        assertThat(response.id()).isEqualTo(TEST_ID);
+        assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+        assertThat(response.hasResponded()).isTrue();
+    }
+
+    @Test
+    void 종료된_테스트_상세_조회_시_상태를_반환한다() {
+        ReflectionTestUtils.setField(test, "testStatus", TestStatus.COMPLETED);
+        given(testRepository.findWithCategoriesByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(TEST_ID, MAKER_ID))
+                .willReturn(false);
+
+        TestDetailResponse response = testService.getTest(TEST_ID, MAKER_ID);
+
+        assertThat(response.testStatus()).isEqualTo(TestStatus.COMPLETED);
+        assertThat(response.hasResponded()).isFalse();
     }
 
     @Test
@@ -86,13 +149,16 @@ class TestServiceTest {
         assertThat(response.tests().getFirst().title()).isEqualTo("내 테스트");
         assertThat(response.tests().getFirst().testStatus()).isEqualTo(TestStatus.WAITING);
         assertThat(response.tests().getFirst().pplCount()).isZero();
+        assertThat(response.tests().getFirst().goalPpl()).isEqualTo(100);
     }
 
     @Test
     void 내가_찜한_테스트_목록을_조회한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
-        given(testRepository.findLikedTestsByUserId(MAKER_ID, TestStatus.IN_PROGRESS))
-                .willReturn(List.of(test));
+        given(testRepository.findLikedTestsByUserId(
+                MAKER_ID,
+                List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING, TestStatus.COMPLETED)
+        )).willReturn(List.of(test));
 
         LikedTestSummaryResponse response = testService.listLikedTests(MAKER_ID);
 
@@ -137,5 +203,19 @@ class TestServiceTest {
         assertThat(response.isLiked()).isFalse();
         assertThat(response.likeCount()).isZero();
         verify(testLikeRepository).delete(testLike);
+    }
+
+    private server.MATE.domain.test.entity.Test createListTest(Long id, String title, TestStatus testStatus) {
+        server.MATE.domain.test.entity.Test listTest = server.MATE.domain.test.entity.Test.builder()
+                .makerId(MAKER_ID)
+                .title(title)
+                .description("소개")
+                .serviceName("서비스")
+                .serviceDescription("서비스 소개")
+                .imageKeys(List.of())
+                .testStatus(testStatus)
+                .build();
+        ReflectionTestUtils.setField(listTest, "id", id);
+        return listTest;
     }
 }
