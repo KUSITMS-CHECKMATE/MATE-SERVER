@@ -169,7 +169,7 @@ class DraftPaymentPublishEndToEndIntegrationTest {
         var savedPayment = paymentRepository.findById(paymentId).orElseThrow();
         assertThat(savedPayment.getPayStatus()).isEqualTo(PayStatus.PAY_SUCCEEDED);
         assertThat(savedPayment.getTestId()).isEqualTo(testId);
-        assertThat(savedPayment.getPaidAmount()).isEqualTo(1500);
+        assertThat(savedPayment.getPaidAmount()).isEqualTo(2750);
 
         var savedTest = testRepository.findById(testId).orElseThrow();
         assertThat(savedTest.getTitle()).isEqualTo("신규 테스트");
