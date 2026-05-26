@@ -73,10 +73,10 @@ public class TestDraftController {
     }
 
     @Operation(
-            summary = "⚠️ 테스트 초안 수정",
+            summary = "✔️ 테스트 초안 수정",
             description = """
                     테스트 초안의 기본 정보, 질문 payload, 목표 인원, 리워드, 마감 기한을 수정합니다. MKTT_02, MKTT_03, 결제하기 화면에 해당하는 api 입니다.<br>
-                    - 버그 사항: 마감기한 필드 추가
+                    - **closedAt**: yyyy-MM-dd 형식으로 요청해주세요.
                     """
     )
     @PatchMapping("/{draftId}")
