@@ -155,7 +155,7 @@ public class TestDraft extends BaseEntity {
         if (this.status == TestDraftStatus.PUBLISHED || this.status == TestDraftStatus.PUBLISHING) {
             throw new BaseException(BaseErrorCode.DRAFT_003);
         }
-        if (this.goalPpl == null || this.reward == null) {
+        if (this.goalPpl == null || this.reward == null || this.closedAt == null) {
             throw new BaseException(BaseErrorCode.PAYMENT_005);
         }
     }
@@ -167,7 +167,7 @@ public class TestDraft extends BaseEntity {
         if (this.status != TestDraftStatus.PAYMENT_CREATED && this.status != TestDraftStatus.PUBLISH_FAILED) {
             throw new BaseException(BaseErrorCode.DRAFT_004);
         }
-        if (this.goalPpl == null || this.reward == null) {
+        if (this.goalPpl == null || this.reward == null || this.closedAt == null) {
             throw new BaseException(BaseErrorCode.DRAFT_004);
         }
         if (isBlank(this.title) || isBlank(this.description)) {
