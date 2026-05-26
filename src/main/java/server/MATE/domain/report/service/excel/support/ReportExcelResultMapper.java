@@ -316,7 +316,7 @@ public final class ReportExcelResultMapper {
         if (percent == Math.rint(percent)) {
             return String.valueOf((long) percent);
         }
-        return String.valueOf(percent);
+        return String.format("%.2f", percent);
     }
 
     private static String formatScaleRatioPercent(int count, int total) {
@@ -334,7 +334,7 @@ public final class ReportExcelResultMapper {
         if (average == Math.rint(average)) {
             return String.valueOf((long) average);
         }
-        return String.valueOf(average);
+        return String.format("%.2f", average);
     }
 
     public record AbTestCounts(int versionACount, int versionBCount) {
