@@ -6,22 +6,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import server.MATE.domain.answer.entity.Answer;
-import server.MATE.domain.answer.repository.AnswerRepository;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Scale;
-import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.question.repository.ScaleRepository;
 import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.excel.ScaleReportExcelData;
 import server.MATE.domain.report.excel.ScaleReportExcelWriter;
-import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,16 +29,10 @@ import static org.mockito.Mockito.verify;
 class ScaleReportExcelServiceTest {
 
     @Mock
-    private TestRepository testRepository;
-
-    @Mock
-    private QuestionRepository questionRepository;
+    private ReportExcelExportSupport reportExcelExportSupport;
 
     @Mock
     private ScaleRepository scaleRepository;
-
-    @Mock
-    private AnswerRepository answerRepository;
 
     @Mock
     private ScaleReportExcelWriter scaleReportExcelWriter;
@@ -64,9 +54,7 @@ class ScaleReportExcelServiceTest {
                 .sequence(1L)
                 .build();
 
-        Scale scale = Scale.builder()
-                .range(7)
-                .build();
+        Scale scale = Scale.builder().range(7).build();
 
         List<Answer> answers = List.of(
                 Answer.builder().participationId(100L).questionId(20L).questionType(QuestionType.SCALE)
@@ -75,10 +63,25 @@ class ScaleReportExcelServiceTest {
                         .answer(Map.of("value", 7)).build()
         );
 
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
-        given(questionRepository.findByIdAndTestIdAndDeletedAtIsNull(20L, 10L)).willReturn(Optional.of(question));
-        given(scaleRepository.findById(20L)).willReturn(Optional.of(scale));
-        given(answerRepository.findAllByQuestionIdAndDeletedAtIsNullOrderByParticipationIdAsc(20L)).willReturn(answers);
+        Map<String, Object> reportResult = Map.of(
+                "average", 5.0,
+                "distribution", List.of(
+                        Map.of("score", 1, "count", 0),
+                        Map.of("score", 2, "count", 0),
+                        Map.of("score", 3, "count", 1),
+                        Map.of("score", 4, "count", 0),
+                        Map.of("score", 5, "count", 0),
+                        Map.of("score", 6, "count", 0),
+                        Map.of("score", 7, "count", 1)
+                )
+        );
+
+        given(reportExcelExportSupport.requireExportReadyTest(10L, 1L)).willReturn(test);
+        given(reportExcelExportSupport.requireQuestion(10L, 20L, QuestionType.SCALE, BaseErrorCode.REPORT_005))
+                .willReturn(question);
+        given(reportExcelExportSupport.requireReportResult(10L, 20L)).willReturn(reportResult);
+        given(scaleRepository.findById(20L)).willReturn(java.util.Optional.of(scale));
+        given(reportExcelExportSupport.loadAnswers(20L)).willReturn(answers);
         given(scaleReportExcelWriter.write(any(ScaleReportExcelData.class))).willReturn(new byte[]{1, 2, 3});
 
         TestReportExcelDownload download = scaleReportExcelService.export(10L, 20L, 1L);
@@ -90,19 +93,10 @@ class ScaleReportExcelServiceTest {
 
     @Test
     void 척도가_아니면_다운로드를_허용하지_않는다() {
-        server.MATE.domain.test.entity.Test test = server.MATE.domain.test.entity.Test.builder()
-                .makerId(1L)
-                .title("테스트")
-                .build();
-        Question question = Question.builder()
-                .testId(10L)
-                .questionType(QuestionType.OBJECTIVE)
-                .title("객관식")
-                .sequence(1L)
-                .build();
-
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
-        given(questionRepository.findByIdAndTestIdAndDeletedAtIsNull(20L, 10L)).willReturn(Optional.of(question));
+        given(reportExcelExportSupport.requireExportReadyTest(10L, 1L))
+                .willReturn(server.MATE.domain.test.entity.Test.builder().makerId(1L).build());
+        given(reportExcelExportSupport.requireQuestion(10L, 20L, QuestionType.SCALE, BaseErrorCode.REPORT_005))
+                .willThrow(new BaseException(BaseErrorCode.REPORT_005));
 
         assertThatThrownBy(() -> scaleReportExcelService.export(10L, 20L, 1L))
                 .isInstanceOfSatisfying(BaseException.class, exception ->
