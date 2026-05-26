@@ -92,6 +92,8 @@ public enum BaseErrorCode implements ErrorCode {
     REPORT_007(HttpStatus.BAD_REQUEST, "REPORT_007", "리포트 집계가 완료된 후에 엑셀을 다운로드할 수 있습니다."),
     REPORT_008(HttpStatus.BAD_REQUEST, "REPORT_008", "트리 테스트 질문만 엑셀 통계를 다운로드할 수 있습니다."),
     REPORT_009(HttpStatus.BAD_REQUEST, "REPORT_009", "5초 테스트 질문만 엑셀 통계를 다운로드할 수 있습니다."),
+    REPORT_010(HttpStatus.BAD_REQUEST, "REPORT_010", "질문별 리포트 집계 결과가 없습니다."),
+    REPORT_011(HttpStatus.BAD_REQUEST, "REPORT_011", "리포트 집계 데이터 형식이 올바르지 않습니다."),
 
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),

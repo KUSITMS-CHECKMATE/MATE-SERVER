@@ -8,20 +8,26 @@ import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.question.dto.response.QuestionSummaryItem;
 import server.MATE.domain.question.entity.FiveSecond;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.question.repository.FiveSecondRepository;
-import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.report.dto.response.TestReportExcelDownload;
+import server.MATE.domain.report.excel.abtest.AbTestReportExcelData;
 import server.MATE.domain.report.excel.abtest.AbTestReportExcelWriter;
+import server.MATE.domain.report.excel.cardsorting.CardSortingReportExcelData;
 import server.MATE.domain.report.excel.cardsorting.CardSortingReportExcelWriter;
+import server.MATE.domain.report.excel.fivesecond.FiveSecondObjectiveReportExcelData;
 import server.MATE.domain.report.excel.fivesecond.FiveSecondObjectiveReportExcelWriter;
+import server.MATE.domain.report.excel.fivesecond.FiveSecondSubjectiveReportExcelData;
 import server.MATE.domain.report.excel.fivesecond.FiveSecondSubjectiveReportExcelWriter;
 import server.MATE.domain.report.excel.basic.MateReportExcelWriter;
 import server.MATE.domain.report.excel.master.MasterTemplateReportExcelWriter;
+import server.MATE.domain.report.excel.objective.ObjectiveReportExcelData;
 import server.MATE.domain.report.excel.objective.ObjectiveReportExcelWriter;
 import server.MATE.domain.report.excel.common.ReportExcelWriteMode;
+import server.MATE.domain.report.excel.scale.ScaleReportExcelData;
 import server.MATE.domain.report.excel.scale.ScaleReportExcelWriter;
+import server.MATE.domain.report.excel.subjective.SubjectiveReportExcelData;
 import server.MATE.domain.report.excel.subjective.SubjectiveReportExcelWriter;
 import server.MATE.domain.report.excel.basic.TestReportExcelData;
+import server.MATE.domain.report.excel.treetest.TreeTestReportExcelData;
 import server.MATE.domain.report.excel.treetest.TreeTestReportExcelWriter;
 import server.MATE.domain.report.service.excel.preparer.AbTestReportExcelService;
 import server.MATE.domain.report.service.excel.preparer.CardSortingReportExcelService;
@@ -30,7 +36,8 @@ import server.MATE.domain.report.service.excel.preparer.ObjectiveReportExcelServ
 import server.MATE.domain.report.service.excel.preparer.ScaleReportExcelService;
 import server.MATE.domain.report.service.excel.preparer.SubjectiveReportExcelService;
 import server.MATE.domain.report.service.excel.preparer.TreeTestReportExcelService;
-import server.MATE.domain.report.service.excel.support.ReportExcelExportSupport;
+import server.MATE.domain.report.service.excel.support.ReportExcelExportContext;
+import server.MATE.domain.report.service.excel.support.ReportExcelExportContextLoader;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
@@ -39,7 +46,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional(readOnly = true)
@@ -59,9 +68,7 @@ public class CombinedTestReportExcelService {
     static final String SHEET_TREE_TEST = "트리테스트";
     static final String SHEET_FIVE_SECOND = "5초 테스트";
 
-    private final ReportExcelExportSupport reportExcelExportSupport;
-    private final QuestionRepository questionRepository;
-    private final FiveSecondRepository fiveSecondRepository;
+    private final ReportExcelExportContextLoader reportExcelExportContextLoader;
     private final MateReportExcelWriter mateReportExcelWriter;
     private final MasterTemplateReportExcelWriter masterTemplateReportExcelWriter;
     private final ObjectiveReportExcelService objectiveReportExcelService;
@@ -81,11 +88,14 @@ public class CombinedTestReportExcelService {
     private final FiveSecondSubjectiveReportExcelWriter fiveSecondSubjectiveReportExcelWriter;
 
     public TestReportExcelDownload export(Long testId, Long makerId) {
-        Test test = reportExcelExportSupport.requireExportReadyTest(testId, makerId);
-        List<QuestionSummaryItem> questions = questionRepository.findQuestionSummariesByTestId(testId);
+        ReportExcelExportContext context = reportExcelExportContextLoader.load(testId, makerId);
+        Test test = context.test();
+        List<QuestionSummaryItem> questions = context.questionSummaries();
         if (questions.size() > MateReportExcelWriter.MAX_QUESTION_ROWS) {
             throw new BaseException(BaseErrorCode.REPORT_001);
         }
+
+        ExportSession session = new ExportSession(context, new HashMap<>());
 
         TestReportExcelData basicInfoData = new TestReportExcelData(
                 test.getTitle(),
@@ -98,15 +108,15 @@ public class CombinedTestReportExcelService {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             mateReportExcelWriter.writeToSheet(workbook.createSheet(SHEET_BASIC_INFO), 0, basicInfoData);
-            writeMasterTemplateSheet(workbook.createSheet(SHEET_MASTER_TEMPLATE), questions, testId, makerId);
+            writeMasterTemplateSheet(workbook.createSheet(SHEET_MASTER_TEMPLATE), session, questions);
 
-            writeQuestionTypeSheet(workbook, SHEET_OBJECTIVE, QuestionType.OBJECTIVE, questions, testId, makerId);
-            writeQuestionTypeSheet(workbook, SHEET_SUBJECTIVE, QuestionType.SUBJECTIVE, questions, testId, makerId);
-            writeQuestionTypeSheet(workbook, SHEET_AB_TEST, QuestionType.AB_TEST, questions, testId, makerId);
-            writeQuestionTypeSheet(workbook, SHEET_SCALE, QuestionType.SCALE, questions, testId, makerId);
-            writeQuestionTypeSheet(workbook, SHEET_CARD_SORTING, QuestionType.CARD_SORTING, questions, testId, makerId);
-            writeQuestionTypeSheet(workbook, SHEET_TREE_TEST, QuestionType.TREE_TEST, questions, testId, makerId);
-            writeFiveSecondSheet(workbook.createSheet(SHEET_FIVE_SECOND), questions, testId, makerId);
+            writeQuestionTypeSheet(workbook, SHEET_OBJECTIVE, QuestionType.OBJECTIVE, session, questions);
+            writeQuestionTypeSheet(workbook, SHEET_SUBJECTIVE, QuestionType.SUBJECTIVE, session, questions);
+            writeQuestionTypeSheet(workbook, SHEET_AB_TEST, QuestionType.AB_TEST, session, questions);
+            writeQuestionTypeSheet(workbook, SHEET_SCALE, QuestionType.SCALE, session, questions);
+            writeQuestionTypeSheet(workbook, SHEET_CARD_SORTING, QuestionType.CARD_SORTING, session, questions);
+            writeQuestionTypeSheet(workbook, SHEET_TREE_TEST, QuestionType.TREE_TEST, session, questions);
+            writeFiveSecondSheet(workbook.createSheet(SHEET_FIVE_SECOND), session, questions);
 
             workbook.write(outputStream);
             return new TestReportExcelDownload(outputStream.toByteArray(), buildFilename(testId));
@@ -117,41 +127,27 @@ public class CombinedTestReportExcelService {
 
     private void writeMasterTemplateSheet(
             Sheet sheet,
-            List<QuestionSummaryItem> questions,
-            Long testId,
-            Long makerId
+            ExportSession session,
+            List<QuestionSummaryItem> questions
     ) {
         masterTemplateReportExcelWriter.configureSheet(sheet);
         int rowIndex = masterTemplateReportExcelWriter.writeGlobalHeader(sheet, 0);
 
-        rowIndex = appendMasterTemplateTypeSection(
-                sheet, rowIndex, QuestionType.OBJECTIVE, questions, testId, makerId
-        );
-        rowIndex = appendMasterTemplateTypeSection(
-                sheet, rowIndex, QuestionType.SUBJECTIVE, questions, testId, makerId
-        );
-        rowIndex = appendMasterTemplateTypeSection(
-                sheet, rowIndex, QuestionType.AB_TEST, questions, testId, makerId
-        );
-        rowIndex = appendMasterTemplateTypeSection(
-                sheet, rowIndex, QuestionType.SCALE, questions, testId, makerId
-        );
-        rowIndex = appendMasterTemplateTypeSection(
-                sheet, rowIndex, QuestionType.CARD_SORTING, questions, testId, makerId
-        );
-        rowIndex = appendMasterTemplateTypeSection(
-                sheet, rowIndex, QuestionType.TREE_TEST, questions, testId, makerId
-        );
-        appendMasterTemplateFiveSecondSection(sheet, rowIndex, questions, testId, makerId);
+        rowIndex = appendMasterTemplateTypeSection(sheet, rowIndex, QuestionType.OBJECTIVE, session, questions);
+        rowIndex = appendMasterTemplateTypeSection(sheet, rowIndex, QuestionType.SUBJECTIVE, session, questions);
+        rowIndex = appendMasterTemplateTypeSection(sheet, rowIndex, QuestionType.AB_TEST, session, questions);
+        rowIndex = appendMasterTemplateTypeSection(sheet, rowIndex, QuestionType.SCALE, session, questions);
+        rowIndex = appendMasterTemplateTypeSection(sheet, rowIndex, QuestionType.CARD_SORTING, session, questions);
+        rowIndex = appendMasterTemplateTypeSection(sheet, rowIndex, QuestionType.TREE_TEST, session, questions);
+        appendMasterTemplateFiveSecondSection(sheet, rowIndex, session, questions);
     }
 
     private int appendMasterTemplateTypeSection(
             Sheet sheet,
             int startRowIndex,
             QuestionType questionType,
-            List<QuestionSummaryItem> questions,
-            Long testId,
-            Long makerId
+            ExportSession session,
+            List<QuestionSummaryItem> questions
     ) {
         List<QuestionSummaryItem> typedQuestions = questions.stream()
                 .filter(question -> question.type() == questionType)
@@ -168,9 +164,8 @@ public class CombinedTestReportExcelService {
                     sheet,
                     rowIndex,
                     questionType,
-                    testId,
+                    session,
                     question.questionId(),
-                    makerId,
                     ReportExcelWriteMode.MASTER_SECTION
             );
             if (index < typedQuestions.size() - 1) {
@@ -183,27 +178,18 @@ public class CombinedTestReportExcelService {
     private void appendMasterTemplateFiveSecondSection(
             Sheet sheet,
             int startRowIndex,
-            List<QuestionSummaryItem> questions,
-            Long testId,
-            Long makerId
+            ExportSession session,
+            List<QuestionSummaryItem> questions
     ) {
-        writeFiveSecondBlocks(
-                sheet,
-                startRowIndex,
-                questions,
-                testId,
-                makerId,
-                ReportExcelWriteMode.MASTER_SECTION
-        );
+        writeFiveSecondBlocks(sheet, startRowIndex, session, questions, ReportExcelWriteMode.MASTER_SECTION);
     }
 
     private void writeQuestionTypeSheet(
             XSSFWorkbook workbook,
             String sheetName,
             QuestionType questionType,
-            List<QuestionSummaryItem> questions,
-            Long testId,
-            Long makerId
+            ExportSession session,
+            List<QuestionSummaryItem> questions
     ) {
         Sheet sheet = workbook.createSheet(sheetName);
         List<QuestionSummaryItem> typedQuestions = questions.stream()
@@ -222,9 +208,8 @@ public class CombinedTestReportExcelService {
                     sheet,
                     rowIndex,
                     questionType,
-                    testId,
+                    session,
                     question.questionId(),
-                    makerId,
                     ReportExcelWriteMode.STANDALONE
             );
             if (index < typedQuestions.size() - 1) {
@@ -235,9 +220,8 @@ public class CombinedTestReportExcelService {
 
     private void writeFiveSecondSheet(
             Sheet sheet,
-            List<QuestionSummaryItem> questions,
-            Long testId,
-            Long makerId
+            ExportSession session,
+            List<QuestionSummaryItem> questions
     ) {
         List<QuestionSummaryItem> fiveSecondQuestions = questions.stream()
                 .filter(question -> question.type() == QuestionType.FIVE_SECOND)
@@ -248,22 +232,14 @@ public class CombinedTestReportExcelService {
             return;
         }
 
-        writeFiveSecondBlocks(
-                sheet,
-                0,
-                questions,
-                testId,
-                makerId,
-                ReportExcelWriteMode.STANDALONE
-        );
+        writeFiveSecondBlocks(sheet, 0, session, questions, ReportExcelWriteMode.STANDALONE);
     }
 
     private void writeFiveSecondBlocks(
             Sheet sheet,
             int startRowIndex,
+            ExportSession session,
             List<QuestionSummaryItem> questions,
-            Long testId,
-            Long makerId,
             ReportExcelWriteMode mode
     ) {
         List<QuestionSummaryItem> fiveSecondQuestions = questions.stream()
@@ -277,23 +253,13 @@ public class CombinedTestReportExcelService {
         int rowIndex = startRowIndex;
         for (int index = 0; index < fiveSecondQuestions.size(); index++) {
             QuestionSummaryItem question = fiveSecondQuestions.get(index);
-            FiveSecond fiveSecond = fiveSecondRepository.findWithOptionsById(question.questionId())
-                    .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
-
-            if (fiveSecond.isObjective()) {
-                rowIndex = fiveSecondObjectiveReportExcelWriter.writeToSheet(
-                        sheet,
-                        rowIndex,
-                        fiveSecondReportExcelService.prepareObjectiveData(testId, question.questionId(), makerId),
-                        mode
-                );
+            Object preparedData = getFiveSecondPreparedData(session, question.questionId());
+            if (preparedData instanceof FiveSecondObjectiveReportExcelData objectiveData) {
+                rowIndex = fiveSecondObjectiveReportExcelWriter.writeToSheet(sheet, rowIndex, objectiveData, mode);
+            } else if (preparedData instanceof FiveSecondSubjectiveReportExcelData subjectiveData) {
+                rowIndex = fiveSecondSubjectiveReportExcelWriter.writeToSheet(sheet, rowIndex, subjectiveData, mode);
             } else {
-                rowIndex = fiveSecondSubjectiveReportExcelWriter.writeToSheet(
-                        sheet,
-                        rowIndex,
-                        fiveSecondReportExcelService.prepareSubjectiveData(testId, question.questionId(), makerId),
-                        mode
-                );
+                throw new BaseException(BaseErrorCode.COMMON_002);
             }
 
             if (index < fiveSecondQuestions.size() - 1) {
@@ -306,88 +272,125 @@ public class CombinedTestReportExcelService {
             Sheet sheet,
             int startRowIndex,
             QuestionType questionType,
-            Long testId,
+            ExportSession session,
             Long questionId,
-            Long makerId
-    ) {
-        return writeQuestionBlock(
-                sheet,
-                startRowIndex,
-                questionType,
-                testId,
-                questionId,
-                makerId,
-                ReportExcelWriteMode.STANDALONE
-        );
-    }
-
-    private int writeQuestionBlock(
-            Sheet sheet,
-            int startRowIndex,
-            QuestionType questionType,
-            Long testId,
-            Long questionId,
-            Long makerId,
             ReportExcelWriteMode mode
     ) {
         return switch (questionType) {
             case OBJECTIVE -> objectiveReportExcelWriter.writeToSheet(
                     sheet,
                     startRowIndex,
-                    objectiveReportExcelService.prepareData(testId, questionId, makerId),
+                    getObjectivePreparedData(session, questionId),
                     mode
             );
             case SUBJECTIVE -> subjectiveReportExcelWriter.writeToSheet(
                     sheet,
                     startRowIndex,
-                    subjectiveReportExcelService.prepareData(testId, questionId, makerId),
+                    getSubjectivePreparedData(session, questionId),
                     mode
             );
             case AB_TEST -> abTestReportExcelWriter.writeToSheet(
                     sheet,
                     startRowIndex,
-                    abTestReportExcelService.prepareData(testId, questionId, makerId),
+                    getAbTestPreparedData(session, questionId),
                     mode
             );
             case SCALE -> scaleReportExcelWriter.writeToSheet(
                     sheet,
                     startRowIndex,
-                    scaleReportExcelService.prepareData(testId, questionId, makerId),
+                    getScalePreparedData(session, questionId),
                     mode
             );
             case CARD_SORTING -> cardSortingReportExcelWriter.writeToSheet(
                     sheet,
                     startRowIndex,
-                    cardSortingReportExcelService.prepareData(testId, questionId, makerId),
+                    getCardSortingPreparedData(session, questionId),
                     mode
             );
             case TREE_TEST -> treeTestReportExcelWriter.writeToSheet(
                     sheet,
                     startRowIndex,
-                    treeTestReportExcelService.prepareData(testId, questionId, makerId),
+                    getTreeTestPreparedData(session, questionId),
                     mode
             );
             default -> throw new BaseException(BaseErrorCode.COMMON_002);
         };
     }
 
+    private ObjectiveReportExcelData getObjectivePreparedData(ExportSession session, Long questionId) {
+        return (ObjectiveReportExcelData) session.preparedDataByQuestionId().computeIfAbsent(
+                questionId,
+                id -> objectiveReportExcelService.prepareData(session.context(), id)
+        );
+    }
+
+    private SubjectiveReportExcelData getSubjectivePreparedData(ExportSession session, Long questionId) {
+        return (SubjectiveReportExcelData) session.preparedDataByQuestionId().computeIfAbsent(
+                questionId,
+                id -> subjectiveReportExcelService.prepareData(session.context(), id)
+        );
+    }
+
+    private AbTestReportExcelData getAbTestPreparedData(ExportSession session, Long questionId) {
+        return (AbTestReportExcelData) session.preparedDataByQuestionId().computeIfAbsent(
+                questionId,
+                id -> abTestReportExcelService.prepareData(session.context(), id)
+        );
+    }
+
+    private ScaleReportExcelData getScalePreparedData(ExportSession session, Long questionId) {
+        return (ScaleReportExcelData) session.preparedDataByQuestionId().computeIfAbsent(
+                questionId,
+                id -> scaleReportExcelService.prepareData(session.context(), id)
+        );
+    }
+
+    private CardSortingReportExcelData getCardSortingPreparedData(ExportSession session, Long questionId) {
+        return (CardSortingReportExcelData) session.preparedDataByQuestionId().computeIfAbsent(
+                questionId,
+                id -> cardSortingReportExcelService.prepareData(session.context(), id)
+        );
+    }
+
+    private TreeTestReportExcelData getTreeTestPreparedData(ExportSession session, Long questionId) {
+        return (TreeTestReportExcelData) session.preparedDataByQuestionId().computeIfAbsent(
+                questionId,
+                id -> treeTestReportExcelService.prepareData(session.context(), id)
+        );
+    }
+
+    private Object getFiveSecondPreparedData(ExportSession session, Long questionId) {
+        return session.preparedDataByQuestionId().computeIfAbsent(questionId, id -> {
+            FiveSecond fiveSecond = session.context().requireFiveSecond(id);
+            if (fiveSecond.isObjective()) {
+                return fiveSecondReportExcelService.prepareObjectiveData(session.context(), id);
+            }
+            return fiveSecondReportExcelService.prepareSubjectiveData(session.context(), id);
+        });
+    }
+
     private void writeEmptySheetMessage(Sheet sheet, String message) {
         sheet.createRow(0).createCell(0).setCellValue(message);
     }
 
+    // TODO: 기획에서 테스트 기간 설정 기능 추가 예정 — 현재는 생성 시각부터 1개월로 고정
     private String formatTestPeriod(Test test) {
         if (test.getCreatedAt() == null) {
             return "";
         }
 
         String start = DATE_FORMAT.format(test.getCreatedAt());
-        if (test.getUpdatedAt() != null) {
-            return start + " ~ " + DATE_FORMAT.format(test.getUpdatedAt());
-        }
-        return start;
+        String end = DATE_FORMAT.format(test.getCreatedAt().plusMonths(1));
+        return start + " ~ " + end;
     }
 
     private String buildFilename(Long testId) {
         return "mate-report-" + testId + ".xlsx";
+    }
+
+    private record ExportSession(
+            ReportExcelExportContext context,
+            Map<Long, Object> preparedDataByQuestionId
+    ) {
     }
 }

@@ -7,13 +7,11 @@ import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Scale;
-import server.MATE.domain.question.repository.ScaleRepository;
 import server.MATE.domain.report.excel.scale.ScaleReportExcelData;
 import server.MATE.domain.report.excel.scale.ScaleRespondentRow;
-import server.MATE.domain.report.service.excel.support.ReportExcelExportSupport;
+import server.MATE.domain.report.service.excel.support.ReportExcelExportContext;
 import server.MATE.domain.report.service.excel.support.ReportExcelResultMapper;
 import server.MATE.global.common.exception.BaseErrorCode;
-import server.MATE.global.common.exception.BaseException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,20 +22,15 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ScaleReportExcelService {
 
-    private final ReportExcelExportSupport reportExcelExportSupport;
-    private final ScaleRepository scaleRepository;
-
-    public ScaleReportExcelData prepareData(Long testId, Long questionId, Long makerId) {
-        reportExcelExportSupport.requireExportReadyTest(testId, makerId);
-        Question question = reportExcelExportSupport.requireQuestion(
-                testId, questionId, QuestionType.SCALE, BaseErrorCode.REPORT_005
+    public ScaleReportExcelData prepareData(ReportExcelExportContext context, Long questionId) {
+        Question question = context.requireQuestion(
+                questionId, QuestionType.SCALE, BaseErrorCode.REPORT_005
         );
-        Map<String, Object> reportResult = reportExcelExportSupport.requireReportResult(testId, questionId);
+        Map<String, Object> reportResult = context.requireReportResult(questionId, QuestionType.SCALE);
 
-        Scale scale = scaleRepository.findById(questionId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
+        Scale scale = context.requireScale(questionId);
 
-        List<Answer> answers = reportExcelExportSupport.loadAnswers(questionId);
+        List<Answer> answers = context.answers(questionId);
         List<ScaleRespondentRow> respondents = buildRespondentRows(answers);
         ReportExcelResultMapper.ScaleStats scaleStats = ReportExcelResultMapper.toScaleStats(scale.getRange(), reportResult);
 

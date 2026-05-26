@@ -82,7 +82,7 @@ class ReportExcelExportSupportTest {
         assertThatThrownBy(() -> reportExcelExportSupport.requireReportResult(10L, 20L))
                 .isInstanceOfSatisfying(BaseException.class, exception ->
                         org.assertj.core.api.Assertions.assertThat(exception.getErrorCode())
-                                .isEqualTo(BaseErrorCode.REPORT_007));
+                                .isEqualTo(BaseErrorCode.REPORT_010));
     }
 
     @Test

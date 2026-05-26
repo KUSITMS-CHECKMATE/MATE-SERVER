@@ -7,14 +7,12 @@ import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.question.entity.CardSorting;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.question.repository.CardSortingRepository;
 import server.MATE.domain.report.excel.cardsorting.CardSortingCategoryStatRow;
 import server.MATE.domain.report.excel.cardsorting.CardSortingReportExcelData;
 import server.MATE.domain.report.excel.cardsorting.CardSortingRespondentRow;
-import server.MATE.domain.report.service.excel.support.ReportExcelExportSupport;
+import server.MATE.domain.report.service.excel.support.ReportExcelExportContext;
 import server.MATE.domain.report.service.excel.support.ReportExcelResultMapper;
 import server.MATE.global.common.exception.BaseErrorCode;
-import server.MATE.global.common.exception.BaseException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,20 +25,15 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CardSortingReportExcelService {
 
-    private final ReportExcelExportSupport reportExcelExportSupport;
-    private final CardSortingRepository cardSortingRepository;
-
-    public CardSortingReportExcelData prepareData(Long testId, Long questionId, Long makerId) {
-        reportExcelExportSupport.requireExportReadyTest(testId, makerId);
-        Question question = reportExcelExportSupport.requireQuestion(
-                testId, questionId, QuestionType.CARD_SORTING, BaseErrorCode.REPORT_006
+    public CardSortingReportExcelData prepareData(ReportExcelExportContext context, Long questionId) {
+        Question question = context.requireQuestion(
+                questionId, QuestionType.CARD_SORTING, BaseErrorCode.REPORT_006
         );
-        Map<String, Object> reportResult = reportExcelExportSupport.requireReportResult(testId, questionId);
+        Map<String, Object> reportResult = context.requireReportResult(questionId, QuestionType.CARD_SORTING);
 
-        CardSorting cardSorting = cardSortingRepository.findById(questionId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
+        CardSorting cardSorting = context.requireCardSorting(questionId);
 
-        List<Answer> answers = reportExcelExportSupport.loadAnswers(questionId);
+        List<Answer> answers = context.answers(questionId);
         List<CardSortingRespondentRow> respondents = buildRespondentRows(cardSorting, answers);
         List<CardSortingCategoryStatRow> categoryStats = ReportExcelResultMapper.toCardSortingCategoryStats(reportResult);
 
