@@ -1,7 +1,9 @@
 package server.MATE.domain.report.service;
 
+import server.MATE.domain.question.entity.FiveSecondOption;
 import server.MATE.domain.question.entity.ObjectiveOption;
 import server.MATE.domain.report.excel.CardSortingCategoryStatRow;
+import server.MATE.domain.report.excel.FiveSecondOptionStatRow;
 import server.MATE.domain.report.excel.ObjectiveOptionStatRow;
 import server.MATE.domain.report.excel.ScaleValueStatRow;
 import server.MATE.domain.report.excel.TreeTestPathStatRow;
@@ -40,6 +42,35 @@ final class ReportExcelResultMapper {
             double ratio = ratioByOptionId.getOrDefault(option.getId(), 0.0);
             stats.add(new ObjectiveOptionStatRow(
                     "선지 " + (index + 1),
+                    count,
+                    formatObjectiveRatioPercent(ratio)
+            ));
+        }
+        return stats;
+    }
+
+    static List<FiveSecondOptionStatRow> toFiveSecondOptionStats(
+            List<FiveSecondOption> options,
+            Map<String, Object> reportResult
+    ) {
+        Map<Long, Integer> countByOptionId = new HashMap<>();
+        Map<Long, Double> ratioByOptionId = new HashMap<>();
+        for (Map<String, Object> optionStat : readOptionStats(reportResult)) {
+            Object optionIdObject = optionStat.get("optionId");
+            if (!(optionIdObject instanceof Number optionIdNumber)) {
+                continue;
+            }
+            long optionId = optionIdNumber.longValue();
+            countByOptionId.put(optionId, readInt(optionStat.get("count")));
+            ratioByOptionId.put(optionId, readDouble(optionStat.get("ratio")));
+        }
+
+        List<FiveSecondOptionStatRow> stats = new ArrayList<>();
+        for (FiveSecondOption option : options) {
+            int count = countByOptionId.getOrDefault(option.getId(), 0);
+            double ratio = ratioByOptionId.getOrDefault(option.getId(), 0.0);
+            stats.add(new FiveSecondOptionStatRow(
+                    option.getContent(),
                     count,
                     formatObjectiveRatioPercent(ratio)
             ));
