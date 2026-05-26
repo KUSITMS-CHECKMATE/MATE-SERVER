@@ -87,7 +87,7 @@ public class AnswerService {
                 .map(MyAnswerItem::from)
                 .toList();
 
-        Integer totalPromotionReward = promotionRewardRepository.sumRewardAmountByTesterIdAndStatus(
+        Long totalPromotionReward = promotionRewardRepository.sumRewardAmountByTesterIdAndStatus(
                 testerId,
                 PromotionRewardStatus.SUCCEEDED
         );

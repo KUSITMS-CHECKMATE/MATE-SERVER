@@ -104,7 +104,7 @@ class MyAnswerIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         var body = parseBody(result);
         assertThat(body.path("message").asText()).isEqualTo("내 응답 목록을 조회했습니다.");
-        assertThat(body.path("data").path("totalPromotionReward").asInt()).isEqualTo(700);
+        assertThat(body.path("data").path("totalPromotionReward").asLong()).isEqualTo(700L);
         assertThat(body.path("data").path("answers")).hasSize(2);
         assertThat(body.path("data").path("answers").get(0).path("testId").asLong()).isEqualTo(secondTest.getId());
         assertThat(body.path("data").path("answers").get(0).path("testName").asText()).isEqualTo("두 번째 테스트");

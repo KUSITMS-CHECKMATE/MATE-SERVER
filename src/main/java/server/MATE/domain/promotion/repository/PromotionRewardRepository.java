@@ -18,6 +18,6 @@ public interface PromotionRewardRepository extends JpaRepository<PromotionReward
             where pr.testerId = :testerId
               and pr.status = :status
             """)
-    Integer sumRewardAmountByTesterIdAndStatus(@Param("testerId") Long testerId,
-                                               @Param("status") PromotionRewardStatus status);
+    Long sumRewardAmountByTesterIdAndStatus(@Param("testerId") Long testerId,
+                                            @Param("status") PromotionRewardStatus status);
 }
