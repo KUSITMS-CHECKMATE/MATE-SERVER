@@ -79,6 +79,7 @@ class TestPublishServiceTest {
                 .categories(List.of("DAILY", "FINANCE"))
                 .goalPpl(100)
                 .reward(300)
+                .closedAt(LocalDateTime.parse("2099-05-31T23:59:59"))
                 .questionsPayload(Map.of(
                         "questions", List.of(
                                 Map.of("type", "SUBJECTIVE", "title", "질문 제목", "description", "질문 설명")
@@ -126,6 +127,7 @@ class TestPublishServiceTest {
         server.MATE.domain.test.entity.Test savedTest = testCaptor.getValue();
         assertThat(savedTest.getGoalPpl()).isEqualTo(100);
         assertThat(savedTest.getReward()).isEqualTo(300);
+        assertThat(savedTest.getClosedAt()).isEqualTo(LocalDateTime.parse("2099-05-31T23:59:59"));
         assertThat(savedTest.getCategories()).hasSize(2);
 
         verify(questionService).createQuestions(any(Long.class), any(Long.class), any(QuestionCreateRequest.class));

@@ -101,14 +101,25 @@ class TestDraftControllerTest {
     void listsDraftsSuccessfully() throws Exception {
         given(testDraftService.listMyDrafts(1L)).willReturn(new MyTestDraftResponse(
                 1,
-                List.of(new MyTestDraftItem(10L, "초안 제목", TestDraftStatus.DRAFT, 100, 300, LocalDateTime.parse("2026-05-25T12:00:00")))
+                List.of(new MyTestDraftItem(
+                        10L,
+                        "초안 제목",
+                        TestDraftStatus.DRAFT,
+                        100,
+                        300,
+                        LocalDateTime.parse("2099-05-31T23:59:59"),
+                        LocalDateTime.parse("2026-05-25T12:00:00")
+                ))
         ));
 
         mockMvc.perform(get("/api/v1/test-drafts/me").with(authenticationPrincipal()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.draftCount").value(1))
                 .andExpect(jsonPath("$.data.drafts[0].draftId").value(10L))
-                .andExpect(jsonPath("$.data.drafts[0].status").value("DRAFT"));
+                .andExpect(jsonPath("$.data.drafts[0].status").value("DRAFT"))
+                .andExpect(jsonPath("$.data.drafts[0].closedAt[0]").value(2099))
+                .andExpect(jsonPath("$.data.drafts[0].closedAt[1]").value(5))
+                .andExpect(jsonPath("$.data.drafts[0].closedAt[2]").value(31));
     }
 
     @Test
@@ -122,6 +133,7 @@ class TestDraftControllerTest {
                   "description": "수정 설명",
                   "goalPpl": 100,
                   "reward": 300,
+                  "closedAt": "2099-05-31",
                   "questionsPayload": {
                     "questions": [
                       {
@@ -139,7 +151,48 @@ class TestDraftControllerTest {
                         .content(request))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("테스트 초안을 수정했습니다."))
-                .andExpect(jsonPath("$.data.title").value("수정된 테스트"));
+                .andExpect(jsonPath("$.data.title").value("수정된 테스트"))
+                .andExpect(jsonPath("$.data.closedAt[0]").value(2099))
+                .andExpect(jsonPath("$.data.closedAt[1]").value(5))
+                .andExpect(jsonPath("$.data.closedAt[2]").value(31));
+    }
+
+    @Test
+    @DisplayName("closedAt 형식이 yyyy-MM-dd가 아니면 검증 에러를 반환한다")
+    void rejectsInvalidClosedAtFormat() throws Exception {
+        String request = """
+                {
+                  "closedAt": "2099-05-31-23"
+                }
+                """;
+
+        mockMvc.perform(patch("/api/v1/test-drafts/10")
+                        .with(authenticationPrincipal())
+                        .contentType(APPLICATION_JSON)
+                        .content(request))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("COMMON_002"))
+                .andExpect(jsonPath("$.field").value("closedAt"))
+                .andExpect(jsonPath("$.message").value("마감 기한은 yyyy-MM-dd 형식이어야 합니다."));
+    }
+
+    @Test
+    @DisplayName("closedAt이 오늘이나 과거 날짜면 검증 에러를 반환한다")
+    void rejectsTodayOrPastClosedAt() throws Exception {
+        String request = """
+                {
+                  "closedAt": "2000-01-01"
+                }
+                """;
+
+        mockMvc.perform(patch("/api/v1/test-drafts/10")
+                        .with(authenticationPrincipal())
+                        .contentType(APPLICATION_JSON)
+                        .content(request))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("COMMON_002"))
+                .andExpect(jsonPath("$.field").value("closedAt"))
+                .andExpect(jsonPath("$.message").value("마감 기한은 오늘 이후 날짜여야 합니다."));
     }
 
     @Test
@@ -175,6 +228,7 @@ class TestDraftControllerTest {
                 List.of("FOOD"),
                 100,
                 300,
+                LocalDateTime.parse("2099-05-31T23:59:59"),
                 payload,
                 TestDraftStatus.DRAFT,
                 null,
