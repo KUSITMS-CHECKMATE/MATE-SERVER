@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import server.MATE.domain.test.entity.Category;
+import server.MATE.domain.testdraft.validator.ClosedAtFormat;
 
 import java.util.List;
 
@@ -31,6 +32,9 @@ public record TestDraftUpdateRequest(
 
         @Min(value = 0, message = "리워드는 0원 이상이어야 합니다.")
         Integer reward,
+
+        @ClosedAtFormat
+        String closedAt,
 
         JsonNode questionsPayload
 ) {
