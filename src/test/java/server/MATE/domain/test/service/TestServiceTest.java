@@ -102,7 +102,7 @@ class TestServiceTest {
     @Test
     void 테스트_상세_조회_시_상태와_응답_여부를_반환한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findWithCategoriesByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
         given(participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(TEST_ID, MAKER_ID))
                 .willReturn(true);
 
@@ -116,7 +116,7 @@ class TestServiceTest {
     @Test
     void 종료된_테스트_상세_조회_시_상태를_반환한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.COMPLETED);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findWithCategoriesByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
         given(participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(TEST_ID, MAKER_ID))
                 .willReturn(false);
 
