@@ -41,6 +41,10 @@ public class TestPublishService {
     public Long publish(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_001));
+        if (payment.getTestId() != null) {
+            return payment.getTestId();
+        }
+
         TestDraft draft = testDraftRepository.findByIdForUpdate(payment.getDraftId())
                 .orElseThrow(() -> new BaseException(BaseErrorCode.DRAFT_001));
 
@@ -81,6 +85,7 @@ public class TestPublishService {
 
         payment.linkTest(test.getId());
         draft.markPublished(test.getId());
+        testDraftRepository.delete(draft);
         return test.getId();
     }
 
