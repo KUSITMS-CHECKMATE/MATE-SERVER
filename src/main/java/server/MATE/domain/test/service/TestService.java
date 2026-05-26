@@ -59,7 +59,10 @@ public class TestService {
 
     @Transactional(readOnly = true)
     public LikedTestSummaryResponse listLikedTests(Long userId) {
-        List<Test> tests = testRepository.findLikedTestsByUserId(userId, TestStatus.IN_PROGRESS);
+        List<Test> tests = testRepository.findLikedTestsByUserId(
+                userId,
+                List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING, TestStatus.COMPLETED)
+        );
         List<LikedTestSummaryItem> items = tests.stream()
                 .map(test -> LikedTestSummaryItem.from(test, toThumbnailUrl(test.getImageKeys())))
                 .toList();
