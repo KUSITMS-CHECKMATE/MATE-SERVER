@@ -20,7 +20,6 @@ final class ReportHandlerUtils {
         return Math.round(count * 1000.0 / total) / 1000.0;
     }
 
-    // TODO: AI 연동 후 의미론적 유사도 기반 그룹핑으로 교체
     static List<Map<String, Object>> buildClusters(List<String> texts) {
         return texts.stream()
                 .filter(t -> t != null && !t.isBlank())
@@ -31,9 +30,9 @@ final class ReportHandlerUtils {
                         Comparator.comparingInt(List::size)).reversed())
                 .map(e -> {
                     Map<String, Object> cluster = new LinkedHashMap<>();
+                    cluster.put("tag", null);
                     cluster.put("representative", e.getKey());
                     cluster.put("count", e.getValue().size());
-                    cluster.put("responses", List.copyOf(e.getValue()));
                     return cluster;
                 })
                 .toList();
