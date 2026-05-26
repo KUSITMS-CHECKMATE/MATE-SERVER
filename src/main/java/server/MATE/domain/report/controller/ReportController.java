@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +15,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import server.MATE.domain.report.dto.response.ReportResponse;
+import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.service.ReportService;
+import server.MATE.domain.report.service.TestReportExcelService;
 import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
@@ -25,6 +29,7 @@ import server.MATE.global.security.principal.AuthenticatedUser;
 public class ReportController {
 
     private final ReportService reportService;
+    private final TestReportExcelService testReportExcelService;
 
     @Operation(
             summary = "✔️ 리포트 전체 조회",
@@ -367,5 +372,25 @@ public class ReportController {
     ) {
         ReportResponse response = reportService.getReport(testId, user.getId());
         return ResponseEntity.ok(ApiResponse.ok("리포트를 조회했습니다.", response));
+    }
+
+    @Operation(
+            summary = "엑셀 보고서 다운로드",
+            description = """
+                    테스트 기본정보와 질문 목록을 엑셀 템플릿 형식으로 다운로드합니다.
+                    - 테스트 메이커만 다운로드할 수 있습니다.
+                    - 질문 목록 행 수는 등록된 질문 개수에 따라 1~20개까지 가변적으로 생성됩니다.
+                    """
+    )
+    @GetMapping("/excel")
+    public ResponseEntity<byte[]> downloadExcelReport(
+            @PathVariable Long testId,
+            @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        TestReportExcelDownload download = testReportExcelService.export(testId, user.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(download.content());
     }
 }

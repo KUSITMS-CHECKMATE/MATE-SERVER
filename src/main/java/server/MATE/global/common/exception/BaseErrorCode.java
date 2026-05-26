@@ -82,6 +82,9 @@ public enum BaseErrorCode implements ErrorCode {
     PAYMENT_004(HttpStatus.BAD_REQUEST, "PAYMENT_004", "환불할 수 없는 상태입니다."),
     PAYMENT_005(HttpStatus.BAD_REQUEST, "PAYMENT_005", "결제 금액 계산에 필요한 값이 누락되었습니다."),
 
+    // Report
+    REPORT_001(HttpStatus.BAD_REQUEST, "REPORT_001", "엑셀 보고서는 질문 20개 이하 테스트만 지원합니다."),
+
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
     FILE_002(HttpStatus.BAD_REQUEST, "FILE_002", "지원하지 않는 파일 형식입니다. 허용되는 확장자를 확인해주세요."),
