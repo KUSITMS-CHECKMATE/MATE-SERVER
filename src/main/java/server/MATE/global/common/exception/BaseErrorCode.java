@@ -90,6 +90,7 @@ public enum BaseErrorCode implements ErrorCode {
     REPORT_005(HttpStatus.BAD_REQUEST, "REPORT_005", "척도 질문만 엑셀 통계를 다운로드할 수 있습니다."),
     REPORT_006(HttpStatus.BAD_REQUEST, "REPORT_006", "카드 소팅 질문만 엑셀 통계를 다운로드할 수 있습니다."),
     REPORT_007(HttpStatus.BAD_REQUEST, "REPORT_007", "리포트 집계가 완료된 후에 엑셀을 다운로드할 수 있습니다."),
+    REPORT_008(HttpStatus.BAD_REQUEST, "REPORT_008", "트리 테스트 질문만 엑셀 통계를 다운로드할 수 있습니다."),
 
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
