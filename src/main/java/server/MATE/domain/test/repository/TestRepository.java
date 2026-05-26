@@ -19,9 +19,9 @@ public interface TestRepository extends JpaRepository<Test, Long> {
     List<Test> findAllByTestStatusAndDeletedAtIsNullOrderByCreatedAtDesc(TestStatus testStatus);
 
     @EntityGraph(attributePaths = {"categories"})
-    List<Test> findAllByTestStatusInAndDeletedAtIsNullAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
+    List<Test> findAllByTestStatusInAndDeletedAtIsNullAndClosedAtGreaterThanEqualOrderByCreatedAtDesc(
             List<TestStatus> testStatuses,
-            LocalDateTime createdAt
+            LocalDateTime closedAt
     );
 
     List<Test> findAllByMakerIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long makerId);
