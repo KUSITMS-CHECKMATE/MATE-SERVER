@@ -75,7 +75,7 @@ public class TestService {
 
     @Transactional(readOnly = true)
     public TestDetailResponse getTest(Long testId, Long userId) {
-        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
+        Test test = testRepository.findWithCategoriesByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         boolean hasResponded = participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(testId, userId);
         return TestDetailResponse.from(test, toImageUrls(test.getImageKeys()), hasResponded);

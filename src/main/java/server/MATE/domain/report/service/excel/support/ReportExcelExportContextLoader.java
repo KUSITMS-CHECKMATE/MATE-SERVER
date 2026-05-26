@@ -46,13 +46,19 @@ public class ReportExcelExportContextLoader {
 
     public ReportExcelExportContext load(Long testId, Long makerId) {
         Test test = reportExcelExportSupport.requireExportReadyTest(testId, makerId);
-        List<QuestionSummaryItem> questionSummaries = questionRepository.findQuestionSummariesByTestId(testId);
-        List<Long> questionIds = questionSummaries.stream()
-                .map(QuestionSummaryItem::questionId)
+        List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
+        List<QuestionSummaryItem> questionSummaries = questions.stream()
+                .map(question -> new QuestionSummaryItem(
+                        question.getId(),
+                        question.getSequence(),
+                        question.getTitle(),
+                        question.getQuestionType()
+                ))
                 .toList();
-
-        Map<Long, Question> questionById = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId)
-                .stream()
+        List<Long> questionIds = questions.stream()
+                .map(Question::getId)
+                .toList();
+        Map<Long, Question> questionById = questions.stream()
                 .collect(Collectors.toMap(Question::getId, Function.identity()));
 
         Map<Long, Map<String, Object>> reportResultByQuestionId = reportRepository.findAllByTestId(testId)
