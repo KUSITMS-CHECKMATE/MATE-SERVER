@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -131,20 +132,15 @@ class TestPublishServiceTest {
         assertThat(savedTest.getCategories()).hasSize(2);
 
         verify(questionService).createQuestions(any(Long.class), any(Long.class), any(QuestionCreateRequest.class));
+        verify(testDraftRepository).delete(draft);
     }
 
     @Test
-    @DisplayName("이미 publish된 draft면 기존 testId를 그대로 반환한다")
-    void returnsExistingPublishedTestId() {
-        TestDraft draft = TestDraft.builder()
-                .makerId(1L)
-                .status(TestDraftStatus.PUBLISHED)
-                .publishedTestId(99L)
-                .build();
-        ReflectionTestUtils.setField(draft, "id", 10L);
-
+    @DisplayName("payment에 이미 testId가 연결되어 있으면 draft 없이 기존 testId를 그대로 반환한다")
+    void returnsExistingLinkedTestIdWithoutDraft() {
         Payment payment = Payment.builder()
                 .draftId(10L)
+                .testId(99L)
                 .makerId(1L)
                 .payStatus(PayStatus.PAY_SUCCEEDED)
                 .build();
@@ -152,12 +148,12 @@ class TestPublishServiceTest {
         ReflectionTestUtils.setField(payment, "id", 20L);
 
         given(paymentRepository.findById(20L)).willReturn(Optional.of(payment));
-        given(testDraftRepository.findByIdForUpdate(10L)).willReturn(Optional.of(draft));
 
         Long testId = testPublishService.publish(20L);
 
         assertThat(testId).isEqualTo(99L);
         assertThat(payment.getTestId()).isEqualTo(99L);
+        verify(testDraftRepository, never()).findByIdForUpdate(any(Long.class));
     }
 
     @Test
