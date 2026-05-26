@@ -386,9 +386,9 @@ class DraftPaymentPublishEndToEndIntegrationTest {
                         .header("Authorization", testerToken))
                 .andExpect(status().isOk())
                 .andReturn());
-        assertThat(listBody.path("data").isArray()).isTrue();
+        assertThat(listBody.path("data").path("tests").isArray()).isTrue();
         boolean existsInList = false;
-        for (JsonNode node : listBody.path("data")) {
+        for (JsonNode node : listBody.path("data").path("tests")) {
             if (node.path("id").asLong() == testId) {
                 assertThat(node.path("title").asText()).isEqualTo("신규 테스트");
                 existsInList = true;

@@ -33,6 +33,7 @@ import server.MATE.domain.users.entity.Users;
 import server.MATE.domain.users.repository.TossAccountRepository;
 import server.MATE.domain.users.repository.UsersRepository;
 import server.MATE.global.storage.FileStorageService;
+import server.MATE.support.TestEntityFixtures;
 
 import java.util.List;
 
@@ -139,6 +140,7 @@ abstract class BaseQuestionAnswerEndToEndTest {
                 .serviceDescription("서비스 설명")
                 .imageKeys(List.of())
                 .testStatus(TestStatus.IN_PROGRESS)
+                .closedAt(TestEntityFixtures.DEFAULT_CLOSED_AT)
                 .build());
         return new TestActors(
                 maker.getId(),
