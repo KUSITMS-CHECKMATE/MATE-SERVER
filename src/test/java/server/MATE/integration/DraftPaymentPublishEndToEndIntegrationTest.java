@@ -589,6 +589,7 @@ class DraftPaymentPublishEndToEndIntegrationTest {
                   "categories": ["FOOD"],
                   "goalPpl": 5,
                   "reward": 300,
+                  "closedAt": "2099-05-31",
                   "questionsPayload": {
                     "questions": [
                       {
