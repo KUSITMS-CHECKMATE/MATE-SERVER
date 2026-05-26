@@ -21,6 +21,15 @@ public class AbTestReportExcelService {
     private final AbTestReportExcelWriter abTestReportExcelWriter;
 
     public TestReportExcelDownload export(Long testId, Long questionId, Long makerId) {
+        AbTestReportExcelData data = prepareData(testId, questionId, makerId);
+        byte[] content = abTestReportExcelWriter.write(data);
+        return new TestReportExcelDownload(
+                content,
+                buildFilename(testId, Long.parseLong(data.questionNumberLabel().substring(1)))
+        );
+    }
+
+    public AbTestReportExcelData prepareData(Long testId, Long questionId, Long makerId) {
         reportExcelExportSupport.requireExportReadyTest(testId, makerId);
         Question question = reportExcelExportSupport.requireQuestion(
                 testId, questionId, QuestionType.AB_TEST, BaseErrorCode.REPORT_004
@@ -28,16 +37,13 @@ public class AbTestReportExcelService {
         Map<String, Object> reportResult = reportExcelExportSupport.requireReportResult(testId, questionId);
         ReportExcelResultMapper.AbTestCounts counts = ReportExcelResultMapper.toAbTestCounts(reportResult);
 
-        AbTestReportExcelData data = new AbTestReportExcelData(
+        return new AbTestReportExcelData(
                 String.format("Q%02d", question.getSequence()),
                 question.getTitle(),
                 counts.versionACount() + counts.versionBCount(),
                 counts.versionACount(),
                 counts.versionBCount()
         );
-
-        byte[] content = abTestReportExcelWriter.write(data);
-        return new TestReportExcelDownload(content, buildFilename(testId, question.getSequence()));
     }
 
     private String buildFilename(Long testId, Long sequence) {

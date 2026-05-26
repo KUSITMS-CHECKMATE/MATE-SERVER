@@ -32,6 +32,15 @@ public class CardSortingReportExcelService {
     private final CardSortingReportExcelWriter cardSortingReportExcelWriter;
 
     public TestReportExcelDownload export(Long testId, Long questionId, Long makerId) {
+        CardSortingReportExcelData data = prepareData(testId, questionId, makerId);
+        byte[] content = cardSortingReportExcelWriter.write(data);
+        return new TestReportExcelDownload(
+                content,
+                buildFilename(testId, Long.parseLong(data.questionNumberLabel().substring(1)))
+        );
+    }
+
+    public CardSortingReportExcelData prepareData(Long testId, Long questionId, Long makerId) {
         reportExcelExportSupport.requireExportReadyTest(testId, makerId);
         Question question = reportExcelExportSupport.requireQuestion(
                 testId, questionId, QuestionType.CARD_SORTING, BaseErrorCode.REPORT_006
@@ -45,15 +54,12 @@ public class CardSortingReportExcelService {
         List<CardSortingRespondentRow> respondents = buildRespondentRows(cardSorting, answers);
         List<CardSortingCategoryStatRow> categoryStats = ReportExcelResultMapper.toCardSortingCategoryStats(reportResult);
 
-        CardSortingReportExcelData data = new CardSortingReportExcelData(
+        return new CardSortingReportExcelData(
                 String.format("Q%02d", question.getSequence()),
                 question.getTitle(),
                 respondents,
                 categoryStats
         );
-
-        byte[] content = cardSortingReportExcelWriter.write(data);
-        return new TestReportExcelDownload(content, buildFilename(testId, question.getSequence()));
     }
 
     private List<CardSortingRespondentRow> buildRespondentRows(CardSorting cardSorting, List<Answer> answers) {

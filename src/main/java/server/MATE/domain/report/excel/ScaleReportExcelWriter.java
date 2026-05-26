@@ -26,28 +26,34 @@ public class ScaleReportExcelWriter {
     private static final int STAT_COUNT_COLUMN = 6;
     private static final int STAT_RATIO_COLUMN = 7;
 
+    private static final String SHEET_NAME = "척도 테스트 통계";
+
     public byte[] write(ScaleReportExcelData data) {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("척도 테스트 통계");
-            ScaleReportExcelStyles styles = ScaleReportExcelStyles.create(workbook);
-
-            configureColumnWidths(sheet);
-
-            int rowIndex = 0;
-            rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
-            rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
-            rowIndex++;
-            rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
-            rowIndex = writeQuestionTextRow(sheet, rowIndex, data.questionTitle(), styles);
-            rowIndex = writeTableHeaderRow(sheet, rowIndex, styles);
-            writeDataRows(sheet, rowIndex, data, styles);
-
+            Sheet sheet = workbook.createSheet(SHEET_NAME);
+            writeToSheet(sheet, 0, data);
             workbook.write(outputStream);
             return outputStream.toByteArray();
         } catch (IOException e) {
             throw new UncheckedIOException("척도 테스트 통계 엑셀 생성에 실패했습니다.", e);
         }
+    }
+
+    public int writeToSheet(Sheet sheet, int startRowIndex, ScaleReportExcelData data) {
+        if (startRowIndex == 0) {
+            configureColumnWidths(sheet);
+        }
+        ScaleReportExcelStyles styles = ScaleReportExcelStyles.create(sheet.getWorkbook());
+
+        int rowIndex = startRowIndex;
+        rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
+        rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
+        rowIndex++;
+        rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
+        rowIndex = writeQuestionTextRow(sheet, rowIndex, data.questionTitle(), styles);
+        rowIndex = writeTableHeaderRow(sheet, rowIndex, styles);
+        return writeDataRows(sheet, rowIndex, data, styles);
     }
 
     private void configureColumnWidths(Sheet sheet) {
@@ -126,7 +132,7 @@ public class ScaleReportExcelWriter {
         return rowIndex + 1;
     }
 
-    private void writeDataRows(
+    private int writeDataRows(
             Sheet sheet,
             int rowIndex,
             ScaleReportExcelData data,
@@ -150,6 +156,7 @@ public class ScaleReportExcelWriter {
                 createCell(row, STAT_RATIO_COLUMN, "", styles.data());
             }
         }
+        return rowIndex + rowCount;
     }
 
     private void writeRespondentCells(

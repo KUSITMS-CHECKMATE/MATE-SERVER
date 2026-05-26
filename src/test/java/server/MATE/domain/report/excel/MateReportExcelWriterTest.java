@@ -31,7 +31,7 @@ class MateReportExcelWriterTest {
 
         try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
             Sheet sheet = workbook.getSheetAt(0);
-            assertThat(sheet.getSheetName()).isEqualTo("메이트 엑셀 보고서");
+            assertThat(sheet.getSheetName()).isEqualTo("기본 정보");
             assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("테스트 기본정보");
             assertThat(sheet.getRow(6).getCell(0).getStringCellValue()).isEqualTo("질문 목록");
 
