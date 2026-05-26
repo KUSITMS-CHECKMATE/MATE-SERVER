@@ -8,15 +8,13 @@ import server.MATE.domain.question.entity.Objective;
 import server.MATE.domain.question.entity.ObjectiveOption;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.question.repository.ObjectiveRepository;
 import server.MATE.domain.report.excel.objective.ObjectiveOptionStatRow;
 import server.MATE.domain.report.excel.objective.ObjectiveReportExcelData;
 import server.MATE.domain.report.excel.objective.ObjectiveRespondentRow;
-import server.MATE.domain.report.service.excel.support.ReportExcelExportSupport;
+import server.MATE.domain.report.service.excel.support.ReportExcelExportContext;
 import server.MATE.domain.report.service.excel.support.ReportExcelResultMapper;
 import server.MATE.domain.report.service.handler.ReportHandlerUtils;
 import server.MATE.global.common.exception.BaseErrorCode;
-import server.MATE.global.common.exception.BaseException;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -30,26 +28,20 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ObjectiveReportExcelService {
 
-    private final ReportExcelExportSupport reportExcelExportSupport;
-    private final ObjectiveRepository objectiveRepository;
-
-    public ObjectiveReportExcelData prepareData(Long testId, Long questionId, Long makerId) {
-        reportExcelExportSupport.requireExportReadyTest(testId, makerId);
-        Question question = reportExcelExportSupport.requireQuestion(
-                testId, questionId, QuestionType.OBJECTIVE, BaseErrorCode.REPORT_002
+    public ObjectiveReportExcelData prepareData(ReportExcelExportContext context, Long questionId) {
+        Question question = context.requireQuestion(
+                questionId, QuestionType.OBJECTIVE, BaseErrorCode.REPORT_002
         );
-        Map<String, Object> reportResult = reportExcelExportSupport.requireReportResult(testId, questionId);
+        Map<String, Object> reportResult = context.requireReportResult(questionId, QuestionType.OBJECTIVE);
 
-        Objective objective = objectiveRepository.findWithOptionsById(questionId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
-
+        Objective objective = context.requireObjective(questionId);
         List<ObjectiveOption> options = objective.getOptions().stream()
                 .sorted(Comparator.comparingInt(ObjectiveOption::getSequence))
                 .toList();
         Map<Long, String> optionContentById = options.stream()
                 .collect(Collectors.toMap(ObjectiveOption::getId, ObjectiveOption::getContent, (a, b) -> a, LinkedHashMap::new));
 
-        List<Answer> answers = reportExcelExportSupport.loadAnswers(questionId);
+        List<Answer> answers = context.answers(questionId);
         List<ObjectiveRespondentRow> respondents = buildRespondentRows(answers, optionContentById);
         List<ObjectiveOptionStatRow> optionStats = ReportExcelResultMapper.toObjectiveOptionStats(options, reportResult);
 

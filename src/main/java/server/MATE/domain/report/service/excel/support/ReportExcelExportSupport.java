@@ -61,7 +61,7 @@ public class ReportExcelExportSupport {
 
     public Map<String, Object> requireReportResult(Long testId, Long questionId) {
         Report report = reportRepository.findByTestIdAndQuestionId(testId, questionId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.REPORT_007));
+                .orElseThrow(() -> new BaseException(BaseErrorCode.REPORT_010));
         return report.getResult();
     }
 

@@ -3,15 +3,14 @@ package server.MATE.domain.report.service.excel.preparer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.question.entity.CardSorting;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.question.repository.CardSortingRepository;
 import server.MATE.domain.report.excel.cardsorting.CardSortingReportExcelData;
-import server.MATE.domain.report.service.excel.support.ReportExcelExportSupport;
+import server.MATE.domain.report.service.excel.support.ReportExcelExportContext;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
@@ -21,39 +20,29 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
 class CardSortingReportExcelServiceTest {
-
-    @Mock
-    private ReportExcelExportSupport reportExcelExportSupport;
-
-    @Mock
-    private CardSortingRepository cardSortingRepository;
 
     @InjectMocks
     private CardSortingReportExcelService cardSortingReportExcelService;
 
     @Test
     void prepareData는_카드소팅_응답과_통계를_엑셀_데이터로_조립한다() {
-        server.MATE.domain.test.entity.Test test = server.MATE.domain.test.entity.Test.builder()
-                .makerId(1L)
-                .title("테스트")
-                .build();
-
         Question question = Question.builder()
                 .testId(10L)
                 .questionType(QuestionType.CARD_SORTING)
                 .title("카드소팅 질문")
                 .sequence(1L)
                 .build();
+        ReflectionTestUtils.setField(question, "id", 20L);
 
         CardSorting cardSorting = new CardSorting(
                 question,
                 List.of("결제", "검색", "홈", "설정"),
                 List.of("메인 기능", "부가 기능")
         );
+        ReflectionTestUtils.setField(cardSorting, "id", 20L);
 
         Answer answer = Answer.builder()
                 .participationId(100L)
@@ -76,14 +65,14 @@ class CardSortingReportExcelServiceTest {
                 "byCategory", List.of(Map.of("category", "메인 기능", "cards", List.of(cardStat)))
         );
 
-        given(reportExcelExportSupport.requireExportReadyTest(10L, 1L)).willReturn(test);
-        given(reportExcelExportSupport.requireQuestion(10L, 20L, QuestionType.CARD_SORTING, BaseErrorCode.REPORT_006))
-                .willReturn(question);
-        given(reportExcelExportSupport.requireReportResult(10L, 20L)).willReturn(reportResult);
-        given(cardSortingRepository.findById(20L)).willReturn(java.util.Optional.of(cardSorting));
-        given(reportExcelExportSupport.loadAnswers(20L)).willReturn(List.of(answer));
+        ReportExcelExportContext context = ReportExcelExportContext.builder()
+                .questionById(Map.of(20L, question))
+                .reportResultByQuestionId(Map.of(20L, reportResult))
+                .answersByQuestionId(Map.of(20L, List.of(answer)))
+                .cardSortingByQuestionId(Map.of(20L, cardSorting))
+                .build();
 
-        CardSortingReportExcelData data = cardSortingReportExcelService.prepareData(10L, 20L, 1L);
+        CardSortingReportExcelData data = cardSortingReportExcelService.prepareData(context, 20L);
 
         assertThat(data.respondents()).isNotEmpty();
         assertThat(data.categoryStats()).hasSize(1);
@@ -91,12 +80,19 @@ class CardSortingReportExcelServiceTest {
 
     @Test
     void 카드소팅이_아니면_prepareData를_허용하지_않는다() {
-        given(reportExcelExportSupport.requireExportReadyTest(10L, 1L))
-                .willReturn(server.MATE.domain.test.entity.Test.builder().makerId(1L).build());
-        given(reportExcelExportSupport.requireQuestion(10L, 20L, QuestionType.CARD_SORTING, BaseErrorCode.REPORT_006))
-                .willThrow(new BaseException(BaseErrorCode.REPORT_006));
+        Question question = Question.builder()
+                .testId(10L)
+                .questionType(QuestionType.OBJECTIVE)
+                .title("객관식")
+                .sequence(1L)
+                .build();
+        ReflectionTestUtils.setField(question, "id", 20L);
 
-        assertThatThrownBy(() -> cardSortingReportExcelService.prepareData(10L, 20L, 1L))
+        ReportExcelExportContext context = ReportExcelExportContext.builder()
+                .questionById(Map.of(20L, question))
+                .build();
+
+        assertThatThrownBy(() -> cardSortingReportExcelService.prepareData(context, 20L))
                 .isInstanceOfSatisfying(BaseException.class, exception ->
                         assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.REPORT_006));
     }
