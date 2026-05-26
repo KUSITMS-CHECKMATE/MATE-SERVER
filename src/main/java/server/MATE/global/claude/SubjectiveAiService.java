@@ -89,8 +89,14 @@ public class SubjectiveAiService {
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                 .block(Duration.ofSeconds(60));
 
+        if (response == null || !response.containsKey("content")) {
+            throw new IllegalStateException("Claude API 응답이 비어있거나 올바르지 않습니다.");
+        }
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> content = (List<Map<String, Object>>) response.get("content");
+        if (content == null || content.isEmpty()) {
+            throw new IllegalStateException("Claude API 응답의 content 필드가 비어있습니다.");
+        }
         return stripMarkdown((String) content.get(0).get("text"));
     }
 
@@ -99,7 +105,10 @@ public class SubjectiveAiService {
         if (trimmed.startsWith("```")) {
             int start = trimmed.indexOf('\n') + 1;
             int end = trimmed.lastIndexOf("```");
-            return trimmed.substring(start, end).trim();
+            if (end > start) {
+                return trimmed.substring(start, end).trim();
+            }
+            return trimmed.substring(start).trim();
         }
         return trimmed;
     }
@@ -107,6 +116,9 @@ public class SubjectiveAiService {
     @SuppressWarnings("unchecked")
     private AiAnalysisResult parseAndValidate(String json, int textCount) throws Exception {
         Map<String, Object> parsed = objectMapper.readValue(json, new TypeReference<>() {});
+        if (parsed == null) {
+            throw new IllegalStateException("JSON 파싱 결과가 null입니다.");
+        }
 
         String aiSummary = (String) parsed.get("aiSummary");
         List<Map<String, Object>> rawClusters = (List<Map<String, Object>>) parsed.get("clusters");
@@ -120,7 +132,12 @@ public class SubjectiveAiService {
             throw new IllegalStateException("mappings 길이 불일치: " + rawMappings.size() + " != " + textCount);
         }
 
-        int[] mappings = rawMappings.stream().mapToInt(o -> ((Number) o).intValue()).toArray();
+        int[] mappings = rawMappings.stream()
+                .mapToInt(o -> {
+                    if (o instanceof Number n) return n.intValue();
+                    throw new IllegalStateException("mappings에 숫자가 아닌 값이 포함되어 있습니다: " + o);
+                })
+                .toArray();
 
         boolean validIndices = IntStream.of(mappings).allMatch(idx -> idx >= 0 && idx < rawClusters.size());
         if (!validIndices) {
@@ -138,6 +155,9 @@ public class SubjectiveAiService {
         List<AiAnalysisResult.ClusterResult> clusters = IntStream.range(0, rawClusters.size())
                 .mapToObj(i -> {
                     Map<String, Object> c = rawClusters.get(i);
+                    if (c == null) {
+                        throw new IllegalStateException("클러스터 정보가 올바르지 않습니다 (null).");
+                    }
                     int count = countByCluster.getOrDefault(i, 0L).intValue();
                     return new AiAnalysisResult.ClusterResult(
                             (String) c.get("tag"),
