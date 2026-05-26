@@ -446,7 +446,7 @@ class DraftPaymentPublishEndToEndIntegrationTest {
 
         JsonNode refundData = refundPayment(paymentId, makerToken, "테스트 환불");
         var payment = paymentRepository.findById(paymentId).orElseThrow();
-        var refunds = paymentRefundRepository.findAllByPaymentIdOrderByApprovalTimeDesc(paymentId);
+        var refunds = paymentRefundRepository.findAllByPaymentIdOrderByApprovedAtDesc(paymentId);
 
         assertThat(refundData.path("payStatus").asText()).isEqualTo("REFUNDED");
         assertThat(payment.getPayStatus()).isEqualTo(PayStatus.REFUNDED);
