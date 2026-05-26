@@ -4,7 +4,6 @@ import server.MATE.domain.question.entity.AbTest;
 import server.MATE.domain.question.entity.ImageRatio;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.global.storage.dto.ImageResponse;
 
 public record AbTestDetailResponse(
         Long questionId,
@@ -13,12 +12,12 @@ public record AbTestDetailResponse(
         Long sequence,
         String title,
         String description,
-        ImageResponse aImage,
-        ImageResponse bImage,
+        String aImageUrl,
+        String bImageUrl,
         ImageRatio imageRatio
 ) implements QuestionDetailItem {
 
-    public static AbTestDetailResponse of(Question question, AbTest abTest, ImageResponse aImage, ImageResponse bImage) {
+    public static AbTestDetailResponse of(Question question, AbTest abTest, String aImageUrl, String bImageUrl) {
         return new AbTestDetailResponse(
                 question.getId(),
                 abTest.getId(),
@@ -26,8 +25,8 @@ public record AbTestDetailResponse(
                 question.getSequence(),
                 question.getTitle(),
                 question.getDescription(),
-                aImage,
-                bImage,
+                aImageUrl,
+                bImageUrl,
                 abTest.getImageRatio()
         );
     }

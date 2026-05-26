@@ -12,7 +12,6 @@ import server.MATE.domain.test.dto.response.LikedTestSummaryItem;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
-import server.MATE.domain.test.entity.ApprovalStatus;
 import server.MATE.domain.test.entity.Category;
 import server.MATE.domain.test.entity.TestLike;
 import server.MATE.domain.test.entity.TestStatus;
@@ -85,13 +84,14 @@ class TestServiceTest {
         assertThat(response.tests()).hasSize(1);
         assertThat(response.tests().getFirst().id()).isEqualTo(TEST_ID);
         assertThat(response.tests().getFirst().title()).isEqualTo("내 테스트");
-        assertThat(response.tests().getFirst().testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+        assertThat(response.tests().getFirst().testStatus()).isEqualTo(TestStatus.WAITING);
         assertThat(response.tests().getFirst().pplCount()).isZero();
     }
 
     @Test
     void 내가_찜한_테스트_목록을_조회한다() {
-        given(testRepository.findLikedTestsByUserId(MAKER_ID, ApprovalStatus.ACCEPTED))
+        ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
+        given(testRepository.findLikedTestsByUserId(MAKER_ID, TestStatus.IN_PROGRESS))
                 .willReturn(List.of(test));
 
         LikedTestSummaryResponse response = testService.listLikedTests(MAKER_ID);

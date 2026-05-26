@@ -1,11 +1,16 @@
 package server.MATE.domain.report.service.handler;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 final class ReportHandlerUtils {
+
+    private static final int TEXT_SAMPLE_SIZE = 15;
 
     private ReportHandlerUtils() {
     }
@@ -16,14 +21,28 @@ final class ReportHandlerUtils {
     }
 
     // TODO: AI 연동 후 의미론적 유사도 기반 그룹핑으로 교체
-    static List<String> topAnswers(List<String> texts) {
+    static List<Map<String, Object>> buildClusters(List<String> texts) {
         return texts.stream()
                 .filter(t -> t != null && !t.isBlank())
-                .collect(Collectors.groupingBy(String::trim, Collectors.counting()))
+                .map(String::trim)
+                .collect(Collectors.groupingBy(Function.identity()))
                 .entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .limit(6)
-                .map(Map.Entry::getKey)
+                .sorted(Map.Entry.<String, List<String>>comparingByValue(
+                        Comparator.comparingInt(List::size)).reversed())
+                .map(e -> {
+                    Map<String, Object> cluster = new LinkedHashMap<>();
+                    cluster.put("representative", e.getKey());
+                    cluster.put("count", e.getValue().size());
+                    cluster.put("responses", List.copyOf(e.getValue()));
+                    return cluster;
+                })
+                .toList();
+    }
+
+    static List<String> sampleTexts(List<String> texts) {
+        return texts.stream()
+                .filter(t -> t != null && !t.isBlank())
+                .limit(TEXT_SAMPLE_SIZE)
                 .toList();
     }
 
