@@ -18,6 +18,7 @@ import server.MATE.domain.report.dto.response.ReportResponse;
 import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.service.ObjectiveReportExcelService;
 import server.MATE.domain.report.service.ReportService;
+import server.MATE.domain.report.service.SubjectiveReportExcelService;
 import server.MATE.domain.report.service.TestReportExcelService;
 import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.security.principal.AuthenticatedUser;
@@ -32,6 +33,7 @@ public class ReportController {
     private final ReportService reportService;
     private final TestReportExcelService testReportExcelService;
     private final ObjectiveReportExcelService objectiveReportExcelService;
+    private final SubjectiveReportExcelService subjectiveReportExcelService;
 
     @Operation(
             summary = "✔️ 리포트 전체 조회",
@@ -411,6 +413,27 @@ public class ReportController {
             @AuthenticationPrincipal AuthenticatedUser user
     ) {
         TestReportExcelDownload download = objectiveReportExcelService.export(testId, questionId, user.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(download.content());
+    }
+
+    @Operation(
+            summary = "주관식 통계 엑셀 다운로드",
+            description = """
+                    주관식 질문 1개에 대한 응답자별 답변 내역을 엑셀로 다운로드합니다.
+                    - 테스트 메이커만 다운로드할 수 있습니다.
+                    - SUBJECTIVE 유형 질문만 지원합니다.
+                    """
+    )
+    @GetMapping("/excel/subjective/{questionId}")
+    public ResponseEntity<byte[]> downloadSubjectiveExcelReport(
+            @PathVariable Long testId,
+            @PathVariable Long questionId,
+            @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        TestReportExcelDownload download = subjectiveReportExcelService.export(testId, questionId, user.getId());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
