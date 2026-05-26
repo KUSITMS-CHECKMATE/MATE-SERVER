@@ -11,6 +11,6 @@ public record PaymentRefundResponse(
         String transactionId,
         String payToken,
         PayStatus payStatus,
-        LocalDateTime approvalTime
+        LocalDateTime approvedAt
 ) {
 }

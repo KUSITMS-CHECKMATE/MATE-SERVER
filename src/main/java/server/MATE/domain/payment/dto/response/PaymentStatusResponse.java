@@ -16,6 +16,6 @@ public record PaymentStatusResponse(
         Integer amount,
         Integer paidAmount,
         String transactionId,
-        LocalDateTime approvalTime
+        LocalDateTime approvedAt
 ) {
 }
