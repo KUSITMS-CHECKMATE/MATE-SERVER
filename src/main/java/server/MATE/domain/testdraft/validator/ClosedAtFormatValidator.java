@@ -14,13 +14,13 @@ public class ClosedAtFormatValidator implements ConstraintValidator<ClosedAtForm
             return true;
         }
 
+        final LocalDate requestedDate;
         try {
-            TestDraftClosedAtParser.parse(value);
+            requestedDate = TestDraftClosedAtParser.parse(value).toLocalDate();
         } catch (IllegalArgumentException e) {
             return false;
         }
 
-        LocalDate requestedDate = LocalDate.parse(value);
         if (!requestedDate.isAfter(LocalDate.now())) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate("마감 기한은 오늘 이후 날짜여야 합니다.")
