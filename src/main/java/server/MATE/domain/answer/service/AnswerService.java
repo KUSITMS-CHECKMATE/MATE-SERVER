@@ -6,12 +6,16 @@ import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.answer.dto.request.AnswerCreateItem;
 import server.MATE.domain.answer.dto.request.AnswerCreateRequest;
 import server.MATE.domain.answer.dto.response.AnswerBatchCreateResponse;
+import server.MATE.domain.answer.dto.response.MyAnswerItem;
+import server.MATE.domain.answer.dto.response.MyAnswerResponse;
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.answer.repository.AnswerRepository;
 import server.MATE.domain.answer.service.handler.AnswerCreateHandler;
 import server.MATE.domain.participation.entity.Participation;
 import server.MATE.domain.participation.repository.ParticipationRepository;
+import server.MATE.domain.promotion.entity.PromotionRewardStatus;
 import server.MATE.domain.promotion.event.PromotionRewardRequestEvent;
+import server.MATE.domain.promotion.repository.PromotionRewardRepository;
 import server.MATE.domain.question.dto.response.AnswerQuestionTypeView;
 import server.MATE.domain.question.entity.CardSorting;
 import server.MATE.domain.question.entity.FiveSecond;
@@ -47,6 +51,7 @@ public class AnswerService {
     private final ScaleRepository scaleRepository;
     private final CardSortingRepository cardSortingRepository;
     private final TreeTestRepository treeTestRepository;
+    private final PromotionRewardRepository promotionRewardRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final Map<QuestionType, AnswerCreateHandler> handlerMap;
 
@@ -59,6 +64,7 @@ public class AnswerService {
                          ScaleRepository scaleRepository,
                          CardSortingRepository cardSortingRepository,
                          TreeTestRepository treeTestRepository,
+                         PromotionRewardRepository promotionRewardRepository,
                          ApplicationEventPublisher eventPublisher,
                          List<AnswerCreateHandler> handlers) {
         this.testRepository = testRepository;
@@ -70,8 +76,23 @@ public class AnswerService {
         this.scaleRepository = scaleRepository;
         this.cardSortingRepository = cardSortingRepository;
         this.treeTestRepository = treeTestRepository;
+        this.promotionRewardRepository = promotionRewardRepository;
         this.eventPublisher = eventPublisher;
         this.handlerMap = buildHandlerMap(handlers);
+    }
+
+    public MyAnswerResponse listMyAnswers(Long testerId) {
+        List<MyAnswerItem> answers = participationRepository.findMyAnswerItemsByTesterIdOrderByCreatedAtDesc(testerId)
+                .stream()
+                .map(MyAnswerItem::from)
+                .toList();
+
+        Integer totalPromotionReward = promotionRewardRepository.sumRewardAmountByTesterIdAndStatus(
+                testerId,
+                PromotionRewardStatus.SUCCEEDED
+        );
+
+        return MyAnswerResponse.of(totalPromotionReward, answers);
     }
 
     @Transactional
