@@ -86,6 +86,7 @@ public enum BaseErrorCode implements ErrorCode {
     REPORT_001(HttpStatus.BAD_REQUEST, "REPORT_001", "엑셀 보고서는 질문 20개 이하 테스트만 지원합니다."),
     REPORT_002(HttpStatus.BAD_REQUEST, "REPORT_002", "객관식 질문만 엑셀 통계를 다운로드할 수 있습니다."),
     REPORT_003(HttpStatus.BAD_REQUEST, "REPORT_003", "주관식 질문만 엑셀 통계를 다운로드할 수 있습니다."),
+    REPORT_004(HttpStatus.BAD_REQUEST, "REPORT_004", "A/B 테스트 질문만 엑셀 통계를 다운로드할 수 있습니다."),
 
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
