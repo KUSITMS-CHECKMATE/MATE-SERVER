@@ -23,6 +23,7 @@ import server.MATE.domain.report.service.ReportService;
 import server.MATE.domain.report.service.ScaleReportExcelService;
 import server.MATE.domain.report.service.SubjectiveReportExcelService;
 import server.MATE.domain.report.service.TestReportExcelService;
+import server.MATE.domain.report.service.TreeTestReportExcelService;
 import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
@@ -40,6 +41,7 @@ public class ReportController {
     private final AbTestReportExcelService abTestReportExcelService;
     private final ScaleReportExcelService scaleReportExcelService;
     private final CardSortingReportExcelService cardSortingReportExcelService;
+    private final TreeTestReportExcelService treeTestReportExcelService;
 
     @Operation(
             summary = "✔️ 리포트 전체 조회",
@@ -505,6 +507,29 @@ public class ReportController {
             @AuthenticationPrincipal AuthenticatedUser user
     ) {
         TestReportExcelDownload download = cardSortingReportExcelService.export(testId, questionId, user.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(download.content());
+    }
+
+    @Operation(
+            summary = "트리 테스트 통계 엑셀 다운로드",
+            description = """
+                    트리 테스트 질문 1개에 대한 응답자별 경로 내역과 경로별 통계를 엑셀로 다운로드합니다.
+                    - 테스트 메이커만 다운로드할 수 있습니다.
+                    - TREE_TEST 유형 질문만 지원합니다.
+                    - 통계는 report 테이블 집계 결과, 응답자 원본은 answer 테이블에서 조회합니다.
+                    - 테스트 종료 및 리포트 집계 완료(`report_status = COMPLETED`) 후 다운로드 가능합니다.
+                    """
+    )
+    @GetMapping("/excel/tree-test/{questionId}")
+    public ResponseEntity<byte[]> downloadTreeTestExcelReport(
+            @PathVariable Long testId,
+            @PathVariable Long questionId,
+            @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        TestReportExcelDownload download = treeTestReportExcelService.export(testId, questionId, user.getId());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
