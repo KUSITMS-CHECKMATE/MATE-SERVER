@@ -8,7 +8,7 @@ import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.report.excel.subjective.SubjectiveReportExcelData;
 import server.MATE.domain.report.excel.subjective.SubjectiveRespondentRow;
-import server.MATE.domain.report.service.excel.support.ReportExcelExportSupport;
+import server.MATE.domain.report.service.excel.support.ReportExcelExportContext;
 import server.MATE.global.common.exception.BaseErrorCode;
 
 import java.util.ArrayList;
@@ -19,16 +19,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SubjectiveReportExcelService {
 
-    private final ReportExcelExportSupport reportExcelExportSupport;
-
-    public SubjectiveReportExcelData prepareData(Long testId, Long questionId, Long makerId) {
-        reportExcelExportSupport.requireExportReadyTest(testId, makerId);
-        Question question = reportExcelExportSupport.requireQuestion(
-                testId, questionId, QuestionType.SUBJECTIVE, BaseErrorCode.REPORT_003
+    public SubjectiveReportExcelData prepareData(ReportExcelExportContext context, Long questionId) {
+        Question question = context.requireQuestion(
+                questionId, QuestionType.SUBJECTIVE, BaseErrorCode.REPORT_003
         );
-        reportExcelExportSupport.requireReportResult(testId, questionId);
+        context.assertReportExists(questionId);
 
-        List<Answer> answers = reportExcelExportSupport.loadAnswers(questionId);
+        List<Answer> answers = context.answers(questionId);
         List<SubjectiveRespondentRow> respondents = buildRespondentRows(answers);
 
         return new SubjectiveReportExcelData(
