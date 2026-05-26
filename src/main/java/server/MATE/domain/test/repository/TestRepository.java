@@ -17,6 +17,9 @@ public interface TestRepository extends JpaRepository<Test, Long> {
     @EntityGraph(attributePaths = {"categories"})
     List<Test> findAllByTestStatusAndDeletedAtIsNullOrderByCreatedAtDesc(TestStatus testStatus);
 
+    @EntityGraph(attributePaths = {"categories"})
+    List<Test> findAllByTestStatusInAndDeletedAtIsNullOrderByCreatedAtDesc(List<TestStatus> testStatuses);
+
     List<Test> findAllByMakerIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long makerId);
 
     @Query("""

@@ -9,6 +9,7 @@ import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryItem;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
+import server.MATE.domain.test.dto.response.TestSummaryListResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestLike;
@@ -19,6 +20,7 @@ import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.storage.FileStorageService;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -33,9 +35,15 @@ public class TestService {
     private final FileStorageService fileStorageService;
 
     @Transactional(readOnly = true)
-    public List<TestSummaryResponse> listTests(Long userId) {
-        List<Test> tests = testRepository.findAllByTestStatusAndDeletedAtIsNullOrderByCreatedAtDesc(TestStatus.IN_PROGRESS);
-        return toSummaryResponses(userId, tests);
+    public TestSummaryListResponse listTests(Long userId) {
+        List<Test> tests = testRepository.findAllByTestStatusInAndDeletedAtIsNullOrderByCreatedAtDesc(
+                List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING)
+        );
+        LocalDate today = LocalDate.now();
+        List<Test> participatableTests = tests.stream()
+                .filter(test -> test.isParticipationPeriodOpen(today))
+                .toList();
+        return TestSummaryListResponse.from(toSummaryResponses(userId, participatableTests));
     }
 
     @Transactional(readOnly = true)
