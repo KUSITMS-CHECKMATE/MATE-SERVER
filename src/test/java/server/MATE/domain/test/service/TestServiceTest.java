@@ -8,7 +8,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import server.MATE.domain.participation.repository.ParticipationRepository;
 import server.MATE.domain.test.dto.response.LikedTestSummaryItem;
+import server.MATE.domain.test.dto.response.TestDetailResponse;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
@@ -39,6 +41,9 @@ class TestServiceTest {
 
     @Mock
     private TestLikeRepository testLikeRepository;
+
+    @Mock
+    private ParticipationRepository participationRepository;
 
     @Mock
     private FileStorageService fileStorageService;
@@ -88,6 +93,33 @@ class TestServiceTest {
         assertThat(response.tests()).hasSize(2);
         assertThat(response.tests()).extracting("title")
                 .containsExactly("진행 중 테스트", "검수 중 테스트");
+    }
+
+    @Test
+    void 테스트_상세_조회_시_상태와_응답_여부를_반환한다() {
+        ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(TEST_ID, MAKER_ID))
+                .willReturn(true);
+
+        TestDetailResponse response = testService.getTest(TEST_ID, MAKER_ID);
+
+        assertThat(response.id()).isEqualTo(TEST_ID);
+        assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+        assertThat(response.hasResponded()).isTrue();
+    }
+
+    @Test
+    void 종료된_테스트_상세_조회_시_상태를_반환한다() {
+        ReflectionTestUtils.setField(test, "testStatus", TestStatus.COMPLETED);
+        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(TEST_ID, MAKER_ID))
+                .willReturn(false);
+
+        TestDetailResponse response = testService.getTest(TEST_ID, MAKER_ID);
+
+        assertThat(response.testStatus()).isEqualTo(TestStatus.COMPLETED);
+        assertThat(response.hasResponded()).isFalse();
     }
 
     @Test
