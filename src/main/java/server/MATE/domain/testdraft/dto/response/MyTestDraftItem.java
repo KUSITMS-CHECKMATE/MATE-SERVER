@@ -11,6 +11,7 @@ public record MyTestDraftItem(
         TestDraftStatus status,
         Integer goalPpl,
         Integer reward,
+        LocalDateTime closedAt,
         LocalDateTime updatedAt
 ) {
     public static MyTestDraftItem from(TestDraft draft) {
@@ -20,6 +21,7 @@ public record MyTestDraftItem(
                 draft.getStatus(),
                 draft.getGoalPpl(),
                 draft.getReward(),
+                draft.getClosedAt(),
                 draft.getUpdatedAt()
         );
     }
