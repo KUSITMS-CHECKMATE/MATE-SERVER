@@ -27,7 +27,7 @@ public class TestController {
     private final TestService testService;
 
     @Operation(
-            summary = "⚠️ 테스트 목록 조회",
+            summary = "✔️ 테스트 목록 조회",
             description = """
                     전체 테스트 요약 목록을 최신순으로 조회합니다. 발견 탭 HM_01 57 화면에 해당하는 api 입니다.
                     추후 페이지네이션 적용하여 무한 스크롤 지원하도록 리팩토링이 필요합니다.
@@ -37,7 +37,6 @@ public class TestController {
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
                     - ui상 사용하지 않는 필드: likeCount, categories
-                    - 필터링: `IN_PROGRESS`(진행 중), `WAITING`(검수 중)이며 `closedAt` 마감 기한(당일 포함)이 지나지 않았고 삭제되지 않은 테스트
                     """
     )
     @GetMapping
@@ -70,7 +69,7 @@ public class TestController {
     }
 
     @Operation(
-            summary = "⚠️ 찜한 테스트 목록 조회",
+            summary = "✔️ 찜한 테스트 목록 조회",
             description = """
                     현재 로그인한 사용자가 찜한 테스트 목록을 찜한 시각 최신순으로 조회합니다. 관심 탭 HM_01 19 화면에 해당하는 api 입니다.<br>
                     추후 페이지네이션 적용하여 무한 스크롤 지원하도록 리팩토링이 필요합니다.
@@ -81,7 +80,6 @@ public class TestController {
                     - **title**: 테스트명
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
-                    - 필터링: `IN_PROGRESS`(진행 중), `WAITING`(검수 중), `COMPLETED`(종료)이며 삭제되지 않은 테스트
                     """
     )
     @GetMapping("/likes")
@@ -93,7 +91,7 @@ public class TestController {
     }
 
     @Operation(
-            summary = "⚠️ 테스트 상세 조회",
+            summary = "✔️ 테스트 상세 조회",
             description = """
                     특정 테스트의 상세 정보를 조회합니다. TT_01 화면에 해당하는 api 입니다.
                     삭제된 테스트는 조회되지 않습니다.<br>
