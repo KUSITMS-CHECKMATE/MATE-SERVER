@@ -14,6 +14,9 @@ import server.MATE.domain.answer.repository.AnswerRepository;
 import server.MATE.domain.auth.jwt.JwtProvider;
 import server.MATE.domain.auth.jwt.TokenType;
 import server.MATE.domain.participation.repository.ParticipationRepository;
+import server.MATE.domain.promotion.repository.PromotionRewardRepository;
+import server.MATE.domain.question.dto.request.QuestionCreateRequest;
+import server.MATE.domain.question.dto.response.QuestionCreateResponse;
 import server.MATE.domain.question.repository.AbTestRepository;
 import server.MATE.domain.question.repository.CardSortingRepository;
 import server.MATE.domain.question.repository.FiveSecondRepository;
@@ -22,8 +25,12 @@ import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.question.repository.ScaleRepository;
 import server.MATE.domain.question.repository.SubjectiveRepository;
 import server.MATE.domain.question.repository.TreeTestRepository;
+import server.MATE.domain.question.service.QuestionService;
+import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
+import server.MATE.domain.users.entity.TossAccount;
 import server.MATE.domain.users.entity.Users;
+import server.MATE.domain.users.repository.TossAccountRepository;
 import server.MATE.domain.users.repository.UsersRepository;
 import server.MATE.global.storage.FileStorageService;
 
@@ -45,6 +52,9 @@ abstract class BaseQuestionAnswerEndToEndTest {
 
     @Autowired
     protected JwtProvider jwtProvider;
+
+    @Autowired
+    protected QuestionService questionService;
 
     @Autowired
     protected UsersRepository usersRepository;
@@ -82,6 +92,12 @@ abstract class BaseQuestionAnswerEndToEndTest {
     @Autowired
     protected AnswerRepository answerRepository;
 
+    @Autowired
+    protected PromotionRewardRepository promotionRewardRepository;
+
+    @Autowired
+    protected TossAccountRepository tossAccountRepository;
+
     @PersistenceContext
     protected EntityManager entityManager;
 
@@ -90,6 +106,8 @@ abstract class BaseQuestionAnswerEndToEndTest {
 
     @AfterEach
     void tearDownBase() {
+        promotionRewardRepository.deleteAll();
+        tossAccountRepository.deleteAll();
         answerRepository.deleteAll();
         participationRepository.deleteAll();
         treeTestRepository.deleteAll();
@@ -120,6 +138,7 @@ abstract class BaseQuestionAnswerEndToEndTest {
                 .serviceName("서비스")
                 .serviceDescription("서비스 설명")
                 .imageKeys(List.of())
+                .testStatus(TestStatus.IN_PROGRESS)
                 .build());
         return new TestActors(
                 maker.getId(),
@@ -134,20 +153,21 @@ abstract class BaseQuestionAnswerEndToEndTest {
         return "Bearer " + jwtProvider.generateToken(user.getId(), user.getRole().name(), TokenType.ACCESS);
     }
 
-    protected JsonNode createQuestion(Long testId, String token, String payload) throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/v1/tests/{testId}/questions", testId)
-                        .header("Authorization", token)
-                        .contentType(APPLICATION_JSON)
-                        .content(payload))
-                .andExpect(status().isCreated())
-                .andReturn();
+    protected TossAccount linkTossAccount(Users user, Long tossUserKey) {
+        return tossAccountRepository.save(TossAccount.builder()
+                .user(user)
+                .tossUserKey(tossUserKey)
+                .isLinked(true)
+                .lastLoginAt(java.time.LocalDateTime.now())
+                .lastTokenRefreshedAt(java.time.LocalDateTime.now())
+                .build());
+    }
 
-        JsonNode body = parseBody(result);
-        assertThat(body.path("success").asBoolean()).isTrue();
-        assertThat(body.path("code").asText()).isEqualTo("201");
-        assertThat(body.path("message").asText()).isEqualTo("문항이 등록되었습니다.");
-        assertThat(body.path("data").path("questions")).hasSize(1);
-
+    protected JsonNode seedQuestion(Long testId, String token, String payload) throws Exception {
+        Long makerId = extractUserId(token);
+        QuestionCreateRequest request = objectMapper.readValue(payload, QuestionCreateRequest.class);
+        QuestionCreateResponse response = questionService.createQuestions(testId, makerId, request);
+        JsonNode body = objectMapper.valueToTree(java.util.Map.of("data", java.util.Map.of("questions", response.questions())));
         JsonNode createdQuestion = body.path("data").path("questions").get(0);
         assertThat(createdQuestion.path("questionId").isNumber()).isTrue();
         assertThat(createdQuestion.path("sequence").asLong()).isEqualTo(1L);
@@ -155,12 +175,8 @@ abstract class BaseQuestionAnswerEndToEndTest {
         return body;
     }
 
-    protected void performCreateQuestion(Long testId, String token, String payload) throws Exception {
-        mockMvc.perform(post("/api/v1/tests/{testId}/questions", testId)
-                        .header("Authorization", token)
-                        .contentType(APPLICATION_JSON)
-                        .content(payload))
-                .andExpect(status().isCreated());
+    protected void seedQuestions(Long testId, String token, String payload) throws Exception {
+        seedQuestion(testId, token, payload);
     }
 
     protected JsonNode getSingleQuestion(Long testId, String token) throws Exception {
@@ -238,16 +254,20 @@ abstract class BaseQuestionAnswerEndToEndTest {
         return objectMapper.readTree(result.getResponse().getContentAsString());
     }
 
+    protected Long extractUserId(String bearerToken) {
+        return jwtProvider.extractUserId(bearerToken.replace("Bearer ", ""));
+    }
+
     protected Long extractCreatedQuestionId(JsonNode createResponse) {
         return createResponse.path("data").path("questions").get(0).path("questionId").asLong();
     }
 
     protected void createSingleSubjectiveQuestion(Long testId, String makerToken) throws Exception {
-        performCreateQuestion(testId, makerToken, singleSubjectiveQuestionPayload());
+        seedQuestions(testId, makerToken, singleSubjectiveQuestionPayload());
     }
 
     protected void createTwoSubjectiveQuestions(Long testId, String makerToken) throws Exception {
-        performCreateQuestion(testId, makerToken, """
+        seedQuestions(testId, makerToken, """
                 {
                   "questions": [
                     {
@@ -268,7 +288,7 @@ abstract class BaseQuestionAnswerEndToEndTest {
     }
 
     protected void createObjectiveQuestion(Long testId, String makerToken, boolean isDuplicate, Integer minSelect, Integer maxSelect, boolean isOther) throws Exception {
-        performCreateQuestion(testId, makerToken, """
+        seedQuestions(testId, makerToken, """
                 {
                   "questions": [
                     {
@@ -290,7 +310,7 @@ abstract class BaseQuestionAnswerEndToEndTest {
     }
 
     protected void createFiveSecondSubjectiveQuestion(Long testId, String makerToken) throws Exception {
-        performCreateQuestion(testId, makerToken, """
+        seedQuestions(testId, makerToken, """
                 {
                   "questions": [
                     {
@@ -312,7 +332,7 @@ abstract class BaseQuestionAnswerEndToEndTest {
     }
 
     protected void createFiveSecondObjectiveQuestion(Long testId, String makerToken, boolean isDuplicate, Integer minSelect, Integer maxSelect, boolean isOther) throws Exception {
-        performCreateQuestion(testId, makerToken, """
+        seedQuestions(testId, makerToken, """
                 {
                   "questions": [
                     {
@@ -337,7 +357,7 @@ abstract class BaseQuestionAnswerEndToEndTest {
     }
 
     protected void createScaleQuestion(Long testId, String makerToken, int range) throws Exception {
-        performCreateQuestion(testId, makerToken, """
+        seedQuestions(testId, makerToken, """
                 {
                   "questions": [
                     {
@@ -355,7 +375,7 @@ abstract class BaseQuestionAnswerEndToEndTest {
     }
 
     protected void createAbTestQuestion(Long testId, String makerToken) throws Exception {
-        performCreateQuestion(testId, makerToken, """
+        seedQuestions(testId, makerToken, """
                 {
                   "questions": [
                     {
@@ -372,7 +392,7 @@ abstract class BaseQuestionAnswerEndToEndTest {
     }
 
     protected void createCardSortingQuestion(Long testId, String makerToken) throws Exception {
-        performCreateQuestion(testId, makerToken, """
+        seedQuestions(testId, makerToken, """
                 {
                   "questions": [
                     {
@@ -388,7 +408,7 @@ abstract class BaseQuestionAnswerEndToEndTest {
     }
 
     protected void createTreeTestQuestion(Long testId, String makerToken) throws Exception {
-        performCreateQuestion(testId, makerToken, """
+        seedQuestions(testId, makerToken, """
                 {
                   "questions": [
                     {

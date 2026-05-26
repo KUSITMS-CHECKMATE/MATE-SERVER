@@ -11,13 +11,13 @@ public record ScaleDetailResponse(
         Long sequence,
         String title,
         String description,
-        String imageKey,
+        String imageUrl,
         String minLabel,
         String maxLabel,
         Integer range
 ) implements QuestionDetailItem {
 
-    public static ScaleDetailResponse of(Question question, Scale scale) {
+    public static ScaleDetailResponse of(Question question, Scale scale, String imageUrl) {
         return new ScaleDetailResponse(
                 question.getId(),
                 scale.getId(),
@@ -25,7 +25,7 @@ public record ScaleDetailResponse(
                 question.getSequence(),
                 question.getTitle(),
                 question.getDescription(),
-                scale.getImageKey(),
+                imageUrl,
                 scale.getMinLabel(),
                 scale.getMaxLabel(),
                 scale.getRange()

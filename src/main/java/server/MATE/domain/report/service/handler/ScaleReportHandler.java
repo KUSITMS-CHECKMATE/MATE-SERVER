@@ -60,12 +60,24 @@ public class ScaleReportHandler implements ReportHandler {
         double average = total == 0 ? 0.0 : Math.round(sum * 10.0 / total) / 10.0;
 
         List<Map<String, Object>> distribution = new ArrayList<>();
+        int mostVotedScore = 0;
+        int maxCount = 0;
         for (int i = 1; i <= range; i++) {
             distribution.add(Map.of("score", i, "count", counts[i]));
+            if (counts[i] > maxCount) {
+                maxCount = counts[i];
+                mostVotedScore = i;
+            }
         }
+
+        Map<String, Object> endValue = new LinkedHashMap<>();
+        endValue.put("minLabel", scale.getMinLabel());
+        endValue.put("maxLabel", scale.getMaxLabel());
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("average", average);
+        result.put("mostVoted", mostVotedScore);
+        result.put("endValue", endValue);
         result.put("distribution", distribution);
         return result;
     }

@@ -8,6 +8,7 @@ import server.MATE.domain.question.entity.FiveSecond;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.FiveSecondRepository;
+import server.MATE.global.storage.FileStorageService;
 
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 public class FiveSecondQuestionDetailFetcher implements QuestionDetailFetcher {
 
     private final FiveSecondRepository fiveSecondRepository;
+    private final FileStorageService fileStorageService;
 
     @Override
     public QuestionType supports() {
@@ -34,7 +36,16 @@ public class FiveSecondQuestionDetailFetcher implements QuestionDetailFetcher {
         return fiveSeconds.stream()
                 .collect(Collectors.toMap(
                         FiveSecond::getId,
-                        fiveSecond -> FiveSecondDetailResponse.of(questionMap.get(fiveSecond.getId()), fiveSecond)
+                        fiveSecond -> FiveSecondDetailResponse.of(
+                                questionMap.get(fiveSecond.getId()),
+                                fiveSecond,
+                                toImageUrl(fiveSecond.getImageKey())
+                        )
                 ));
+    }
+
+    private String toImageUrl(String key) {
+        if (key == null) return null;
+        return fileStorageService.generateDownloadUrl(key);
     }
 }

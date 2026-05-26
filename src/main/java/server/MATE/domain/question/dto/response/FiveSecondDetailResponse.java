@@ -14,7 +14,7 @@ public record FiveSecondDetailResponse(
         Long sequence,
         String title,
         String description,
-        String imageKey,
+        String imageUrl,
         ImageRatio imageRatio,
         boolean isObjective,
         Boolean isDuplicate,
@@ -24,7 +24,7 @@ public record FiveSecondDetailResponse(
         List<FiveSecondOptionDetailResponse> options
 ) implements QuestionDetailItem {
 
-    public static FiveSecondDetailResponse of(Question question, FiveSecond fiveSecond) {
+    public static FiveSecondDetailResponse of(Question question, FiveSecond fiveSecond, String imageUrl) {
         return new FiveSecondDetailResponse(
                 question.getId(),
                 fiveSecond.getId(),
@@ -32,7 +32,7 @@ public record FiveSecondDetailResponse(
                 question.getSequence(),
                 question.getTitle(),
                 question.getDescription(),
-                fiveSecond.getImageKey(),
+                imageUrl,
                 fiveSecond.getImageRatio(),
                 fiveSecond.isObjective(),
                 fiveSecond.getIsDuplicate(),

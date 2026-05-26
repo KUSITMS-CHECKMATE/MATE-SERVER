@@ -52,10 +52,6 @@ public class Test extends BaseEntity {
     @Column(nullable = false, length = 20)
     private ReportStatus reportStatus = ReportStatus.PENDING;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ApprovalStatus approvalStatus;
-
     @Column(nullable = false)
     private Integer goalPpl;
 
@@ -101,7 +97,7 @@ public class Test extends BaseEntity {
     }
 
     public void validateCanParticipate() {
-        if (this.approvalStatus != ApprovalStatus.ACCEPTED || this.testStatus != TestStatus.IN_PROGRESS) {
+        if (this.testStatus != TestStatus.IN_PROGRESS) {
             throw new BaseException(BaseErrorCode.PARTICIPATION_002);
         }
         if (this.pplCount >= this.goalPpl.longValue()) {
@@ -127,6 +123,14 @@ public class Test extends BaseEntity {
         this.testStatus = TestStatus.COMPLETED;
     }
 
+    public void start() {
+        this.testStatus = TestStatus.IN_PROGRESS;
+    }
+
+    public void reject() {
+        this.testStatus = TestStatus.REJECTED;
+    }
+
     public void startReportAggregation() {
         this.reportStatus = ReportStatus.IN_PROGRESS;
     }
@@ -145,17 +149,17 @@ public class Test extends BaseEntity {
 
     @Builder
     public Test(Long makerId, String title, String description, String serviceName,
-                String serviceDescription, List<String> imageKeys) {
+                String serviceDescription, List<String> imageKeys, Integer goalPpl, Integer reward,
+                TestStatus testStatus) {
         this.makerId = makerId;
         this.title = title;
         this.description = description;
         this.serviceName = serviceName;
         this.serviceDescription = serviceDescription;
         if (imageKeys != null) this.imageKeys.addAll(imageKeys);
-        this.testStatus = TestStatus.IN_PROGRESS;
-        this.approvalStatus = ApprovalStatus.ACCEPTED; // Todo. 관리자 api 개발 후 WAITING으로 수정
-        this.goalPpl = 100;
-        this.reward = 300;
+        this.testStatus = testStatus == null ? TestStatus.WAITING : testStatus;
+        this.goalPpl = goalPpl == null ? 100 : goalPpl;
+        this.reward = reward == null ? 300 : reward;
         this.pplCount = 0L;
         this.likeCount = 0L;
     }
