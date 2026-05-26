@@ -45,8 +45,8 @@ public class PaymentRefund extends BaseEntity {
     @Column(nullable = false)
     private String transactionId;
 
-    @Column(nullable = false)
-    private LocalDateTime approvalTime;
+    @Column(name = "approved_at", nullable = false)
+    private LocalDateTime approvedAt;
 
     @Builder
     public PaymentRefund(Long paymentId,
@@ -54,12 +54,12 @@ public class PaymentRefund extends BaseEntity {
                          String reason,
                          Integer refundedAmount,
                          String transactionId,
-                         LocalDateTime approvalTime) {
+                         LocalDateTime approvedAt) {
         this.paymentId = paymentId;
         this.refundNo = refundNo;
         this.reason = reason;
         this.refundedAmount = refundedAmount;
         this.transactionId = transactionId;
-        this.approvalTime = approvalTime;
+        this.approvedAt = approvedAt;
     }
 }

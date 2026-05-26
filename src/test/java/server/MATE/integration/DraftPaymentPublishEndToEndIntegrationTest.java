@@ -252,7 +252,7 @@ class DraftPaymentPublishEndToEndIntegrationTest {
     }
 
     @Test
-    @DisplayName("goalPpl과 reward가 없는 draft는 결제 생성이 차단된다")
+    @DisplayName("goalPpl, reward, closedAt 중 하나라도 없으면 결제 생성이 차단된다")
     void blocksPaymentCreationForIncompleteDraft() throws Exception {
         Users maker = usersRepository.save(Users.builder()
                 .ci("maker-" + System.nanoTime())
@@ -282,7 +282,8 @@ class DraftPaymentPublishEndToEndIntegrationTest {
         updateDraft(draftId, makerToken, """
                 {
                   "goalPpl": 5,
-                  "reward": 300
+                  "reward": 300,
+                  "closedAt": "2099-05-31"
                 }
                 """);
 
@@ -446,7 +447,7 @@ class DraftPaymentPublishEndToEndIntegrationTest {
 
         JsonNode refundData = refundPayment(paymentId, makerToken, "테스트 환불");
         var payment = paymentRepository.findById(paymentId).orElseThrow();
-        var refunds = paymentRefundRepository.findAllByPaymentIdOrderByApprovalTimeDesc(paymentId);
+        var refunds = paymentRefundRepository.findAllByPaymentIdOrderByApprovedAtDesc(paymentId);
 
         assertThat(refundData.path("payStatus").asText()).isEqualTo("REFUNDED");
         assertThat(payment.getPayStatus()).isEqualTo(PayStatus.REFUNDED);
@@ -589,6 +590,7 @@ class DraftPaymentPublishEndToEndIntegrationTest {
                   "categories": ["FOOD"],
                   "goalPpl": 5,
                   "reward": 300,
+                  "closedAt": "2099-05-31",
                   "questionsPayload": {
                     "questions": [
                       {

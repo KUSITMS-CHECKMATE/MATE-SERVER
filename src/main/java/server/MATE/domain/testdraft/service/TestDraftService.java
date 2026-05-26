@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import server.MATE.domain.testdraft.dto.request.TestDraftClosedAtParser;
 import server.MATE.domain.testdraft.dto.request.TestDraftUpdateRequest;
 import server.MATE.domain.testdraft.dto.response.MyTestDraftItem;
 import server.MATE.domain.testdraft.dto.response.MyTestDraftResponse;
@@ -14,6 +15,7 @@ import server.MATE.domain.testdraft.repository.TestDraftRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -58,6 +60,7 @@ public class TestDraftService {
                 request.categories() == null ? null : request.categories().stream().map(Enum::name).toList(),
                 request.goalPpl(),
                 request.reward(),
+                parseClosedAt(request.closedAt()),
                 toMap(request.questionsPayload())
         );
         return TestDraftResponse.from(draft, toJsonNode(draft.getQuestionsPayload()));
@@ -79,6 +82,13 @@ public class TestDraftService {
 
     private JsonNode toJsonNode(Map<String, Object> payload) {
         return payload == null ? null : objectMapper.valueToTree(payload);
+    }
+
+    private LocalDateTime parseClosedAt(String closedAt) {
+        if (closedAt == null || closedAt.isBlank()) {
+            return null;
+        }
+        return TestDraftClosedAtParser.parse(closedAt);
     }
 
     @SuppressWarnings("unchecked")
