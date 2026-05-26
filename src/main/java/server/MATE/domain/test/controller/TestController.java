@@ -75,7 +75,6 @@ public class TestController {
             summary = "⚠️ 찜한 테스트 목록 조회",
             description = """
                     현재 로그인한 사용자가 찜한 테스트 목록을 찜한 시각 최신순으로 조회합니다. 관심 탭 HM_01 19 화면에 해당하는 api 입니다.<br>
-                    삭제되지 않았고 진행 중(`IN_PROGRESS`)인 테스트만 반환합니다.<br>
                     추후 페이지네이션 적용하여 무한 스크롤 지원하도록 리팩토링이 필요합니다.
                     
                     - **testCount**: 테스트 개수
@@ -84,8 +83,7 @@ public class TestController {
                     - **title**: 테스트명
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
-                    - 버그 사항: testStatus(진행 중, 검수 중, 종료)이고 삭제되지 않은 테스트를 필터링.
-                    
+                    - 필터링: `IN_PROGRESS`(진행 중), `WAITING`(검수 중), `COMPLETED`(종료)이며 삭제되지 않은 테스트
                     """
     )
     @GetMapping("/likes")
