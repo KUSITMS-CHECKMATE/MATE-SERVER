@@ -12,12 +12,12 @@ public record AbTestDetailResponse(
         Long sequence,
         String title,
         String description,
-        String aImageKey,
-        String bImageKey,
+        String aImageUrl,
+        String bImageUrl,
         ImageRatio imageRatio
 ) implements QuestionDetailItem {
 
-    public static AbTestDetailResponse of(Question question, AbTest abTest) {
+    public static AbTestDetailResponse of(Question question, AbTest abTest, String aImageUrl, String bImageUrl) {
         return new AbTestDetailResponse(
                 question.getId(),
                 abTest.getId(),
@@ -25,8 +25,8 @@ public record AbTestDetailResponse(
                 question.getSequence(),
                 question.getTitle(),
                 question.getDescription(),
-                abTest.getAImageKey(),
-                abTest.getBImageKey(),
+                aImageUrl,
+                bImageUrl,
                 abTest.getImageRatio()
         );
     }

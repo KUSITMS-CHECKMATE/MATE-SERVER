@@ -241,6 +241,7 @@ class QuestionServiceTest {
 
         QuestionSummaryResponse response = questionService.getQuestionSummary(TEST_ID, MAKER_ID);
 
+        assertThat(response.testStatus()).isEqualTo(TestStatus.COMPLETED);
         assertThat(response.questionCount()).isEqualTo(2);
         assertThat(response.participantCount()).isEqualTo(12L);
         assertThat(response.questions()).extracting(QuestionSummaryItem::questionId)
@@ -250,16 +251,22 @@ class QuestionServiceTest {
     }
 
     @Test
-    @DisplayName("테스트가 진행 중이면 질문 요약 조회 시 TEST_006 예외가 발생한다")
-    void getQuestionSummaryThrowsTest006WhenTestIsInProgress() {
+    @DisplayName("질문 목록 조회는 테스트가 진행 중이어도 현재 testStatus와 함께 반환한다")
+    void getQuestionSummaryReturnsWhenTestIsInProgress() {
+        setTestStatus(test, TestStatus.IN_PROGRESS);
+        setTestPplCount(test, 3L);
         given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findQuestionSummariesByTestId(TEST_ID)).willReturn(List.of(
+                new QuestionSummaryItem(301L, 1L, "진행 중 질문", QuestionType.SUBJECTIVE)
+        ));
 
-        assertThatThrownBy(() -> questionService.getQuestionSummary(TEST_ID, MAKER_ID))
-                .isInstanceOf(BaseException.class)
-                .extracting(ex -> ((BaseException) ex).getErrorCode())
-                .isEqualTo(BaseErrorCode.TEST_006);
+        QuestionSummaryResponse response = questionService.getQuestionSummary(TEST_ID, MAKER_ID);
 
-        verify(questionRepository, never()).findQuestionSummariesByTestId(TEST_ID);
+        assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+        assertThat(response.questionCount()).isEqualTo(1);
+        assertThat(response.participantCount()).isEqualTo(3L);
+        assertThat(response.questions()).extracting(QuestionSummaryItem::questionId)
+                .containsExactly(301L);
     }
 
     @Test

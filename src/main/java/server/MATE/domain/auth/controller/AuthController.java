@@ -44,7 +44,7 @@ public class AuthController {
     private final AuthService authService;
     private final ObjectProvider<TossLoginService> tossLoginServiceProvider;
 
-    @Operation(summary = "토스 로그인", description = "토스 authorization code를 사용해 Mate JWT를 발급합니다.")
+    @Operation(summary = "✔️ 토스 로그인", description = "토스 authorization code를 사용해 Mate JWT를 발급합니다.")
     @PostMapping("/toss/login")
     public ResponseEntity<ApiResponse<TossLoginResponse>> loginWithToss(
             @RequestBody @Valid TossLoginRequest request
@@ -62,7 +62,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("로그아웃이 완료되었습니다.", null));
     }
 
-    @Operation(summary = "토큰 재발급", description = "refresh 토큰으로 요청하면 새 access 토큰과 refresh 토큰을 발급합니다.")
+    @Operation(summary = "✔️ 토큰 재발급", description = "refresh 토큰으로 요청하면 새 access 토큰과 refresh 토큰을 발급합니다.")
     @PostMapping("/reissue")
     public ResponseEntity<ApiResponse<AuthReissueResponse>> reissue(
             @RequestBody @Valid AuthReissueRequest request
@@ -72,7 +72,7 @@ public class AuthController {
     }
 
     @Operation(
-            summary = "토스 연결 해제",
+            summary = "➰ 토스 연결 해제",
             description = "현재 사용자의 토스 로그인 연결을 해제합니다. 토스 앱에서 연결이 해제되면 서비스 세션도 종료되어 재로그인이 필요합니다."
     )
     @PostMapping("/toss/unlink")

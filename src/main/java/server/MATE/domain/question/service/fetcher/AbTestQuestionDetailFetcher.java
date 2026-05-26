@@ -8,6 +8,7 @@ import server.MATE.domain.question.entity.AbTest;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.AbTestRepository;
+import server.MATE.global.storage.FileStorageService;
 
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 public class AbTestQuestionDetailFetcher implements QuestionDetailFetcher {
 
     private final AbTestRepository abTestRepository;
+    private final FileStorageService fileStorageService;
 
     @Override
     public QuestionType supports() {
@@ -34,7 +36,17 @@ public class AbTestQuestionDetailFetcher implements QuestionDetailFetcher {
         return abTests.stream()
                 .collect(Collectors.toMap(
                         AbTest::getId,
-                        abTest -> AbTestDetailResponse.of(questionMap.get(abTest.getId()), abTest)
+                        abTest -> AbTestDetailResponse.of(
+                                questionMap.get(abTest.getId()),
+                                abTest,
+                                toImageUrl(abTest.getAImageKey()),
+                                toImageUrl(abTest.getBImageKey())
+                        )
                 ));
+    }
+
+    private String toImageUrl(String key) {
+        if (key == null) return null;
+        return fileStorageService.generateDownloadUrl(key);
     }
 }

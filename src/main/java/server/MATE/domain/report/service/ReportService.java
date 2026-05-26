@@ -36,54 +36,59 @@ public class ReportService {
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         if (!test.getMakerId().equals(makerId)) throw new BaseException(BaseErrorCode.TEST_005);
 
-        List<QuestionSummaryItem> questionSummaries = questionRepository.findQuestionSummariesByTestId(testId);
-        int questionCount = questionSummaries.size();
-
-        // 테스트가 진행 중이고, 리포트 집계가 시작되지 않은 상태. reports를 빈 리스트로 반환
-        if (test.getTestStatus() == TestStatus.IN_PROGRESS) {
-            return new ReportResponse(
-                    TestStatus.IN_PROGRESS,
-                    ReportStatus.PENDING,
-                    questionCount,
-                    test.getPplCount(),
-                    questionSummaries,
-                    List.of()
-            );
-        }
-
-        // 테스트가 완료이지만, 리포트 집계가 끝나지 않음. reportStatus를 업데이트하고 reports를 빈 리스트로 반환
+        int questionCount = Math.toIntExact(questionRepository.countByTestIdAndDeletedAtIsNull(testId));
         ReportStatus reportStatus = test.getReportStatus() != null ? test.getReportStatus() : ReportStatus.PENDING;
-        if (reportStatus != ReportStatus.COMPLETED) {
-            return new ReportResponse(
-                    TestStatus.COMPLETED,
-                    reportStatus,
-                    questionCount,
-                    test.getPplCount(),
-                    questionSummaries,
-                    List.of()
-            );
+
+        switch (test.getTestStatus()) {
+            case WAITING, IN_PROGRESS, REJECTED -> {
+                // 완료 전 상태이므로 집계 결과 없이 현재 리포트 상태만 반환함
+                return new ReportResponse(
+                        test.getTestStatus(),
+                        reportStatus,
+                        questionCount,
+                        test.getPplCount(),
+                        List.of()
+                );
+            }
+            case COMPLETED -> {
+                // 테스트는 종료됐지만 집계가 끝나지 않았으면 빈 결과를 반환함
+                if (reportStatus != ReportStatus.COMPLETED) {
+                    return new ReportResponse(
+                            TestStatus.COMPLETED,
+                            reportStatus,
+                            questionCount,
+                            test.getPplCount(),
+                            List.of()
+                    );
+                }
+            }
         }
 
-        // 테스트가 완료이고, 리포트 집계가 끝난 상태. 질문별 집계 결과를 반환
+        // 테스트가 종료됐고 리포트 집계가 끝났다면 리포트를 반환함
         List<Report> aggregations = reportRepository.findAllByTestId(testId);
-
-        if (aggregations.size() != questionCount) {
-            log.error("테스트 {} 리포트 조회 중 완전성 불일치 감지: questionCount={}, reportCount={}",
-                    testId, questionCount, aggregations.size());
-            return new ReportResponse(
-                    TestStatus.COMPLETED,
-                    ReportStatus.FAILED,
-                    questionCount,
-                    test.getPplCount(),
-                    questionSummaries,
-                    List.of()
-            );
-        }
+        List<QuestionSummaryItem> questionSummaries = questionRepository.findQuestionSummariesByTestId(testId);
 
         Map<Long, Map<String, Object>> resultByQuestionId = aggregations.stream()
                 .collect(Collectors.toMap(Report::getQuestionId, Report::getResult));
 
-        // questions에서 사용한 projection을 reports에서 재사용
+        List<Long> missingQuestionIds = questionSummaries.stream()
+                .map(QuestionSummaryItem::questionId)
+                .filter(questionId -> !resultByQuestionId.containsKey(questionId))
+                .toList();
+
+        if (!missingQuestionIds.isEmpty()) {
+            log.error("테스트 {} 리포트 조회 중 활성 질문 리포트 누락 감지: questionCount={}, reportCount={}, missingQuestionIds={}",
+                    testId, questionCount, aggregations.size(), missingQuestionIds);
+            return new ReportResponse(
+                    test.getTestStatus(),
+                    ReportStatus.FAILED,
+                    questionCount,
+                    test.getPplCount(),
+                    List.of()
+            );
+        }
+
+        // 질문 요약 projection을 reports 조립에 재사용
         List<ReportItem> reports = questionSummaries.stream()
                 .map(question -> new ReportItem(
                         question.questionId(),
@@ -99,7 +104,6 @@ public class ReportService {
                 ReportStatus.COMPLETED,
                 questionCount,
                 test.getPplCount(),
-                questionSummaries,
                 reports
         );
     }

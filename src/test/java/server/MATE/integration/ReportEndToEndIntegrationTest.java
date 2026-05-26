@@ -14,9 +14,8 @@ import org.springframework.test.context.ActiveProfiles;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.report.entity.Report;
 import server.MATE.domain.report.repository.ReportRepository;
-import server.MATE.domain.report.service.ReportAggregationService;
+import server.MATE.domain.report.event.ReportAggregateService;
 import server.MATE.domain.test.entity.ReportStatus;
-import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.support.time.MutableClock;
 
 import java.time.Duration;
@@ -39,7 +38,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     private static final Instant DEFAULT_TEST_INSTANT = Instant.parse("2026-01-01T00:00:00Z");
 
     @Autowired
-    private ReportAggregationService reportAggregationService;
+    private ReportAggregateService reportAggregateService;
 
     @Autowired
     private ReportRepository reportRepository;
@@ -104,7 +103,10 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0);
         assertThat(result.path("type").asText()).isEqualTo("SUBJECTIVE");
-        JsonNode texts = result.path("result").path("texts");
+        JsonNode resultData = result.path("result");
+        assertThat(resultData.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
+        assertThat(resultData.path("clusters").isArray()).isTrue();
+        JsonNode texts = resultData.path("texts");
         assertThat(texts).hasSize(1);
         assertThat(texts.get(0).asText()).isEqualTo("주관식 응답");
     }
@@ -156,6 +158,10 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
         assertThat(result.path("average").asDouble()).isEqualTo(4.0);
+        assertThat(result.path("mostVoted").asInt()).isEqualTo(4);
+        JsonNode endValue = result.path("endValue");
+        assertThat(endValue.path("minLabel").asText()).isNotBlank();
+        assertThat(endValue.path("maxLabel").asText()).isNotBlank();
         JsonNode distribution = result.path("distribution");
         assertThat(distribution).hasSize(5);
         assertThat(distribution.get(3).path("score").asInt()).isEqualTo(4);
@@ -180,7 +186,10 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0);
         assertThat(result.path("type").asText()).isEqualTo("FIVE_SECOND");
-        JsonNode texts = result.path("result").path("texts");
+        JsonNode resultData = result.path("result");
+        assertThat(resultData.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
+        assertThat(resultData.path("clusters").isArray()).isTrue();
+        JsonNode texts = resultData.path("texts");
         assertThat(texts).hasSize(1);
         assertThat(texts.get(0).asText()).isEqualTo("5초 주관 응답");
     }
@@ -278,7 +287,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     @DisplayName("TREE_TEST 응답 제출 후 리포트에 nodeFrequency와 pathFrequency가 반환된다")
     void getReport_withTreeTestAnswers_returnsNodeFrequencyAndPathFrequency() throws Exception {
         TestActors actors = createActors();
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     {
@@ -319,7 +328,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("COMPLETED 테스트에 질문이 없으면 questions와 reports가 모두 빈 리스트다")
+    @DisplayName("COMPLETED 테스트에 질문이 없으면 reports가 빈 리스트다")
     void getReport_whenCompletedWithNoQuestions_returnsEmptyLists() throws Exception {
         TestActors actors = createActors();
         completeTest(actors.testId());
@@ -328,7 +337,6 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
         assertThat(data.path("testStatus").asText()).isEqualTo("COMPLETED");
         assertThat(data.path("questionCount").asInt()).isEqualTo(0);
-        assertThat(data.path("questions")).isEmpty();
         assertThat(data.path("reports")).isEmpty();
     }
 
@@ -473,16 +481,16 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("리포트의 questions 필드는 sequence 오름차순으로 질문 목록을 반환한다")
-    void getReport_questions_returnedInSequenceOrder() throws Exception {
+    @DisplayName("리포트의 reports 필드는 sequence 오름차순으로 질문별 결과를 반환한다")
+    void getReport_reports_returnedInSequenceOrder() throws Exception {
         TestActors actors = createActors();
         createTwoSubjectiveQuestions(actors.testId(), actors.makerToken());
         completeTest(actors.testId());
 
-        JsonNode questions = reportData(actors.testId(), actors.makerToken()).path("questions");
-        assertThat(questions).hasSize(2);
-        assertThat(questions.get(0).path("sequence").asLong()).isEqualTo(1L);
-        assertThat(questions.get(1).path("sequence").asLong()).isEqualTo(2L);
+        JsonNode reports = reportData(actors.testId(), actors.makerToken()).path("reports");
+        assertThat(reports).hasSize(2);
+        assertThat(reports.get(0).path("sequence").asLong()).isEqualTo(1L);
+        assertThat(reports.get(1).path("sequence").asLong()).isEqualTo(2L);
     }
 
     @Test
@@ -509,7 +517,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     @DisplayName("여러 타입 질문이 혼재할 때 reports가 sequence 순서로 조립되고 각 항목의 필드가 올바르다")
     void getReport_withMultipleQuestionTypes_reportsAssembledInSequenceOrder() throws Exception {
         TestActors actors = createActors();
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     { "type": "SUBJECTIVE", "title": "주관식 질문", "description": "설명", "imageKey": null },
@@ -562,7 +570,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     @DisplayName("전체 질문 유형이 혼재할 때 reports가 sequence 순서로 조립되고 각 유형별 핵심 집계 필드를 포함한다")
     void getReport_withAllQuestionTypes_reportsAssembledInSequenceOrder() throws Exception {
         TestActors actors = createActors();
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     { "type": "SUBJECTIVE", "title": "주관식 질문", "description": "설명", "imageKey": null },
@@ -788,8 +796,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("OBJECTIVE isOther=true 응답 시 리포트에 otherTexts가 포함된다")
-    void getReport_withObjectiveOtherText_returnsOtherTexts() throws Exception {
+    @DisplayName("OBJECTIVE isOther=true 응답 시 리포트에 clusters와 texts가 포함된다")
+    void getReport_withObjectiveOtherText_returnsClustersAndTexts() throws Exception {
         TestActors actors = createActors();
         createObjectiveQuestion(actors.testId(), actors.makerToken(), false, null, null, true);
         JsonNode questionNode = getSingleQuestion(actors.testId(), actors.makerToken());
@@ -806,6 +814,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
+        assertThat(result.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
+        assertThat(result.path("clusters").isArray()).isTrue();
         JsonNode otherTexts = result.path("otherTexts");
         assertThat(otherTexts).hasSize(1);
         assertThat(otherTexts.get(0).asText()).isEqualTo("직접 입력 응답");
@@ -956,7 +966,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         TestActors actors = createActors();
         String tester2Token = createAdditionalTester();
 
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [{
                     "type": "TREE_TEST", "title": "트리 질문", "description": "설명",
@@ -982,13 +992,13 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("SUBJECTIVE와 FIVE_SECOND 주관식 리포트의 texts는 createdAt 오름차순으로 정렬된다")
-    void getReport_withSubjectiveTexts_returnsCreatedAtAscendingOrder() throws Exception {
+    @DisplayName("SUBJECTIVE와 FIVE_SECOND 주관식 리포트의 texts는 미리보기 샘플을 포함한다")
+    void getReport_withSubjectiveTexts_returnsPreviewSample() throws Exception {
         mutableClock.setInstant(DEFAULT_TEST_INSTANT);
 
         TestActors actors = createActors();
         String tester2Token = createAdditionalTester();
-        performCreateQuestion(actors.testId(), actors.makerToken(), """
+        seedQuestions(actors.testId(), actors.makerToken(), """
                 {
                   "questions": [
                     { "type": "SUBJECTIVE", "title": "주관식 질문", "description": "설명", "imageKey": null },
@@ -1037,12 +1047,12 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         JsonNode fiveSecondTexts = reports.get(1).path("result").path("texts");
 
         assertThat(subjectiveTexts).hasSize(2);
-        assertThat(subjectiveTexts.get(0).asText()).isEqualTo("빠른 주관식 응답");
-        assertThat(subjectiveTexts.get(1).asText()).isEqualTo("늦은 주관식 응답");
+        assertThat(subjectiveTexts).extracting(JsonNode::asText)
+                .containsExactly("빠른 주관식 응답", "늦은 주관식 응답");
 
         assertThat(fiveSecondTexts).hasSize(2);
-        assertThat(fiveSecondTexts.get(0).asText()).isEqualTo("빠른 5초 응답");
-        assertThat(fiveSecondTexts.get(1).asText()).isEqualTo("늦은 5초 응답");
+        assertThat(fiveSecondTexts).extracting(JsonNode::asText)
+                .containsExactly("빠른 5초 응답", "늦은 5초 응답");
     }
 
     @TestConfiguration(proxyBeanMethods = false)
@@ -1109,7 +1119,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         List<Report> existingReports = reportRepository.findAllByTestId(actors.testId());
         JsonNode before = reportData(actors.testId(), actors.makerToken());
 
-        List<Report> reusedReports = reportAggregationService.aggregate(actors.testId());
+        List<Report> reusedReports = reportAggregateService.aggregate(actors.testId());
 
         server.MATE.domain.test.entity.Test updated = testRepository.findById(actors.testId()).orElseThrow();
         JsonNode after = reportData(actors.testId(), actors.makerToken());
@@ -1155,8 +1165,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("FIVE_SECOND isOther=true 응답 시 리포트에 otherTexts가 포함된다")
-    void getReport_withFiveSecondOtherText_returnsOtherTexts() throws Exception {
+    @DisplayName("FIVE_SECOND isOther=true 응답 시 리포트에 clusters와 texts가 포함된다")
+    void getReport_withFiveSecondOtherText_returnsClustersAndTexts() throws Exception {
         TestActors actors = createActors();
         createFiveSecondObjectiveQuestion(actors.testId(), actors.makerToken(), false, null, null, true);
         JsonNode questionNode = getSingleQuestion(actors.testId(), actors.makerToken());
@@ -1180,6 +1190,8 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
+        assertThat(result.path("aiSummary").asText()).isEqualTo("AI 요약 준비 중입니다.");
+        assertThat(result.path("clusters").isArray()).isTrue();
         JsonNode otherTexts = result.path("otherTexts");
         assertThat(otherTexts).hasSize(1);
         assertThat(otherTexts.get(0).asText()).isEqualTo("5초 기타 응답");
@@ -1247,7 +1259,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
                 .build());
 
         completeTestStatusOnly(actors.testId());
-        reportAggregationService.aggregate(actors.testId());
+        reportAggregateService.aggregate(actors.testId());
 
         server.MATE.domain.test.entity.Test updated = testRepository.findById(actors.testId()).orElseThrow();
         assertThat(updated.getReportStatus()).isEqualTo(ReportStatus.FAILED);
@@ -1310,7 +1322,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         server.MATE.domain.test.entity.Test test = testRepository.findById(testId).orElseThrow();
         test.complete();
         testRepository.save(test);
-        reportAggregationService.aggregate(testId);
+        reportAggregateService.aggregate(testId);
     }
 
     private void completeTestStatusOnly(Long testId) {

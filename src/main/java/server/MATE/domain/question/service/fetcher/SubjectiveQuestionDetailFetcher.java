@@ -8,6 +8,7 @@ import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Subjective;
 import server.MATE.domain.question.repository.SubjectiveRepository;
+import server.MATE.global.storage.FileStorageService;
 
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 public class SubjectiveQuestionDetailFetcher implements QuestionDetailFetcher {
 
     private final SubjectiveRepository subjectiveRepository;
+    private final FileStorageService fileStorageService;
 
     @Override
     public QuestionType supports() {
@@ -34,7 +36,16 @@ public class SubjectiveQuestionDetailFetcher implements QuestionDetailFetcher {
         return subjectives.stream()
                 .collect(Collectors.toMap(
                         Subjective::getId,
-                        subjective -> SubjectiveDetailResponse.of(questionMap.get(subjective.getId()), subjective)
+                        subjective -> SubjectiveDetailResponse.of(
+                                questionMap.get(subjective.getId()),
+                                subjective,
+                                toImageUrl(subjective.getImageKey())
+                        )
                 ));
+    }
+
+    private String toImageUrl(String key) {
+        if (key == null) return null;
+        return fileStorageService.generateDownloadUrl(key);
     }
 }

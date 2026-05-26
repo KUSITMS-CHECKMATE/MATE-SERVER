@@ -75,7 +75,9 @@ public class ObjectiveReportHandler implements ReportHandler {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("options", options);
         if (objective.isOther()) {
-            result.put("otherTexts", otherTexts);
+            result.put("aiSummary", "AI 요약 준비 중입니다.");
+            result.put("clusters", ReportHandlerUtils.buildClusters(otherTexts));
+            result.put("otherTexts", ReportHandlerUtils.sampleTexts(otherTexts));
         }
         return result;
     }

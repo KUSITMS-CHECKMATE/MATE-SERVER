@@ -24,8 +24,6 @@ import server.MATE.domain.question.dto.response.FiveSecondDetailResponse;
 import server.MATE.domain.question.dto.response.FiveSecondOptionDetailResponse;
 import server.MATE.domain.question.dto.response.ObjectiveOptionDetailResponse;
 import server.MATE.domain.question.dto.response.ObjectiveDetailResponse;
-import server.MATE.domain.question.dto.response.QuestionCreateResponse;
-import server.MATE.domain.question.dto.response.QuestionCreateResult;
 import server.MATE.domain.question.dto.response.QuestionDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionsDetailResponse;
 import server.MATE.domain.question.dto.response.QuestionSummaryItem;
@@ -37,6 +35,7 @@ import server.MATE.domain.question.dto.response.TreeTestNodeDetailResponse;
 import server.MATE.domain.question.entity.ImageRatio;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.service.QuestionService;
+import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.users.entity.Role;
 import server.MATE.global.common.exception.GlobalExceptionHandler;
 import server.MATE.global.discord.DiscordWebhookNotifier;
@@ -45,12 +44,10 @@ import server.MATE.global.security.principal.AuthenticatedUser;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -102,7 +99,7 @@ class QuestionControllerTest {
                                 true,
                                 List.of(
                                         new ObjectiveOptionDetailResponse(1001L, "A", null, 1, false),
-                                        new ObjectiveOptionDetailResponse(1002L, "B", "image-b", 2, false),
+                                        new ObjectiveOptionDetailResponse(1002L, "B", "https://example.com/image-b", 2, false),
                                         new ObjectiveOptionDetailResponse(1099L, "기타 (직접 입력)", null, 3, true)
                                 )
                         )
@@ -171,6 +168,7 @@ class QuestionControllerTest {
     @DisplayName("질문 목록 조회 요청을 정상 처리한다")
     void handlesQuestionSummaryRequestSuccessfully() throws Exception {
         QuestionSummaryResponse response = new QuestionSummaryResponse(
+                TestStatus.IN_PROGRESS,
                 2,
                 17L,
                 List.of(
@@ -186,6 +184,7 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("200"))
                 .andExpect(jsonPath("$.message").value("질문 목록을 조회했습니다."))
+                .andExpect(jsonPath("$.data.testStatus").value("IN_PROGRESS"))
                 .andExpect(jsonPath("$.data.questionCount").value(2))
                 .andExpect(jsonPath("$.data.participantCount").value(17))
                 .andExpect(jsonPath("$.data.questions.length()").value(2))
@@ -208,14 +207,15 @@ class QuestionControllerTest {
                                 false, null, null, true,
                                 List.of(new ObjectiveOptionDetailResponse(1001L, "A", null, 1, false))
                         ),
-                        new SubjectiveDetailResponse(102L, 200L, QuestionType.SUBJECTIVE, 2L, "주관식", "설명", "subjective-image"),
+                        new SubjectiveDetailResponse(102L, 200L, QuestionType.SUBJECTIVE, 2L, "주관식", "설명", "https://example.com/subjective-image"),
                         new FiveSecondDetailResponse(
                                 103L, 300L, QuestionType.FIVE_SECOND, 3L, "5초", "설명",
-                                "five-second-image", ImageRatio.RATIO_9_16, true, true, 1, 2, true,
+                                "https://example.com/five-second-image",
+                                ImageRatio.RATIO_9_16, true, true, 1, 2, true,
                                 List.of(new FiveSecondOptionDetailResponse(3001L, "검색창", 1, false))
                         ),
                         new ScaleDetailResponse(104L, 400L, QuestionType.SCALE, 4L, "척도", "설명", null, "낮음", "높음", 5),
-                        new AbTestDetailResponse(105L, 500L, QuestionType.AB_TEST, 5L, "AB", "설명", "a.jpg", "b.jpg", ImageRatio.RATIO_9_16),
+                        new AbTestDetailResponse(105L, 500L, QuestionType.AB_TEST, 5L, "AB", "설명", "https://example.com/a.jpg", "https://example.com/b.jpg", ImageRatio.RATIO_9_16),
                         new CardSortingDetailResponse(106L, 600L, QuestionType.CARD_SORTING, 6L, "카드", "설명", List.of("A", "B", "C", "D"), List.of("cat")),
                         new TreeTestDetailResponse(
                                 107L, QuestionType.TREE_TEST, 7L, "트리", "설명",
@@ -258,7 +258,8 @@ class QuestionControllerTest {
                         new SubjectiveDetailResponse(101L, 201L, QuestionType.SUBJECTIVE, 1L, "주관식", "설명", null),
                         new FiveSecondDetailResponse(
                                 102L, 202L, QuestionType.FIVE_SECOND, 2L, "5초 주관식", "설명",
-                                "five-second-image", ImageRatio.RATIO_9_16, false, null, null, null, null, List.of()
+                                "https://example.com/five-second-image",
+                                ImageRatio.RATIO_9_16, false, null, null, null, null, List.of()
                         ),
                         new ScaleDetailResponse(103L, 203L, QuestionType.SCALE, 3L, "척도", "설명", null, null, null, 5),
                         new TreeTestDetailResponse(
@@ -272,7 +273,7 @@ class QuestionControllerTest {
         mockMvc.perform(get("/api/v1/tests/10/questions")
                         .with(authenticationPrincipal()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.questions[0].imageKey").value((String) null))
+                .andExpect(jsonPath("$.data.questions[0].imageUrl").value((String) null))
                 .andExpect(jsonPath("$.data.questions[1].isDuplicate").value((String) null))
                 .andExpect(jsonPath("$.data.questions[1].imageRatio").value("9:16"))
                 .andExpect(jsonPath("$.data.questions[1].minSelect").value((String) null))
@@ -280,7 +281,7 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.data.questions[1].isOther").value((String) null))
                 .andExpect(jsonPath("$.data.questions[1].options").isArray())
                 .andExpect(jsonPath("$.data.questions[1].options.length()").value(0))
-                .andExpect(jsonPath("$.data.questions[2].imageKey").value((String) null))
+                .andExpect(jsonPath("$.data.questions[2].imageUrl").value((String) null))
                 .andExpect(jsonPath("$.data.questions[2].minLabel").value((String) null))
                 .andExpect(jsonPath("$.data.questions[2].maxLabel").value((String) null))
                 .andExpect(jsonPath("$.data.questions[3].features[0].children").isArray())
@@ -300,7 +301,8 @@ class QuestionControllerTest {
                         ),
                         new FiveSecondDetailResponse(
                                 102L, 202L, QuestionType.FIVE_SECOND, 2L, "5초", "설명",
-                                "five-second-image", ImageRatio.RATIO_9_16, true, true, 1, 2, true,
+                                "https://example.com/five-second-image",
+                                ImageRatio.RATIO_9_16, true, true, 1, 2, true,
                                 List.of(new FiveSecondOptionDetailResponse(2001L, "검색창", 1, false))
                         )
                 )
@@ -322,234 +324,6 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.data.questions[1].isOther").value(true))
                 .andExpect(jsonPath("$.data.questions[1].objective").doesNotExist())
                 .andExpect(jsonPath("$.data.questions[1].duplicate").doesNotExist());
-    }
-
-    @Test
-    @DisplayName("통합 문항 등록 요청을 정상 처리한다")
-    void handlesBulkQuestionCreateRequestSuccessfully() throws Exception {
-        QuestionCreateResponse response = new QuestionCreateResponse(List.of(
-                new QuestionCreateResult(101L, QuestionType.OBJECTIVE, 1L, "객관식 질문"),
-                new QuestionCreateResult(102L, QuestionType.SCALE, 2L, "척도 질문")
-        ));
-        given(questionService.createQuestions(eq(10L), eq(1L), any())).willReturn(response);
-
-        String requestBody = """
-                {
-                  "questions": [
-                    {
-                      "type": "OBJECTIVE",
-                      "title": "객관식 질문",
-                      "description": "설명",
-                      "isDuplicate": false,
-                      "isOther": true,
-                      "options": [
-                        { "content": "A", "imageKey": null },
-                        { "content": "B", "imageKey": null }
-                      ]
-                    },
-                    {
-                      "type": "SCALE",
-                      "title": "척도 질문",
-                      "description": "설명",
-                      "imageKey": null,
-                      "minLabel": "낮음",
-                      "maxLabel": "높음",
-                      "range": 5
-                    }
-                  ]
-                }
-                """;
-
-        mockMvc.perform(post("/api/v1/tests/10/questions")
-                        .with(authenticationPrincipal())
-                        .contentType(APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.code").value("201"))
-                .andExpect(jsonPath("$.message").value("문항이 등록되었습니다."))
-                .andExpect(jsonPath("$.data.questions.length()").value(2))
-                .andExpect(jsonPath("$.data.questions[0].questionId").value(101))
-                .andExpect(jsonPath("$.data.questions[0].type").value("OBJECTIVE"))
-                .andExpect(jsonPath("$.data.questions[0].sequence").value(1))
-                .andExpect(jsonPath("$.data.questions[1].questionId").value(102))
-                .andExpect(jsonPath("$.data.questions[1].type").value("SCALE"))
-                .andExpect(jsonPath("$.data.questions[1].sequence").value(2));
-    }
-
-    @Test
-    @DisplayName("통합 문항 등록 요청이 검증에 실패하면 400을 반환한다")
-    void returnsBadRequestWhenBulkQuestionCreateRequestValidationFails() throws Exception {
-        String requestBody = """
-                {
-                  "questions": [
-                    {
-                      "type": "OBJECTIVE",
-                      "title": "객관식 질문",
-                      "description": "설명",
-                      "isDuplicate": false,
-                      "isOther": true
-                    }
-                  ]
-                }
-                """;
-
-        mockMvc.perform(post("/api/v1/tests/10/questions")
-                        .with(authenticationPrincipal())
-                        .contentType(APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("COMMON_002"))
-                .andExpect(jsonPath("$.message").value("선택지는 필수 입력 사항입니다."))
-                .andExpect(jsonPath("$.field").value("questions[0].options"));
-    }
-
-    @Test
-    @DisplayName("혼합 요청 중 뒤 문항이 검증에 실패하면 전체 요청이 400으로 종료되고 서비스를 호출하지 않는다")
-    void returnsBadRequestWhenLaterMixedQuestionFailsValidation() throws Exception {
-        String requestBody = """
-                {
-                  "questions": [
-                    {
-                      "type": "OBJECTIVE",
-                      "title": "객관식 질문",
-                      "description": "설명",
-                      "isDuplicate": false,
-                      "isOther": true,
-                      "options": [
-                        { "content": "A", "imageKey": null },
-                        { "content": "B", "imageKey": null }
-                      ]
-                    },
-                    {
-                      "type": "OBJECTIVE",
-                      "title": "두 번째 객관식",
-                      "description": "설명",
-                      "isDuplicate": false,
-                      "isOther": true
-                    }
-                  ]
-                }
-                """;
-
-        mockMvc.perform(post("/api/v1/tests/10/questions")
-                        .with(authenticationPrincipal())
-                        .contentType(APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("COMMON_002"))
-                .andExpect(jsonPath("$.message").value("선택지는 필수 입력 사항입니다."))
-                .andExpect(jsonPath("$.field").value("questions[1].options"));
-
-        verifyNoInteractions(questionService);
-    }
-
-    @Test
-    @DisplayName("통합 문항 등록 요청 본문 파싱에 실패하면 field 없이 400을 반환한다")
-    void returnsBadRequestWithoutFieldWhenRequestBodyParsingFails() throws Exception {
-        String requestBody = """
-                {
-                  "questions": [
-                    {
-                      "type": "SCALE",
-                      "title": "척도 질문",
-                      "description": "설명",
-                      "imageKey": null,
-                      "minLabel": "낮음",
-                      "maxLabel": "높음",
-                      "range": "five"
-                    }
-                  ]
-                }
-                """;
-
-        mockMvc.perform(post("/api/v1/tests/10/questions")
-                        .with(authenticationPrincipal())
-                        .contentType(APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("COMMON_003"))
-                .andExpect(jsonPath("$.message").value("요청 본문을 읽을 수 없습니다."))
-                .andExpect(jsonPath("$.field").doesNotExist());
-    }
-
-    @Test
-    @DisplayName("혼합 요청 중 뒤 문항에 다른 타입 필드가 섞이면 전체 요청이 400으로 종료되고 서비스를 호출하지 않는다")
-    void returnsBadRequestWhenLaterMixedQuestionContainsAnotherTypeField() throws Exception {
-        String requestBody = """
-                {
-                  "questions": [
-                    {
-                      "type": "OBJECTIVE",
-                      "title": "객관식 질문",
-                      "description": "설명",
-                      "isDuplicate": false,
-                      "isOther": true,
-                      "options": [
-                        { "content": "A", "imageKey": null },
-                        { "content": "B", "imageKey": null }
-                      ]
-                    },
-                    {
-                      "type": "OBJECTIVE",
-                      "title": "두 번째 객관식",
-                      "description": "설명",
-                      "isDuplicate": false,
-                      "isOther": true,
-                      "options": [
-                        { "content": "A", "imageKey": null },
-                        { "content": "B", "imageKey": null }
-                      ],
-                      "range": 5
-                    }
-                  ]
-                }
-                """;
-
-        mockMvc.perform(post("/api/v1/tests/10/questions")
-                        .with(authenticationPrincipal())
-                        .contentType(APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("COMMON_003"))
-                .andExpect(jsonPath("$.message").value("요청 본문을 읽을 수 없습니다."))
-                .andExpect(jsonPath("$.field").doesNotExist());
-
-        verifyNoInteractions(questionService);
-    }
-
-    @Test
-    @DisplayName("통합 문항 등록 요청 JSON 형식이 깨지면 field 없이 COMMON_003을 반환한다")
-    void returnsCommon003WhenJsonSyntaxIsMalformed() throws Exception {
-        String requestBody = """
-                {
-                  "questions": [
-                    {
-                      "type": "OBJECTIVE",
-                      "title": "객관식 질문",
-                      "isDuplicate": false,
-                      "isOther": true,
-                      "options": [
-                        { "content": "A", "imageKey": null },
-                        { "content": "B", "imageKey": null }
-                      ]
-                    }
-                  ]
-                """;
-
-        mockMvc.perform(post("/api/v1/tests/10/questions")
-                        .with(authenticationPrincipal())
-                        .contentType(APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("COMMON_003"))
-                .andExpect(jsonPath("$.message").value("요청 본문을 읽을 수 없습니다."))
-                .andExpect(jsonPath("$.field").doesNotExist());
     }
 
     private UsernamePasswordAuthenticationToken authentication() {

@@ -5,15 +5,15 @@ import server.MATE.domain.question.entity.ObjectiveOption;
 public record ObjectiveOptionDetailResponse(
         Long objectiveOptionId,
         String content,
-        String imageKey,
+        String imageUrl,
         Integer sequence,
         boolean isOtherOption
 ) {
-    public static ObjectiveOptionDetailResponse from(ObjectiveOption option) {
+    public static ObjectiveOptionDetailResponse from(ObjectiveOption option, String imageUrl) {
         return new ObjectiveOptionDetailResponse(
                 option.getId(),
                 option.getContent(),
-                option.getImageKey(),
+                imageUrl,
                 option.getSequence(),
                 Boolean.TRUE.equals(option.getIsOtherOption())
         );

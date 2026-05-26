@@ -11,10 +11,10 @@ public record SubjectiveDetailResponse(
         Long sequence,
         String title,
         String description,
-        String imageKey
+        String imageUrl
 ) implements QuestionDetailItem {
 
-    public static SubjectiveDetailResponse of(Question question, Subjective subjective) {
+    public static SubjectiveDetailResponse of(Question question, Subjective subjective, String imageUrl) {
         return new SubjectiveDetailResponse(
                 question.getId(),
                 subjective.getId(),
@@ -22,7 +22,7 @@ public record SubjectiveDetailResponse(
                 question.getSequence(),
                 question.getTitle(),
                 question.getDescription(),
-                subjective.getImageKey()
+                imageUrl
         );
     }
 }
