@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import server.MATE.domain.report.dto.response.ReportResponse;
 import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.service.ReportService;
-import server.MATE.domain.report.service.TestReportExcelService;
+import server.MATE.domain.report.service.excel.TestReportExcelService;
 import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
