@@ -12,7 +12,6 @@ import server.MATE.domain.payment.entity.Payment;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.service.QuestionService;
-import server.MATE.domain.test.entity.ApprovalStatus;
 import server.MATE.domain.test.entity.Category;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestStatus;
@@ -66,8 +65,7 @@ public class TestPublishService {
                 .imageKeys(draft.getImageKeys())
                 .goalPpl(payment.getGoalPpl())
                 .reward(payment.getReward())
-                .testStatus(TestStatus.IN_PROGRESS)
-                .approvalStatus(ApprovalStatus.ACCEPTED)
+                .testStatus(TestStatus.WAITING)
                 .build());
 
         if (draft.getCategories() != null && !draft.getCategories().isEmpty()) {

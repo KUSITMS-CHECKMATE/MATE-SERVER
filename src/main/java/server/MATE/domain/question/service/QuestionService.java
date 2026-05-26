@@ -153,10 +153,10 @@ public class QuestionService {
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         if (!test.getMakerId().equals(makerId)) throw new BaseException(BaseErrorCode.TEST_005);
-        if (test.getTestStatus() != TestStatus.COMPLETED) throw new BaseException(BaseErrorCode.TEST_006);
 
         List<QuestionSummaryItem> questions = questionRepository.findQuestionSummariesByTestId(testId);
         return new QuestionSummaryResponse(
+                test.getTestStatus(),
                 questions.size(),
                 test.getPplCount(),
                 questions

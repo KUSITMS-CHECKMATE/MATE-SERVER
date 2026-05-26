@@ -1,4 +1,4 @@
-package server.MATE.domain.report.service;
+package server.MATE.domain.report.event;
 
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
@@ -23,6 +23,7 @@ import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.report.entity.Report;
 import server.MATE.domain.report.repository.ReportRepository;
+import server.MATE.domain.report.service.ReportHandler;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
@@ -30,7 +31,7 @@ import server.MATE.global.common.exception.BaseException;
 
 @Slf4j
 @Service
-public class ReportAggregationService {
+public class ReportAggregateService {
 
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
@@ -38,11 +39,11 @@ public class ReportAggregationService {
     private final TestRepository testRepository;
     private final Map<QuestionType, ReportHandler> handlerMap;
 
-    public ReportAggregationService(QuestionRepository questionRepository,
-                                    AnswerRepository answerRepository,
-                                    ReportRepository reportRepository,
-                                    TestRepository testRepository,
-                                    List<ReportHandler> handlers) {
+    public ReportAggregateService(QuestionRepository questionRepository,
+                                  AnswerRepository answerRepository,
+                                  ReportRepository reportRepository,
+                                  TestRepository testRepository,
+                                  List<ReportHandler> handlers) {
         this.questionRepository = questionRepository;
         this.answerRepository = answerRepository;
         this.reportRepository = reportRepository;

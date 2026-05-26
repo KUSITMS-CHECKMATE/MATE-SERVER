@@ -1,7 +1,6 @@
 package server.MATE.domain.report.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import server.MATE.domain.question.dto.response.QuestionSummaryItem;
 import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.TestStatus;
 
@@ -20,9 +19,6 @@ public record ReportResponse(
 
         @Schema(description = "총 참여자 수", example = "12")
         Long participantCount,
-
-        @Schema(description = "질문 목록 (순서 오름차순)")
-        List<QuestionSummaryItem> questions,
 
         @Schema(description = "질문별 집계 결과 (reportStatus가 COMPLETED일 때만 포함)")
         List<ReportItem> reports

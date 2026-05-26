@@ -14,6 +14,7 @@ import server.MATE.domain.answer.repository.AnswerRepository;
 import server.MATE.domain.auth.jwt.JwtProvider;
 import server.MATE.domain.auth.jwt.TokenType;
 import server.MATE.domain.participation.repository.ParticipationRepository;
+import server.MATE.domain.promotion.repository.PromotionRewardRepository;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.dto.response.QuestionCreateResponse;
 import server.MATE.domain.question.repository.AbTestRepository;
@@ -25,8 +26,11 @@ import server.MATE.domain.question.repository.ScaleRepository;
 import server.MATE.domain.question.repository.SubjectiveRepository;
 import server.MATE.domain.question.repository.TreeTestRepository;
 import server.MATE.domain.question.service.QuestionService;
+import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
+import server.MATE.domain.users.entity.TossAccount;
 import server.MATE.domain.users.entity.Users;
+import server.MATE.domain.users.repository.TossAccountRepository;
 import server.MATE.domain.users.repository.UsersRepository;
 import server.MATE.global.storage.FileStorageService;
 
@@ -88,6 +92,12 @@ abstract class BaseQuestionAnswerEndToEndTest {
     @Autowired
     protected AnswerRepository answerRepository;
 
+    @Autowired
+    protected PromotionRewardRepository promotionRewardRepository;
+
+    @Autowired
+    protected TossAccountRepository tossAccountRepository;
+
     @PersistenceContext
     protected EntityManager entityManager;
 
@@ -96,6 +106,8 @@ abstract class BaseQuestionAnswerEndToEndTest {
 
     @AfterEach
     void tearDownBase() {
+        promotionRewardRepository.deleteAll();
+        tossAccountRepository.deleteAll();
         answerRepository.deleteAll();
         participationRepository.deleteAll();
         treeTestRepository.deleteAll();
@@ -126,6 +138,7 @@ abstract class BaseQuestionAnswerEndToEndTest {
                 .serviceName("서비스")
                 .serviceDescription("서비스 설명")
                 .imageKeys(List.of())
+                .testStatus(TestStatus.IN_PROGRESS)
                 .build());
         return new TestActors(
                 maker.getId(),
@@ -138,6 +151,16 @@ abstract class BaseQuestionAnswerEndToEndTest {
 
     protected String bearerToken(Users user) {
         return "Bearer " + jwtProvider.generateToken(user.getId(), user.getRole().name(), TokenType.ACCESS);
+    }
+
+    protected TossAccount linkTossAccount(Users user, Long tossUserKey) {
+        return tossAccountRepository.save(TossAccount.builder()
+                .user(user)
+                .tossUserKey(tossUserKey)
+                .isLinked(true)
+                .lastLoginAt(java.time.LocalDateTime.now())
+                .lastTokenRefreshedAt(java.time.LocalDateTime.now())
+                .build());
     }
 
     protected JsonNode seedQuestion(Long testId, String token, String payload) throws Exception {

@@ -3,7 +3,6 @@ package server.MATE.domain.question.dto.response;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Scale;
-import server.MATE.global.storage.dto.ImageResponse;
 
 public record ScaleDetailResponse(
         Long questionId,
@@ -12,13 +11,13 @@ public record ScaleDetailResponse(
         Long sequence,
         String title,
         String description,
-        ImageResponse image,
+        String imageUrl,
         String minLabel,
         String maxLabel,
         Integer range
 ) implements QuestionDetailItem {
 
-    public static ScaleDetailResponse of(Question question, Scale scale, ImageResponse image) {
+    public static ScaleDetailResponse of(Question question, Scale scale, String imageUrl) {
         return new ScaleDetailResponse(
                 question.getId(),
                 scale.getId(),
@@ -26,7 +25,7 @@ public record ScaleDetailResponse(
                 question.getSequence(),
                 question.getTitle(),
                 question.getDescription(),
-                image,
+                imageUrl,
                 scale.getMinLabel(),
                 scale.getMaxLabel(),
                 scale.getRange()

@@ -9,7 +9,6 @@ import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.AbTestRepository;
 import server.MATE.global.storage.FileStorageService;
-import server.MATE.global.storage.dto.ImageResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -40,14 +39,14 @@ public class AbTestQuestionDetailFetcher implements QuestionDetailFetcher {
                         abTest -> AbTestDetailResponse.of(
                                 questionMap.get(abTest.getId()),
                                 abTest,
-                                toImageResponse(abTest.getAImageKey()),
-                                toImageResponse(abTest.getBImageKey())
+                                toImageUrl(abTest.getAImageKey()),
+                                toImageUrl(abTest.getBImageKey())
                         )
                 ));
     }
 
-    private ImageResponse toImageResponse(String key) {
+    private String toImageUrl(String key) {
         if (key == null) return null;
-        return new ImageResponse(key, fileStorageService.generateDownloadUrl(key));
+        return fileStorageService.generateDownloadUrl(key);
     }
 }

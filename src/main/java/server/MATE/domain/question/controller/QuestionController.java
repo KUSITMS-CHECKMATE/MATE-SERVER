@@ -29,7 +29,7 @@ public class QuestionController {
 
     private final QuestionService questionService;
 
-    @Operation(summary = "질문 전체 조회", description = """
+    @Operation(summary = "➰ 질문 전체 조회", description = """
             testId에 해당한 테스트의 모든 질문 문항을 상세조회합니다. TT01-01 화면에 해당하는 api 입니다.
             - 응답 루트에 `testId`와 `questions`를 함께 반환합니다.
             - `questions` 배열은 `sequence` 오름차순입니다.
@@ -64,9 +64,9 @@ public class QuestionController {
                                                             "maxSelect": null,
                                                             "isOther": true,
                                                             "options": [
-                                                              { "objectiveOptionId": 1001, "content": "검색", "image": null, "sequence": 1, "isOtherOption": false },
-                                                              { "objectiveOptionId": 1002, "content": "결제", "image": { "imageKey": "objective-option-image-key", "imageUrl": "https://storage.example.com/objective-option-image-key" }, "sequence": 2, "isOtherOption": false },
-                                                              { "objectiveOptionId": 1099, "content": "기타 (직접 입력)", "image": null, "sequence": 3, "isOtherOption": true }
+                                                              { "objectiveOptionId": 1001, "content": "검색", "imageUrl": null, "sequence": 1, "isOtherOption": false },
+                                                              { "objectiveOptionId": 1002, "content": "결제", "imageUrl": "https://storage.example.com/objective-option-image-key", "sequence": 2, "isOtherOption": false },
+                                                              { "objectiveOptionId": 1099, "content": "기타 (직접 입력)", "imageUrl": null, "sequence": 3, "isOtherOption": true }
                                                             ]
                                                           }
                                                         ]
@@ -92,7 +92,7 @@ public class QuestionController {
                                                             "sequence": 2,
                                                             "title": "개선이 필요한 점은 무엇인가요?",
                                                             "description": "자유롭게 작성해주세요.",
-                                                            "image": { "imageKey": "subjective-image-key", "imageUrl": "https://storage.example.com/subjective-image-key" }
+                                                            "imageUrl": "https://storage.example.com/subjective-image-key"
                                                           }
                                                         ]
                                                       }
@@ -117,7 +117,7 @@ public class QuestionController {
                                                             "sequence": 3,
                                                             "title": "첫 화면에서 눈에 띄는 요소는 무엇인가요?",
                                                             "description": "이미지를 5초간 본 뒤 답변해주세요.",
-                                                            "image": { "imageKey": "five-second-image-key", "imageUrl": "https://storage.example.com/five-second-image-key" },
+                                                            "imageUrl": "https://storage.example.com/five-second-image-key",
                                                             "imageRatio": "9:16",
                                                             "isObjective": true,
                                                             "isDuplicate": true,
@@ -153,7 +153,7 @@ public class QuestionController {
                                                             "sequence": 3,
                                                             "title": "첫 화면에서 가장 먼저 떠오른 점은 무엇인가요?",
                                                             "description": "이미지를 5초간 본 뒤 자유롭게 작성해주세요.",
-                                                            "image": { "imageKey": "five-second-image-key", "imageUrl": "https://storage.example.com/five-second-image-key" },
+                                                            "imageUrl": "https://storage.example.com/five-second-image-key",
                                                             "imageRatio": "9:16",
                                                             "isObjective": false,
                                                             "isDuplicate": null,
@@ -185,7 +185,7 @@ public class QuestionController {
                                                             "sequence": 4,
                                                             "title": "전반적인 만족도를 평가해주세요.",
                                                             "description": "5점 척도로 응답해주세요.",
-                                                            "image": null,
+                                                            "imageUrl": null,
                                                             "minLabel": "매우 불만족",
                                                             "maxLabel": "매우 만족",
                                                             "range": 5
@@ -213,8 +213,8 @@ public class QuestionController {
                                                             "sequence": 5,
                                                             "title": "어느 시안이 더 마음에 드시나요?",
                                                             "description": "두 시안을 비교하고 더 선호하는 쪽을 선택해주세요.",
-                                                            "aImage": { "imageKey": "image-a.jpg", "imageUrl": "https://storage.example.com/image-a.jpg" },
-                                                            "bImage": { "imageKey": "image-b.jpg", "imageUrl": "https://storage.example.com/image-b.jpg" },
+                                                            "aImageUrl": "https://storage.example.com/image-a.jpg",
+                                                            "bImageUrl": "https://storage.example.com/image-b.jpg",
                                                             "imageRatio": "9:16"
                                                           }
                                                         ]
@@ -301,8 +301,8 @@ public class QuestionController {
         return ResponseEntity.ok(ApiResponse.ok("문항을 조회했습니다.", questionsDetailResponse));
     }
 
-    @Operation(summary = "질문 상세 조회", description = """
-            testId에 해당하는 테스트의 특정 질문 문항 하나를 상세조회합니다. 통계의 질문 탭 MKST_01 화면에 해당하는 api입니다.
+    @Operation(summary = "➰ 질문 상세 조회", description = """
+            testId에 해당하는 테스트의 특정 질문 문항 하나를 상세조회합니다. 통계의 질문 탭 MKST_01-1 화면에 해당하는 api입니다.
             - 응답 루트에 `testId`와 `question`을 함께 반환합니다.
             - `question`은 공통 필드와 유형별 상세 필드를 모두 포함합니다.
             - 별도로 조회 요청한 유저가 해당 테스트 메이커인지 검증하지 않습니다.
@@ -335,9 +335,9 @@ public class QuestionController {
                                                           "maxSelect": null,
                                                           "isOther": true,
                                                           "options": [
-                                                            { "objectiveOptionId": 1001, "content": "검색", "image": null, "sequence": 1, "isOtherOption": false },
-                                                            { "objectiveOptionId": 1002, "content": "결제", "image": { "imageKey": "objective-option-image-key", "imageUrl": "https://storage.example.com/objective-option-image-key" }, "sequence": 2, "isOtherOption": false },
-                                                            { "objectiveOptionId": 1099, "content": "기타 (직접 입력)", "image": null, "sequence": 3, "isOtherOption": true }
+                                                            { "objectiveOptionId": 1001, "content": "검색", "imageUrl": null, "sequence": 1, "isOtherOption": false },
+                                                            { "objectiveOptionId": 1002, "content": "결제", "imageUrl": "https://storage.example.com/objective-option-image-key", "sequence": 2, "isOtherOption": false },
+                                                            { "objectiveOptionId": 1099, "content": "기타 (직접 입력)", "imageUrl": null, "sequence": 3, "isOtherOption": true }
                                                           ]
                                                         }
                                                       }
@@ -361,7 +361,7 @@ public class QuestionController {
                                                           "sequence": 2,
                                                           "title": "개선이 필요한 점은 무엇인가요?",
                                                           "description": "자유롭게 작성해주세요.",
-                                                          "image": { "imageKey": "subjective-image-key", "imageUrl": "https://storage.example.com/subjective-image-key" }
+                                                          "imageUrl": "https://storage.example.com/subjective-image-key"
                                                         }
                                                       }
                                                     }
@@ -384,7 +384,7 @@ public class QuestionController {
                                                           "sequence": 3,
                                                           "title": "첫 화면에서 눈에 띄는 요소는 무엇인가요?",
                                                           "description": "이미지를 5초간 본 뒤 답변해주세요.",
-                                                          "image": { "imageKey": "five-second-image-key", "imageUrl": "https://storage.example.com/five-second-image-key" },
+                                                          "imageUrl": "https://storage.example.com/five-second-image-key",
                                                           "imageRatio": "9:16",
                                                           "isObjective": true,
                                                           "isDuplicate": true,
@@ -418,7 +418,7 @@ public class QuestionController {
                                                           "sequence": 4,
                                                           "title": "전반적인 만족도를 평가해주세요.",
                                                           "description": "5점 척도로 응답해주세요.",
-                                                          "image": null,
+                                                          "imageUrl": null,
                                                           "minLabel": "매우 불만족",
                                                           "maxLabel": "매우 만족",
                                                           "range": 5
@@ -444,8 +444,8 @@ public class QuestionController {
                                                           "sequence": 5,
                                                           "title": "어느 시안이 더 마음에 드시나요?",
                                                           "description": "두 시안을 비교하고 더 선호하는 쪽을 선택해주세요.",
-                                                          "aImage": { "imageKey": "image-a.jpg", "imageUrl": "https://storage.example.com/image-a.jpg" },
-                                                          "bImage": { "imageKey": "image-b.jpg", "imageUrl": "https://storage.example.com/image-b.jpg" },
+                                                          "aImageUrl": "https://storage.example.com/image-a.jpg",
+                                                          "bImageUrl": "https://storage.example.com/image-b.jpg",
                                                           "imageRatio": "9:16"
                                                         }
                                                       }
@@ -528,11 +528,11 @@ public class QuestionController {
         return ResponseEntity.ok(ApiResponse.ok("질문 상세 조회했습니다.", questionDetailResponse));
     }
 
-    @Operation(summary = "질문 목록 조회", description = """
-            testId에 해당하는 테스트의 질문 목록 정보를 조회합니다. 통계의 질문 탭 MKST_01 화면에 해당하는 api입니다.
+    @Operation(summary = "✔️ 질문 목록 조회", description = """
+            testId에 해당하는 테스트의 질문 목록 정보를 조회합니다. 통계의 질문 탭 MKST_01 29 화면에 해당하는 api입니다.
             - 테스트 메이커만 조회할 수 있습니다.
-            - 테스트가 종료된 경우에만 조회할 수 있습니다.
-            - 질문 개수, 테스트 참여자 수, 질문 목록을 반환합니다.
+            - 테스트 종료 여부와 관계없이 조회할 수 있습니다.
+            - 테스트 상태, 질문 개수, 테스트 참여자 수, 질문 목록을 반환합니다.
             """)
     @GetMapping("/summary")
     public ResponseEntity<ApiResponse<QuestionSummaryResponse>> getQuestionSummary(

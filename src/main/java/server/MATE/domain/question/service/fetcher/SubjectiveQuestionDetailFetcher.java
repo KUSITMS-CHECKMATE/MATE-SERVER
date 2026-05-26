@@ -9,7 +9,6 @@ import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Subjective;
 import server.MATE.domain.question.repository.SubjectiveRepository;
 import server.MATE.global.storage.FileStorageService;
-import server.MATE.global.storage.dto.ImageResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -40,13 +39,13 @@ public class SubjectiveQuestionDetailFetcher implements QuestionDetailFetcher {
                         subjective -> SubjectiveDetailResponse.of(
                                 questionMap.get(subjective.getId()),
                                 subjective,
-                                toImageResponse(subjective.getImageKey())
+                                toImageUrl(subjective.getImageKey())
                         )
                 ));
     }
 
-    private ImageResponse toImageResponse(String key) {
+    private String toImageUrl(String key) {
         if (key == null) return null;
-        return new ImageResponse(key, fileStorageService.generateDownloadUrl(key));
+        return fileStorageService.generateDownloadUrl(key);
     }
 }
