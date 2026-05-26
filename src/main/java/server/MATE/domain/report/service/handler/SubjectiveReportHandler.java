@@ -1,10 +1,12 @@
 package server.MATE.domain.report.service.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.report.service.ReportHandler;
+import server.MATE.global.claude.SubjectiveAiService;
 
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -12,7 +14,10 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@RequiredArgsConstructor
 public class SubjectiveReportHandler implements ReportHandler {
+
+    private final SubjectiveAiService aiService;
 
     @Override
     public QuestionType supports() {
@@ -33,11 +38,27 @@ public class SubjectiveReportHandler implements ReportHandler {
         List<String> allTexts = answers.stream()
                 .sorted(Comparator.comparing(Answer::getCreatedAt))
                 .map(a -> (String) a.getAnswer().get("text"))
+                .filter(t -> t != null && !t.isBlank())
                 .toList();
+
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("aiSummary", "AI 요약 준비 중입니다.");
-        result.put("clusters", ReportHandlerUtils.buildClusters(allTexts));
-        result.put("texts", ReportHandlerUtils.sampleTexts(allTexts));
+
+        if (allTexts.size() < aiService.getMinResponseThreshold()) {
+            result.put("texts", allTexts);
+            return result;
+        }
+
+        aiService.analyze(allTexts).ifPresentOrElse(
+                aiResult -> {
+                    result.put("aiSummary", aiResult.aiSummary());
+                    result.put("clusters", aiResult.toClusterMaps());
+                    result.put("texts", ReportHandlerUtils.sampleTexts(allTexts));
+                },
+                () -> {
+                    result.put("clusters", ReportHandlerUtils.buildClusters(allTexts));
+                    result.put("texts", allTexts);
+                }
+        );
         return result;
     }
 }
