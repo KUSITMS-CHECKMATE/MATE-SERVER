@@ -46,6 +46,10 @@ toss:
   token:
     refresh-cache-ttl: ${TOSS_REFRESH_CACHE_TTL:1209600000}
 
+claude:
+  api:
+    key: ${CLAUDE_API_KEY:}
+
 discord:
   webhook-url: ${DISCORD_WEBHOOK_URL:}
 
