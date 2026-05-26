@@ -21,6 +21,10 @@ jwt:
     REFRESH:
       expiration: 1209600000
 
+claude:
+  api:
+    key: ${CLAUDE_API_KEY:}
+
 toss:
   api:
     enabled: false
