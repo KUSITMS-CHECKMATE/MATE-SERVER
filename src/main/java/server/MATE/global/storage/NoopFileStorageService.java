@@ -8,7 +8,7 @@ import server.MATE.global.common.exception.BaseException;
 import java.util.List;
 
 @Service
-@ConditionalOnMissingBean(FileStorageService.class)
+@ConditionalOnMissingBean(AzureBlobFileStorageService.class)
 public class NoopFileStorageService implements FileStorageService {
 
     private static final String STORAGE_NOT_CONFIGURED_MESSAGE = "파일 스토리지가 설정되지 않았습니다.";

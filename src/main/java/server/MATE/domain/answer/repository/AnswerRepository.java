@@ -8,4 +8,6 @@ import java.util.List;
 public interface AnswerRepository extends JpaRepository<Answer, Long> {
 
     List<Answer> findAllByQuestionIdInAndDeletedAtIsNull(List<Long> questionIds);
+
+    List<Answer> findAllByQuestionIdAndDeletedAtIsNullOrderByParticipationIdAsc(Long questionId);
 }

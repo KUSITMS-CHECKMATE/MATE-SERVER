@@ -8,14 +8,14 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-final class ReportHandlerUtils {
+public final class ReportHandlerUtils {
 
     private static final int TEXT_SAMPLE_SIZE = 15;
 
     private ReportHandlerUtils() {
     }
 
-    static double toRatio(int count, int total) {
+    public static double toRatio(int count, int total) {
         if (total == 0) return 0.0;
         return Math.round(count * 1000.0 / total) / 1000.0;
     }
@@ -47,7 +47,7 @@ final class ReportHandlerUtils {
     }
 
     @SuppressWarnings("unchecked")
-    static List<Long> extractOptionIds(Map<String, Object> answerMap) {
+    public static List<Long> extractOptionIds(Map<String, Object> answerMap) {
         List<Object> raw = (List<Object>) answerMap.get("optionIds");
         if (raw == null) return List.of();
         List<Long> ids = new ArrayList<>();
