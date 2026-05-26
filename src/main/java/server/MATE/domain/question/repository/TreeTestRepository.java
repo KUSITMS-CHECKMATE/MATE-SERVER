@@ -16,6 +16,7 @@ public interface TreeTestRepository extends JpaRepository<TreeTest, Long> {
     @Query("""
             select node
             from TreeTest node
+            join fetch node.question
             left join fetch node.parent
             where node.question.id in :questionIds
             order by node.question.id asc, node.depth asc, node.sequence asc, node.id asc
