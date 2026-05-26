@@ -3,15 +3,14 @@ package server.MATE.domain.report.service.excel.preparer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Scale;
-import server.MATE.domain.question.repository.ScaleRepository;
 import server.MATE.domain.report.excel.scale.ScaleReportExcelData;
-import server.MATE.domain.report.service.excel.support.ReportExcelExportSupport;
+import server.MATE.domain.report.service.excel.support.ReportExcelExportContext;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
@@ -20,35 +19,25 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
 class ScaleReportExcelServiceTest {
-
-    @Mock
-    private ReportExcelExportSupport reportExcelExportSupport;
-
-    @Mock
-    private ScaleRepository scaleRepository;
 
     @InjectMocks
     private ScaleReportExcelService scaleReportExcelService;
 
     @Test
     void prepareData는_척도_응답과_통계를_엑셀_데이터로_조립한다() {
-        server.MATE.domain.test.entity.Test test = server.MATE.domain.test.entity.Test.builder()
-                .makerId(1L)
-                .title("테스트")
-                .build();
-
         Question question = Question.builder()
                 .testId(10L)
                 .questionType(QuestionType.SCALE)
                 .title("척도 질문")
                 .sequence(1L)
                 .build();
+        ReflectionTestUtils.setField(question, "id", 20L);
 
         Scale scale = Scale.builder().range(7).build();
+        ReflectionTestUtils.setField(scale, "id", 20L);
 
         List<Answer> answers = List.of(
                 Answer.builder().participationId(100L).questionId(20L).questionType(QuestionType.SCALE)
@@ -70,14 +59,14 @@ class ScaleReportExcelServiceTest {
                 )
         );
 
-        given(reportExcelExportSupport.requireExportReadyTest(10L, 1L)).willReturn(test);
-        given(reportExcelExportSupport.requireQuestion(10L, 20L, QuestionType.SCALE, BaseErrorCode.REPORT_005))
-                .willReturn(question);
-        given(reportExcelExportSupport.requireReportResult(10L, 20L)).willReturn(reportResult);
-        given(scaleRepository.findById(20L)).willReturn(java.util.Optional.of(scale));
-        given(reportExcelExportSupport.loadAnswers(20L)).willReturn(answers);
+        ReportExcelExportContext context = ReportExcelExportContext.builder()
+                .questionById(Map.of(20L, question))
+                .reportResultByQuestionId(Map.of(20L, reportResult))
+                .answersByQuestionId(Map.of(20L, answers))
+                .scaleByQuestionId(Map.of(20L, scale))
+                .build();
 
-        ScaleReportExcelData data = scaleReportExcelService.prepareData(10L, 20L, 1L);
+        ScaleReportExcelData data = scaleReportExcelService.prepareData(context, 20L);
 
         assertThat(data.respondents()).hasSize(2);
         assertThat(data.valueStats()).hasSize(7);
@@ -86,12 +75,19 @@ class ScaleReportExcelServiceTest {
 
     @Test
     void 척도가_아니면_prepareData를_허용하지_않는다() {
-        given(reportExcelExportSupport.requireExportReadyTest(10L, 1L))
-                .willReturn(server.MATE.domain.test.entity.Test.builder().makerId(1L).build());
-        given(reportExcelExportSupport.requireQuestion(10L, 20L, QuestionType.SCALE, BaseErrorCode.REPORT_005))
-                .willThrow(new BaseException(BaseErrorCode.REPORT_005));
+        Question question = Question.builder()
+                .testId(10L)
+                .questionType(QuestionType.OBJECTIVE)
+                .title("객관식")
+                .sequence(1L)
+                .build();
+        ReflectionTestUtils.setField(question, "id", 20L);
 
-        assertThatThrownBy(() -> scaleReportExcelService.prepareData(10L, 20L, 1L))
+        ReportExcelExportContext context = ReportExcelExportContext.builder()
+                .questionById(Map.of(20L, question))
+                .build();
+
+        assertThatThrownBy(() -> scaleReportExcelService.prepareData(context, 20L))
                 .isInstanceOfSatisfying(BaseException.class, exception ->
                         assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.REPORT_005));
     }

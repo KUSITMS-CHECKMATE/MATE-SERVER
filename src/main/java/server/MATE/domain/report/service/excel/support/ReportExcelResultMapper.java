@@ -2,12 +2,14 @@ package server.MATE.domain.report.service.excel.support;
 
 import server.MATE.domain.question.entity.FiveSecondOption;
 import server.MATE.domain.question.entity.ObjectiveOption;
+import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.report.excel.cardsorting.CardSortingCategoryStatRow;
 import server.MATE.domain.report.excel.fivesecond.FiveSecondOptionStatRow;
 import server.MATE.domain.report.excel.objective.ObjectiveOptionStatRow;
 import server.MATE.domain.report.excel.scale.ScaleValueStatRow;
 import server.MATE.domain.report.excel.treetest.TreeTestPathStatRow;
-import server.MATE.domain.report.service.handler.ReportHandlerUtils;
+import server.MATE.global.common.exception.BaseErrorCode;
+import server.MATE.global.common.exception.BaseException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,6 +19,26 @@ import java.util.Map;
 public final class ReportExcelResultMapper {
 
     private ReportExcelResultMapper() {
+    }
+
+    public static void validateReportResult(QuestionType questionType, Map<String, Object> reportResult) {
+        switch (questionType) {
+            case OBJECTIVE -> requireList(reportResult, "options");
+            case FIVE_SECOND, SUBJECTIVE -> {
+                // report row 존재만 확인하고, 형식 검증은 preparer에서 처리한다.
+            }
+            case AB_TEST -> {
+                requireMap(reportResult, "A");
+                requireMap(reportResult, "B");
+            }
+            case SCALE -> {
+                requireNumber(reportResult, "average");
+                requireList(reportResult, "distribution");
+            }
+            case CARD_SORTING -> requireList(reportResult, "byCategory");
+            case TREE_TEST -> requireList(reportResult, "pathFrequency");
+            default -> throw new BaseException(BaseErrorCode.COMMON_002);
+        }
     }
 
     public static List<ObjectiveOptionStatRow> toObjectiveOptionStats(
@@ -116,7 +138,7 @@ public final class ReportExcelResultMapper {
     public static List<CardSortingCategoryStatRow> toCardSortingCategoryStats(Map<String, Object> reportResult) {
         Object byCategoryObject = reportResult.get("byCategory");
         if (!(byCategoryObject instanceof List<?> byCategory)) {
-            return List.of();
+            throw new BaseException(BaseErrorCode.REPORT_011);
         }
 
         List<CardSortingCategoryStatRow> rows = new ArrayList<>();
@@ -149,7 +171,7 @@ public final class ReportExcelResultMapper {
     public static List<TreeTestPathStatRow> toTreeTestPathStats(Map<String, Object> reportResult) {
         Object pathFrequencyObject = reportResult.get("pathFrequency");
         if (!(pathFrequencyObject instanceof List<?> pathFrequency)) {
-            return List.of();
+            throw new BaseException(BaseErrorCode.REPORT_011);
         }
 
         List<Map<String, Object>> items = new ArrayList<>();
@@ -213,7 +235,7 @@ public final class ReportExcelResultMapper {
     private static List<Map<String, Object>> readOptionStats(Map<String, Object> reportResult) {
         Object optionsObject = reportResult.get("options");
         if (!(optionsObject instanceof List<?> options)) {
-            return List.of();
+            throw new BaseException(BaseErrorCode.REPORT_011);
         }
         List<Map<String, Object>> result = new ArrayList<>();
         for (Object optionObject : options) {
@@ -227,7 +249,7 @@ public final class ReportExcelResultMapper {
     private static List<Map<String, Object>> readDistribution(Map<String, Object> reportResult) {
         Object distributionObject = reportResult.get("distribution");
         if (!(distributionObject instanceof List<?> distribution)) {
-            return List.of();
+            throw new BaseException(BaseErrorCode.REPORT_011);
         }
         List<Map<String, Object>> result = new ArrayList<>();
         for (Object itemObject : distribution) {
@@ -243,7 +265,30 @@ public final class ReportExcelResultMapper {
         if (versionObject instanceof Map<?, ?> versionMap) {
             return (Map<String, Object>) versionMap;
         }
-        return Map.of("count", 0, "ratio", 0.0);
+        throw new BaseException(BaseErrorCode.REPORT_011);
+    }
+
+    private static List<?> requireList(Map<String, Object> reportResult, String key) {
+        Object value = reportResult.get(key);
+        if (!(value instanceof List<?> list)) {
+            throw new BaseException(BaseErrorCode.REPORT_011);
+        }
+        return list;
+    }
+
+    private static Map<?, ?> requireMap(Map<String, Object> reportResult, String key) {
+        Object value = reportResult.get(key);
+        if (!(value instanceof Map<?, ?> map)) {
+            throw new BaseException(BaseErrorCode.REPORT_011);
+        }
+        return map;
+    }
+
+    private static void requireNumber(Map<String, Object> reportResult, String key) {
+        Object value = reportResult.get(key);
+        if (!(value instanceof Number)) {
+            throw new BaseException(BaseErrorCode.REPORT_011);
+        }
     }
 
     private static Map<String, Object> toStringObjectMap(Map<?, ?> source) {

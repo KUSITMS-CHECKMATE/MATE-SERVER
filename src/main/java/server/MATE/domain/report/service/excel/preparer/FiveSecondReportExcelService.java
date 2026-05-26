@@ -8,11 +8,10 @@ import server.MATE.domain.question.entity.FiveSecond;
 import server.MATE.domain.question.entity.FiveSecondOption;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.question.repository.FiveSecondRepository;
 import server.MATE.domain.report.excel.fivesecond.FiveSecondObjectiveReportExcelData;
 import server.MATE.domain.report.excel.fivesecond.FiveSecondRespondentRow;
 import server.MATE.domain.report.excel.fivesecond.FiveSecondSubjectiveReportExcelData;
-import server.MATE.domain.report.service.excel.support.ReportExcelExportSupport;
+import server.MATE.domain.report.service.excel.support.ReportExcelExportContext;
 import server.MATE.domain.report.service.excel.support.ReportExcelResultMapper;
 import server.MATE.domain.report.service.handler.ReportHandlerUtils;
 import server.MATE.global.common.exception.BaseErrorCode;
@@ -30,17 +29,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FiveSecondReportExcelService {
 
-    private final ReportExcelExportSupport reportExcelExportSupport;
-    private final FiveSecondRepository fiveSecondRepository;
-
-    public FiveSecondObjectiveReportExcelData prepareObjectiveData(Long testId, Long questionId, Long makerId) {
-        reportExcelExportSupport.requireExportReadyTest(testId, makerId);
-        Question question = reportExcelExportSupport.requireQuestion(
-                testId, questionId, QuestionType.FIVE_SECOND, BaseErrorCode.REPORT_009
+    public FiveSecondObjectiveReportExcelData prepareObjectiveData(ReportExcelExportContext context, Long questionId) {
+        Question question = context.requireQuestion(
+                questionId, QuestionType.FIVE_SECOND, BaseErrorCode.REPORT_009
         );
-        FiveSecond fiveSecond = fiveSecondRepository.findWithOptionsById(questionId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
-        Map<String, Object> reportResult = reportExcelExportSupport.requireReportResult(testId, questionId);
+        FiveSecond fiveSecond = context.requireFiveSecond(questionId);
+        if (!fiveSecond.isObjective()) {
+            throw new BaseException(BaseErrorCode.REPORT_009);
+        }
+        Map<String, Object> reportResult = context.requireReportResult(questionId, QuestionType.OBJECTIVE);
 
         List<FiveSecondOption> options = fiveSecond.getOptions().stream()
                 .sorted(Comparator.comparingInt(FiveSecondOption::getSequence))
@@ -53,7 +50,7 @@ public class FiveSecondReportExcelService {
                         LinkedHashMap::new
                 ));
 
-        List<Answer> answers = reportExcelExportSupport.loadAnswers(questionId);
+        List<Answer> answers = context.answers(questionId);
         return new FiveSecondObjectiveReportExcelData(
                 String.format("Q%02d", question.getSequence()),
                 question.getTitle(),
@@ -63,14 +60,17 @@ public class FiveSecondReportExcelService {
         );
     }
 
-    public FiveSecondSubjectiveReportExcelData prepareSubjectiveData(Long testId, Long questionId, Long makerId) {
-        reportExcelExportSupport.requireExportReadyTest(testId, makerId);
-        Question question = reportExcelExportSupport.requireQuestion(
-                testId, questionId, QuestionType.FIVE_SECOND, BaseErrorCode.REPORT_009
+    public FiveSecondSubjectiveReportExcelData prepareSubjectiveData(ReportExcelExportContext context, Long questionId) {
+        Question question = context.requireQuestion(
+                questionId, QuestionType.FIVE_SECOND, BaseErrorCode.REPORT_009
         );
-        reportExcelExportSupport.requireReportResult(testId, questionId);
+        FiveSecond fiveSecond = context.requireFiveSecond(questionId);
+        if (fiveSecond.isObjective()) {
+            throw new BaseException(BaseErrorCode.REPORT_009);
+        }
+        context.assertReportExists(questionId);
 
-        List<Answer> answers = reportExcelExportSupport.loadAnswers(questionId);
+        List<Answer> answers = context.answers(questionId);
         return new FiveSecondSubjectiveReportExcelData(
                 String.format("Q%02d", question.getSequence()),
                 question.getTitle(),
