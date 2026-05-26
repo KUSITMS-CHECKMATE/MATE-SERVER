@@ -16,9 +16,6 @@ import java.util.Optional;
 public interface TestRepository extends JpaRepository<Test, Long> {
 
     @EntityGraph(attributePaths = {"categories"})
-    List<Test> findAllByTestStatusAndDeletedAtIsNullOrderByCreatedAtDesc(TestStatus testStatus);
-
-    @EntityGraph(attributePaths = {"categories"})
     List<Test> findAllByTestStatusInAndDeletedAtIsNullAndClosedAtGreaterThanEqualOrderByCreatedAtDesc(
             List<TestStatus> testStatuses,
             LocalDateTime closedAt
@@ -42,7 +39,8 @@ public interface TestRepository extends JpaRepository<Test, Long> {
 
     Optional<Test> findByIdAndDeletedAtIsNull(Long id);
 
-    Optional<Test> findByIdAndTestStatusAndDeletedAtIsNull(Long id, TestStatus testStatus);
+    @EntityGraph(attributePaths = {"categories"})
+    Optional<Test> findWithCategoriesByIdAndDeletedAtIsNull(Long id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
