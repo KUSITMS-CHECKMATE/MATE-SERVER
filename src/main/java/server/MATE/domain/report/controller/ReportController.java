@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import server.MATE.domain.report.dto.response.ReportResponse;
 import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.service.AbTestReportExcelService;
+import server.MATE.domain.report.service.CardSortingReportExcelService;
 import server.MATE.domain.report.service.ObjectiveReportExcelService;
 import server.MATE.domain.report.service.ReportService;
 import server.MATE.domain.report.service.ScaleReportExcelService;
@@ -38,6 +39,7 @@ public class ReportController {
     private final SubjectiveReportExcelService subjectiveReportExcelService;
     private final AbTestReportExcelService abTestReportExcelService;
     private final ScaleReportExcelService scaleReportExcelService;
+    private final CardSortingReportExcelService cardSortingReportExcelService;
 
     @Operation(
             summary = "✔️ 리포트 전체 조회",
@@ -481,6 +483,28 @@ public class ReportController {
             @AuthenticationPrincipal AuthenticatedUser user
     ) {
         TestReportExcelDownload download = scaleReportExcelService.export(testId, questionId, user.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(download.content());
+    }
+
+    @Operation(
+            summary = "카드 소팅 통계 엑셀 다운로드",
+            description = """
+                    카드 소팅 질문 1개에 대한 응답자별 분류 내역과 카테고리별 카드 순위 통계를 엑셀로 다운로드합니다.
+                    - 테스트 메이커만 다운로드할 수 있습니다.
+                    - CARD_SORTING 유형 질문만 지원합니다.
+                    - 카테고리 최대 3개, 카드 4~12개 범위를 반영합니다.
+                    """
+    )
+    @GetMapping("/excel/card-sorting/{questionId}")
+    public ResponseEntity<byte[]> downloadCardSortingExcelReport(
+            @PathVariable Long testId,
+            @PathVariable Long questionId,
+            @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        TestReportExcelDownload download = cardSortingReportExcelService.export(testId, questionId, user.getId());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
