@@ -13,14 +13,17 @@ public record MyTestSummaryItem(
         @Schema(description = "테스트 제목", example = "승인된테스트1")
         String title,
         @Schema(description = "현재 참여 인원", example = "12")
-        Long pplCount
+        Long pplCount,
+        @Schema(description = "테스트 가능 최대 인원수", example = "100")
+        Integer goalPpl
 ) {
     public static MyTestSummaryItem from(Test test) {
         return new MyTestSummaryItem(
                 test.getId(),
                 test.getTestStatus(),
                 test.getTitle(),
-                test.getPplCount()
+                test.getPplCount(),
+                test.getGoalPpl()
         );
     }
 }
