@@ -34,6 +34,7 @@ toss:
       enabled: ${TOSS_API_SSL_ENABLED:true}
       bundle: toss
   promotion:
+    provider: ${TOSS_PROMOTION_PROVIDER:mock}
     answer:
       enabled: ${TOSS_PROMOTION_ANSWER_ENABLED:false}
       promotion-code: ${TOSS_PROMOTION_ANSWER_CODE:}
