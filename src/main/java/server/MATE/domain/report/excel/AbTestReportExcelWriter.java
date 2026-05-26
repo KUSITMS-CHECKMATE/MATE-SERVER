@@ -33,15 +33,26 @@ public class AbTestReportExcelWriter {
     }
 
     public int writeToSheet(Sheet sheet, int startRowIndex, AbTestReportExcelData data) {
-        if (startRowIndex == 0) {
+        return writeToSheet(sheet, startRowIndex, data, ReportExcelWriteMode.STANDALONE);
+    }
+
+    public int writeToSheet(
+            Sheet sheet,
+            int startRowIndex,
+            AbTestReportExcelData data,
+            ReportExcelWriteMode mode
+    ) {
+        if (startRowIndex == 0 && mode == ReportExcelWriteMode.STANDALONE) {
             configureColumnWidths(sheet);
         }
         AbTestReportExcelStyles styles = AbTestReportExcelStyles.create(sheet.getWorkbook());
 
         int rowIndex = startRowIndex;
-        rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
-        rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
-        rowIndex++;
+        if (mode == ReportExcelWriteMode.STANDALONE) {
+            rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
+            rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
+            rowIndex++;
+        }
         rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
         rowIndex = writeQuestionTextRow(sheet, rowIndex, data.questionTitle(), styles);
         rowIndex = writeTotalCountRow(sheet, rowIndex, data.totalCount(), styles);

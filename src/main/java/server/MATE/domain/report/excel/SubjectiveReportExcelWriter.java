@@ -34,15 +34,26 @@ public class SubjectiveReportExcelWriter {
     }
 
     public int writeToSheet(Sheet sheet, int startRowIndex, SubjectiveReportExcelData data) {
-        if (startRowIndex == 0) {
+        return writeToSheet(sheet, startRowIndex, data, ReportExcelWriteMode.STANDALONE);
+    }
+
+    public int writeToSheet(
+            Sheet sheet,
+            int startRowIndex,
+            SubjectiveReportExcelData data,
+            ReportExcelWriteMode mode
+    ) {
+        if (startRowIndex == 0 && mode == ReportExcelWriteMode.STANDALONE) {
             configureColumnWidths(sheet);
         }
         SubjectiveReportExcelStyles styles = SubjectiveReportExcelStyles.create(sheet.getWorkbook());
 
         int rowIndex = startRowIndex;
-        rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
-        rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
-        rowIndex++;
+        if (mode == ReportExcelWriteMode.STANDALONE) {
+            rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
+            rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
+            rowIndex++;
+        }
         rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
         rowIndex = writeQuestionTextRow(sheet, rowIndex, data.questionTitle(), styles);
         rowIndex = writeTableHeaderRow(sheet, rowIndex, styles);
