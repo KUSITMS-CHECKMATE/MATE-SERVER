@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.payment.dto.response.PaymentCreateResponse;
 import server.MATE.domain.payment.entity.PayStatus;
 import server.MATE.domain.payment.entity.Payment;
+import server.MATE.domain.payment.policy.PaymentAmountCalculator;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.testdraft.entity.TestDraft;
 import server.MATE.domain.testdraft.repository.TestDraftRepository;
@@ -32,7 +33,7 @@ public class PaymentPrepareService {
         }
         draft.validateReadyForPayment();
 
-        int amount = paymentAmountCalculator.calculate(draft.getGoalPpl(), draft.getReward());
+        int amount = paymentAmountCalculator.totalAmount(draft.getGoalPpl(), draft.getReward());
         Payment existingPayment = paymentRepository.findByDraftId(draftId).orElse(null);
         if (existingPayment != null) {
             if (existingPayment.getPayStatus() == PayStatus.PAY_CREATED) {
