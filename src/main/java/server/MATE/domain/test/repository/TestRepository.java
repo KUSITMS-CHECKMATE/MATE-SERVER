@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,7 +19,10 @@ public interface TestRepository extends JpaRepository<Test, Long> {
     List<Test> findAllByTestStatusAndDeletedAtIsNullOrderByCreatedAtDesc(TestStatus testStatus);
 
     @EntityGraph(attributePaths = {"categories"})
-    List<Test> findAllByTestStatusInAndDeletedAtIsNullOrderByCreatedAtDesc(List<TestStatus> testStatuses);
+    List<Test> findAllByTestStatusInAndDeletedAtIsNullAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
+            List<TestStatus> testStatuses,
+            LocalDateTime createdAt
+    );
 
     List<Test> findAllByMakerIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long makerId);
 
