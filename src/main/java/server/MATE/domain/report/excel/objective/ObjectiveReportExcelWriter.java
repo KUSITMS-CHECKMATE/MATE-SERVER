@@ -4,10 +4,11 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
 import server.MATE.domain.report.excel.common.ReportExcelWriteMode;
+
+import static server.MATE.domain.report.excel.common.ReportExcelMergeSupport.mergeRow;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -78,7 +79,7 @@ public class ObjectiveReportExcelWriter {
         Row row = sheet.createRow(rowIndex);
         row.setHeightInPoints(24f);
         createCell(row, 0, questionNumberLabel + " - 질문 설정", styles.questionSettingHeader());
-        mergeRow(sheet, rowIndex, 0, LAST_COLUMN, styles.questionSettingHeader());
+        mergeRow(row, 0, LAST_COLUMN, styles.questionSettingHeader());
         return rowIndex + 1;
     }
 
@@ -95,7 +96,7 @@ public class ObjectiveReportExcelWriter {
         createCell(row, 1, "객관식", styles.value());
         createCell(row, 3, "질문 제목", styles.label());
         createCell(row, 4, questionTitle == null ? "" : questionTitle, styles.value());
-        mergeRow(sheet, rowIndex, 4, LAST_COLUMN, styles.value());
+        mergeRow(row, 4, LAST_COLUMN, styles.value());
         return rowIndex + 1;
     }
 
@@ -104,10 +105,10 @@ public class ObjectiveReportExcelWriter {
         row.setHeightInPoints(24f);
 
         createCell(row, 0, "객관식", styles.redSectionHeader());
-        mergeRow(sheet, rowIndex, 0, 1, styles.redSectionHeader());
+        mergeRow(row, 0, 1, styles.redSectionHeader());
 
         createCell(row, 3, "객관식 - 통계", styles.redSectionHeader());
-        mergeRow(sheet, rowIndex, 3, LAST_COLUMN, styles.redSectionHeader());
+        mergeRow(row, 3, LAST_COLUMN, styles.redSectionHeader());
         return rowIndex + 1;
     }
 
@@ -176,18 +177,4 @@ public class ObjectiveReportExcelWriter {
         cell.setCellStyle(style);
     }
 
-    private void mergeRow(Sheet sheet, int rowIndex, int firstCol, int lastCol, CellStyle style) {
-        if (firstCol == lastCol) {
-            return;
-        }
-        sheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, firstCol, lastCol));
-        Row row = sheet.getRow(rowIndex);
-        for (int columnIndex = firstCol + 1; columnIndex <= lastCol; columnIndex++) {
-            Cell cell = row.getCell(columnIndex);
-            if (cell == null) {
-                cell = row.createCell(columnIndex);
-            }
-            cell.setCellStyle(style);
-        }
-    }
 }
