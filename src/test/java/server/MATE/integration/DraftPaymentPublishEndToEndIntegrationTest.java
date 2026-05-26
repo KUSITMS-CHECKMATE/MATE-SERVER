@@ -162,9 +162,7 @@ class DraftPaymentPublishEndToEndIntegrationTest {
 
         assertThat(testId).isPositive();
 
-        var savedDraft = testDraftRepository.findById(draftId).orElseThrow();
-        assertThat(savedDraft.getStatus()).isEqualTo(TestDraftStatus.PUBLISHED);
-        assertThat(savedDraft.getPublishedTestId()).isEqualTo(testId);
+        assertThat(testDraftRepository.findById(draftId)).isEmpty();
 
         var savedPayment = paymentRepository.findById(paymentId).orElseThrow();
         assertThat(savedPayment.getPayStatus()).isEqualTo(PayStatus.PAY_SUCCEEDED);
@@ -241,11 +239,9 @@ class DraftPaymentPublishEndToEndIntegrationTest {
         JsonNode secondExecute = executePayment(paymentId, makerToken);
         long publishedTestId = secondExecute.path("testId").asLong();
 
-        var recoveredDraft = testDraftRepository.findById(draftId).orElseThrow();
         var linkedPayment = paymentRepository.findById(paymentId).orElseThrow();
         assertThat(publishedTestId).isPositive();
-        assertThat(recoveredDraft.getStatus()).isEqualTo(TestDraftStatus.PUBLISHED);
-        assertThat(recoveredDraft.getPublishedTestId()).isEqualTo(publishedTestId);
+        assertThat(testDraftRepository.findById(draftId)).isEmpty();
         assertThat(linkedPayment.getTestId()).isEqualTo(publishedTestId);
         assertThat(testRepository.count()).isEqualTo(1);
         assertThat(questionRepository.countByTestIdAndDeletedAtIsNull(publishedTestId)).isEqualTo(1);
@@ -322,8 +318,8 @@ class DraftPaymentPublishEndToEndIntegrationTest {
         Long paymentId = firstCreate.path("paymentId").asLong();
         executePayment(paymentId, makerToken);
 
-        JsonNode publishedError = createPaymentExpectingError(draftId, makerToken, 400, "DRAFT_003");
-        assertThat(publishedError.path("message").asText()).isEqualTo("결제를 생성할 수 없는 테스트 초안입니다.");
+        JsonNode publishedError = createPaymentExpectingError(draftId, makerToken, 404, "DRAFT_001");
+        assertThat(publishedError.path("message").asText()).isEqualTo("테스트 초안을 찾을 수 없습니다.");
 
         Users retryMaker = usersRepository.save(Users.builder()
                 .ci("maker-" + System.nanoTime())
