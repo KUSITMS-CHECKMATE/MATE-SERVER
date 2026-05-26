@@ -16,15 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import server.MATE.domain.report.dto.response.ReportResponse;
 import server.MATE.domain.report.dto.response.TestReportExcelDownload;
-import server.MATE.domain.report.service.AbTestReportExcelService;
-import server.MATE.domain.report.service.CardSortingReportExcelService;
-import server.MATE.domain.report.service.FiveSecondReportExcelService;
-import server.MATE.domain.report.service.ObjectiveReportExcelService;
 import server.MATE.domain.report.service.ReportService;
-import server.MATE.domain.report.service.ScaleReportExcelService;
-import server.MATE.domain.report.service.SubjectiveReportExcelService;
 import server.MATE.domain.report.service.TestReportExcelService;
-import server.MATE.domain.report.service.TreeTestReportExcelService;
 import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
@@ -37,13 +30,6 @@ public class ReportController {
 
     private final ReportService reportService;
     private final TestReportExcelService testReportExcelService;
-    private final ObjectiveReportExcelService objectiveReportExcelService;
-    private final SubjectiveReportExcelService subjectiveReportExcelService;
-    private final AbTestReportExcelService abTestReportExcelService;
-    private final ScaleReportExcelService scaleReportExcelService;
-    private final CardSortingReportExcelService cardSortingReportExcelService;
-    private final TreeTestReportExcelService treeTestReportExcelService;
-    private final FiveSecondReportExcelService fiveSecondReportExcelService;
 
     @Operation(
             summary = "✔️ 리포트 전체 조회",
@@ -389,11 +375,14 @@ public class ReportController {
     }
 
     @Operation(
-            summary = "엑셀 보고서 다운로드",
+            summary = "통합 엑셀 보고서 다운로드",
             description = """
-                    테스트 기본정보와 질문 목록을 엑셀 템플릿 형식으로 다운로드합니다.
+                    테스트 전체 리포트를 하나의 엑셀 파일(다중 시트)로 다운로드합니다.
                     - 테스트 메이커만 다운로드할 수 있습니다.
-                    - 질문 목록 행 수는 등록된 질문 개수에 따라 1~20개까지 가변적으로 생성됩니다.
+                    - 테스트 종료 및 리포트 집계 완료(`report_status = COMPLETED`) 후 다운로드 가능합니다.
+                    - 시트 구성: 기본 정보, 마스터 템플릿, 객관식, 주관식, AB 테스트, 척도 테스트, 카드소팅, 트리테스트, 5초 테스트
+                    - 질문 유형별 시트에는 해당 테스트에 포함된 질문 통계가 순서대로 기록됩니다.
+                    - 5초 테스트는 객관/주관 설정에 따라 시트 내 템플릿이 달라집니다.
                     """
     )
     @GetMapping("/excel")
@@ -402,160 +391,6 @@ public class ReportController {
             @AuthenticationPrincipal AuthenticatedUser user
     ) {
         TestReportExcelDownload download = testReportExcelService.export(testId, user.getId());
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .body(download.content());
-    }
-
-    @Operation(
-            summary = "객관식 통계 엑셀 다운로드",
-            description = """
-                    객관식 질문 1개에 대한 응답자별 선택 내역과 선지별 통계를 엑셀로 다운로드합니다.
-                    - 테스트 메이커만 다운로드할 수 있습니다.
-                    - OBJECTIVE 유형 질문만 지원합니다.
-                    """
-    )
-    @GetMapping("/excel/objective/{questionId}")
-    public ResponseEntity<byte[]> downloadObjectiveExcelReport(
-            @PathVariable Long testId,
-            @PathVariable Long questionId,
-            @AuthenticationPrincipal AuthenticatedUser user
-    ) {
-        TestReportExcelDownload download = objectiveReportExcelService.export(testId, questionId, user.getId());
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .body(download.content());
-    }
-
-    @Operation(
-            summary = "주관식 통계 엑셀 다운로드",
-            description = """
-                    주관식 질문 1개에 대한 응답자별 답변 내역을 엑셀로 다운로드합니다.
-                    - 테스트 메이커만 다운로드할 수 있습니다.
-                    - SUBJECTIVE 유형 질문만 지원합니다.
-                    """
-    )
-    @GetMapping("/excel/subjective/{questionId}")
-    public ResponseEntity<byte[]> downloadSubjectiveExcelReport(
-            @PathVariable Long testId,
-            @PathVariable Long questionId,
-            @AuthenticationPrincipal AuthenticatedUser user
-    ) {
-        TestReportExcelDownload download = subjectiveReportExcelService.export(testId, questionId, user.getId());
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .body(download.content());
-    }
-
-    @Operation(
-            summary = "A/B 테스트 통계 엑셀 다운로드",
-            description = """
-                    A/B 테스트 질문 1개에 대한 Version A/B 선택 개수를 엑셀로 다운로드합니다.
-                    - 테스트 메이커만 다운로드할 수 있습니다.
-                    - AB_TEST 유형 질문만 지원합니다.
-                    """
-    )
-    @GetMapping("/excel/ab-test/{questionId}")
-    public ResponseEntity<byte[]> downloadAbTestExcelReport(
-            @PathVariable Long testId,
-            @PathVariable Long questionId,
-            @AuthenticationPrincipal AuthenticatedUser user
-    ) {
-        TestReportExcelDownload download = abTestReportExcelService.export(testId, questionId, user.getId());
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .body(download.content());
-    }
-
-    @Operation(
-            summary = "척도 테스트 통계 엑셀 다운로드",
-            description = """
-                    척도 질문 1개에 대한 응답자별 점수와 점수별 통계(비율, 평균)를 엑셀로 다운로드합니다.
-                    - 테스트 메이커만 다운로드할 수 있습니다.
-                    - SCALE 유형 질문만 지원합니다.
-                    - 척도 범위(5점/7점)는 질문 설정에 따라 동적으로 반영됩니다.
-                    """
-    )
-    @GetMapping("/excel/scale/{questionId}")
-    public ResponseEntity<byte[]> downloadScaleExcelReport(
-            @PathVariable Long testId,
-            @PathVariable Long questionId,
-            @AuthenticationPrincipal AuthenticatedUser user
-    ) {
-        TestReportExcelDownload download = scaleReportExcelService.export(testId, questionId, user.getId());
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .body(download.content());
-    }
-
-    @Operation(
-            summary = "카드 소팅 통계 엑셀 다운로드",
-            description = """
-                    카드 소팅 질문 1개에 대한 응답자별 분류 내역과 카테고리별 카드 순위 통계를 엑셀로 다운로드합니다.
-                    - 테스트 메이커만 다운로드할 수 있습니다.
-                    - CARD_SORTING 유형 질문만 지원합니다.
-                    - 카테고리 최대 3개, 카드 4~12개 범위를 반영합니다.
-                    """
-    )
-    @GetMapping("/excel/card-sorting/{questionId}")
-    public ResponseEntity<byte[]> downloadCardSortingExcelReport(
-            @PathVariable Long testId,
-            @PathVariable Long questionId,
-            @AuthenticationPrincipal AuthenticatedUser user
-    ) {
-        TestReportExcelDownload download = cardSortingReportExcelService.export(testId, questionId, user.getId());
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .body(download.content());
-    }
-
-    @Operation(
-            summary = "트리 테스트 통계 엑셀 다운로드",
-            description = """
-                    트리 테스트 질문 1개에 대한 응답자별 경로 내역과 경로별 통계를 엑셀로 다운로드합니다.
-                    - 테스트 메이커만 다운로드할 수 있습니다.
-                    - TREE_TEST 유형 질문만 지원합니다.
-                    - 통계는 report 테이블 집계 결과, 응답자 원본은 answer 테이블에서 조회합니다.
-                    - 테스트 종료 및 리포트 집계 완료(`report_status = COMPLETED`) 후 다운로드 가능합니다.
-                    """
-    )
-    @GetMapping("/excel/tree-test/{questionId}")
-    public ResponseEntity<byte[]> downloadTreeTestExcelReport(
-            @PathVariable Long testId,
-            @PathVariable Long questionId,
-            @AuthenticationPrincipal AuthenticatedUser user
-    ) {
-        TestReportExcelDownload download = treeTestReportExcelService.export(testId, questionId, user.getId());
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .body(download.content());
-    }
-
-    @Operation(
-            summary = "5초 테스트 통계 엑셀 다운로드",
-            description = """
-                    5초 테스트 질문 1개에 대한 응답자별 내역을 엑셀로 다운로드합니다.
-                    - 테스트 메이커만 다운로드할 수 있습니다.
-                    - FIVE_SECOND 유형 질문만 지원합니다.
-                    - 객관식(isObjective=true): 응답자별 선택 내역 + 선지별 통계(응답 수, 비율)
-                    - 주관식(isObjective=false): 주관식 템플릿 형태로 응답자별 텍스트만 제공
-                    - 통계는 report 테이블, 응답자 원본은 answer 테이블에서 조회합니다.
-                    """
-    )
-    @GetMapping("/excel/five-second/{questionId}")
-    public ResponseEntity<byte[]> downloadFiveSecondExcelReport(
-            @PathVariable Long testId,
-            @PathVariable Long questionId,
-            @AuthenticationPrincipal AuthenticatedUser user
-    ) {
-        TestReportExcelDownload download = fiveSecondReportExcelService.export(testId, questionId, user.getId());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))

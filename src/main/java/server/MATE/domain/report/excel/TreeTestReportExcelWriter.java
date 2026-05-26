@@ -25,28 +25,34 @@ public class TreeTestReportExcelWriter {
     private static final int LEFT_COLUMN_WIDTH = 18 * 256;
     private static final int SHARED_COLUMN_WIDTH = 16 * 256;
 
+    private static final String SHEET_NAME = "트리 테스트 통계";
+
     public byte[] write(TreeTestReportExcelData data) {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("트리 테스트 통계");
-            TreeTestReportExcelStyles styles = TreeTestReportExcelStyles.create(workbook);
-
-            configureColumnWidths(sheet);
-
-            int rowIndex = 0;
-            rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
-            rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
-            rowIndex++;
-            rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
-            rowIndex = writeQuestionAndStatHeaderRow(sheet, rowIndex, styles);
-            rowIndex = writeLeftTableHeaderRow(sheet, rowIndex, styles);
-            writeDataRows(sheet, rowIndex, data, styles);
-
+            Sheet sheet = workbook.createSheet(SHEET_NAME);
+            writeToSheet(sheet, 0, data);
             workbook.write(outputStream);
             return outputStream.toByteArray();
         } catch (IOException e) {
             throw new UncheckedIOException("트리 테스트 통계 엑셀 생성에 실패했습니다.", e);
         }
+    }
+
+    public int writeToSheet(Sheet sheet, int startRowIndex, TreeTestReportExcelData data) {
+        if (startRowIndex == 0) {
+            configureColumnWidths(sheet);
+        }
+        TreeTestReportExcelStyles styles = TreeTestReportExcelStyles.create(sheet.getWorkbook());
+
+        int rowIndex = startRowIndex;
+        rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
+        rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
+        rowIndex++;
+        rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
+        rowIndex = writeQuestionAndStatHeaderRow(sheet, rowIndex, styles);
+        rowIndex = writeLeftTableHeaderRow(sheet, rowIndex, styles);
+        return writeDataRows(sheet, rowIndex, data, styles);
     }
 
     private void configureColumnWidths(Sheet sheet) {
@@ -123,7 +129,7 @@ public class TreeTestReportExcelWriter {
         return rowIndex + 1;
     }
 
-    private void writeDataRows(
+    private int writeDataRows(
             Sheet sheet,
             int rowIndex,
             TreeTestReportExcelData data,
@@ -139,6 +145,7 @@ public class TreeTestReportExcelWriter {
             writeRespondentCells(row, relativeRow, respondents, styles);
             writeStatCells(sheet, row, relativeRow, pathStats, data.totalResponseCount(), styles);
         }
+        return rowIndex + rowCount;
     }
 
     private void writeRespondentCells(

@@ -18,28 +18,34 @@ public class ObjectiveReportExcelWriter {
 
     private static final int LAST_COLUMN = 5;
 
+    private static final String SHEET_NAME = "객관식 통계";
+
     public byte[] write(ObjectiveReportExcelData data) {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("객관식 통계");
-            ObjectiveReportExcelStyles styles = ObjectiveReportExcelStyles.create(workbook);
-
-            configureColumnWidths(sheet);
-
-            int rowIndex = 0;
-            rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
-            rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
-            rowIndex++;
-            rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
-            rowIndex = writeQuestionSubLabelRow(sheet, rowIndex, styles);
-            rowIndex = writeTableHeaderRow(sheet, rowIndex, styles);
-            rowIndex = writeDataRows(sheet, rowIndex, data, styles);
-
+            Sheet sheet = workbook.createSheet(SHEET_NAME);
+            writeToSheet(sheet, 0, data);
             workbook.write(outputStream);
             return outputStream.toByteArray();
         } catch (IOException e) {
             throw new UncheckedIOException("객관식 통계 엑셀 생성에 실패했습니다.", e);
         }
+    }
+
+    public int writeToSheet(Sheet sheet, int startRowIndex, ObjectiveReportExcelData data) {
+        if (startRowIndex == 0) {
+            configureColumnWidths(sheet);
+        }
+        ObjectiveReportExcelStyles styles = ObjectiveReportExcelStyles.create(sheet.getWorkbook());
+
+        int rowIndex = startRowIndex;
+        rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
+        rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
+        rowIndex++;
+        rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
+        rowIndex = writeQuestionSubLabelRow(sheet, rowIndex, styles);
+        rowIndex = writeTableHeaderRow(sheet, rowIndex, styles);
+        return writeDataRows(sheet, rowIndex, data, styles);
     }
 
     private void configureColumnWidths(Sheet sheet) {

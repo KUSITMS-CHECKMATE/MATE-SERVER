@@ -21,29 +21,35 @@ public class FiveSecondSubjectiveReportExcelWriter {
     private static final int LEFT_COLUMN_WIDTH = 18 * 256;
     private static final int SHARED_COLUMN_WIDTH = 16 * 256;
 
+    private static final String SHEET_NAME = "5초 테스트 통계";
+
     public byte[] write(FiveSecondSubjectiveReportExcelData data) {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("5초 테스트 통계");
-            FiveSecondReportExcelStyles styles = FiveSecondReportExcelStyles.create(workbook);
-
-            configureColumnWidths(sheet);
-
-            int rowIndex = 0;
-            rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
-            rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
-            rowIndex++;
-            rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
-            rowIndex = writeQuestionRow(sheet, rowIndex, data.questionTitle(), styles);
-            rowIndex = writeQuestionTypeRow(sheet, rowIndex, styles);
-            rowIndex = writeTableHeaderRow(sheet, rowIndex, styles);
-            writeRespondentRows(sheet, rowIndex, data.respondents(), styles);
-
+            Sheet sheet = workbook.createSheet(SHEET_NAME);
+            writeToSheet(sheet, 0, data);
             workbook.write(outputStream);
             return outputStream.toByteArray();
         } catch (IOException e) {
             throw new UncheckedIOException("5초 테스트(주관식) 통계 엑셀 생성에 실패했습니다.", e);
         }
+    }
+
+    public int writeToSheet(Sheet sheet, int startRowIndex, FiveSecondSubjectiveReportExcelData data) {
+        if (startRowIndex == 0) {
+            configureColumnWidths(sheet);
+        }
+        FiveSecondReportExcelStyles styles = FiveSecondReportExcelStyles.create(sheet.getWorkbook());
+
+        int rowIndex = startRowIndex;
+        rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
+        rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
+        rowIndex++;
+        rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
+        rowIndex = writeQuestionRow(sheet, rowIndex, data.questionTitle(), styles);
+        rowIndex = writeQuestionTypeRow(sheet, rowIndex, styles);
+        rowIndex = writeTableHeaderRow(sheet, rowIndex, styles);
+        return writeRespondentRows(sheet, rowIndex, data.respondents(), styles);
     }
 
     private void configureColumnWidths(Sheet sheet) {
@@ -127,7 +133,7 @@ public class FiveSecondSubjectiveReportExcelWriter {
         return rowIndex + 1;
     }
 
-    private void writeRespondentRows(
+    private int writeRespondentRows(
             Sheet sheet,
             int rowIndex,
             List<FiveSecondRespondentRow> respondents,
@@ -142,6 +148,7 @@ public class FiveSecondSubjectiveReportExcelWriter {
             createCell(row, 1, respondent.answerContent(), styles.data());
             mergeRow(sheet, rowIndex + index, 1, LEFT_LAST_COLUMN, styles.data());
         }
+        return rowIndex + respondents.size();
     }
 
     private void createCell(Row row, int columnIndex, String value, CellStyle style) {

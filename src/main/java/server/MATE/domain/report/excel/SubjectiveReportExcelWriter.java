@@ -19,28 +19,34 @@ public class SubjectiveReportExcelWriter {
     private static final int LAST_COLUMN = 6;
     private static final int CONTENT_LAST_COLUMN = 3;
 
+    private static final String SHEET_NAME = "주관식 통계";
+
     public byte[] write(SubjectiveReportExcelData data) {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("주관식 통계");
-            SubjectiveReportExcelStyles styles = SubjectiveReportExcelStyles.create(workbook);
-
-            configureColumnWidths(sheet);
-
-            int rowIndex = 0;
-            rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
-            rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
-            rowIndex++;
-            rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
-            rowIndex = writeQuestionTextRow(sheet, rowIndex, data.questionTitle(), styles);
-            rowIndex = writeTableHeaderRow(sheet, rowIndex, styles);
-            writeRespondentRows(sheet, rowIndex, data.respondents(), styles);
-
+            Sheet sheet = workbook.createSheet(SHEET_NAME);
+            writeToSheet(sheet, 0, data);
             workbook.write(outputStream);
             return outputStream.toByteArray();
         } catch (IOException e) {
             throw new UncheckedIOException("주관식 통계 엑셀 생성에 실패했습니다.", e);
         }
+    }
+
+    public int writeToSheet(Sheet sheet, int startRowIndex, SubjectiveReportExcelData data) {
+        if (startRowIndex == 0) {
+            configureColumnWidths(sheet);
+        }
+        SubjectiveReportExcelStyles styles = SubjectiveReportExcelStyles.create(sheet.getWorkbook());
+
+        int rowIndex = startRowIndex;
+        rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
+        rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
+        rowIndex++;
+        rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
+        rowIndex = writeQuestionTextRow(sheet, rowIndex, data.questionTitle(), styles);
+        rowIndex = writeTableHeaderRow(sheet, rowIndex, styles);
+        return writeRespondentRows(sheet, rowIndex, data.respondents(), styles);
     }
 
     private void configureColumnWidths(Sheet sheet) {
@@ -118,7 +124,7 @@ public class SubjectiveReportExcelWriter {
         return rowIndex + 1;
     }
 
-    private void writeRespondentRows(
+    private int writeRespondentRows(
             Sheet sheet,
             int rowIndex,
             List<SubjectiveRespondentRow> respondents,
@@ -133,6 +139,7 @@ public class SubjectiveReportExcelWriter {
             createCell(row, 1, respondent.answerContent(), styles.data());
             mergeRow(sheet, rowIndex + index, 1, CONTENT_LAST_COLUMN, styles.data());
         }
+        return rowIndex + respondents.size();
     }
 
     private void createCell(Row row, int columnIndex, String value, CellStyle style) {

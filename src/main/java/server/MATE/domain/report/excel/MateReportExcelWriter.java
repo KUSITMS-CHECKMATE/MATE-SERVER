@@ -17,45 +17,50 @@ import java.util.List;
 public class MateReportExcelWriter {
 
     public static final int MAX_QUESTION_ROWS = 20;
-    private static final String SHEET_NAME = "메이트 엑셀 보고서";
+    private static final String SHEET_NAME = "기본 정보";
 
     public byte[] write(TestReportExcelData data) {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet(SHEET_NAME);
-            MateReportExcelStyles styles = MateReportExcelStyles.create(workbook);
-
-            configureColumnWidths(sheet);
-
-            int rowIndex = 0;
-            rowIndex = writeSectionHeader(sheet, rowIndex, "테스트 기본정보", styles.sectionHeader());
-            rowIndex = writeBasicInfoRow(sheet, rowIndex, "테스트명", data.testTitle(), styles);
-            rowIndex = writeBasicInfoRow(sheet, rowIndex, "설명", data.testDescription(), styles);
-            rowIndex = writeBasicInfoRow(sheet, rowIndex, "테스트 기간", data.testPeriod(), styles);
-            rowIndex = writeBasicInfoRow(sheet, rowIndex, "대상 인원 명수", String.valueOf(data.targetParticipantCount()), styles);
-
-            rowIndex++;
-            rowIndex = writeSectionHeader(sheet, rowIndex, "질문 목록", styles.sectionHeader());
-            rowIndex = writeQuestionHeaderRow(sheet, rowIndex, styles);
-
-            List<QuestionSummaryItem> questions = data.questions();
-            for (int index = 0; index < questions.size(); index++) {
-                QuestionSummaryItem question = questions.get(index);
-                writeQuestionRow(
-                        sheet,
-                        rowIndex + index,
-                        index + 1,
-                        QuestionTypeLabels.label(question.type()),
-                        question.title(),
-                        styles
-                );
-            }
-
+            writeToSheet(sheet, 0, data);
             workbook.write(outputStream);
             return outputStream.toByteArray();
         } catch (IOException e) {
             throw new UncheckedIOException("엑셀 보고서 생성에 실패했습니다.", e);
         }
+    }
+
+    public int writeToSheet(Sheet sheet, int startRowIndex, TestReportExcelData data) {
+        if (startRowIndex == 0) {
+            configureColumnWidths(sheet);
+        }
+        MateReportExcelStyles styles = MateReportExcelStyles.create(sheet.getWorkbook());
+
+        int rowIndex = startRowIndex;
+        rowIndex = writeSectionHeader(sheet, rowIndex, "테스트 기본정보", styles.sectionHeader());
+        rowIndex = writeBasicInfoRow(sheet, rowIndex, "테스트명", data.testTitle(), styles);
+        rowIndex = writeBasicInfoRow(sheet, rowIndex, "설명", data.testDescription(), styles);
+        rowIndex = writeBasicInfoRow(sheet, rowIndex, "테스트 기간", data.testPeriod(), styles);
+        rowIndex = writeBasicInfoRow(sheet, rowIndex, "대상 인원 명수", String.valueOf(data.targetParticipantCount()), styles);
+
+        rowIndex++;
+        rowIndex = writeSectionHeader(sheet, rowIndex, "질문 목록", styles.sectionHeader());
+        rowIndex = writeQuestionHeaderRow(sheet, rowIndex, styles);
+
+        List<QuestionSummaryItem> questions = data.questions();
+        for (int index = 0; index < questions.size(); index++) {
+            QuestionSummaryItem question = questions.get(index);
+            writeQuestionRow(
+                    sheet,
+                    rowIndex + index,
+                    index + 1,
+                    QuestionTypeLabels.label(question.type()),
+                    question.title(),
+                    styles
+            );
+        }
+        return rowIndex + questions.size();
     }
 
     private void configureColumnWidths(Sheet sheet) {

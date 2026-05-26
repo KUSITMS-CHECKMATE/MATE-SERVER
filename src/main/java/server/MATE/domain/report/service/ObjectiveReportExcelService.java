@@ -35,6 +35,15 @@ public class ObjectiveReportExcelService {
     private final ObjectiveReportExcelWriter objectiveReportExcelWriter;
 
     public TestReportExcelDownload export(Long testId, Long questionId, Long makerId) {
+        ObjectiveReportExcelData data = prepareData(testId, questionId, makerId);
+        byte[] content = objectiveReportExcelWriter.write(data);
+        return new TestReportExcelDownload(
+                content,
+                buildFilename(testId, Long.parseLong(data.questionNumberLabel().substring(1)))
+        );
+    }
+
+    public ObjectiveReportExcelData prepareData(Long testId, Long questionId, Long makerId) {
         reportExcelExportSupport.requireExportReadyTest(testId, makerId);
         Question question = reportExcelExportSupport.requireQuestion(
                 testId, questionId, QuestionType.OBJECTIVE, BaseErrorCode.REPORT_002
@@ -54,16 +63,13 @@ public class ObjectiveReportExcelService {
         List<ObjectiveRespondentRow> respondents = buildRespondentRows(answers, optionContentById);
         List<ObjectiveOptionStatRow> optionStats = ReportExcelResultMapper.toObjectiveOptionStats(options, reportResult);
 
-        ObjectiveReportExcelData data = new ObjectiveReportExcelData(
+        return new ObjectiveReportExcelData(
                 String.format("Q%02d", question.getSequence()),
                 question.getTitle(),
                 respondents,
                 optionStats,
                 answers.size()
         );
-
-        byte[] content = objectiveReportExcelWriter.write(data);
-        return new TestReportExcelDownload(content, buildFilename(testId, question.getSequence()));
     }
 
     private List<ObjectiveRespondentRow> buildRespondentRows(

@@ -31,6 +31,15 @@ public class TreeTestReportExcelService {
     private final TreeTestReportExcelWriter treeTestReportExcelWriter;
 
     public TestReportExcelDownload export(Long testId, Long questionId, Long makerId) {
+        TreeTestReportExcelData data = prepareData(testId, questionId, makerId);
+        byte[] content = treeTestReportExcelWriter.write(data);
+        return new TestReportExcelDownload(
+                content,
+                buildFilename(testId, Long.parseLong(data.questionNumberLabel().substring(1)))
+        );
+    }
+
+    public TreeTestReportExcelData prepareData(Long testId, Long questionId, Long makerId) {
         reportExcelExportSupport.requireExportReadyTest(testId, makerId);
         Question question = reportExcelExportSupport.requireQuestion(
                 testId, questionId, QuestionType.TREE_TEST, BaseErrorCode.REPORT_008
@@ -46,16 +55,13 @@ public class TreeTestReportExcelService {
         List<TreeTestPathStatRow> pathStats = ReportExcelResultMapper.toTreeTestPathStats(reportResult);
         int totalResponseCount = ReportExcelResultMapper.readTreeTestTotalResponseCount(reportResult);
 
-        TreeTestReportExcelData data = new TreeTestReportExcelData(
+        return new TreeTestReportExcelData(
                 String.format("Q%02d", question.getSequence()),
                 question.getTitle(),
                 respondents,
                 pathStats,
                 totalResponseCount
         );
-
-        byte[] content = treeTestReportExcelWriter.write(data);
-        return new TestReportExcelDownload(content, buildFilename(testId, question.getSequence()));
     }
 
     private List<TreeTestRespondentRow> buildRespondentRows(Map<Long, TreeTest> nodeMap, List<Answer> answers) {

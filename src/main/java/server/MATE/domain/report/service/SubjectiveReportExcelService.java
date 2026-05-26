@@ -24,6 +24,15 @@ public class SubjectiveReportExcelService {
     private final SubjectiveReportExcelWriter subjectiveReportExcelWriter;
 
     public TestReportExcelDownload export(Long testId, Long questionId, Long makerId) {
+        SubjectiveReportExcelData data = prepareData(testId, questionId, makerId);
+        byte[] content = subjectiveReportExcelWriter.write(data);
+        return new TestReportExcelDownload(
+                content,
+                buildFilename(testId, Long.parseLong(data.questionNumberLabel().substring(1)))
+        );
+    }
+
+    public SubjectiveReportExcelData prepareData(Long testId, Long questionId, Long makerId) {
         reportExcelExportSupport.requireExportReadyTest(testId, makerId);
         Question question = reportExcelExportSupport.requireQuestion(
                 testId, questionId, QuestionType.SUBJECTIVE, BaseErrorCode.REPORT_003
@@ -33,14 +42,11 @@ public class SubjectiveReportExcelService {
         List<Answer> answers = reportExcelExportSupport.loadAnswers(questionId);
         List<SubjectiveRespondentRow> respondents = buildRespondentRows(answers);
 
-        SubjectiveReportExcelData data = new SubjectiveReportExcelData(
+        return new SubjectiveReportExcelData(
                 String.format("Q%02d", question.getSequence()),
                 question.getTitle(),
                 respondents
         );
-
-        byte[] content = subjectiveReportExcelWriter.write(data);
-        return new TestReportExcelDownload(content, buildFilename(testId, question.getSequence()));
     }
 
     private List<SubjectiveRespondentRow> buildRespondentRows(List<Answer> answers) {
