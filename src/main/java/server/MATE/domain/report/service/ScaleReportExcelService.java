@@ -29,6 +29,15 @@ public class ScaleReportExcelService {
     private final ScaleReportExcelWriter scaleReportExcelWriter;
 
     public TestReportExcelDownload export(Long testId, Long questionId, Long makerId) {
+        ScaleReportExcelData data = prepareData(testId, questionId, makerId);
+        byte[] content = scaleReportExcelWriter.write(data);
+        return new TestReportExcelDownload(
+                content,
+                buildFilename(testId, Long.parseLong(data.questionNumberLabel().substring(1)))
+        );
+    }
+
+    public ScaleReportExcelData prepareData(Long testId, Long questionId, Long makerId) {
         reportExcelExportSupport.requireExportReadyTest(testId, makerId);
         Question question = reportExcelExportSupport.requireQuestion(
                 testId, questionId, QuestionType.SCALE, BaseErrorCode.REPORT_005
@@ -42,16 +51,13 @@ public class ScaleReportExcelService {
         List<ScaleRespondentRow> respondents = buildRespondentRows(answers);
         ReportExcelResultMapper.ScaleStats scaleStats = ReportExcelResultMapper.toScaleStats(scale.getRange(), reportResult);
 
-        ScaleReportExcelData data = new ScaleReportExcelData(
+        return new ScaleReportExcelData(
                 String.format("Q%02d", question.getSequence()),
                 question.getTitle(),
                 respondents,
                 scaleStats.valueStats(),
                 scaleStats.average()
         );
-
-        byte[] content = scaleReportExcelWriter.write(data);
-        return new TestReportExcelDownload(content, buildFilename(testId, question.getSequence()));
     }
 
     private List<ScaleRespondentRow> buildRespondentRows(List<Answer> answers) {

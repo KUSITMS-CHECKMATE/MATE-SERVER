@@ -24,28 +24,34 @@ public class CardSortingReportExcelWriter {
     private static final int STAT_CARD_COLUMN = 5;
     private static final int STAT_RATIO_COLUMN = 6;
 
+    private static final String SHEET_NAME = "카드소팅 통계";
+
     public byte[] write(CardSortingReportExcelData data) {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("카드소팅 통계");
-            CardSortingReportExcelStyles styles = CardSortingReportExcelStyles.create(workbook);
-
-            configureColumnWidths(sheet);
-
-            int rowIndex = 0;
-            rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
-            rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
-            rowIndex++;
-            rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
-            rowIndex = writeQuestionAndStatHeaderRow(sheet, rowIndex, styles);
-            rowIndex = writeLeftTableHeaderRow(sheet, rowIndex, styles);
-            writeDataRows(sheet, rowIndex, data, styles);
-
+            Sheet sheet = workbook.createSheet(SHEET_NAME);
+            writeToSheet(sheet, 0, data);
             workbook.write(outputStream);
             return outputStream.toByteArray();
         } catch (IOException e) {
             throw new UncheckedIOException("카드소팅 통계 엑셀 생성에 실패했습니다.", e);
         }
+    }
+
+    public int writeToSheet(Sheet sheet, int startRowIndex, CardSortingReportExcelData data) {
+        if (startRowIndex == 0) {
+            configureColumnWidths(sheet);
+        }
+        CardSortingReportExcelStyles styles = CardSortingReportExcelStyles.create(sheet.getWorkbook());
+
+        int rowIndex = startRowIndex;
+        rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
+        rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
+        rowIndex++;
+        rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
+        rowIndex = writeQuestionAndStatHeaderRow(sheet, rowIndex, styles);
+        rowIndex = writeLeftTableHeaderRow(sheet, rowIndex, styles);
+        return writeDataRows(sheet, rowIndex, data, styles);
     }
 
     private void configureColumnWidths(Sheet sheet) {
@@ -121,7 +127,7 @@ public class CardSortingReportExcelWriter {
         return rowIndex + 1;
     }
 
-    private void writeDataRows(
+    private int writeDataRows(
             Sheet sheet,
             int rowIndex,
             CardSortingReportExcelData data,
@@ -154,6 +160,7 @@ public class CardSortingReportExcelWriter {
         }
 
         mergeCategoryNameCells(sheet, rowIndex, categoryStats, styles);
+        return rowIndex + rowCount;
     }
 
     private void mergeCategoryNameCells(

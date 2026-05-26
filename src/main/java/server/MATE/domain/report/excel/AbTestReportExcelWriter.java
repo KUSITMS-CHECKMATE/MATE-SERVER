@@ -18,28 +18,34 @@ public class AbTestReportExcelWriter {
     private static final int LAST_COLUMN = 6;
     private static final int CONTENT_LAST_COLUMN = 2;
 
+    private static final String SHEET_NAME = "AB 테스트 통계";
+
     public byte[] write(AbTestReportExcelData data) {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("AB 테스트 통계");
-            AbTestReportExcelStyles styles = AbTestReportExcelStyles.create(workbook);
-
-            configureColumnWidths(sheet);
-
-            int rowIndex = 0;
-            rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
-            rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
-            rowIndex++;
-            rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
-            rowIndex = writeQuestionTextRow(sheet, rowIndex, data.questionTitle(), styles);
-            rowIndex = writeTotalCountRow(sheet, rowIndex, data.totalCount(), styles);
-            writeVersionRows(sheet, rowIndex, data, styles);
-
+            Sheet sheet = workbook.createSheet(SHEET_NAME);
+            writeToSheet(sheet, 0, data);
             workbook.write(outputStream);
             return outputStream.toByteArray();
         } catch (IOException e) {
             throw new UncheckedIOException("AB 테스트 통계 엑셀 생성에 실패했습니다.", e);
         }
+    }
+
+    public int writeToSheet(Sheet sheet, int startRowIndex, AbTestReportExcelData data) {
+        if (startRowIndex == 0) {
+            configureColumnWidths(sheet);
+        }
+        AbTestReportExcelStyles styles = AbTestReportExcelStyles.create(sheet.getWorkbook());
+
+        int rowIndex = startRowIndex;
+        rowIndex = writeQuestionSettingHeader(sheet, rowIndex, data.questionNumberLabel(), styles);
+        rowIndex = writeQuestionMetaRow(sheet, rowIndex, data.questionTitle(), styles);
+        rowIndex++;
+        rowIndex = writeSectionTitleRow(sheet, rowIndex, styles);
+        rowIndex = writeQuestionTextRow(sheet, rowIndex, data.questionTitle(), styles);
+        rowIndex = writeTotalCountRow(sheet, rowIndex, data.totalCount(), styles);
+        return writeVersionRows(sheet, rowIndex, data, styles);
     }
 
     private void configureColumnWidths(Sheet sheet) {
@@ -117,7 +123,7 @@ public class AbTestReportExcelWriter {
         return rowIndex + 1;
     }
 
-    private void writeVersionRows(Sheet sheet, int rowIndex, AbTestReportExcelData data, AbTestReportExcelStyles styles) {
+    private int writeVersionRows(Sheet sheet, int rowIndex, AbTestReportExcelData data, AbTestReportExcelStyles styles) {
         Row versionARow = sheet.createRow(rowIndex);
         versionARow.setHeightInPoints(22f);
         createCell(versionARow, 0, "Version A", styles.versionLabel());
@@ -129,6 +135,7 @@ public class AbTestReportExcelWriter {
         createCell(versionBRow, 0, "Version B", styles.versionLabel());
         createCell(versionBRow, 1, String.valueOf(data.versionBCount()), styles.countValue());
         mergeRow(sheet, rowIndex + 1, 1, CONTENT_LAST_COLUMN, styles.countValue());
+        return rowIndex + 2;
     }
 
     private void createCell(Row row, int columnIndex, String value, CellStyle style) {
