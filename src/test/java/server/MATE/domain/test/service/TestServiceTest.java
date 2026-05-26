@@ -151,8 +151,10 @@ class TestServiceTest {
     @Test
     void 내가_찜한_테스트_목록을_조회한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
-        given(testRepository.findLikedTestsByUserId(MAKER_ID, TestStatus.IN_PROGRESS))
-                .willReturn(List.of(test));
+        given(testRepository.findLikedTestsByUserId(
+                MAKER_ID,
+                List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING, TestStatus.COMPLETED)
+        )).willReturn(List.of(test));
 
         LikedTestSummaryResponse response = testService.listLikedTests(MAKER_ID);
 

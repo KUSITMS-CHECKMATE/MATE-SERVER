@@ -28,12 +28,12 @@ public interface TestRepository extends JpaRepository<Test, Long> {
             join TestLike tl on tl.testId = t.id
             where tl.userId = :userId
               and t.deletedAt is null
-              and t.testStatus = :testStatus
+              and t.testStatus in :testStatuses
             order by tl.createdAt desc
             """)
     List<Test> findLikedTestsByUserId(
             @Param("userId") Long userId,
-            @Param("testStatus") TestStatus testStatus
+            @Param("testStatuses") List<TestStatus> testStatuses
     );
 
     Optional<Test> findByIdAndDeletedAtIsNull(Long id);
