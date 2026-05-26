@@ -151,14 +151,11 @@ public class Test extends BaseEntity {
         this.deletedAt = deletedAt;
     }
 
-    /**
-     * TODO: 기획에서 테스트 기간 설정 기능 추가 예정 — 현재는 생성 시각부터 1개월을 마감일로 본다.
-     */
     public LocalDate participationDeadlineDate() {
-        if (getCreatedAt() == null) {
+        if (closedAt == null) {
             return null;
         }
-        return getCreatedAt().toLocalDate().plusMonths(1);
+        return closedAt.toLocalDate();
     }
 
     public boolean isParticipationPeriodOpen(LocalDate today) {

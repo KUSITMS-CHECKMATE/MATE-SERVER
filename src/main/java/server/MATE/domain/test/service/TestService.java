@@ -44,8 +44,8 @@ public class TestService {
 
     @Transactional(readOnly = true)
     public TestSummaryListResponse listTests(Long userId) {
-        LocalDateTime threshold = LocalDate.now(clock.withZone(KST)).minusMonths(1).atStartOfDay();
-        List<Test> tests = testRepository.findAllByTestStatusInAndDeletedAtIsNullAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
+        LocalDateTime threshold = LocalDate.now(clock.withZone(KST)).atStartOfDay();
+        List<Test> tests = testRepository.findAllByTestStatusInAndDeletedAtIsNullAndClosedAtGreaterThanEqualOrderByCreatedAtDesc(
                 List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING),
                 threshold
         );

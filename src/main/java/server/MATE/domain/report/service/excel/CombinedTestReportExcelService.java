@@ -373,14 +373,13 @@ public class CombinedTestReportExcelService {
         sheet.createRow(0).createCell(0).setCellValue(message);
     }
 
-    // TODO: 기획에서 테스트 기간 설정 기능 추가 예정 — 현재는 생성 시각부터 1개월로 고정
     private String formatTestPeriod(Test test) {
-        if (test.getCreatedAt() == null) {
+        if (test.getCreatedAt() == null || test.getClosedAt() == null) {
             return "";
         }
 
         String start = DATE_FORMAT.format(test.getCreatedAt());
-        String end = DATE_FORMAT.format(test.getCreatedAt().plusMonths(1));
+        String end = DATE_FORMAT.format(test.getClosedAt());
         return start + " ~ " + end;
     }
 
