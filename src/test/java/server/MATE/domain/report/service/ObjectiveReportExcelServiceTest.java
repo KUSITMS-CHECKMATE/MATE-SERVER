@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.answer.repository.AnswerRepository;
 import server.MATE.domain.question.entity.Objective;
@@ -12,21 +13,20 @@ import server.MATE.domain.question.entity.ObjectiveOption;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.ObjectiveRepository;
-import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.excel.ObjectiveReportExcelData;
 import server.MATE.domain.report.excel.ObjectiveReportExcelWriter;
-import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -34,16 +34,10 @@ import static org.mockito.Mockito.verify;
 class ObjectiveReportExcelServiceTest {
 
     @Mock
-    private TestRepository testRepository;
-
-    @Mock
-    private QuestionRepository questionRepository;
+    private ReportExcelExportSupport reportExcelExportSupport;
 
     @Mock
     private ObjectiveRepository objectiveRepository;
-
-    @Mock
-    private AnswerRepository answerRepository;
 
     @Mock
     private ObjectiveReportExcelWriter objectiveReportExcelWriter;
@@ -69,6 +63,7 @@ class ObjectiveReportExcelServiceTest {
                 .content("옵션1")
                 .sequence(1)
                 .build();
+        ReflectionTestUtils.setField(option, "id", 1L);
         Objective objective = Objective.builder().question(question).build();
         objective.addOption(option);
 
@@ -79,11 +74,16 @@ class ObjectiveReportExcelServiceTest {
                 .answer(Map.of("optionIds", List.of(1L)))
                 .build();
 
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
-        given(questionRepository.findByIdAndTestIdAndDeletedAtIsNull(20L, 10L)).willReturn(Optional.of(question));
-        given(objectiveRepository.findWithOptionsById(20L)).willReturn(Optional.of(objective));
-        given(answerRepository.findAllByQuestionIdAndDeletedAtIsNullOrderByParticipationIdAsc(20L))
-                .willReturn(List.of(answer));
+        Map<String, Object> reportResult = Map.of(
+                "options", List.of(Map.of("optionId", 1L, "content", "옵션1", "count", 1, "ratio", 1.0))
+        );
+
+        given(reportExcelExportSupport.requireExportReadyTest(10L, 1L)).willReturn(test);
+        given(reportExcelExportSupport.requireQuestion(10L, 20L, QuestionType.OBJECTIVE, BaseErrorCode.REPORT_002))
+                .willReturn(question);
+        given(reportExcelExportSupport.requireReportResult(10L, 20L)).willReturn(reportResult);
+        given(objectiveRepository.findWithOptionsById(20L)).willReturn(java.util.Optional.of(objective));
+        given(reportExcelExportSupport.loadAnswers(20L)).willReturn(List.of(answer));
         given(objectiveReportExcelWriter.write(any(ObjectiveReportExcelData.class))).willReturn(new byte[]{1, 2, 3});
 
         TestReportExcelDownload download = objectiveReportExcelService.export(10L, 20L, 1L);
@@ -95,19 +95,10 @@ class ObjectiveReportExcelServiceTest {
 
     @Test
     void 객관식이_아니면_다운로드를_허용하지_않는다() {
-        server.MATE.domain.test.entity.Test test = server.MATE.domain.test.entity.Test.builder()
-                .makerId(1L)
-                .title("테스트")
-                .build();
-        Question question = Question.builder()
-                .testId(10L)
-                .questionType(QuestionType.SUBJECTIVE)
-                .title("주관식")
-                .sequence(1L)
-                .build();
-
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
-        given(questionRepository.findByIdAndTestIdAndDeletedAtIsNull(20L, 10L)).willReturn(Optional.of(question));
+        given(reportExcelExportSupport.requireExportReadyTest(10L, 1L))
+                .willReturn(server.MATE.domain.test.entity.Test.builder().makerId(1L).build());
+        given(reportExcelExportSupport.requireQuestion(10L, 20L, QuestionType.OBJECTIVE, BaseErrorCode.REPORT_002))
+                .willThrow(new BaseException(BaseErrorCode.REPORT_002));
 
         assertThatThrownBy(() -> objectiveReportExcelService.export(10L, 20L, 1L))
                 .isInstanceOfSatisfying(BaseException.class, exception ->

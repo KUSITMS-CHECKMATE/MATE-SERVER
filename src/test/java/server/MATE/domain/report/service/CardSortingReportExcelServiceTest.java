@@ -6,24 +6,19 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import server.MATE.domain.answer.entity.Answer;
-import server.MATE.domain.answer.repository.AnswerRepository;
 import server.MATE.domain.question.entity.CardSorting;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.CardSortingRepository;
-import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.excel.CardSortingReportExcelData;
 import server.MATE.domain.report.excel.CardSortingReportExcelWriter;
-import server.MATE.domain.report.service.handler.CardSortingReportHandler;
-import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,19 +30,10 @@ import static org.mockito.Mockito.verify;
 class CardSortingReportExcelServiceTest {
 
     @Mock
-    private TestRepository testRepository;
-
-    @Mock
-    private QuestionRepository questionRepository;
+    private ReportExcelExportSupport reportExcelExportSupport;
 
     @Mock
     private CardSortingRepository cardSortingRepository;
-
-    @Mock
-    private AnswerRepository answerRepository;
-
-    @Mock
-    private CardSortingReportHandler cardSortingReportHandler;
 
     @Mock
     private CardSortingReportExcelWriter cardSortingReportExcelWriter;
@@ -92,18 +78,16 @@ class CardSortingReportExcelServiceTest {
         cardStat.put("cardName", "결제");
         cardStat.put("count", 1);
         cardStat.put("ratio", 1.0);
-        Map<String, Object> byCategory = Map.of(
-                "category", "메인 기능",
-                "cards", List.of(cardStat)
+        Map<String, Object> reportResult = Map.of(
+                "byCategory", List.of(Map.of("category", "메인 기능", "cards", List.of(cardStat)))
         );
 
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
-        given(questionRepository.findByIdAndTestIdAndDeletedAtIsNull(20L, 10L)).willReturn(Optional.of(question));
-        given(cardSortingRepository.findById(20L)).willReturn(Optional.of(cardSorting));
-        given(answerRepository.findAllByQuestionIdAndDeletedAtIsNullOrderByParticipationIdAsc(20L))
-                .willReturn(List.of(answer));
-        given(cardSortingReportHandler.compute(any(), any()))
-                .willReturn(Map.of(20L, Map.of("byCategory", List.of(byCategory))));
+        given(reportExcelExportSupport.requireExportReadyTest(10L, 1L)).willReturn(test);
+        given(reportExcelExportSupport.requireQuestion(10L, 20L, QuestionType.CARD_SORTING, BaseErrorCode.REPORT_006))
+                .willReturn(question);
+        given(reportExcelExportSupport.requireReportResult(10L, 20L)).willReturn(reportResult);
+        given(cardSortingRepository.findById(20L)).willReturn(java.util.Optional.of(cardSorting));
+        given(reportExcelExportSupport.loadAnswers(20L)).willReturn(List.of(answer));
         given(cardSortingReportExcelWriter.write(any(CardSortingReportExcelData.class))).willReturn(new byte[]{1, 2, 3});
 
         TestReportExcelDownload download = cardSortingReportExcelService.export(10L, 20L, 1L);
@@ -115,19 +99,10 @@ class CardSortingReportExcelServiceTest {
 
     @Test
     void 카드소팅이_아니면_다운로드를_허용하지_않는다() {
-        server.MATE.domain.test.entity.Test test = server.MATE.domain.test.entity.Test.builder()
-                .makerId(1L)
-                .title("테스트")
-                .build();
-        Question question = Question.builder()
-                .testId(10L)
-                .questionType(QuestionType.OBJECTIVE)
-                .title("객관식")
-                .sequence(1L)
-                .build();
-
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
-        given(questionRepository.findByIdAndTestIdAndDeletedAtIsNull(20L, 10L)).willReturn(Optional.of(question));
+        given(reportExcelExportSupport.requireExportReadyTest(10L, 1L))
+                .willReturn(server.MATE.domain.test.entity.Test.builder().makerId(1L).build());
+        given(reportExcelExportSupport.requireQuestion(10L, 20L, QuestionType.CARD_SORTING, BaseErrorCode.REPORT_006))
+                .willThrow(new BaseException(BaseErrorCode.REPORT_006));
 
         assertThatThrownBy(() -> cardSortingReportExcelService.export(10L, 20L, 1L))
                 .isInstanceOfSatisfying(BaseException.class, exception ->

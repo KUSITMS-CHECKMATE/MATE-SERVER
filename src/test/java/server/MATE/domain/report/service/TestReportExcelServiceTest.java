@@ -11,12 +11,10 @@ import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.excel.MateReportExcelWriter;
 import server.MATE.domain.report.excel.TestReportExcelData;
-import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +27,7 @@ import static org.mockito.Mockito.verify;
 class TestReportExcelServiceTest {
 
     @Mock
-    private TestRepository testRepository;
+    private ReportExcelExportSupport reportExcelExportSupport;
 
     @Mock
     private QuestionRepository questionRepository;
@@ -51,7 +49,7 @@ class TestReportExcelServiceTest {
                 new QuestionSummaryItem(1L, 1L, "질문 1", QuestionType.OBJECTIVE)
         );
 
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
+        given(reportExcelExportSupport.requireExportReadyTest(10L, 1L)).willReturn(test);
         given(questionRepository.findQuestionSummariesByTestId(10L)).willReturn(questions);
         given(mateReportExcelWriter.write(any(TestReportExcelData.class))).willReturn(new byte[]{1, 2, 3});
 
@@ -74,7 +72,7 @@ class TestReportExcelServiceTest {
                 ))
                 .toList();
 
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
+        given(reportExcelExportSupport.requireExportReadyTest(10L, 1L)).willReturn(test);
         given(questionRepository.findQuestionSummariesByTestId(10L)).willReturn(questions);
 
         assertThatThrownBy(() -> testReportExcelService.export(10L, 1L))
