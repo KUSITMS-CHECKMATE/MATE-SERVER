@@ -10,7 +10,6 @@ import server.MATE.global.common.entity.BaseEntity;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -149,20 +148,6 @@ public class Test extends BaseEntity {
 
     public void delete(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
-    }
-
-    public LocalDate participationDeadlineDate() {
-        if (closedAt == null) {
-            return null;
-        }
-        return closedAt.toLocalDate();
-    }
-
-    public boolean isParticipationPeriodOpen(LocalDate today) {
-        if (today == null) return false;
-        LocalDate deadline = participationDeadlineDate();
-        if (deadline == null) return false;
-        return !deadline.isBefore(today);
     }
 
     @Builder
