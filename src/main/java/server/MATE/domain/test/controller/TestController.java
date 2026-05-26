@@ -7,16 +7,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import server.MATE.domain.test.dto.response.TestDetailResponse;
-import server.MATE.domain.test.dto.response.TestLikeResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
+import server.MATE.domain.test.dto.response.TestDetailResponse;
+import server.MATE.domain.test.dto.response.TestLikeResponse;
+import server.MATE.domain.test.dto.response.TestSummaryListResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.service.TestService;
 import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.security.principal.AuthenticatedUser;
-
-import java.util.List;
 
 @Tag(name = "[TEST] 테스트 API", description = "테스트 조회/수정 관련 API")
 @RestController
@@ -31,21 +30,21 @@ public class TestController {
             summary = "⚠️ 테스트 목록 조회",
             description = """
                     전체 테스트 요약 목록을 최신순으로 조회합니다. 발견 탭 HM_01 57 화면에 해당하는 api 입니다.
-                    `IN_PROGRESS`(진행 중) 이거나, `WAITING`(검수 중) 인 테스트를 반환합니다.
                     추후 페이지네이션 적용하여 무한 스크롤 지원하도록 리팩토링이 필요합니다.
 
+                    - **testCount**: 참여 가능한 전체 테스트 개수
                     - **thumbnailUrl**: 업로드된 이미지 중 첫 번째의 Public URL, 없으면 null을 반환
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
                     - ui상 사용하지 않는 필드: likeCount, categories
-                    - 버그 사항: 전체 테스트 개수 필드 누락. testStatus(진행 중, 검수 중)이고 마감기한(당일까지 조회)이 지나지 않았고 삭제되지 않은 테스트를 필터링.
+                    - 필터링: `IN_PROGRESS`(진행 중), `WAITING`(검수 중)이며 `closedAt` 마감 기한(당일 포함)이 지나지 않았고 삭제되지 않은 테스트
                     """
     )
     @GetMapping
-    public ResponseEntity<ApiResponse<List<TestSummaryResponse>>> listTests(
+    public ResponseEntity<ApiResponse<TestSummaryListResponse>> listTests(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        List<TestSummaryResponse> data = testService.listTests(authenticatedUser.getId());
+        TestSummaryListResponse data = testService.listTests(authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트 목록을 조회했습니다.", data));
     }
 
@@ -59,6 +58,7 @@ public class TestController {
                     - **testStatus**: `WAITING`(검수 중), `IN_PROGRESS`(진행 중), `COMPLETED`(종료), `REJECTED`(반려)
                     - **title**: 테스트 제목
                     - **pplCount**: 현재 참여 인원
+                    - **goalPpl**: 테스트 가능 최대 인원수
                     """
     )
     @GetMapping("/me")
@@ -73,7 +73,6 @@ public class TestController {
             summary = "⚠️ 찜한 테스트 목록 조회",
             description = """
                     현재 로그인한 사용자가 찜한 테스트 목록을 찜한 시각 최신순으로 조회합니다. 관심 탭 HM_01 19 화면에 해당하는 api 입니다.<br>
-                    삭제되지 않았고 진행 중(`IN_PROGRESS`)인 테스트만 반환합니다.<br>
                     추후 페이지네이션 적용하여 무한 스크롤 지원하도록 리팩토링이 필요합니다.
                     
                     - **testCount**: 테스트 개수
@@ -82,8 +81,7 @@ public class TestController {
                     - **title**: 테스트명
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
-                    - 버그 사항: testStatus(진행 중, 검수 중, 종료)이고 삭제되지 않은 테스트를 필터링.
-                    
+                    - 필터링: `IN_PROGRESS`(진행 중), `WAITING`(검수 중), `COMPLETED`(종료)이며 삭제되지 않은 테스트
                     """
     )
     @GetMapping("/likes")
@@ -100,7 +98,8 @@ public class TestController {
                     특정 테스트의 상세 정보를 조회합니다. TT_01 화면에 해당하는 api 입니다.
                     삭제된 테스트는 조회되지 않습니다.<br>
                     
-                    - 버그 사항: 로그인한 사용자의 테스트 응답 여부, testStatus 필드 누락
+                    - **testStatus**: `WAITING`(검수 중), `IN_PROGRESS`(진행 중), `COMPLETED`(종료), `REJECTED`(반려). 종료(`COMPLETED`) 시 참여 버튼 비활성화
+                    - **hasResponded**: 현재 로그인한 사용자가 이미 응답했으면 true. true면 참여 버튼 비활성화
                     """
     )
     @GetMapping("/{testId}")
@@ -108,7 +107,7 @@ public class TestController {
             @PathVariable Long testId,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        TestDetailResponse data = testService.getTest(testId);
+        TestDetailResponse data = testService.getTest(testId, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트를 조회했습니다.", data));
     }
 

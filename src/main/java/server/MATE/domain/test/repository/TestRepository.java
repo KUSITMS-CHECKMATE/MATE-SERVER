@@ -9,13 +9,17 @@ import org.springframework.data.repository.query.Param;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 public interface TestRepository extends JpaRepository<Test, Long> {
 
     @EntityGraph(attributePaths = {"categories"})
-    List<Test> findAllByTestStatusAndDeletedAtIsNullOrderByCreatedAtDesc(TestStatus testStatus);
+    List<Test> findAllByTestStatusInAndDeletedAtIsNullAndClosedAtGreaterThanEqualOrderByCreatedAtDesc(
+            List<TestStatus> testStatuses,
+            LocalDateTime closedAt
+    );
 
     List<Test> findAllByMakerIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long makerId);
 
@@ -25,17 +29,18 @@ public interface TestRepository extends JpaRepository<Test, Long> {
             join TestLike tl on tl.testId = t.id
             where tl.userId = :userId
               and t.deletedAt is null
-              and t.testStatus = :testStatus
+              and t.testStatus in :testStatuses
             order by tl.createdAt desc
             """)
     List<Test> findLikedTestsByUserId(
             @Param("userId") Long userId,
-            @Param("testStatus") TestStatus testStatus
+            @Param("testStatuses") List<TestStatus> testStatuses
     );
 
     Optional<Test> findByIdAndDeletedAtIsNull(Long id);
 
-    Optional<Test> findByIdAndTestStatusAndDeletedAtIsNull(Long id, TestStatus testStatus);
+    @EntityGraph(attributePaths = {"categories"})
+    Optional<Test> findWithCategoriesByIdAndDeletedAtIsNull(Long id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
