@@ -45,6 +45,11 @@ management:
       prometheus:
         enabled: true
 
+claude:
+  api:
+    model: claude-sonnet-4-6
+    min-response-threshold: 20
+
 toss:
   api:
     base-url: https://apps-in-toss-api.toss.im

@@ -9,6 +9,7 @@ import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.FiveSecondRepository;
 import server.MATE.domain.report.service.ReportHandler;
+import server.MATE.global.claude.SubjectiveAiService;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 public class FiveSecondReportHandler implements ReportHandler {
 
     private final FiveSecondRepository fiveSecondRepository;
+    private final SubjectiveAiService aiService;
 
     @Override
     public QuestionType supports() {
@@ -57,7 +59,7 @@ public class FiveSecondReportHandler implements ReportHandler {
                 countByOptionId.merge(optionId, 1, Integer::sum);
             }
             String otherText = (String) answer.getAnswer().get("otherText");
-            if (otherText != null) otherTexts.add(otherText);
+            if (otherText != null && !otherText.isBlank()) otherTexts.add(otherText);
         }
 
         int total = answers.size();
@@ -77,9 +79,7 @@ public class FiveSecondReportHandler implements ReportHandler {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("options", options);
         if (Boolean.TRUE.equals(fiveSecond.getIsOther())) {
-            result.put("aiSummary", "AI 요약 준비 중입니다.");
-            result.put("clusters", ReportHandlerUtils.buildClusters(otherTexts));
-            result.put("otherTexts", ReportHandlerUtils.sampleTexts(otherTexts));
+            appendAiResult(result, otherTexts, "otherTexts");
         }
         return result;
     }
@@ -88,11 +88,30 @@ public class FiveSecondReportHandler implements ReportHandler {
         List<String> allTexts = answers.stream()
                 .sorted(Comparator.comparing(Answer::getCreatedAt))
                 .map(a -> (String) a.getAnswer().get("text"))
+                .filter(t -> t != null && !t.isBlank())
                 .toList();
+
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("aiSummary", "AI 요약 준비 중입니다.");
-        result.put("clusters", ReportHandlerUtils.buildClusters(allTexts));
-        result.put("texts", ReportHandlerUtils.sampleTexts(allTexts));
+        appendAiResult(result, allTexts, "texts");
         return result;
+    }
+
+    private void appendAiResult(Map<String, Object> result, List<String> texts, String rawTextsKey) {
+        if (texts.size() < aiService.getMinResponseThreshold()) {
+            result.put(rawTextsKey, texts);
+            return;
+        }
+
+        aiService.analyze(texts).ifPresentOrElse(
+                aiResult -> {
+                    result.put("aiSummary", aiResult.aiSummary());
+                    result.put("clusters", aiResult.toClusterMaps());
+                    result.put(rawTextsKey, ReportHandlerUtils.sampleTexts(texts));
+                },
+                () -> {
+                    result.put("clusters", ReportHandlerUtils.buildClusters(texts));
+                    result.put(rawTextsKey, texts);
+                }
+        );
     }
 }

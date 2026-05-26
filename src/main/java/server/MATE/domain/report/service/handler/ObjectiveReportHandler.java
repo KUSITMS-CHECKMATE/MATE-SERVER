@@ -9,6 +9,7 @@ import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.ObjectiveRepository;
 import server.MATE.domain.report.service.ReportHandler;
+import server.MATE.global.claude.SubjectiveAiService;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 public class ObjectiveReportHandler implements ReportHandler {
 
     private final ObjectiveRepository objectiveRepository;
+    private final SubjectiveAiService aiService;
 
     @Override
     public QuestionType supports() {
@@ -55,7 +57,7 @@ public class ObjectiveReportHandler implements ReportHandler {
                 countByOptionId.merge(optionId, 1, Integer::sum);
             }
             String otherText = (String) answer.getAnswer().get("otherText");
-            if (otherText != null) otherTexts.add(otherText);
+            if (otherText != null && !otherText.isBlank()) otherTexts.add(otherText);
         }
 
         int total = answers.size();
@@ -75,10 +77,28 @@ public class ObjectiveReportHandler implements ReportHandler {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("options", options);
         if (objective.isOther()) {
-            result.put("aiSummary", "AI 요약 준비 중입니다.");
-            result.put("clusters", ReportHandlerUtils.buildClusters(otherTexts));
-            result.put("otherTexts", ReportHandlerUtils.sampleTexts(otherTexts));
+            appendAiResult(result, otherTexts);
         }
         return result;
     }
+
+    private void appendAiResult(Map<String, Object> result, List<String> texts) {
+        if (texts.size() < aiService.getMinResponseThreshold()) {
+            result.put("otherTexts", texts);
+            return;
+        }
+
+        aiService.analyze(texts).ifPresentOrElse(
+                aiResult -> {
+                    result.put("aiSummary", aiResult.aiSummary());
+                    result.put("clusters", aiResult.toClusterMaps());
+                    result.put("otherTexts", ReportHandlerUtils.sampleTexts(texts));
+                },
+                () -> {
+                    result.put("clusters", ReportHandlerUtils.buildClusters(texts));
+                    result.put("otherTexts", texts);
+                }
+        );
+    }
+
 }
