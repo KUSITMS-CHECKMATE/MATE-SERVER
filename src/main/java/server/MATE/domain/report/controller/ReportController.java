@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +15,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import server.MATE.domain.report.dto.response.ReportResponse;
+import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.service.ReportService;
+import server.MATE.domain.report.service.excel.TestReportExcelService;
 import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
@@ -25,6 +29,7 @@ import server.MATE.global.security.principal.AuthenticatedUser;
 public class ReportController {
 
     private final ReportService reportService;
+    private final TestReportExcelService testReportExcelService;
 
     @Operation(
             summary = "✔️ 리포트 전체 조회",
@@ -367,5 +372,28 @@ public class ReportController {
     ) {
         ReportResponse response = reportService.getReport(testId, user.getId());
         return ResponseEntity.ok(ApiResponse.ok("리포트를 조회했습니다.", response));
+    }
+
+    @Operation(
+            summary = "통합 엑셀 보고서 다운로드",
+            description = """
+                    테스트 전체 리포트를 하나의 엑셀 파일(다중 시트)로 다운로드합니다.
+                    - 테스트 메이커만 다운로드할 수 있습니다.
+                    - 테스트 종료 및 리포트 집계 완료(`report_status = COMPLETED`) 후 다운로드 가능합니다.
+                    - 시트 구성: 기본 정보, 마스터 템플릿, 객관식, 주관식, AB 테스트, 척도 테스트, 카드소팅, 트리테스트, 5초 테스트
+                    - 질문 유형별 시트에는 해당 테스트에 포함된 질문 통계가 순서대로 기록됩니다.
+                    - 5초 테스트는 객관/주관 설정에 따라 시트 내 템플릿이 달라집니다.
+                    """
+    )
+    @GetMapping("/excel")
+    public ResponseEntity<byte[]> downloadExcelReport(
+            @PathVariable Long testId,
+            @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        TestReportExcelDownload download = testReportExcelService.export(testId, user.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(download.content());
     }
 }
