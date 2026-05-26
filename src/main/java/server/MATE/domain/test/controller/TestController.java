@@ -59,6 +59,7 @@ public class TestController {
                     - **testStatus**: `WAITING`(검수 중), `IN_PROGRESS`(진행 중), `COMPLETED`(종료), `REJECTED`(반려)
                     - **title**: 테스트 제목
                     - **pplCount**: 현재 참여 인원
+                    - **goalPpl**: 테스트 가능 최대 인원수
                     """
     )
     @GetMapping("/me")
