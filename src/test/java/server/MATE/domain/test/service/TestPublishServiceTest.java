@@ -107,7 +107,7 @@ class TestPublishServiceTest {
 
         ReflectionTestUtils.setField(payment, "id", 20L);
 
-        given(paymentRepository.findById(20L)).willReturn(Optional.of(payment));
+        given(paymentRepository.findByIdForUpdate(20L)).willReturn(Optional.of(payment));
         given(testDraftRepository.findByIdForUpdate(10L)).willReturn(Optional.of(draft));
         given(testRepository.save(any(server.MATE.domain.test.entity.Test.class))).willAnswer(invocation -> {
             server.MATE.domain.test.entity.Test saved = invocation.getArgument(0);
@@ -147,7 +147,7 @@ class TestPublishServiceTest {
 
         ReflectionTestUtils.setField(payment, "id", 20L);
 
-        given(paymentRepository.findById(20L)).willReturn(Optional.of(payment));
+        given(paymentRepository.findByIdForUpdate(20L)).willReturn(Optional.of(payment));
 
         Long testId = testPublishService.publish(20L);
 
@@ -187,7 +187,7 @@ class TestPublishServiceTest {
                 .build();
         ReflectionTestUtils.setField(payment, "id", 20L);
 
-        given(paymentRepository.findById(20L)).willReturn(Optional.of(payment));
+        given(paymentRepository.findByIdForUpdate(20L)).willReturn(Optional.of(payment));
         given(testDraftRepository.findByIdForUpdate(10L)).willReturn(Optional.of(draft));
 
         assertThatThrownBy(() -> testPublishService.publish(20L))
@@ -224,7 +224,7 @@ class TestPublishServiceTest {
                 .build();
         ReflectionTestUtils.setField(payment, "id", 20L);
 
-        given(paymentRepository.findById(20L)).willReturn(Optional.of(payment));
+        given(paymentRepository.findByIdForUpdate(20L)).willReturn(Optional.of(payment));
         given(testDraftRepository.findByIdForUpdate(10L)).willReturn(Optional.of(draft));
 
         assertThatThrownBy(() -> testPublishService.publish(20L))
