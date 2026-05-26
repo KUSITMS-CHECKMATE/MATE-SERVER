@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import server.MATE.domain.report.dto.response.ReportResponse;
 import server.MATE.domain.report.dto.response.TestReportExcelDownload;
+import server.MATE.domain.report.service.AbTestReportExcelService;
 import server.MATE.domain.report.service.ObjectiveReportExcelService;
 import server.MATE.domain.report.service.ReportService;
 import server.MATE.domain.report.service.SubjectiveReportExcelService;
@@ -34,6 +35,7 @@ public class ReportController {
     private final TestReportExcelService testReportExcelService;
     private final ObjectiveReportExcelService objectiveReportExcelService;
     private final SubjectiveReportExcelService subjectiveReportExcelService;
+    private final AbTestReportExcelService abTestReportExcelService;
 
     @Operation(
             summary = "✔️ 리포트 전체 조회",
@@ -434,6 +436,27 @@ public class ReportController {
             @AuthenticationPrincipal AuthenticatedUser user
     ) {
         TestReportExcelDownload download = subjectiveReportExcelService.export(testId, questionId, user.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(download.content());
+    }
+
+    @Operation(
+            summary = "A/B 테스트 통계 엑셀 다운로드",
+            description = """
+                    A/B 테스트 질문 1개에 대한 Version A/B 선택 개수를 엑셀로 다운로드합니다.
+                    - 테스트 메이커만 다운로드할 수 있습니다.
+                    - AB_TEST 유형 질문만 지원합니다.
+                    """
+    )
+    @GetMapping("/excel/ab-test/{questionId}")
+    public ResponseEntity<byte[]> downloadAbTestExcelReport(
+            @PathVariable Long testId,
+            @PathVariable Long questionId,
+            @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        TestReportExcelDownload download = abTestReportExcelService.export(testId, questionId, user.getId());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
