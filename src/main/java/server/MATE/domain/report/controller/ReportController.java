@@ -18,6 +18,7 @@ import server.MATE.domain.report.dto.response.ReportResponse;
 import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.service.AbTestReportExcelService;
 import server.MATE.domain.report.service.CardSortingReportExcelService;
+import server.MATE.domain.report.service.FiveSecondReportExcelService;
 import server.MATE.domain.report.service.ObjectiveReportExcelService;
 import server.MATE.domain.report.service.ReportService;
 import server.MATE.domain.report.service.ScaleReportExcelService;
@@ -42,6 +43,7 @@ public class ReportController {
     private final ScaleReportExcelService scaleReportExcelService;
     private final CardSortingReportExcelService cardSortingReportExcelService;
     private final TreeTestReportExcelService treeTestReportExcelService;
+    private final FiveSecondReportExcelService fiveSecondReportExcelService;
 
     @Operation(
             summary = "✔️ 리포트 전체 조회",
@@ -530,6 +532,30 @@ public class ReportController {
             @AuthenticationPrincipal AuthenticatedUser user
     ) {
         TestReportExcelDownload download = treeTestReportExcelService.export(testId, questionId, user.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(download.content());
+    }
+
+    @Operation(
+            summary = "5초 테스트 통계 엑셀 다운로드",
+            description = """
+                    5초 테스트 질문 1개에 대한 응답자별 내역을 엑셀로 다운로드합니다.
+                    - 테스트 메이커만 다운로드할 수 있습니다.
+                    - FIVE_SECOND 유형 질문만 지원합니다.
+                    - 객관식(isObjective=true): 응답자별 선택 내역 + 선지별 통계(응답 수, 비율)
+                    - 주관식(isObjective=false): 주관식 템플릿 형태로 응답자별 텍스트만 제공
+                    - 통계는 report 테이블, 응답자 원본은 answer 테이블에서 조회합니다.
+                    """
+    )
+    @GetMapping("/excel/five-second/{questionId}")
+    public ResponseEntity<byte[]> downloadFiveSecondExcelReport(
+            @PathVariable Long testId,
+            @PathVariable Long questionId,
+            @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        TestReportExcelDownload download = fiveSecondReportExcelService.export(testId, questionId, user.getId());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
