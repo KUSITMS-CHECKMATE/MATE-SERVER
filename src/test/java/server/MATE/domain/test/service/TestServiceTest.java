@@ -86,6 +86,7 @@ class TestServiceTest {
         assertThat(response.tests().getFirst().title()).isEqualTo("내 테스트");
         assertThat(response.tests().getFirst().testStatus()).isEqualTo(TestStatus.WAITING);
         assertThat(response.tests().getFirst().pplCount()).isZero();
+        assertThat(response.tests().getFirst().goalPpl()).isEqualTo(100);
     }
 
     @Test
