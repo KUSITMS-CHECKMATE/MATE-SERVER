@@ -22,6 +22,9 @@ public class DefaultPaymentAmountCalculator implements PaymentAmountCalculator {
     }
 
     private int ceilDivide(int dividend, int divisor) {
-        return Math.floorDiv(Math.addExact(dividend, divisor - 1), divisor);
+        if (dividend < 0 || divisor <= 0) {
+            throw new IllegalArgumentException("ceilDivide requires dividend >= 0 and divisor > 0");
+        }
+        return (int) (((long) dividend + divisor - 1) / divisor);
     }
 }
