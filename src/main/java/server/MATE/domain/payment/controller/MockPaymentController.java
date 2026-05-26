@@ -52,10 +52,9 @@ public class MockPaymentController {
                 .body(ApiResponse.created("결제를 등록했습니다.", response));
     }
 
-    @Operation(summary = "⚠️ 결제 실행",
+    @Operation(summary = "✔️ 결제 실행",
             description = """
                           mock 결제를 실행하고 승인 결과를 반환합니다.
-                          - 버그 사항: 부가세 포함하여 최종 결제 금액 산정
                           """
     )
     @PostMapping("/{paymentId}/execute")
