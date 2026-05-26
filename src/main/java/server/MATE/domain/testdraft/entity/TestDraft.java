@@ -19,6 +19,7 @@ import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.entity.BaseEntity;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,8 @@ public class TestDraft extends BaseEntity {
 
     private Integer reward;
 
+    private LocalDateTime closedAt;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> questionsPayload;
@@ -90,6 +93,7 @@ public class TestDraft extends BaseEntity {
                        List<String> categories,
                        Integer goalPpl,
                        Integer reward,
+                       LocalDateTime closedAt,
                        Map<String, Object> questionsPayload) {
         if (title != null) {
             this.title = title;
@@ -114,6 +118,9 @@ public class TestDraft extends BaseEntity {
         }
         if (reward != null) {
             this.reward = reward;
+        }
+        if (closedAt != null) {
+            this.closedAt = closedAt;
         }
         if (questionsPayload != null) {
             this.questionsPayload = questionsPayload;
@@ -202,6 +209,7 @@ public class TestDraft extends BaseEntity {
                      List<String> categories,
                      Integer goalPpl,
                      Integer reward,
+                     LocalDateTime closedAt,
                      Map<String, Object> questionsPayload,
                      TestDraftStatus status,
                      Long publishedTestId,
@@ -221,6 +229,7 @@ public class TestDraft extends BaseEntity {
         }
         this.goalPpl = goalPpl;
         this.reward = reward;
+        this.closedAt = closedAt;
         this.questionsPayload = questionsPayload;
         this.status = status == null ? TestDraftStatus.DRAFT : status;
         this.publishedTestId = publishedTestId;
