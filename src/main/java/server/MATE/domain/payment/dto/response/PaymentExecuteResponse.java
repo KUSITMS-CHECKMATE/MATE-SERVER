@@ -16,6 +16,6 @@ public record PaymentExecuteResponse(
         String payToken,
         String transactionId,
         PayMethod payMethod,
-        LocalDateTime approvalTime
+        LocalDateTime approvedAt
 ) {
 }
