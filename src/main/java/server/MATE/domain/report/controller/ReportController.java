@@ -19,6 +19,7 @@ import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.service.AbTestReportExcelService;
 import server.MATE.domain.report.service.ObjectiveReportExcelService;
 import server.MATE.domain.report.service.ReportService;
+import server.MATE.domain.report.service.ScaleReportExcelService;
 import server.MATE.domain.report.service.SubjectiveReportExcelService;
 import server.MATE.domain.report.service.TestReportExcelService;
 import server.MATE.global.common.response.ApiResponse;
@@ -36,6 +37,7 @@ public class ReportController {
     private final ObjectiveReportExcelService objectiveReportExcelService;
     private final SubjectiveReportExcelService subjectiveReportExcelService;
     private final AbTestReportExcelService abTestReportExcelService;
+    private final ScaleReportExcelService scaleReportExcelService;
 
     @Operation(
             summary = "✔️ 리포트 전체 조회",
@@ -457,6 +459,28 @@ public class ReportController {
             @AuthenticationPrincipal AuthenticatedUser user
     ) {
         TestReportExcelDownload download = abTestReportExcelService.export(testId, questionId, user.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(download.content());
+    }
+
+    @Operation(
+            summary = "척도 테스트 통계 엑셀 다운로드",
+            description = """
+                    척도 질문 1개에 대한 응답자별 점수와 점수별 통계(비율, 평균)를 엑셀로 다운로드합니다.
+                    - 테스트 메이커만 다운로드할 수 있습니다.
+                    - SCALE 유형 질문만 지원합니다.
+                    - 척도 범위(5점/7점)는 질문 설정에 따라 동적으로 반영됩니다.
+                    """
+    )
+    @GetMapping("/excel/scale/{questionId}")
+    public ResponseEntity<byte[]> downloadScaleExcelReport(
+            @PathVariable Long testId,
+            @PathVariable Long questionId,
+            @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        TestReportExcelDownload download = scaleReportExcelService.export(testId, questionId, user.getId());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
