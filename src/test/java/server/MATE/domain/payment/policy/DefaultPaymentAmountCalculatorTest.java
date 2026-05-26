@@ -1,9 +1,7 @@
-package server.MATE.domain.payment.service;
+package server.MATE.domain.payment.policy;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import server.MATE.domain.payment.policy.DefaultPaymentAmountCalculator;
-import server.MATE.domain.payment.policy.PaymentAmountBreakdown;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
