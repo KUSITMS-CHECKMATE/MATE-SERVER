@@ -39,7 +39,7 @@ public class TestPublishService {
     private final Validator validator;
 
     public Long publish(Long paymentId) {
-        Payment payment = paymentRepository.findById(paymentId)
+        Payment payment = paymentRepository.findByIdForUpdate(paymentId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_001));
         if (payment.getTestId() != null) {
             return payment.getTestId();
