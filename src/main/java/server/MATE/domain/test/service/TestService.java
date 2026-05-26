@@ -11,6 +11,7 @@ import server.MATE.domain.test.dto.response.MyTestSummaryItem;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestSummaryListResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
+import server.MATE.domain.participation.repository.ParticipationRepository;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestLike;
 import server.MATE.domain.test.entity.TestStatus;
@@ -32,6 +33,7 @@ public class TestService {
 
     private final TestRepository testRepository;
     private final TestLikeRepository testLikeRepository;
+    private final ParticipationRepository participationRepository;
     private final FileStorageService fileStorageService;
 
     @Transactional(readOnly = true)
@@ -65,10 +67,11 @@ public class TestService {
     }
 
     @Transactional(readOnly = true)
-    public TestDetailResponse getTest(Long testId) {
-        Test test = testRepository.findByIdAndTestStatusAndDeletedAtIsNull(testId, TestStatus.IN_PROGRESS)
+    public TestDetailResponse getTest(Long testId, Long userId) {
+        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
-        return TestDetailResponse.from(test, toImageUrls(test.getImageKeys()));
+        boolean hasResponded = participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(testId, userId);
+        return TestDetailResponse.from(test, toImageUrls(test.getImageKeys()), hasResponded);
     }
 
     public TestLikeResponse likeTest(Long testId, Long userId) {
