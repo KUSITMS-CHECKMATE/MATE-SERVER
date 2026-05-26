@@ -205,6 +205,7 @@ class CombinedTestReportExcelServiceTest {
                 .description("설명")
                 .goalPpl(100)
                 .testStatus(TestStatus.COMPLETED)
+                .closedAt(LocalDateTime.of(2026, 6, 1, 23, 59, 59))
                 .build();
         ReflectionTestUtils.setField(test, "createdAt", createdAt);
         return test;

@@ -37,7 +37,7 @@ public class TestController {
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
                     - ui상 사용하지 않는 필드: likeCount, categories
-                    - 필터링: `IN_PROGRESS`(진행 중), `WAITING`(검수 중)이며 마감일(생성일+1개월, 당일 포함)이 지나지 않았고 삭제되지 않은 테스트
+                    - 필터링: `IN_PROGRESS`(진행 중), `WAITING`(검수 중)이며 `closedAt` 마감 기한(당일 포함)이 지나지 않았고 삭제되지 않은 테스트
                     """
     )
     @GetMapping
