@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mate-pdf
+  labels:
+    app: mate-pdf
+spec:
+  type: ClusterIP
+  selector:
+    app: mate-pdf
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

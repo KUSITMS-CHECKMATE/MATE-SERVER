@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mate-pdf
+  labels:
+    app: mate-pdf
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: mate-pdf
+  template:
+    metadata:
+      labels:
+        app: mate-pdf
+    spec:
+      imagePullSecrets:
+        - name: acr-pull
+      containers:
+        - name: mate-pdf
+          image: kusitmsmateacr.azurecr.io/mate-pdf
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3001
+          envFrom:
+            - secretRef:
+                name: mate-pdf-secrets
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
