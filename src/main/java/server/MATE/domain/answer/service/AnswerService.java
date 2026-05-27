@@ -97,7 +97,7 @@ public class AnswerService {
 
     @Transactional
     public AnswerBatchCreateResponse createAnswers(Long testId, Long testerId, AnswerCreateRequest request) {
-        Test test = testRepository.findByIdAndDeletedAtIsNullForUpdate(testId)
+        Test test = testRepository.findByIdForUpdate(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         test.validateCanParticipate();

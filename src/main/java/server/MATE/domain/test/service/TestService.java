@@ -47,7 +47,7 @@ public class TestService {
     @Transactional(readOnly = true)
     public TestSummaryListResponse listTests(Long userId) {
         LocalDateTime threshold = LocalDate.now(clock.withZone(KST)).atStartOfDay();
-        List<Test> tests = testRepository.findAllByTestStatusInAndDeletedAtIsNullAndClosedAtGreaterThanEqualOrderByCreatedAtDesc(
+        List<Test> tests = testRepository.findActiveTests(
                 List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING),
                 threshold
         );
@@ -56,7 +56,7 @@ public class TestService {
 
     @Transactional(readOnly = true)
     public MyTestSummaryResponse listMyTests(Long makerId) {
-        List<Test> tests = testRepository.findAllByMakerIdAndDeletedAtIsNullOrderByCreatedAtDesc(makerId);
+        List<Test> tests = testRepository.findByMakerId(makerId);
         List<MyTestSummaryItem> items = tests.stream()
                 .map(MyTestSummaryItem::from)
                 .toList();
@@ -65,7 +65,7 @@ public class TestService {
 
     @Transactional(readOnly = true)
     public LikedTestSummaryResponse listLikedTests(Long userId) {
-        List<Test> tests = testRepository.findLikedTestsByUserId(
+        List<Test> tests = testRepository.findLikedTests(
                 userId,
                 List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING, TestStatus.COMPLETED)
         );
@@ -77,14 +77,14 @@ public class TestService {
 
     @Transactional(readOnly = true)
     public TestDetailResponse getTest(Long testId, Long userId) {
-        Test test = testRepository.findWithCategoriesByIdAndDeletedAtIsNull(testId)
+        Test test = testRepository.findWithCategoriesById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         boolean hasResponded = participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(testId, userId);
         return TestDetailResponse.from(test, toImageUrls(test.getImageKeys()), hasResponded);
     }
 
     public TestStatusUpdateResponse updateTestStatus(Long testId, Long userId, Role role, TestStatus status) {
-        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
+        Test test = testRepository.findActiveById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         switch (status) {
@@ -122,7 +122,7 @@ public class TestService {
     }
 
     public TestLikeResponse likeTest(Long testId, Long userId) {
-        Test test = testRepository.findByIdAndDeletedAtIsNullForUpdate(testId)
+        Test test = testRepository.findByIdForUpdate(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         if (!testLikeRepository.existsByUserIdAndTestId(userId, testId)) {
@@ -137,7 +137,7 @@ public class TestService {
     }
 
     public TestLikeResponse unlikeTest(Long testId, Long userId) {
-        Test test = testRepository.findByIdAndDeletedAtIsNullForUpdate(testId)
+        Test test = testRepository.findByIdForUpdate(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         testLikeRepository.findByUserIdAndTestId(userId, testId)
