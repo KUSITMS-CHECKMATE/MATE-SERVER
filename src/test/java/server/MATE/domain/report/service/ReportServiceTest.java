@@ -69,14 +69,14 @@ class ReportServiceTest {
         ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.FAILED);
 
         given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(0L);
+        given(questionRepository.countQuestionsInTest(10L)).willReturn(0L);
 
         ReportResponse response = reportService.getReport(10L, 1L, Role.USER);
 
         assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
         assertThat(response.reportStatus()).isEqualTo(ReportStatus.FAILED);
         assertThat(response.reports()).isEmpty();
-        verify(questionRepository, never()).findQuestionSummariesByTestId(10L);
+        verify(questionRepository, never()).findQuestionSummariesInTest(10L);
     }
 
     @Test
@@ -86,14 +86,14 @@ class ReportServiceTest {
         ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.FAILED);
 
         given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(0L);
+        given(questionRepository.countQuestionsInTest(10L)).willReturn(0L);
 
         ReportResponse response = reportService.getReport(10L, 1L, Role.USER);
 
         assertThat(response.testStatus()).isEqualTo(TestStatus.REJECTED);
         assertThat(response.reportStatus()).isEqualTo(ReportStatus.FAILED);
         assertThat(response.reports()).isEmpty();
-        verify(questionRepository, never()).findQuestionSummariesByTestId(10L);
+        verify(questionRepository, never()).findQuestionSummariesInTest(10L);
     }
 
     @Test
@@ -103,7 +103,7 @@ class ReportServiceTest {
         ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.IN_PROGRESS);
 
         given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(2L);
+        given(questionRepository.countQuestionsInTest(10L)).willReturn(2L);
 
         ReportResponse response = reportService.getReport(10L, 1L, Role.USER);
 
@@ -111,7 +111,7 @@ class ReportServiceTest {
         assertThat(response.reportStatus()).isEqualTo(ReportStatus.IN_PROGRESS);
         assertThat(response.questionCount()).isEqualTo(2);
         assertThat(response.reports()).isEmpty();
-        verify(questionRepository, never()).findQuestionSummariesByTestId(10L);
+        verify(questionRepository, never()).findQuestionSummariesInTest(10L);
     }
 
     @Test
@@ -127,9 +127,9 @@ class ReportServiceTest {
                 .build();
 
         given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(1L);
+        given(questionRepository.countQuestionsInTest(10L)).willReturn(1L);
         given(reportRepository.findAllByTestId(10L)).willReturn(List.of(report));
-        given(questionRepository.findQuestionSummariesByTestId(10L)).willReturn(List.of(
+        given(questionRepository.findQuestionSummariesInTest(10L)).willReturn(List.of(
                 new QuestionSummaryItem(101L, 1L, "질문", server.MATE.domain.question.entity.QuestionType.SUBJECTIVE)
         ));
 
@@ -137,7 +137,7 @@ class ReportServiceTest {
 
         assertThat(response.reportStatus()).isEqualTo(ReportStatus.COMPLETED);
         assertThat(response.reports()).hasSize(1);
-        verify(questionRepository).findQuestionSummariesByTestId(10L);
+        verify(questionRepository).findQuestionSummariesInTest(10L);
     }
 
     @Test
@@ -153,9 +153,9 @@ class ReportServiceTest {
                 .build();
 
         given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(2L);
+        given(questionRepository.countQuestionsInTest(10L)).willReturn(2L);
         given(reportRepository.findAllByTestId(10L)).willReturn(List.of(report));
-        given(questionRepository.findQuestionSummariesByTestId(10L)).willReturn(List.of(
+        given(questionRepository.findQuestionSummariesInTest(10L)).willReturn(List.of(
                 new QuestionSummaryItem(101L, 1L, "질문1", server.MATE.domain.question.entity.QuestionType.SUBJECTIVE),
                 new QuestionSummaryItem(102L, 2L, "질문2", server.MATE.domain.question.entity.QuestionType.SUBJECTIVE)
         ));
@@ -184,9 +184,9 @@ class ReportServiceTest {
                 .build();
 
         given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(1L);
+        given(questionRepository.countQuestionsInTest(10L)).willReturn(1L);
         given(reportRepository.findAllByTestId(10L)).willReturn(List.of(activeReport, orphanReport));
-        given(questionRepository.findQuestionSummariesByTestId(10L)).willReturn(List.of(
+        given(questionRepository.findQuestionSummariesInTest(10L)).willReturn(List.of(
                 new QuestionSummaryItem(101L, 1L, "질문", server.MATE.domain.question.entity.QuestionType.SUBJECTIVE)
         ));
 
@@ -215,7 +215,7 @@ class ReportServiceTest {
         ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.PENDING);
 
         given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(0L);
+        given(questionRepository.countQuestionsInTest(10L)).willReturn(0L);
 
         ReportResponse response = reportService.getReport(10L, 999L, Role.ADMIN);
 
