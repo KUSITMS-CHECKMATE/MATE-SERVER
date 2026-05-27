@@ -6,6 +6,7 @@ import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -127,6 +128,21 @@ class TestDraftValidationTest {
                 .goalPpl(5).reward(300).closedAt(LocalDateTime.now().plusDays(10))
                 .title("제목").description("설명")
                 .categories(List.of("INVALID_CATEGORY"))
+                .questionsPayload(Map.of("questions", List.of(Map.of("type", "SUBJECTIVE"))))
+                .build();
+
+        BaseException ex = assertThrows(BaseException.class, draft::validatePublishableFields);
+        assertThat(ex.getErrorCode()).isEqualTo(BaseErrorCode.DRAFT_006);
+    }
+
+    @Test
+    @DisplayName("categories에 null 요소가 있으면 DRAFT_006")
+    void validatePublishableFields_nullCategory_throwsDraft006() {
+        TestDraft draft = TestDraft.builder()
+                .makerId(1L)
+                .goalPpl(5).reward(300).closedAt(LocalDateTime.now().plusDays(10))
+                .title("제목").description("설명")
+                .categories(Arrays.asList("FOOD", null))
                 .questionsPayload(Map.of("questions", List.of(Map.of("type", "SUBJECTIVE"))))
                 .build();
 
