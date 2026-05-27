@@ -42,6 +42,7 @@ public enum BaseErrorCode implements ErrorCode {
     TEST_004(HttpStatus.NOT_FOUND, "TEST_004", "테스트를 찾을 수 없습니다."),
     TEST_005(HttpStatus.FORBIDDEN, "TEST_005", "테스트 메이커만 조회할 수 있습니다."),
     TEST_006(HttpStatus.BAD_REQUEST, "TEST_006", "테스트가 종료된 후에 조회할 수 있습니다."),
+    TEST_007(HttpStatus.BAD_REQUEST, "TEST_007", "현재 상태에서는 변경할 수 없습니다."),
 
     // Test Draft
     DRAFT_001(HttpStatus.NOT_FOUND, "DRAFT_001", "테스트 초안을 찾을 수 없습니다."),
