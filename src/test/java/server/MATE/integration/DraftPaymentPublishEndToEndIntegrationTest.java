@@ -35,11 +35,14 @@ import server.MATE.domain.question.service.QuestionService;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
+import server.MATE.domain.testdraft.entity.TestDraft;
 import server.MATE.domain.testdraft.entity.TestDraftStatus;
 import server.MATE.domain.testdraft.repository.TestDraftRepository;
 import server.MATE.domain.users.entity.Users;
 import server.MATE.domain.users.repository.UsersRepository;
 import server.MATE.global.storage.FileStorageService;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -258,16 +261,16 @@ class DraftPaymentPublishEndToEndIntegrationTest {
 
         Long draftId = createDraft(makerToken);
 
-        JsonNode error = createPaymentExpectingError(draftId, makerToken, 400, "PAYMENT_005");
+        JsonNode error = createPaymentExpectingError(draftId, makerToken, 400, "DRAFT_005");
 
-        assertThat(error.path("message").asText()).isEqualTo("결제 금액 계산에 필요한 값이 누락되었습니다.");
+        assertThat(error.path("message").asText()).isEqualTo("결제 금액 산정에 필요한 정보가 부족합니다.");
         assertThat(paymentRepository.findByDraftId(draftId)).isEmpty();
         assertThat(testDraftRepository.findById(draftId).orElseThrow().getStatus()).isEqualTo(TestDraftStatus.DRAFT);
     }
 
     @Test
-    @DisplayName("게시 필수 정보가 없는 draft는 결제 성공 후에도 publish가 차단되고 draft는 PUBLISH_FAILED로 남는다")
-    void marksDraftAsPublishFailedWhenPublishValidationFails() throws Exception {
+    @DisplayName("goalPpl/reward/closedAt은 있지만 title/categories/questions 없으면 결제 등록이 차단된다")
+    void blocksPaymentCreationWhenPublishFieldsMissing() throws Exception {
         Users maker = usersRepository.save(Users.builder()
                 .ci("maker-" + System.nanoTime())
                 .name("maker")
@@ -283,16 +286,76 @@ class DraftPaymentPublishEndToEndIntegrationTest {
                 }
                 """);
 
-        Long paymentId = createPayment(draftId, makerToken);
-        JsonNode error = executePaymentExpectingError(paymentId, makerToken, 400, "DRAFT_004");
+        JsonNode error = createPaymentExpectingError(draftId, makerToken, 400, "DRAFT_006");
+        assertThat(error.path("message").asText()).isEqualTo("게시에 필요한 필수 정보가 부족합니다.");
+        assertThat(paymentRepository.findByDraftId(draftId)).isEmpty();
+        assertThat(testDraftRepository.findById(draftId).orElseThrow().getStatus()).isEqualTo(TestDraftStatus.DRAFT);
+    }
 
-        assertThat(error.path("message").asText()).isEqualTo("게시할 수 없는 테스트 초안입니다.");
-        var draft = testDraftRepository.findById(draftId).orElseThrow();
-        var payment = paymentRepository.findById(paymentId).orElseThrow();
-        assertThat(draft.getStatus()).isEqualTo(TestDraftStatus.PUBLISH_FAILED);
-        assertThat(draft.getPublishedTestId()).isNull();
-        assertThat(payment.getPayStatus()).isEqualTo(PayStatus.PAY_SUCCEEDED);
-        assertThat(payment.getTestId()).isNull();
+    @Test
+    @DisplayName("questions 배열 원소가 객체가 아니면 결제 등록이 차단된다")
+    void blocksPaymentCreationWhenQuestionsPayloadMalformed() throws Exception {
+        Users maker = usersRepository.save(Users.builder()
+                .ci("maker-" + System.nanoTime())
+                .name("maker")
+                .build());
+        String makerToken = bearerToken(maker);
+
+        Long draftId = createDraft(makerToken);
+        updateDraft(draftId, makerToken, """
+                {
+                  "title": "신규 테스트",
+                  "description": "테스트 소개",
+                  "categories": ["FOOD"],
+                  "goalPpl": 5,
+                  "reward": 300,
+                  "closedAt": "2099-05-31",
+                  "questionsPayload": {
+                    "questions": ["not-an-object"]
+                  }
+                }
+                """);
+
+        JsonNode error = createPaymentExpectingError(draftId, makerToken, 400, "DRAFT_006");
+        assertThat(error.path("message").asText()).isEqualTo("게시에 필요한 필수 정보가 부족합니다.");
+        assertThat(paymentRepository.findByDraftId(draftId)).isEmpty();
+        assertThat(testDraftRepository.findById(draftId).orElseThrow().getStatus()).isEqualTo(TestDraftStatus.DRAFT);
+    }
+
+    @Test
+    @DisplayName("결제 등록 후 draft가 훼손되면 결제 실행 시 publish 직전 검증에서 차단된다")
+    void blocksPublishWhenDraftBecomesInvalidAfterPaymentCreation() throws Exception {
+        Users maker = usersRepository.save(Users.builder()
+                .ci("maker-" + System.nanoTime())
+                .name("maker")
+                .build());
+        String makerToken = bearerToken(maker);
+
+        Long draftId = createDraft(makerToken);
+        updateDraft(draftId, makerToken, draftPayload());
+        Long paymentId = createPayment(draftId, makerToken);
+
+        TestDraft invalidatedDraft = testDraftRepository.findById(draftId).orElseThrow();
+        invalidatedDraft.update(
+                null,
+                null,
+                null,
+                null,
+                null,
+                List.of("INVALID_CATEGORY"),
+                null,
+                null,
+                null,
+                null
+        );
+        testDraftRepository.saveAndFlush(invalidatedDraft);
+
+        JsonNode error = executePaymentExpectingError(paymentId, makerToken, 400, "DRAFT_006");
+
+        assertThat(error.path("message").asText()).isEqualTo("게시에 필요한 필수 정보가 부족합니다.");
+        assertThat(testDraftRepository.findById(draftId).orElseThrow().getStatus()).isEqualTo(TestDraftStatus.PUBLISH_FAILED);
+        assertThat(paymentRepository.findById(paymentId).orElseThrow().getPayStatus()).isEqualTo(PayStatus.PAY_SUCCEEDED);
+        assertThat(paymentRepository.findById(paymentId).orElseThrow().getTestId()).isNull();
         assertThat(testRepository.count()).isZero();
         assertThat(questionRepository.count()).isZero();
     }
