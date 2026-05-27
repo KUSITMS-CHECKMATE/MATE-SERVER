@@ -105,7 +105,7 @@ public class QuestionService {
         testRepository.findActiveById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
-        List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
+        List<Question> questions = questionRepository.findQuestionsInTest(testId);
         List<QuestionDetailItem> questionDetails = buildQuestionDetails(questions);
 
         return new QuestionsDetailResponse(testId, questionDetails);
@@ -116,7 +116,7 @@ public class QuestionService {
         testRepository.findActiveById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
-        Question question = questionRepository.findByIdAndTestIdAndDeletedAtIsNull(questionId, testId)
+        Question question = questionRepository.findQuestionByIdInTest(questionId, testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.QUESTION_005));
 
         List<QuestionDetailItem> questionDetails = buildQuestionDetails(List.of(question));
@@ -154,7 +154,7 @@ public class QuestionService {
 
         if (!test.getMakerId().equals(makerId)) throw new BaseException(BaseErrorCode.TEST_005);
 
-        List<QuestionSummaryItem> questions = questionRepository.findQuestionSummariesByTestId(testId);
+        List<QuestionSummaryItem> questions = questionRepository.findQuestionSummariesInTest(testId);
         return new QuestionSummaryResponse(
                 test.getTestStatus(),
                 questions.size(),

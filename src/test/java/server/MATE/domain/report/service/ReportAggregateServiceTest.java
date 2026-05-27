@@ -8,12 +8,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
+import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.answer.repository.AnswerRepository;
+import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.report.entity.Report;
 import server.MATE.domain.report.event.ReportAggregateService;
 import server.MATE.domain.report.repository.ReportRepository;
+import server.MATE.domain.report.service.ReportHandler;
 import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.repository.TestRepository;
 
@@ -23,7 +26,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class ReportAggregateServiceTest {
@@ -40,6 +45,9 @@ class ReportAggregateServiceTest {
     @Mock
     private TestRepository testRepository;
 
+    @Mock
+    private ReportHandler reportHandler;
+
     private ReportAggregateService reportAggregateService;
 
     private server.MATE.domain.test.entity.Test test;
@@ -47,12 +55,14 @@ class ReportAggregateServiceTest {
 
     @BeforeEach
     void setUp() {
+        given(reportHandler.supports()).willReturn(QuestionType.SUBJECTIVE);
+
         reportAggregateService = new ReportAggregateService(
                 questionRepository,
                 answerRepository,
                 reportRepository,
                 testRepository,
-                List.of()
+                List.of(reportHandler)
         );
 
         test = server.MATE.domain.test.entity.Test.builder()
@@ -68,12 +78,50 @@ class ReportAggregateServiceTest {
     }
 
     @Test
+    @DisplayName("aggregate는 활성 질문 목록을 조회해 handler 결과로 리포트를 저장하고 집계를 완료 처리한다")
+    void aggregate_buildsReportsFromQuestionsAndAnswers() {
+        Question question = Question.builder()
+                .testId(TEST_ID)
+                .questionType(QuestionType.SUBJECTIVE)
+                .title("주관식 질문")
+                .description("설명")
+                .sequence(1L)
+                .build();
+        ReflectionTestUtils.setField(question, "id", 101L);
+
+        Answer answer = Answer.builder()
+                .participationId(501L)
+                .questionId(101L)
+                .questionType(QuestionType.SUBJECTIVE)
+                .answer(Map.of("text", "응답"))
+                .build();
+
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(1L);
+        given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
+        given(questionRepository.findQuestionsInTest(TEST_ID)).willReturn(List.of(question));
+        given(answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(List.of(101L))).willReturn(List.of(answer));
+        given(reportHandler.compute(List.of(question), Map.of(101L, List.of(answer))))
+                .willReturn(Map.of(101L, Map.of("texts", List.of("응답"))));
+        given(reportRepository.saveAll(any())).willAnswer(invocation -> invocation.getArgument(0));
+
+        List<Report> result = reportAggregateService.aggregate(TEST_ID);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().getQuestionId()).isEqualTo(101L);
+        assertThat(result.getFirst().getResult()).isEqualTo(Map.of("texts", List.of("응답")));
+        assertThat(test.getReportStatus()).isEqualTo(ReportStatus.COMPLETED);
+        verify(questionRepository).findQuestionsInTest(TEST_ID);
+        verify(reportHandler).compute(List.of(question), Map.of(101L, List.of(answer)));
+    }
+
+    @Test
     @DisplayName("완전한 리포트가 이미 존재하면 COMPLETED로 복구하고 기존 리포트를 반환한다")
     void recover_whenCompleteReportsAlreadyExist_returnsExistingReportsAndMarksCompleted() {
         Report report1 = report(101L);
         Report report2 = report(102L);
 
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(2L);
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(2L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(2L);
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
         given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report1, report2));
@@ -91,7 +139,7 @@ class ReportAggregateServiceTest {
         Report report1 = report(101L);
         Report report2 = report(102L);
 
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(2L);
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(2L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(2L);
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
         given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report1, report2));
@@ -106,7 +154,7 @@ class ReportAggregateServiceTest {
     @Test
     @DisplayName("부분 생성된 리포트만 존재하면 FAILED로 복구하고 빈 리스트를 반환한다")
     void recover_whenReportsArePartiallyCreated_returnsEmptyListAndMarksFailed() {
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(3L);
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(3L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(1L);
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
@@ -120,7 +168,7 @@ class ReportAggregateServiceTest {
     @Test
     @DisplayName("일반 예외이고 리포트가 없으면 FAILED로 복구하고 빈 리스트를 반환한다")
     void recover_whenGenericExceptionAndNoReportsExist_returnsEmptyListAndMarksFailed() {
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(2L);
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(2L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
