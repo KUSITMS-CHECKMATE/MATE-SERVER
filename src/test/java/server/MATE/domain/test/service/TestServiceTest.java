@@ -89,7 +89,7 @@ class TestServiceTest {
         server.MATE.domain.test.entity.Test waitingTest = createListTest(11L, "검수 중 테스트", TestStatus.WAITING);
         ReflectionTestUtils.setField(waitingTest, "createdAt", LocalDateTime.now().minusDays(5));
 
-        given(testRepository.findAllByTestStatusInAndDeletedAtIsNullAndClosedAtGreaterThanEqualOrderByCreatedAtDesc(
+        given(testRepository.findActiveTests(
                 any(),
                 any()
         )).willReturn(List.of(inProgressTest, waitingTest));
@@ -107,7 +107,7 @@ class TestServiceTest {
     @Test
     void 테스트_상세_조회_시_상태와_응답_여부를_반환한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
-        given(testRepository.findWithCategoriesByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findWithCategoriesById(TEST_ID)).willReturn(Optional.of(test));
         given(participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(TEST_ID, MAKER_ID))
                 .willReturn(true);
 
@@ -121,7 +121,7 @@ class TestServiceTest {
     @Test
     void 종료된_테스트_상세_조회_시_상태를_반환한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.COMPLETED);
-        given(testRepository.findWithCategoriesByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findWithCategoriesById(TEST_ID)).willReturn(Optional.of(test));
         given(participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(TEST_ID, MAKER_ID))
                 .willReturn(false);
 
@@ -143,7 +143,7 @@ class TestServiceTest {
                 .build();
         ReflectionTestUtils.setField(myTest, "id", TEST_ID);
 
-        given(testRepository.findAllByMakerIdAndDeletedAtIsNullOrderByCreatedAtDesc(MAKER_ID))
+        given(testRepository.findByMakerId(MAKER_ID))
                 .willReturn(List.of(myTest));
 
         MyTestSummaryResponse response = testService.listMyTests(MAKER_ID);
@@ -160,7 +160,7 @@ class TestServiceTest {
     @Test
     void 내가_찜한_테스트_목록을_조회한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
-        given(testRepository.findLikedTestsByUserId(
+        given(testRepository.findLikedTests(
                 MAKER_ID,
                 List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING, TestStatus.COMPLETED)
         )).willReturn(List.of(test));
@@ -180,7 +180,7 @@ class TestServiceTest {
 
     @Test
     void 테스트_찜_시_찜_정보를_저장하고_카운트를_증가시킨다() {
-        given(testRepository.findByIdAndDeletedAtIsNullForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
         given(testLikeRepository.existsByUserIdAndTestId(MAKER_ID, TEST_ID)).willReturn(false);
 
         TestLikeResponse response = testService.likeTest(TEST_ID, MAKER_ID);
@@ -199,7 +199,7 @@ class TestServiceTest {
                 .build();
         test.incrementLikeCount();
 
-        given(testRepository.findByIdAndDeletedAtIsNullForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
         given(testLikeRepository.findByUserIdAndTestId(MAKER_ID, TEST_ID)).willReturn(Optional.of(testLike));
 
         TestLikeResponse response = testService.unlikeTest(TEST_ID, MAKER_ID);
@@ -213,7 +213,7 @@ class TestServiceTest {
     @Test
     void 메이커가_진행_중인_테스트를_종료한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
         TestStatusUpdateResponse response = testService.updateTestStatus(TEST_ID, MAKER_ID, Role.USER, TestStatus.COMPLETED);
 
@@ -224,7 +224,7 @@ class TestServiceTest {
     @Test
     void 진행_중이_아닌_테스트를_종료하면_예외가_발생한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.WAITING);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
         BaseException exception = Assertions.assertThrows(BaseException.class,
                 () -> testService.updateTestStatus(TEST_ID, MAKER_ID, Role.USER, TestStatus.COMPLETED));
@@ -235,7 +235,7 @@ class TestServiceTest {
     @Test
     void 메이커가_아닌_사용자가_테스트를_종료하면_예외가_발생한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
         BaseException exception = Assertions.assertThrows(BaseException.class,
                 () -> testService.updateTestStatus(TEST_ID, 999L, Role.USER, TestStatus.COMPLETED));
@@ -246,7 +246,7 @@ class TestServiceTest {
     @Test
     void 관리자가_검수_중인_테스트를_승인한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.WAITING);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
         TestStatusUpdateResponse response = testService.updateTestStatus(TEST_ID, 999L, Role.ADMIN, TestStatus.IN_PROGRESS);
 
@@ -256,7 +256,7 @@ class TestServiceTest {
     @Test
     void 관리자가_검수_중인_테스트를_반려한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.WAITING);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
         TestStatusUpdateResponse response = testService.updateTestStatus(TEST_ID, 999L, Role.ADMIN, TestStatus.REJECTED);
 
@@ -266,7 +266,7 @@ class TestServiceTest {
     @Test
     void 관리자가_검수_중이_아닌_테스트를_승인하면_예외가_발생한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
         BaseException exception = Assertions.assertThrows(BaseException.class,
                 () -> testService.updateTestStatus(TEST_ID, 999L, Role.ADMIN, TestStatus.IN_PROGRESS));
@@ -277,7 +277,7 @@ class TestServiceTest {
     @Test
     void 관리자가_검수_중이_아닌_테스트를_반려하면_예외가_발생한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.COMPLETED);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
         BaseException exception = Assertions.assertThrows(BaseException.class,
                 () -> testService.updateTestStatus(TEST_ID, 999L, Role.ADMIN, TestStatus.REJECTED));
@@ -288,7 +288,7 @@ class TestServiceTest {
     @Test
     void 일반_사용자가_승인을_시도하면_예외가_발생한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.WAITING);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
         BaseException exception = Assertions.assertThrows(BaseException.class,
                 () -> testService.updateTestStatus(TEST_ID, 999L, Role.USER, TestStatus.IN_PROGRESS));
@@ -298,7 +298,7 @@ class TestServiceTest {
 
     @Test
     void WAITING_상태로_변경을_시도하면_예외가_발생한다() {
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
         BaseException exception = Assertions.assertThrows(BaseException.class,
                 () -> testService.updateTestStatus(TEST_ID, MAKER_ID, Role.USER, TestStatus.WAITING));
