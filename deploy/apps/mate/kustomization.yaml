@@ -12,6 +12,7 @@ resources:
   - externalsecret-pdf.yaml
   - deployment-pdf.yaml
   - service-pdf.yaml
+  - ingress-pdf.yaml
 images:
   - name: kusitmsmateacr.azurecr.io/mate
     newTag: gha-23
