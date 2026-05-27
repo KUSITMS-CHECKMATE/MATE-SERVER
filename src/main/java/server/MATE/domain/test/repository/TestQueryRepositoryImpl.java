@@ -72,11 +72,11 @@ public class TestQueryRepositoryImpl implements TestQueryRepository {
 
 
     @Override
-    public List<Test> findActiveTests(List<TestStatus> statuses, LocalDateTime closedAt) {
+    public List<Test> findAvailableTestsForUser(List<TestStatus> statuses, LocalDateTime closedAt, Long userId) {
         return queryFactory
                 .selectFrom(test)
                 .leftJoin(test.categories).fetchJoin()
-                .where(statusIn(statuses), notDeleted(), closedAtAfter(closedAt))
+                .where(statusIn(statuses), notDeleted(), closedAtAfter(closedAt), notParticipatedBy(userId))
                 .orderBy(test.createdAt.desc())
                 .distinct()
                 .fetch();

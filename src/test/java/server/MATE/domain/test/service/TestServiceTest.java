@@ -90,7 +90,8 @@ class TestServiceTest {
         server.MATE.domain.test.entity.Test waitingTest = createListTest(11L, "검수 중 테스트", TestStatus.WAITING);
         ReflectionTestUtils.setField(waitingTest, "createdAt", LocalDateTime.now().minusDays(5));
 
-        given(testRepository.findActiveTests(
+        given(testRepository.findAvailableTestsForUser(
+                any(),
                 any(),
                 any()
         )).willReturn(List.of(inProgressTest, waitingTest));

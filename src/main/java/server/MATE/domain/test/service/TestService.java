@@ -47,9 +47,10 @@ public class TestService {
     @Transactional(readOnly = true)
     public TestSummaryListResponse listTests(Long userId) {
         LocalDateTime threshold = LocalDate.now(clock.withZone(KST)).atStartOfDay();
-        List<Test> tests = testRepository.findActiveTests(
+        List<Test> tests = testRepository.findAvailableTestsForUser(
                 List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING),
-                threshold
+                threshold,
+                userId
         );
         return TestSummaryListResponse.from(toSummaryResponses(userId, tests));
     }

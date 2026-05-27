@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
+import server.MATE.domain.participation.entity.Participation;
 import server.MATE.domain.test.entity.Category;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.global.config.ClockConfig;
@@ -157,11 +158,12 @@ class TestQueryRepositoryImplTest {
     }
 
     @Test
-    @DisplayName("findActiveTests: 주어진 상태와 마감일 조건에 맞는 테스트를 반환한다")
-    void findActiveTests_returnsMatchingTests() {
-        List<server.MATE.domain.test.entity.Test> result = testRepository.findActiveTests(
+    @DisplayName("findAvailableTestsForUser: 주어진 상태와 마감일 조건에 맞는 테스트를 반환한다")
+    void findAvailableTestsForUser_returnsMatchingTests() {
+        List<server.MATE.domain.test.entity.Test> result = testRepository.findAvailableTestsForUser(
                 List.of(TestStatus.IN_PROGRESS),
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                10L
         );
 
         assertThat(result).hasSize(1);
@@ -169,8 +171,8 @@ class TestQueryRepositoryImplTest {
     }
 
     @Test
-    @DisplayName("findActiveTests: 마감된 테스트는 결과에 포함하지 않는다")
-    void findActiveTests_excludesExpiredTests() {
+    @DisplayName("findAvailableTestsForUser: 마감된 테스트는 결과에 포함하지 않는다")
+    void findAvailableTestsForUser_excludesExpiredTests() {
         em.getEntityManager()
                 .createQuery("update Test t set t.closedAt = :past where t.id = :id")
                 .setParameter("past", LocalDateTime.now().minusDays(1))
@@ -178,17 +180,18 @@ class TestQueryRepositoryImplTest {
                 .executeUpdate();
         em.clear();
 
-        List<server.MATE.domain.test.entity.Test> result = testRepository.findActiveTests(
+        List<server.MATE.domain.test.entity.Test> result = testRepository.findAvailableTestsForUser(
                 List.of(TestStatus.IN_PROGRESS),
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                10L
         );
 
         assertThat(result).isEmpty();
     }
 
     @Test
-    @DisplayName("findActiveTests: 삭제된 테스트는 결과에 포함하지 않는다")
-    void findActiveTests_excludesDeletedTests() {
+    @DisplayName("findAvailableTestsForUser: 삭제된 테스트는 결과에 포함하지 않는다")
+    void findAvailableTestsForUser_excludesDeletedTests() {
         em.getEntityManager()
                 .createQuery("update Test t set t.deletedAt = :now where t.id = :id")
                 .setParameter("now", LocalDateTime.now())
@@ -196,9 +199,28 @@ class TestQueryRepositoryImplTest {
                 .executeUpdate();
         em.clear();
 
-        List<server.MATE.domain.test.entity.Test> result = testRepository.findActiveTests(
+        List<server.MATE.domain.test.entity.Test> result = testRepository.findAvailableTestsForUser(
                 List.of(TestStatus.IN_PROGRESS),
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                10L
+        );
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findAvailableTestsForUser: 이미 응답한 테스트는 결과에 포함하지 않는다")
+    void findAvailableTestsForUser_excludesParticipatedTests() {
+        em.persistAndFlush(Participation.builder()
+                .testId(savedTest.getId())
+                .testerId(10L)
+                .build());
+        em.clear();
+
+        List<server.MATE.domain.test.entity.Test> result = testRepository.findAvailableTestsForUser(
+                List.of(TestStatus.IN_PROGRESS),
+                LocalDateTime.now(),
+                10L
         );
 
         assertThat(result).isEmpty();
