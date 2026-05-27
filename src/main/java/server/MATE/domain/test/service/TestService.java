@@ -10,6 +10,8 @@ import server.MATE.domain.test.dto.response.MyTestSummaryItem;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
+import server.MATE.domain.test.dto.response.TestStatusUpdateResponse;
+import server.MATE.domain.users.entity.Role;
 import server.MATE.domain.test.dto.response.TestSummaryListResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.entity.Test;
@@ -79,6 +81,44 @@ public class TestService {
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         boolean hasResponded = participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(testId, userId);
         return TestDetailResponse.from(test, toImageUrls(test.getImageKeys()), hasResponded);
+    }
+
+    public TestStatusUpdateResponse updateTestStatus(Long testId, Long userId, Role role, TestStatus status) {
+        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        switch (status) {
+            case COMPLETED -> {
+                if (!test.getMakerId().equals(userId)) {
+                    throw new BaseException(BaseErrorCode.COMMON_009);
+                }
+                if (test.getTestStatus() != TestStatus.IN_PROGRESS) {
+                    throw new BaseException(BaseErrorCode.TEST_007);
+                }
+                test.complete();
+            }
+            case IN_PROGRESS -> {
+                if (role != Role.ADMIN) {
+                    throw new BaseException(BaseErrorCode.COMMON_009);
+                }
+                if (test.getTestStatus() != TestStatus.WAITING) {
+                    throw new BaseException(BaseErrorCode.TEST_007);
+                }
+                test.start();
+            }
+            case REJECTED -> {
+                if (role != Role.ADMIN) {
+                    throw new BaseException(BaseErrorCode.COMMON_009);
+                }
+                if (test.getTestStatus() != TestStatus.WAITING) {
+                    throw new BaseException(BaseErrorCode.TEST_007);
+                }
+                test.reject();
+            }
+            default -> throw new BaseException(BaseErrorCode.COMMON_002);
+        }
+
+        return new TestStatusUpdateResponse(testId, test.getTestStatus());
     }
 
     public TestLikeResponse likeTest(Long testId, Long userId) {
