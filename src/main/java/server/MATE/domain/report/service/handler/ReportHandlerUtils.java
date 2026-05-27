@@ -30,9 +30,9 @@ public final class ReportHandlerUtils {
                         Comparator.comparingInt(List::size)).reversed())
                 .map(e -> {
                     Map<String, Object> cluster = new LinkedHashMap<>();
-                    cluster.put("tag", null);
                     cluster.put("representative", e.getKey());
                     cluster.put("count", e.getValue().size());
+                    cluster.put("responses", e.getValue());
                     return cluster;
                 })
                 .toList();

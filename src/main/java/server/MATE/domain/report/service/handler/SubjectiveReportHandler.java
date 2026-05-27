@@ -44,6 +44,8 @@ public class SubjectiveReportHandler implements ReportHandler {
         Map<String, Object> result = new LinkedHashMap<>();
 
         if (allTexts.size() < aiService.getMinResponseThreshold()) {
+            result.put("aiSummary", null);
+            result.put("clusters", List.of());
             result.put("texts", allTexts);
             return result;
         }
@@ -55,8 +57,9 @@ public class SubjectiveReportHandler implements ReportHandler {
                     result.put("texts", ReportHandlerUtils.sampleTexts(allTexts));
                 },
                 () -> {
+                    result.put("aiSummary", null);
                     result.put("clusters", ReportHandlerUtils.buildClusters(allTexts));
-                    result.put("texts", allTexts);
+                    result.put("texts", ReportHandlerUtils.sampleTexts(allTexts));
                 }
         );
         return result;
