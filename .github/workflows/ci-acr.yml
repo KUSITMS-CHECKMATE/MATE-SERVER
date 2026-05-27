@@ -17,7 +17,34 @@ env:
   JAVA_VERSION: "21"
 
 jobs:
+  build-and-push-pdf:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        if: github.event_name == 'push'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build & push mate-pdf
+        if: github.event_name == 'push'
+        run: |
+          az acr login --name kusitmsmateacr
+          docker build \
+            -t kusitmsmateacr.azurecr.io/mate-pdf:gha-${{ github.run_number }} \
+            ./pdf-server
+          docker push kusitmsmateacr.azurecr.io/mate-pdf:gha-${{ github.run_number }}
+
   build-and-push:
+    needs: build-and-push-pdf
     runs-on: ubuntu-latest
     permissions:
       contents: write 
@@ -84,17 +111,20 @@ jobs:
           docker push "${{ steps.meta.outputs.image }}:gha-${{ github.run_number }}"
           printf 'Pushed %s (%s variants)\n' "${{ steps.meta.outputs.image }}" "$SHORT_SHA gha-${{ github.run_number }}"
 
+      - name: Install kustomize
+        if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
+        uses: imranismail/setup-kustomize@v2
+
       - name: Update kustomization image tag for ArgoCD
         if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
         env:
           IMAGE_TAG: gha-${{ github.run_number }}
         run: |
           FILE="deploy/apps/mate/kustomization.yaml"
-          if grep -q '^[[:space:]]*newTag:' "$FILE"; then
-            sed -i -E "s|(^[[:space:]]*newTag:[[:space:]]*).*$|\1${IMAGE_TAG}|" "$FILE"
-          else
-            printf '\nimages:\n  - name: kusitmsmateacr.azurecr.io/mate\n    newTag: %s\n' "${IMAGE_TAG}" >> "$FILE"
-          fi
+          cd deploy/apps/mate
+          kustomize edit set image kusitmsmateacr.azurecr.io/mate:${IMAGE_TAG}
+          kustomize edit set image kusitmsmateacr.azurecr.io/mate-pdf:${IMAGE_TAG}
+          cd -
 
           git add "$FILE"
           if git diff --cached --quiet; then
@@ -104,5 +134,5 @@ jobs:
 
           git -c user.name="github-actions[bot]" \
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-              commit -m "chore(cd): update mate image tag to ${IMAGE_TAG} [skip ci]"
+              commit -m "chore(cd): update image tags (mate, mate-pdf) to ${IMAGE_TAG} [skip ci]"
           git push origin "HEAD:${GITHUB_REF_NAME}"
