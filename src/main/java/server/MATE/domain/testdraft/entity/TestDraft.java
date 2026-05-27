@@ -161,6 +161,9 @@ public class TestDraft extends BaseEntity {
         if (this.goalPpl == null || this.reward == null || this.closedAt == null) {
             throw new BaseException(BaseErrorCode.DRAFT_005);
         }
+        if (this.goalPpl <= 0 || this.reward < 0) {
+            throw new BaseException(BaseErrorCode.DRAFT_005);
+        }
     }
 
     public void validatePublishableFields() {
