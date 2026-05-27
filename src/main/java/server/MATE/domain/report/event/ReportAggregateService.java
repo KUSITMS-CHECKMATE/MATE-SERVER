@@ -55,7 +55,7 @@ public class ReportAggregateService {
             noRetryFor = {BaseException.class, DataIntegrityViolationException.class})
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<Report> aggregate(Long testId) {
-        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
+        Test test = testRepository.findActiveById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         long questionCount = questionRepository.countByTestIdAndDeletedAtIsNull(testId);
@@ -140,7 +140,7 @@ public class ReportAggregateService {
     }
 
     private void updateReportStatus(Long testId, Consumer<Test> action) {
-        testRepository.findByIdAndDeletedAtIsNull(testId).ifPresent(test -> {
+        testRepository.findActiveById(testId).ifPresent(test -> {
             action.accept(test);
             testRepository.save(test);
         });

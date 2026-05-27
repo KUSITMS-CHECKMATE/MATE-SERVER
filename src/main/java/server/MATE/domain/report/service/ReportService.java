@@ -33,7 +33,7 @@ public class ReportService {
     private final ReportRepository reportRepository;
 
     public ReportResponse getReport(Long testId, Long userId, Role role) {
-        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
+        Test test = testRepository.findActiveById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         if (role != Role.ADMIN && !test.getMakerId().equals(userId)) throw new BaseException(BaseErrorCode.TEST_005);
 
