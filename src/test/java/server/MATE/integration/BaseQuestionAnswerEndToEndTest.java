@@ -139,6 +139,7 @@ abstract class BaseQuestionAnswerEndToEndTest {
                 .serviceDescription("서비스 설명")
                 .imageKeys(List.of())
                 .testStatus(TestStatus.IN_PROGRESS)
+                .closedAt(java.time.LocalDateTime.of(2099, 12, 31, 23, 59, 59))
                 .build());
         return new TestActors(
                 maker.getId(),
