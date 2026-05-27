@@ -16,6 +16,9 @@ import server.MATE.domain.report.repository.ReportRepository;
 import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
+import server.MATE.domain.users.entity.Role;
+import server.MATE.global.common.exception.BaseErrorCode;
+import server.MATE.global.common.exception.BaseException;
 
 import java.util.List;
 import java.util.Map;
@@ -66,7 +69,7 @@ class ReportServiceTest {
         given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
         given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(0L);
 
-        ReportResponse response = reportService.getReport(10L, 1L);
+        ReportResponse response = reportService.getReport(10L, 1L, Role.USER);
 
         assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
         assertThat(response.reportStatus()).isEqualTo(ReportStatus.FAILED);
@@ -83,7 +86,7 @@ class ReportServiceTest {
         given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
         given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(0L);
 
-        ReportResponse response = reportService.getReport(10L, 1L);
+        ReportResponse response = reportService.getReport(10L, 1L, Role.USER);
 
         assertThat(response.testStatus()).isEqualTo(TestStatus.REJECTED);
         assertThat(response.reportStatus()).isEqualTo(ReportStatus.FAILED);
@@ -100,7 +103,7 @@ class ReportServiceTest {
         given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
         given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(2L);
 
-        ReportResponse response = reportService.getReport(10L, 1L);
+        ReportResponse response = reportService.getReport(10L, 1L, Role.USER);
 
         assertThat(response.testStatus()).isEqualTo(TestStatus.COMPLETED);
         assertThat(response.reportStatus()).isEqualTo(ReportStatus.IN_PROGRESS);
@@ -128,7 +131,7 @@ class ReportServiceTest {
                 new QuestionSummaryItem(101L, 1L, "질문", server.MATE.domain.question.entity.QuestionType.SUBJECTIVE)
         ));
 
-        ReportResponse response = reportService.getReport(10L, 1L);
+        ReportResponse response = reportService.getReport(10L, 1L, Role.USER);
 
         assertThat(response.reportStatus()).isEqualTo(ReportStatus.COMPLETED);
         assertThat(response.reports()).hasSize(1);
@@ -155,7 +158,7 @@ class ReportServiceTest {
                 new QuestionSummaryItem(102L, 2L, "질문2", server.MATE.domain.question.entity.QuestionType.SUBJECTIVE)
         ));
 
-        ReportResponse response = reportService.getReport(10L, 1L);
+        ReportResponse response = reportService.getReport(10L, 1L, Role.USER);
 
         assertThat(response.reportStatus()).isEqualTo(ReportStatus.FAILED);
         assertThat(response.reports()).isEmpty();
@@ -185,10 +188,35 @@ class ReportServiceTest {
                 new QuestionSummaryItem(101L, 1L, "질문", server.MATE.domain.question.entity.QuestionType.SUBJECTIVE)
         ));
 
-        ReportResponse response = reportService.getReport(10L, 1L);
+        ReportResponse response = reportService.getReport(10L, 1L, Role.USER);
 
         assertThat(response.reportStatus()).isEqualTo(ReportStatus.COMPLETED);
         assertThat(response.reports()).hasSize(1);
         assertThat(response.reports().getFirst().questionId()).isEqualTo(101L);
+    }
+
+    @Test
+    @DisplayName("메이커가 아닌 일반 사용자는 리포트를 조회할 수 없다")
+    void getReport_throwsExceptionWhenNotMaker() {
+        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
+
+        BaseException exception = org.junit.jupiter.api.Assertions.assertThrows(BaseException.class,
+                () -> reportService.getReport(10L, 999L, Role.USER));
+
+        assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.TEST_005);
+    }
+
+    @Test
+    @DisplayName("어드민은 메이커가 아니어도 리포트를 조회할 수 있다")
+    void getReport_adminCanViewAnyReport() {
+        ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
+        ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.PENDING);
+
+        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
+        given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(0L);
+
+        ReportResponse response = reportService.getReport(10L, 999L, Role.ADMIN);
+
+        assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
     }
 }
