@@ -1,8 +1,5 @@
 package server.MATE.domain.test.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -18,12 +15,12 @@ import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.domain.testdraft.entity.TestDraft;
 import server.MATE.domain.testdraft.repository.TestDraftRepository;
+import server.MATE.domain.testdraft.validator.TestDraftValidator;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.storage.event.FileCleanupEvent;
 
 import java.util.List;
-import java.util.Set;
 
 @Service
 @Transactional
@@ -35,8 +32,7 @@ public class TestPublishService {
     private final TestRepository testRepository;
     private final QuestionService questionService;
     private final ApplicationEventPublisher eventPublisher;
-    private final ObjectMapper objectMapper;
-    private final Validator validator;
+    private final TestDraftValidator testDraftValidator;
 
     public Long publish(Long paymentId) {
         Payment payment = paymentRepository.findByIdForUpdate(paymentId)
@@ -57,7 +53,7 @@ public class TestPublishService {
             throw new BaseException(BaseErrorCode.PAYMENT_003);
         }
 
-        draft.validateReadyForPublish();
+        QuestionCreateRequest questionCreateRequest = testDraftValidator.validateForPublish(draft);
         draft.markPublishing();
 
         Test test = testRepository.save(Test.builder()
@@ -80,7 +76,6 @@ public class TestPublishService {
             eventPublisher.publishEvent(new FileCleanupEvent(draft.getImageKeys()));
         }
 
-        QuestionCreateRequest questionCreateRequest = toQuestionCreateRequest(draft);
         questionService.createQuestions(test.getId(), draft.getMakerId(), questionCreateRequest);
 
         payment.linkTest(test.getId());
@@ -93,23 +88,5 @@ public class TestPublishService {
         return categoryNames.stream()
                 .map(Category::valueOf)
                 .toList();
-    }
-
-    private QuestionCreateRequest toQuestionCreateRequest(TestDraft draft) {
-        final QuestionCreateRequest questionCreateRequest;
-        try {
-            questionCreateRequest = objectMapper.convertValue(
-                    draft.getQuestionsPayload(),
-                    QuestionCreateRequest.class
-            );
-        } catch (IllegalArgumentException e) {
-            throw new BaseException(BaseErrorCode.DRAFT_004);
-        }
-
-        Set<ConstraintViolation<QuestionCreateRequest>> violations = validator.validate(questionCreateRequest);
-        if (!violations.isEmpty()) {
-            throw new BaseException(BaseErrorCode.DRAFT_004);
-        }
-        return questionCreateRequest;
     }
 }
