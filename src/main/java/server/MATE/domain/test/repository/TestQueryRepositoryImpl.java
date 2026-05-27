@@ -7,7 +7,6 @@ import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import server.MATE.domain.participation.entity.QParticipation;
-import server.MATE.domain.test.entity.QTest;
 import server.MATE.domain.test.entity.QTestLike;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestStatus;
@@ -16,41 +15,41 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static server.MATE.domain.test.entity.QTest.test;
+
 @Repository
 @RequiredArgsConstructor
 public class TestQueryRepositoryImpl implements TestQueryRepository {
 
     private final JPAQueryFactory queryFactory;
 
-    private static final QTest test = QTest.test;
-
-    // ── BooleanExpression 조각 ──────────────────────────────────────────────
-
+    // 삭제되지 않은 테스트만 가져오는 조건
     private static BooleanExpression notDeleted() {
         return test.deletedAt.isNull();
     }
 
+    // 전달받은 ID와 테스트 ID가 같은 경우만 거르는 조건
     private static BooleanExpression idEq(Long id) {
         return id != null ? test.id.eq(id) : null;
     }
 
+    // 전달받은 사용자와 테스트 생성자가 같은 경우만 거르는 조건
     private static BooleanExpression makerIdEq(Long makerId) {
         return makerId != null ? test.makerId.eq(makerId) : null;
     }
 
+    // 전달받은 상태 목록(statuses)인 테스트만 가져오는 조건
     private static BooleanExpression statusIn(List<TestStatus> statuses) {
         return (statuses != null && !statuses.isEmpty())
                 ? test.testStatus.in(statuses) : null;
     }
 
+    // 테스트 마감 기한이 기준 시간(time)과 같거나 이후인 경우만 거르는 조건
     private static BooleanExpression closedAtAfter(LocalDateTime time) {
         return time != null ? test.closedAt.goe(time) : null;
     }
 
-    /**
-     * 특정 유저가 이 테스트에 참여한 경우 true — 미래 메서드 조합용 조각.
-     * 사용 예: .where(notParticipatedBy(userId)) → 내가 아직 참여 안 한 테스트 필터
-     */
+    // 현재 조회 중인 테스트에 해당 유저가 응답한 경우만 거르는 조건
     private static BooleanExpression participatedBy(Long userId) {
         if (userId == null) return null;
         QParticipation p = QParticipation.participation;
@@ -65,40 +64,80 @@ public class TestQueryRepositoryImpl implements TestQueryRepository {
                 .exists();
     }
 
+    // 현재 조회 중인 테스트에 해당 유저가 응답하지 않은 경우만 거르는 조건
     private static BooleanExpression notParticipatedBy(Long userId) {
         if (userId == null) return null;
         return participatedBy(userId).not();
     }
 
-    // ── 메서드 구현 (스텁 — Task 4, 5에서 교체) ────────────────────────────
 
     @Override
     public List<Test> findActiveTests(List<TestStatus> statuses, LocalDateTime closedAt) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return queryFactory
+                .selectFrom(test)
+                .leftJoin(test.categories).fetchJoin()
+                .where(statusIn(statuses), notDeleted(), closedAtAfter(closedAt))
+                .orderBy(test.createdAt.desc())
+                .distinct()
+                .fetch();
     }
 
     @Override
     public List<Test> findByMakerId(Long makerId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return queryFactory
+                .selectFrom(test)
+                .where(makerIdEq(makerId), notDeleted())
+                .orderBy(test.createdAt.desc())
+                .fetch();
     }
 
     @Override
     public List<Test> findLikedTests(Long userId, List<TestStatus> statuses) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        QTestLike testLike = QTestLike.testLike;
+        return queryFactory
+                .selectFrom(test)
+                .join(testLike).on(testLike.testId.eq(test.id))
+                .where(
+                        testLike.userId.eq(userId),
+                        notDeleted(),
+                        statusIn(statuses)
+                )
+                .orderBy(testLike.createdAt.desc())
+                .fetch();
     }
 
     @Override
     public Optional<Test> findActiveById(Long id) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return Optional.ofNullable(
+                queryFactory
+                        .selectFrom(test)
+                        .where(idEq(id), notDeleted())
+                        .fetchOne()
+        );
     }
 
     @Override
     public Optional<Test> findWithCategoriesById(Long id) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return Optional.ofNullable(
+                queryFactory
+                        .selectFrom(test)
+                        // categories를 fetch join하면 테스트가 중복 조회될 수 있어 distinct로 중복 제거함
+                        // 컬렉션 fetch join은 하나만 두는 편이 안전함
+                        .leftJoin(test.categories).fetchJoin()
+                        .where(idEq(id), notDeleted())
+                        .distinct()
+                        .fetchOne()
+        );
     }
 
     @Override
     public Optional<Test> findByIdForUpdate(Long id) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return Optional.ofNullable(
+                queryFactory
+                        .selectFrom(test)
+                        .where(idEq(id), notDeleted())
+                        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                        .fetchOne()
+        );
     }
 }
