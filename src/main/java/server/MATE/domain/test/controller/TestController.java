@@ -3,6 +3,7 @@ package server.MATE.domain.test.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -11,6 +12,8 @@ import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
+import server.MATE.domain.test.dto.request.TestStatusUpdateRequest;
+import server.MATE.domain.test.dto.response.TestStatusUpdateResponse;
 import server.MATE.domain.test.dto.response.TestSummaryListResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.service.TestService;
@@ -107,6 +110,27 @@ public class TestController {
     ) {
         TestDetailResponse data = testService.getTest(testId, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트를 조회했습니다.", data));
+    }
+
+    @Operation(
+            summary = "✔️ 테스트 상태 변경",
+            description = """
+                    테스트 상태를 변경합니다.
+
+                    - `COMPLETED`: 메이커 본인만 가능, 현재 상태가 `IN_PROGRESS`일 때만 허용
+                    - `IN_PROGRESS`: 관리자만 가능 (테스트 승인)
+                    - `REJECTED`: 관리자만 가능 (테스트 반려)
+                    """
+    )
+    @PatchMapping("/{testId}/status")
+    public ResponseEntity<ApiResponse<TestStatusUpdateResponse>> updateTestStatus(
+            @PathVariable Long testId,
+            @RequestBody @Valid TestStatusUpdateRequest request,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        TestStatusUpdateResponse response = testService.updateTestStatus(
+                testId, authenticatedUser.getId(), authenticatedUser.getRole(), request.status());
+        return ResponseEntity.ok(ApiResponse.ok("테스트 상태가 변경되었습니다.", response));
     }
 
     @Operation(summary = "✔️ 테스트 찜하기",

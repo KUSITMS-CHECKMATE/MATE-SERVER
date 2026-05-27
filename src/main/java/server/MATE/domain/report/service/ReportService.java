@@ -18,6 +18,7 @@ import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
+import server.MATE.domain.users.entity.Role;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
@@ -31,10 +32,10 @@ public class ReportService {
     private final QuestionRepository questionRepository;
     private final ReportRepository reportRepository;
 
-    public ReportResponse getReport(Long testId, Long makerId) {
+    public ReportResponse getReport(Long testId, Long userId, Role role) {
         Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
-        if (!test.getMakerId().equals(makerId)) throw new BaseException(BaseErrorCode.TEST_005);
+        if (role != Role.ADMIN && !test.getMakerId().equals(userId)) throw new BaseException(BaseErrorCode.TEST_005);
 
         int questionCount = Math.toIntExact(questionRepository.countByTestIdAndDeletedAtIsNull(testId));
         ReportStatus reportStatus = test.getReportStatus() != null ? test.getReportStatus() : ReportStatus.PENDING;
