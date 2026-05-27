@@ -40,6 +40,17 @@ public class ReportController {
                     - `testStatus`가 `COMPLETED`이고 `reportStatus`가 `IN_PROGRESS`이면 집계 중으로 `reports`는 빈 리스트입니다.
                     - `reportStatus`가 `COMPLETED`이면 `reports`를 반환합니다.
                     - `reports[].result` 구조는 질문 유형(`type`)마다 다릅니다. 아래 예시 응답을 참고해주세요.
+
+                    #### 주관식 응답 집계 필드(`aiSummary` / `clusters` / `texts` · `otherTexts`) 반환 규칙
+                    주관식(SUBJECTIVE), 객관식 기타입력(OBJECTIVE + isOther), 5초테스트(FIVE_SECOND) 유형에 포함됩니다.
+
+                    | 상황 | aiSummary | clusters | texts / otherTexts |
+                    |------|-----------|----------|--------------------|
+                    | 응답 수 < 기준치 | `null` | `[]` | 전체 응답 |
+                    | 응답 수 ≥ 기준치, AI 요약 성공 | AI 요약 문자열 | AI 클러스터 목록 | 최대 15개 샘플 |
+                    | 응답 수 ≥ 기준치, AI 요약 실패 | `null` | 동일 응답 기준 그룹화 | 최대 15개 샘플 |
+
+                    각 클러스터 오브젝트: `{ "representative": string, "count": number, "responses": string[] }`
                     """
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -85,7 +96,7 @@ public class ReportController {
                                                     "title": "서비스에서 불편한 점은?",
                                                     "type": "SUBJECTIVE",
                                                     "result": {
-                                                      "aiSummary": "AI 요약 준비 중입니다.",
+                                                      "aiSummary": "AI 요약을 적어줍니다. 최대 3줄까지 보여줍니다. ",
                                                       "clusters": [
                                                         { "representative": "버튼이 너무 작아요.", "count": 2, "responses": ["버튼이 너무 작아요.", "버튼이 너무 작아요."] },
                                                         { "representative": "로딩이 느립니다.", "count": 1, "responses": ["로딩이 느립니다."] }
@@ -127,7 +138,7 @@ public class ReportController {
                                                         { "optionId": 102, "content": "검색", "count": 3, "ratio": 0.3 },
                                                         { "optionId": 103, "content": "기타", "count": 1, "ratio": 0.1 }
                                                       ],
-                                                      "aiSummary": "AI 요약 준비 중입니다.",
+                                                      "aiSummary": "AI 요약을 적어줍니다. 최대 3줄까지 보여줍니다. ",
                                                       "clusters": [
                                                         { "representative": "알림 기능을 자주 씁니다.", "count": 1, "responses": ["알림 기능을 자주 씁니다."] }
                                                       ],
@@ -159,7 +170,7 @@ public class ReportController {
                                                     "title": "화면에서 가장 먼저 눈에 띈 것은?",
                                                     "type": "FIVE_SECOND",
                                                     "result": {
-                                                      "aiSummary": "AI 요약 준비 중입니다.",
+                                                      "aiSummary": "AI 요약을 적어줍니다. 최대 3줄까지 보여줍니다. ",
                                                       "clusters": [
                                                         { "representative": "상단 배너가 눈에 들어왔어요.", "count": 1, "responses": ["상단 배너가 눈에 들어왔어요."] },
                                                         { "representative": "검색창이 먼저 보였습니다.", "count": 1, "responses": ["검색창이 먼저 보였습니다."] }
@@ -199,7 +210,7 @@ public class ReportController {
                                                         { "optionId": 201, "content": "검색창", "count": 4, "ratio": 0.667 },
                                                         { "optionId": 202, "content": "배너", "count": 2, "ratio": 0.333 }
                                                       ],
-                                                      "aiSummary": "AI 요약 준비 중입니다.",
+                                                      "aiSummary": "AI 요약을 적어줍니다. 최대 3줄까지 보여줍니다. ",
                                                       "clusters": [
                                                         { "representative": "하단 버튼이요", "count": 1, "responses": ["하단 버튼이요"] }
                                                       ],

@@ -98,6 +98,8 @@ public class FiveSecondReportHandler implements ReportHandler {
 
     private void appendAiResult(Map<String, Object> result, List<String> texts, String rawTextsKey) {
         if (texts.size() < aiService.getMinResponseThreshold()) {
+            result.put("aiSummary", null);
+            result.put("clusters", List.of());
             result.put(rawTextsKey, texts);
             return;
         }
@@ -109,8 +111,9 @@ public class FiveSecondReportHandler implements ReportHandler {
                     result.put(rawTextsKey, ReportHandlerUtils.sampleTexts(texts));
                 },
                 () -> {
+                    result.put("aiSummary", null);
                     result.put("clusters", ReportHandlerUtils.buildClusters(texts));
-                    result.put(rawTextsKey, texts);
+                    result.put(rawTextsKey, ReportHandlerUtils.sampleTexts(texts));
                 }
         );
     }
