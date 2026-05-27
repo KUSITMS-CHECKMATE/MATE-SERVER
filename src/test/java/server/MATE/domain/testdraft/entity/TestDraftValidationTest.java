@@ -74,6 +74,34 @@ class TestDraftValidationTest {
     }
 
     @Test
+    @DisplayName("goalPpl이 0 이하이면 DRAFT_005")
+    void validateAmountFields_nonPositiveGoalPpl_throwsDraft005() {
+        TestDraft draft = TestDraft.builder()
+                .makerId(1L)
+                .goalPpl(0)
+                .reward(300)
+                .closedAt(LocalDateTime.now().plusDays(10))
+                .build();
+
+        BaseException ex = assertThrows(BaseException.class, draft::validateAmountFields);
+        assertThat(ex.getErrorCode()).isEqualTo(BaseErrorCode.DRAFT_005);
+    }
+
+    @Test
+    @DisplayName("reward가 음수이면 DRAFT_005")
+    void validateAmountFields_negativeReward_throwsDraft005() {
+        TestDraft draft = TestDraft.builder()
+                .makerId(1L)
+                .goalPpl(5)
+                .reward(-1)
+                .closedAt(LocalDateTime.now().plusDays(10))
+                .build();
+
+        BaseException ex = assertThrows(BaseException.class, draft::validateAmountFields);
+        assertThat(ex.getErrorCode()).isEqualTo(BaseErrorCode.DRAFT_005);
+    }
+
+    @Test
     @DisplayName("title이 blank이면 DRAFT_006")
     void validatePublishableFields_blankTitle_throwsDraft006() {
         TestDraft draft = TestDraft.builder()
