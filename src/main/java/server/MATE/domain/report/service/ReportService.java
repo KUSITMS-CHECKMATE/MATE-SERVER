@@ -37,7 +37,7 @@ public class ReportService {
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         if (role != Role.ADMIN && !test.getMakerId().equals(userId)) throw new BaseException(BaseErrorCode.TEST_005);
 
-        int questionCount = Math.toIntExact(questionRepository.countByTestIdAndDeletedAtIsNull(testId));
+        int questionCount = Math.toIntExact(questionRepository.countQuestionsInTest(testId));
         ReportStatus reportStatus = test.getReportStatus() != null ? test.getReportStatus() : ReportStatus.PENDING;
 
         switch (test.getTestStatus()) {
@@ -67,7 +67,7 @@ public class ReportService {
 
         // 테스트가 종료됐고 리포트 집계가 끝났다면 리포트를 반환함
         List<Report> aggregations = reportRepository.findAllByTestId(testId);
-        List<QuestionSummaryItem> questionSummaries = questionRepository.findQuestionSummariesByTestId(testId);
+        List<QuestionSummaryItem> questionSummaries = questionRepository.findQuestionSummariesInTest(testId);
 
         Map<Long, Map<String, Object>> resultByQuestionId = aggregations.stream()
                 .collect(Collectors.toMap(Report::getQuestionId, Report::getResult));

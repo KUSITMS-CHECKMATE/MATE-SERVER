@@ -107,7 +107,7 @@ public class AnswerService {
         }
 
         Map<Long, AnswerQuestionTypeView> questionMap = questionRepository
-                .findAnswerQuestionTypeViewsByTestId(testId)
+                .findAnswerQuestionTypesInTest(testId)
                 .stream()
                 .collect(Collectors.toMap(AnswerQuestionTypeView::questionId, view -> view));
 
