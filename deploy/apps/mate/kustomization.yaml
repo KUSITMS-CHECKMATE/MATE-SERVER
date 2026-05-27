@@ -15,6 +15,6 @@ resources:
 - ingress-pdf.yaml
 images:
 - name: kusitmsmateacr.azurecr.io/mate
-  newTag: gha-36
+  newTag: gha-37
 - name: kusitmsmateacr.azurecr.io/mate-pdf
-  newTag: gha-36
+  newTag: gha-37
