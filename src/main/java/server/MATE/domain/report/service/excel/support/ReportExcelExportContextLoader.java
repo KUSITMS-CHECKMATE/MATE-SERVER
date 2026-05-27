@@ -46,7 +46,7 @@ public class ReportExcelExportContextLoader {
 
     public ReportExcelExportContext load(Long testId, Long makerId) {
         Test test = reportExcelExportSupport.requireExportReadyTest(testId, makerId);
-        List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
+        List<Question> questions = questionRepository.findQuestionsInTest(testId);
         List<QuestionSummaryItem> questionSummaries = questions.stream()
                 .map(question -> new QuestionSummaryItem(
                         question.getId(),
