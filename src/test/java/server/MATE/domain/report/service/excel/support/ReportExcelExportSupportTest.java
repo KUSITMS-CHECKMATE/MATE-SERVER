@@ -35,7 +35,7 @@ class ReportExcelExportSupportTest {
                 .build();
         ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.PENDING);
 
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
 
         assertThatThrownBy(() -> reportExcelExportSupport.requireExportReadyTest(10L, 1L))
                 .isInstanceOfSatisfying(BaseException.class, exception ->
@@ -50,7 +50,7 @@ class ReportExcelExportSupportTest {
                 .build();
         ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.IN_PROGRESS);
 
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
 
         assertThatThrownBy(() -> reportExcelExportSupport.requireExportReadyTest(10L, 1L))
                 .isInstanceOfSatisfying(BaseException.class, exception ->

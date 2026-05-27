@@ -66,7 +66,7 @@ class ReportServiceTest {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
         ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.FAILED);
 
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
         given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(0L);
 
         ReportResponse response = reportService.getReport(10L, 1L, Role.USER);
@@ -83,7 +83,7 @@ class ReportServiceTest {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.REJECTED);
         ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.FAILED);
 
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
         given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(0L);
 
         ReportResponse response = reportService.getReport(10L, 1L, Role.USER);
@@ -100,7 +100,7 @@ class ReportServiceTest {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.COMPLETED);
         ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.IN_PROGRESS);
 
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
         given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(2L);
 
         ReportResponse response = reportService.getReport(10L, 1L, Role.USER);
@@ -124,7 +124,7 @@ class ReportServiceTest {
                 .result(Map.of("count", 3))
                 .build();
 
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
         given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(1L);
         given(reportRepository.findAllByTestId(10L)).willReturn(List.of(report));
         given(questionRepository.findQuestionSummariesByTestId(10L)).willReturn(List.of(
@@ -150,7 +150,7 @@ class ReportServiceTest {
                 .result(Map.of("count", 3))
                 .build();
 
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
         given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(2L);
         given(reportRepository.findAllByTestId(10L)).willReturn(List.of(report));
         given(questionRepository.findQuestionSummariesByTestId(10L)).willReturn(List.of(
@@ -181,7 +181,7 @@ class ReportServiceTest {
                 .result(Map.of("count", 1))
                 .build();
 
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
         given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(1L);
         given(reportRepository.findAllByTestId(10L)).willReturn(List.of(activeReport, orphanReport));
         given(questionRepository.findQuestionSummariesByTestId(10L)).willReturn(List.of(
@@ -198,7 +198,7 @@ class ReportServiceTest {
     @Test
     @DisplayName("메이커가 아닌 일반 사용자는 리포트를 조회할 수 없다")
     void getReport_throwsExceptionWhenNotMaker() {
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
 
         BaseException exception = org.junit.jupiter.api.Assertions.assertThrows(BaseException.class,
                 () -> reportService.getReport(10L, 999L, Role.USER));
@@ -212,7 +212,7 @@ class ReportServiceTest {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
         ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.PENDING);
 
-        given(testRepository.findByIdAndDeletedAtIsNull(10L)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
         given(questionRepository.countByTestIdAndDeletedAtIsNull(10L)).willReturn(0L);
 
         ReportResponse response = reportService.getReport(10L, 999L, Role.ADMIN);

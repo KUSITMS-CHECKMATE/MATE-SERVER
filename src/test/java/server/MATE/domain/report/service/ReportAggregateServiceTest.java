@@ -73,7 +73,7 @@ class ReportAggregateServiceTest {
 
         given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(2L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(2L);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
         given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report1, report2));
 
         List<Report> recovered = reportAggregateService.recover(
@@ -91,7 +91,7 @@ class ReportAggregateServiceTest {
 
         given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(2L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(2L);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
         given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report1, report2));
 
         List<Report> recovered = reportAggregateService.recover(
@@ -106,7 +106,7 @@ class ReportAggregateServiceTest {
     void recover_whenReportsArePartiallyCreated_returnsEmptyListAndMarksFailed() {
         given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(3L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(1L);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
         List<Report> recovered = reportAggregateService.recover(
                 new DataIntegrityViolationException("duplicate key"), TEST_ID);
@@ -120,7 +120,7 @@ class ReportAggregateServiceTest {
     void recover_whenGenericExceptionAndNoReportsExist_returnsEmptyListAndMarksFailed() {
         given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(2L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
         List<Report> recovered = reportAggregateService.recover(
                 new RuntimeException("aggregate failed"), TEST_ID);
