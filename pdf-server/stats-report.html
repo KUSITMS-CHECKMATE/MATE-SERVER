@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MATE 통계 결과</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #D1D5DB;
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', 'Noto Sans KR', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 16px;
+}
+
+@media print {
+  body { background: white; padding: 0; gap: 0; }
+  .page { page-break-after: always; box-shadow: none !important; margin: 0 !important; }
+}
+@page { size: 595px 842px; margin: 0; }
+
+/* ─── Page ─── */
+.page {
+  width: 595px;
+  height: 842px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.14);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* ─── Header ─── */
+.hd {
+  height: 57px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  border-bottom: 1px solid #E5E7EB;
+  flex-shrink: 0;
+}
+.hd span { font-size: 11px; color: #9CA3AF; }
+
+/* ─── Top (badge + title + count) ─── */
+.top {
+  height: 117px;
+  padding: 18px 40px 0;
+  flex-shrink: 0;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  background: #F3F4F6;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #4B5563;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+.q-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.35;
+  margin-bottom: 8px;
+}
+.q-cnt { font-size: 13px; color: #6B7280; }
+
+/* ─── Body ─── */
+.body { flex: 1; padding: 22px 40px 12px; overflow: hidden; }
+
+/* ─── Footer ─── */
+.ft {
+  height: 53px;
+  border-top: 1px solid #E5E7EB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #9CA3AF;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════
+   Horizontal Bar Chart
+   ════════════════════════════════ */
+.hbar { display: flex; flex-direction: column; }
+.hbar-row {
+  display: grid;
+  grid-template-columns: 118px 1fr 100px;
+  align-items: center;
+  height: 36px;
+  gap: 0;
+}
+.hbl {
+  font-size: 11px;
+  color: #374151;
+  text-align: right;
+  padding-right: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hbt {
+  position: relative;
+  height: 16px;
+  border-left: 1.5px solid #D1D5DB;
+}
+.hbf {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 0 2px 2px 0;
+}
+.hbf.p { background: #3D5AFE; }
+.hbf.g { background: #E5E7EB; }
+.hbv {
+  font-size: 11px;
+  color: #374151;
+  padding-left: 10px;
+  white-space: nowrap;
+}
+
+/* ════════════════════════════════
+   Vertical Bar Chart (Scale)
+   ════════════════════════════════ */
+.vbar-wrap { display: flex; flex-direction: column; }
+.vbar-inner {
+  display: flex;
+  align-items: flex-end;
+  height: 200px;
+  padding-top: 36px;
+  gap: 0;
+}
+.vbar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+.vbar-above {
+  font-size: 10px;
+  color: #374151;
+  text-align: center;
+  line-height: 1.35;
+  margin-bottom: 5px;
+  white-space: pre;
+}
+.vbar-bar { width: 62px; border-radius: 3px 3px 0 0; }
+.vbar-bar.p { background: #3D5AFE; }
+.vbar-bar.g { background: #E5E7EB; }
+.vbar-xaxis {
+  display: flex;
+  border-top: 1px solid #E5E7EB;
+  margin-top: 0;
+}
+.vbar-xcol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 7px;
+}
+.vbar-xcol .xn { font-size: 14px; font-weight: 600; color: #374151; }
+.vbar-xcol .xs { font-size: 9px; color: #9CA3AF; margin-top: 3px; text-align: center; line-height: 1.3; }
+
+/* ════════════════════════════════
+   Pie Chart
+   ════════════════════════════════ */
+.pie-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0 0;
+}
+.pie-legend { display: flex; gap: 20px; }
+.pie-li { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #374151; }
+.pdot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ════════════════════════════════
+   Table
+   ════════════════════════════════ */
+.tbl { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 18px; }
+.tbl th {
+  background: #F9FAFB;
+  padding: 9px 14px;
+  color: #374151;
+  font-weight: 600;
+  text-align: left;
+  border-top: 1px solid #E5E7EB;
+  border-bottom: 1px solid #E5E7EB;
+}
+.tbl td {
+  padding: 9px 14px;
+  color: #374151;
+  border-bottom: 1px solid #F3F4F6;
+}
+.tbl tr.tr-total td {
+  font-weight: 600;
+  color: #111827;
+  border-top: 1px solid #E5E7EB;
+  border-bottom: none;
+}
+
+/* ════════════════════════════════
+   AI Summary + Subjective List
+   ════════════════════════════════ */
+.ai-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 5px;
+}
+.ai-icon { color: #3D5AFE; font-size: 16px; }
+.ai-sub { font-size: 12px; color: #6B7280; margin-bottom: 9px; }
+.ai-box {
+  background: #F9FAFB;
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 11.5px;
+  color: #374151;
+  line-height: 1.7;
+}
+.sj-head {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin-top: 20px;
+  margin-bottom: 4px;
+}
+.sj-sub { font-size: 12px; color: #6B7280; margin-bottom: 10px; }
+.sj-list { display: flex; flex-direction: column; gap: 6px; }
+.sj-item {
+  background: #F9FAFB;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #374151;
+}
+
+/* ════════════════════════════════
+   Stacked Bar Chart (Card Sorting)
+   ════════════════════════════════ */
+.sbar-legend {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 14px;
+  justify-content: center;
+}
+.sbl-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #374151; }
+.sbl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.sbar-rows { display: flex; flex-direction: column; gap: 10px; }
+.sbar-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 62px;
+  align-items: center;
+  gap: 10px;
+}
+.sbl { font-size: 11px; color: #374151; text-align: right; }
+.sbt { height: 16px; display: flex; border-radius: 2px; overflow: hidden; }
+.sbs { height: 100%; }
+.sbv { font-size: 10px; color: #6B7280; }
+</style>
+</head>
+<body>
+<script>
+(async () => {
+  // ─── 파라미터 파싱 ────────────────────────────────────────────────
+  const p = new URLSearchParams(location.search);
+  const testId  = p.get('testId');
+  const token   = p.get('token');
+  const apiBase = (p.get('apiBase') ?? '').replace(/\/$/, '');
+  const testTitle = p.get('title') ?? '테스트 이름';
+
+  console.log('[stats-report] location.href:', location.href);
+  console.log('[stats-report] location.search:', location.search);
+  console.log('[stats-report] 파싱된 params:', { testId, token: token ? '있음' : '없음', apiBase, testTitle });
+
+  if (!testId) {
+    const msg = `[stats-report] testId 파라미터가 없습니다.\nlocation.href: ${location.href}`;
+    console.error(msg);
+    alert(msg);
+    document.body.innerHTML = '<p style="color:red;padding:20px">testId 파라미터가 필요합니다.</p>';
+    return;
+  }
+
+  // ─── API 호출 (pdf-server가 주입한 데이터 우선 사용, 없으면 직접 fetch) ──
+  let data;
+  if (window.__REPORT_DATA__) {
+    console.log('[stats-report] window.__REPORT_DATA__ 사용 (pdf-server 주입)');
+    console.log('[stats-report] 응답 데이터:', JSON.stringify(window.__REPORT_DATA__));
+    data = window.__REPORT_DATA__.data;
+  } else {
+    console.log('[stats-report] 직접 fetch 시도');
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const url = `${apiBase}/api/v1/tests/${testId}/report`;
+      console.log('[stats-report] 요청 URL:', url);
+      const res = await fetch(url, { headers });
+      console.log('[stats-report] 응답 status:', res.status);
+      const json = await res.json();
+      console.log('[stats-report] 응답 데이터:', JSON.stringify(json));
+      data = json.data;
+    } catch (e) {
+      const msg = `[stats-report] API 오류: ${e.message}\n요청 URL: ${apiBase}/api/v1/tests/${testId}/report`;
+      console.error(msg, e);
+      alert(msg);
+      document.body.innerHTML = `<p style="color:red;padding:20px">데이터를 불러오지 못했습니다: ${e.message}</p>`;
+      return;
+    }
+  }
+
+  if (!data?.reports?.length) {
+    const msg = `[stats-report] reports 데이터가 없습니다.\n응답: ${JSON.stringify(data)}`;
+    console.warn(msg);
+    alert(msg);
+    document.body.innerHTML = '<p style="padding:20px">리포트 데이터가 없습니다.</p>';
+    return;
+  }
+
+  // ─── 유틸 ─────────────────────────────────────────────────────────
+  const CATEGORY_COLORS = [
+    '#3D5AFE','#10B981','#F59E0B','#EF4444','#8B5CF6',
+    '#06B6D4','#F97316','#EC4899','#14B8A6','#84CC16'
+  ];
+
+  const TYPE_LABEL = {
+    OBJECTIVE:    '객관식',
+    SUBJECTIVE:   '주관식',
+    FIVE_SECOND:  '5초 테스트',
+    SCALE:        '척도 평가',
+    AB_TEST:      'A/B 테스트',
+    CARD_SORTING: '카드 소팅',
+    TREE_TEST:    '트리 테스트',
+  };
+
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function makeHeader(title) {
+    return `<div class="hd"><span>MATE 통계결과</span><span>${esc(title)}</span></div>`;
+  }
+
+  function makeTop(typeLabel, questionTitle, count) {
+    return `
+      <div class="top">
+        <div class="badge">${esc(typeLabel)}</div>
+        <div class="q-title">${esc(questionTitle)}</div>
+        <div class="q-cnt">응답 ${count}개</div>
+      </div>`;
+  }
+
+  function makeFooter(idx, total) {
+    return `<div class="ft">${idx}/${total}</div>`;
+  }
+
+  // ─── 가로 막대 차트 (OBJECTIVE / TREE_TEST / FIVE_SECOND 객관식) ──
+  function renderHBar(options) {
+    // options: [{label, count, ratio}]
+    const maxRatio = Math.max(...options.map(o => o.ratio), 1);
+    return `<div class="hbar">${options.map((o, i) => `
+      <div class="hbar-row">
+        <div class="hbl">${esc(o.label)}</div>
+        <div class="hbt"><div class="hbf ${i === 0 ? 'p' : 'g'}" style="width:${(o.ratio / maxRatio * 100).toFixed(1)}%"></div></div>
+        <div class="hbv">— 응답 ${o.count} (${o.ratio}%)</div>
+      </div>`).join('')}</div>`;
+  }
+
+  // ─── 주관식 ───────────────────────────────────────────────────────
+  function renderSubjective(result) {
+    const items = (result.clusters ?? []).flatMap(c => c.responses ?? [])
+                    .concat(result.texts ?? []).slice(0, 7);
+    return `
+      <div class="ai-head"><span class="ai-icon">✦</span> AI 요약</div>
+      <div class="ai-sub">모든 응답을 보고 싶다면 엑셀 파일로 확인해주세요.</div>
+      <div class="ai-box">${esc(result.aiSummary ?? '')}</div>
+      <div class="sj-head">주요 응답 유형</div>
+      <div class="sj-sub">많이 나온 의견들로 정리했어요.</div>
+      <div class="sj-list">${items.map(t => `<div class="sj-item">${esc(t)}</div>`).join('')}</div>`;
+  }
+
+  // ─── 세로 막대 차트 (SCALE) ───────────────────────────────────────
+  function renderVBar(result) {
+    const dist = result.distribution ?? [];
+    const maxCount = Math.max(...dist.map(d => d.count), 1);
+    const MAX_H = 164;
+    const cols = dist.map(d => {
+      const h = Math.round(d.count / maxCount * MAX_H);
+      const isPeak = d.score === result.mostVoted;
+      return `
+        <div class="vbar-col">
+          <div class="vbar-above" ${isPeak ? 'style="color:#3D5AFE;font-weight:600"' : ''}>응답 ${d.count}&#10;(${Math.round(d.count/dist.reduce((s,x)=>s+x.count,0)*100)}%)</div>
+          <div class="vbar-bar ${isPeak ? 'p' : 'g'}" style="height:${h}px"></div>
+        </div>`;
+    }).join('');
+
+    const xCols = dist.map((d, i) => {
+      const isFirst = i === 0;
+      const isLast  = i === dist.length - 1;
+      return `
+        <div class="vbar-xcol">
+          <span class="xn">${d.score}</span>
+          <span class="xs">${isFirst ? esc(result.endValue?.minLabel ?? '') : isLast ? esc(result.endValue?.maxLabel ?? '') : ''}</span>
+        </div>`;
+    }).join('');
+
+    const total = dist.reduce((s, d) => s + d.count, 0);
+    const avg = result.average?.toFixed(2) ?? '-';
+    const mostVoted = result.mostVoted ?? '-';
+    const peakItem = dist.find(d => d.score === result.mostVoted);
+    const peakRatio = peakItem ? Math.round(peakItem.count / total * 100) : '-';
+
+    return `
+      <div class="vbar-wrap">
+        <div class="vbar-inner">${cols}</div>
+        <div class="vbar-xaxis">${xCols}</div>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>평균 점수</th><th>최다 득표</th><th>응답률</th><th>응답 수</th></tr></thead>
+        <tbody><tr>
+          <td>${avg}</td><td>${mostVoted}점</td><td>${peakRatio}%</td><td>${peakItem?.count ?? '-'}</td>
+        </tr></tbody>
+      </table>`;
+  }
+
+  // ─── 파이 차트 (AB_TEST) ──────────────────────────────────────────
+  function renderAbTest(result) {
+    // API ratio는 0~1 값 → % 변환
+    const rA = Math.round((result.A?.ratio ?? 0) * 100);
+    const rB = Math.round((result.B?.ratio ?? 0) * 100);
+    const cA = result.A?.count ?? 0;
+    const cB = result.B?.count ?? 0;
+    const total = cA + cB;
+
+    // SVG arc: center(90,90), r=85, start from top (rA는 0~100)
+    function polarToXY(pct) {
+      const angle = (pct / 100 * 360 - 90) * Math.PI / 180;
+      return { x: 90 + 85 * Math.cos(angle), y: 90 + 85 * Math.sin(angle) };
+    }
+
+    let pieSvg;
+    if (rA === 0 || rA === 100) {
+      // 한쪽이 0%면 전체 원으로 처리
+      const color = rA === 100 ? '#EF4444' : '#3D5AFE';
+      pieSvg = `
+        <svg width="180" height="180" viewBox="0 0 180 180">
+          <circle cx="90" cy="90" r="85" fill="${color}"/>
+        </svg>`;
+    } else {
+      const endA = polarToXY(rA);
+      const largeA = rA > 50 ? 1 : 0;
+      const largeB = rB > 50 ? 1 : 0;
+      pieSvg = `
+        <svg width="180" height="180" viewBox="0 0 180 180">
+          <path d="M90,90 L90,5 A85,85 0 ${largeA},1 ${endA.x.toFixed(2)},${endA.y.toFixed(2)} Z" fill="#EF4444"/>
+          <path d="M90,90 L${endA.x.toFixed(2)},${endA.y.toFixed(2)} A85,85 0 ${largeB},1 90,5 Z" fill="#3D5AFE"/>
+        </svg>`;
+    }
+
+    return `
+      <div class="pie-area">
+        ${pieSvg}
+        <div class="pie-legend">
+          <div class="pie-li"><div class="pdot" style="background:#EF4444"></div> A안</div>
+          <div class="pie-li"><div class="pdot" style="background:#3D5AFE"></div> B안</div>
+        </div>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>분류</th><th>응답률</th><th>응답 수</th></tr></thead>
+        <tbody>
+          <tr><td>A안</td><td>${rA}%</td><td>${cA}</td></tr>
+          <tr><td>B안</td><td>${rB}%</td><td>${cB}</td></tr>
+          <tr class="tr-total"><td>합계</td><td>100%</td><td>${total}</td></tr>
+        </tbody>
+      </table>`;
+  }
+
+  // ─── 스택 막대 차트 (CARD_SORTING) ───────────────────────────────
+  function renderCardSorting(result) {
+    const byCard = result.byCard ?? [];
+    const categories = [...new Set(byCard.flatMap(c => Object.keys(c.categories ?? {})))];
+
+    const legend = categories.map((cat, i) => `
+      <div class="sbl-item">
+        <div class="sbl-dot" style="background:${CATEGORY_COLORS[i % CATEGORY_COLORS.length]}"></div>
+        ${esc(cat)}
+      </div>`).join('');
+
+    const rows = byCard.map(card => {
+      const total = Object.values(card.categories ?? {}).reduce((s, v) => s + v, 0) || 1;
+      const segs = categories.map((cat, i) => {
+        const cnt = card.categories?.[cat] ?? 0;
+        const pct = (cnt / total * 100).toFixed(1);
+        return `<div class="sbs" style="width:${pct}%;background:${CATEGORY_COLORS[i % CATEGORY_COLORS.length]};opacity:0.85"></div>`;
+      }).join('');
+      const vals = categories.map(cat => card.categories?.[cat] ?? 0).join('  ');
+      return `
+        <div class="sbar-row">
+          <div class="sbl">${esc(card.cardName)}</div>
+          <div class="sbt">${segs}</div>
+          <div class="sbv">${vals}</div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="sbar-legend">${legend}</div>
+      <div class="sbar-rows">${rows}</div>`;
+  }
+
+  // ─── 페이지 생성 ──────────────────────────────────────────────────
+  const total = data.reports.length;
+  document.body.innerHTML = '';
+
+  data.reports.forEach((item, idx) => {
+    const typeLabel = TYPE_LABEL[item.type] ?? item.type;
+    const participantCount = data.participantCount ?? 0;
+    let bodyHtml = '';
+
+    if (item.type === 'OBJECTIVE') {
+      const opts = (item.result.options ?? []).map(o => ({
+        label: o.content, count: o.count, ratio: Math.round(o.ratio * 100)
+      }));
+      bodyHtml = renderHBar(opts);
+    } else if (item.type === 'SUBJECTIVE') {
+      bodyHtml = renderSubjective(item.result);
+    } else if (item.type === 'FIVE_SECOND') {
+      if ('options' in item.result && item.result.options) {
+        const opts = item.result.options.map(o => ({
+          label: o.content, count: o.count, ratio: Math.round(o.ratio * 100)
+        }));
+        bodyHtml = renderHBar(opts);
+      } else {
+        bodyHtml = renderSubjective(item.result);
+      }
+    } else if (item.type === 'SCALE') {
+      bodyHtml = renderVBar(item.result);
+    } else if (item.type === 'AB_TEST') {
+      bodyHtml = renderAbTest(item.result);
+    } else if (item.type === 'CARD_SORTING') {
+      bodyHtml = renderCardSorting(item.result);
+    } else if (item.type === 'TREE_TEST') {
+      const opts = (item.result.nodeFrequency ?? []).map(n => ({
+        label: n.label, count: n.count, ratio: Math.round(n.ratio * 100)
+      }));
+      bodyHtml = renderHBar(opts);
+    }
+
+    const page = document.createElement('div');
+    page.className = 'page';
+    page.innerHTML = `
+      ${makeHeader(testTitle)}
+      ${makeTop(typeLabel, item.title, participantCount)}
+      <div class="body">${bodyHtml}</div>
+      ${makeFooter(idx + 1, total)}`;
+    document.body.appendChild(page);
+  });
+
+  // 렌더링 완료 마커 (pdf-server가 이걸 기다렸다가 PDF 생성)
+  document.body.setAttribute('data-rendered', 'true');
+  console.log('[stats-report] 렌더링 완료');
+})();
+</script>
+
+
+</body>
+</html>
