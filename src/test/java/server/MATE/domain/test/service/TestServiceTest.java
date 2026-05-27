@@ -74,6 +74,7 @@ class TestServiceTest {
                 .serviceName("기존 서비스")
                 .serviceDescription("기존 서비스 소개")
                 .imageKeys(new ArrayList<>(List.of("old-key-1", "old-key-2")))
+                .closedAt(LocalDateTime.of(2099, 12, 31, 23, 59, 59))
                 .build();
         ReflectionTestUtils.setField(test, "id", TEST_ID);
         test.addCategories(List.of(Category.FOOD));
@@ -140,6 +141,7 @@ class TestServiceTest {
                 .serviceName("서비스")
                 .serviceDescription("서비스 소개")
                 .imageKeys(List.of())
+                .closedAt(LocalDateTime.of(2099, 12, 31, 23, 59, 59))
                 .build();
         ReflectionTestUtils.setField(myTest, "id", TEST_ID);
 
@@ -315,6 +317,7 @@ class TestServiceTest {
                 .serviceDescription("서비스 소개")
                 .imageKeys(List.of())
                 .testStatus(testStatus)
+                .closedAt(LocalDateTime.of(2099, 12, 31, 23, 59, 59))
                 .build();
         ReflectionTestUtils.setField(listTest, "id", id);
         return listTest;
