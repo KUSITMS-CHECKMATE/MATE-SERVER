@@ -58,7 +58,7 @@ public class QuestionService {
 
         // 테스트 내 질문의 시퀀스 할당 시 경쟁을 방지하기 위해 부모 행을 잠금
         // 이를 통해 MAX(sequence) 조회 및 생성 요청을 직렬화하여 처리함
-        Test test = testRepository.findByIdAndDeletedAtIsNullForUpdate(testId)
+        Test test = testRepository.findByIdForUpdate(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         if (!test.getMakerId().equals(makerId)) throw new BaseException(BaseErrorCode.TEST_005);
@@ -102,7 +102,7 @@ public class QuestionService {
 
     @Transactional(readOnly = true)
     public QuestionsDetailResponse getQuestionsDetails(Long testId) {
-        testRepository.findByIdAndDeletedAtIsNull(testId)
+        testRepository.findActiveById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         List<Question> questions = questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(testId);
@@ -113,7 +113,7 @@ public class QuestionService {
 
     @Transactional(readOnly = true)
     public QuestionDetailResponse getQuestionDetail(Long testId, Long questionId) {
-        testRepository.findByIdAndDeletedAtIsNull(testId)
+        testRepository.findActiveById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         Question question = questionRepository.findByIdAndTestIdAndDeletedAtIsNull(questionId, testId)
@@ -149,7 +149,7 @@ public class QuestionService {
 
     @Transactional(readOnly = true)
     public QuestionSummaryResponse getQuestionSummary(Long testId, Long makerId) {
-        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
+        Test test = testRepository.findActiveById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         if (!test.getMakerId().equals(makerId)) throw new BaseException(BaseErrorCode.TEST_005);

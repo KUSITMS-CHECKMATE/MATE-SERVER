@@ -19,7 +19,6 @@ import java.util.List;
 @Table(name = "test")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Test extends BaseEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -165,6 +164,9 @@ public class Test extends BaseEntity {
         this.reward = reward == null ? 300 : reward;
         this.pplCount = 0L;
         this.likeCount = 0L;
+        if (closedAt == null) {
+            throw new BaseException(BaseErrorCode.TEST_008);
+        }
         this.closedAt = closedAt;
     }
 }
