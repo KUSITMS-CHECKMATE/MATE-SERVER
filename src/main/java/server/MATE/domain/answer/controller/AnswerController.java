@@ -13,13 +13,14 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import server.MATE.domain.answer.dto.request.AnswerCreateRequest;
 import server.MATE.domain.answer.dto.response.AnswerBatchCreateResponse;
+import server.MATE.domain.answer.dto.response.MyAnswerResponse;
 import server.MATE.domain.answer.service.AnswerService;
 import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
 @Tag(name = "[ANSWER] 응답 API", description = "테스트 응답 관련 API")
 @RestController
-@RequestMapping("/api/v1/tests/{testId}/answers")
+@RequestMapping("/api/v1")
 @SecurityRequirement(name = "JWT")
 @RequiredArgsConstructor
 public class AnswerController {
@@ -43,7 +44,7 @@ public class AnswerController {
             - **CARD_SORTING**: groups 필수
             - **TREE_TEST**: nodeId 필수, path 필수 (루트부터 최종 노드까지 클릭 순서), 최종 선택은 leaf node여야 함
             """)
-    @PostMapping
+    @PostMapping("/tests/{testId}/answers")
     public ResponseEntity<ApiResponse<AnswerBatchCreateResponse>> createAnswers(
             @PathVariable Long testId,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
@@ -186,5 +187,21 @@ public class AnswerController {
         AnswerBatchCreateResponse response = answerService.createAnswers(testId, authenticatedUser.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("응답이 등록되었습니다.", response));
+    }
+
+    @Operation(
+            summary = "✔️ 내 응답 목록 조회",
+            description = """
+                    현재 로그인한 사용자가 응답한 테스트 목록을 최신순으로 조회합니다. 참여기록20 화면에 해당하는 api 입니다.
+                    - createdAt은 yyyy.MM.dd 형식으로 반환합니다.
+                    - totalPromotionReward는 로그인한 사용자의 누적 프로모션 리워드 합계입니다.
+                    """
+    )
+    @GetMapping("/answers/me")
+    public ResponseEntity<ApiResponse<MyAnswerResponse>> listMyAnswers(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        MyAnswerResponse response = answerService.listMyAnswers(authenticatedUser.getId());
+        return ResponseEntity.ok(ApiResponse.ok("내 응답 목록을 조회했습니다.", response));
     }
 }
