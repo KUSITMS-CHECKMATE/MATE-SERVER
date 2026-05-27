@@ -17,6 +17,7 @@ import server.MATE.domain.report.repository.ReportRepository;
 import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.repository.TestRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,6 +62,7 @@ class ReportAggregateServiceTest {
                 .serviceName("서비스")
                 .serviceDescription("서비스 설명")
                 .imageKeys(List.of())
+                .closedAt(LocalDateTime.of(2099, 12, 31, 23, 59, 59))
                 .build();
         ReflectionTestUtils.setField(test, "id", TEST_ID);
     }

@@ -20,6 +20,7 @@ import server.MATE.domain.users.entity.Role;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,6 +57,7 @@ class ReportServiceTest {
                 .serviceDescription("서비스 설명")
                 .imageKeys(List.of())
                 .testStatus(TestStatus.WAITING)
+                .closedAt(LocalDateTime.of(2099, 12, 31, 23, 59, 59))
                 .build();
         ReflectionTestUtils.setField(test, "id", 10L);
     }

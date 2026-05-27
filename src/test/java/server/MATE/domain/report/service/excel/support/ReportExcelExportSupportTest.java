@@ -12,6 +12,7 @@ import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +33,7 @@ class ReportExcelExportSupportTest {
         server.MATE.domain.test.entity.Test test = server.MATE.domain.test.entity.Test.builder()
                 .makerId(1L)
                 .testStatus(TestStatus.IN_PROGRESS)
+                .closedAt(LocalDateTime.of(2099, 12, 31, 23, 59, 59))
                 .build();
         ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.PENDING);
 
@@ -47,6 +49,7 @@ class ReportExcelExportSupportTest {
         server.MATE.domain.test.entity.Test test = server.MATE.domain.test.entity.Test.builder()
                 .makerId(1L)
                 .testStatus(TestStatus.COMPLETED)
+                .closedAt(LocalDateTime.of(2099, 12, 31, 23, 59, 59))
                 .build();
         ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.IN_PROGRESS);
 
