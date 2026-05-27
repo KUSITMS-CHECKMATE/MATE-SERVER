@@ -151,37 +151,45 @@ public class TestDraft extends BaseEntity {
         this.status = TestDraftStatus.PUBLISH_FAILED;
     }
 
-    public void validateReadyForPayment() {
+    public void validatePaymentState() {
         if (this.status == TestDraftStatus.PUBLISHED || this.status == TestDraftStatus.PUBLISHING) {
             throw new BaseException(BaseErrorCode.DRAFT_003);
         }
+    }
+
+    public void validateAmountFields() {
         if (this.goalPpl == null || this.reward == null || this.closedAt == null) {
-            throw new BaseException(BaseErrorCode.PAYMENT_005);
+            throw new BaseException(BaseErrorCode.DRAFT_005);
+        }
+        if (this.goalPpl <= 0 || this.reward < 0) {
+            throw new BaseException(BaseErrorCode.DRAFT_005);
         }
     }
 
-    public void validateReadyForPublish() {
-        if (this.publishedTestId != null && this.status == TestDraftStatus.PUBLISHED) {
-            return;
-        }
-        if (this.status != TestDraftStatus.PAYMENT_CREATED && this.status != TestDraftStatus.PUBLISH_FAILED) {
-            throw new BaseException(BaseErrorCode.DRAFT_004);
-        }
-        if (this.goalPpl == null || this.reward == null || this.closedAt == null) {
-            throw new BaseException(BaseErrorCode.DRAFT_004);
-        }
+    public void validatePublishableFields() {
         if (isBlank(this.title) || isBlank(this.description)) {
-            throw new BaseException(BaseErrorCode.DRAFT_004);
+            throw new BaseException(BaseErrorCode.DRAFT_006);
         }
         if (this.categories == null || this.categories.isEmpty()) {
-            throw new BaseException(BaseErrorCode.DRAFT_004);
+            throw new BaseException(BaseErrorCode.DRAFT_006);
         }
         boolean hasInvalidCategory = this.categories.stream()
                 .anyMatch(category -> !isValidCategory(category));
         if (hasInvalidCategory) {
-            throw new BaseException(BaseErrorCode.DRAFT_004);
+            throw new BaseException(BaseErrorCode.DRAFT_006);
         }
-        if (this.questionsPayload == null || !(this.questionsPayload.get("questions") instanceof List<?> questions) || questions.isEmpty()) {
+        if (this.questionsPayload == null
+                || !(this.questionsPayload.get("questions") instanceof List<?> questions)
+                || questions.isEmpty()) {
+            throw new BaseException(BaseErrorCode.DRAFT_006);
+        }
+    }
+
+    public void validatePublishState() {
+        if (this.publishedTestId != null && this.status == TestDraftStatus.PUBLISHED) {
+            return;
+        }
+        if (this.status != TestDraftStatus.PAYMENT_CREATED && this.status != TestDraftStatus.PUBLISH_FAILED) {
             throw new BaseException(BaseErrorCode.DRAFT_004);
         }
     }
@@ -191,6 +199,9 @@ public class TestDraft extends BaseEntity {
     }
 
     private boolean isValidCategory(String category) {
+        if (category == null) {
+            return false;
+        }
         try {
             server.MATE.domain.test.entity.Category.valueOf(category);
             return true;

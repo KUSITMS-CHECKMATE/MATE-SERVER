@@ -212,7 +212,7 @@ class QuestionServiceIntegrationTest {
                 .serviceName("서비스")
                 .serviceDescription("서비스 설명")
                 .imageKeys(List.of())
-                .closedAt(TestEntityFixtures.DEFAULT_CLOSED_AT)
+                .closedAt(LocalDateTime.of(2099, 12, 31, 23, 59, 59))
                 .build());
 
         QuestionCreateResponse createResponse = questionService.createQuestions(secondTest.getId(), 2L, new QuestionCreateRequest(List.of(
@@ -764,7 +764,7 @@ class QuestionServiceIntegrationTest {
                 .serviceName("서비스")
                 .serviceDescription("서비스 설명")
                 .imageKeys(List.of())
-                .closedAt(TestEntityFixtures.DEFAULT_CLOSED_AT)
+                .closedAt(LocalDateTime.of(2099, 12, 31, 23, 59, 59))
                 .build());
     }
 }

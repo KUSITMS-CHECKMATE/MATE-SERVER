@@ -1,7 +1,5 @@
 package server.MATE.domain.test.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.Validation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,6 +19,9 @@ import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.domain.testdraft.entity.TestDraft;
 import server.MATE.domain.testdraft.entity.TestDraftStatus;
 import server.MATE.domain.testdraft.repository.TestDraftRepository;
+import server.MATE.domain.testdraft.validator.TestDraftValidator;
+import server.MATE.global.common.exception.BaseErrorCode;
+import server.MATE.global.common.exception.BaseException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -52,6 +53,9 @@ class TestPublishServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private TestDraftValidator testDraftValidator;
+
     private TestPublishService testPublishService;
 
     @BeforeEach
@@ -62,8 +66,7 @@ class TestPublishServiceTest {
                 testRepository,
                 questionService,
                 eventPublisher,
-                new ObjectMapper().findAndRegisterModules(),
-                Validation.buildDefaultValidatorFactory().getValidator()
+                testDraftValidator
         );
     }
 
@@ -109,6 +112,8 @@ class TestPublishServiceTest {
 
         given(paymentRepository.findByIdForUpdate(20L)).willReturn(Optional.of(payment));
         given(testDraftRepository.findByIdForUpdate(10L)).willReturn(Optional.of(draft));
+        given(testDraftValidator.validateForPublish(any(TestDraft.class)))
+                .willReturn(new QuestionCreateRequest(List.of()));
         given(testRepository.save(any(server.MATE.domain.test.entity.Test.class))).willAnswer(invocation -> {
             server.MATE.domain.test.entity.Test saved = invocation.getArgument(0);
             ReflectionTestUtils.setField(saved, "id", 99L);
@@ -157,59 +162,17 @@ class TestPublishServiceTest {
     }
 
     @Test
-    @DisplayName("유효하지 않은 카테고리가 포함된 draft는 publish 단계에서 DRAFT_004 예외가 발생한다")
-    void throwsDraft004WhenDraftContainsInvalidCategory() {
+    @DisplayName("TestDraftValidator가 DRAFT_006을 던지면 publish 단계에서 그대로 전파된다")
+    void throwsDraft006WhenTestDraftValidatorFails() {
         TestDraft draft = TestDraft.builder()
                 .makerId(1L)
                 .title("테스트 제목")
                 .description("테스트 설명")
-                .serviceName("서비스명")
-                .serviceDescription("서비스 설명")
-                .categories(List.of("INVALID_CATEGORY"))
-                .goalPpl(100)
-                .reward(300)
-                .questionsPayload(Map.of(
-                        "questions", List.of(
-                                Map.of("type", "SUBJECTIVE", "title", "질문 제목", "description", "질문 설명")
-                        )
-                ))
-                .status(TestDraftStatus.PAYMENT_CREATED)
-                .build();
-        ReflectionTestUtils.setField(draft, "id", 10L);
-
-        Payment payment = Payment.builder()
-                .draftId(10L)
-                .makerId(1L)
-                .payStatus(PayStatus.PAY_SUCCEEDED)
-                .goalPpl(100)
-                .reward(300)
-                .amount(30000)
-                .build();
-        ReflectionTestUtils.setField(payment, "id", 20L);
-
-        given(paymentRepository.findByIdForUpdate(20L)).willReturn(Optional.of(payment));
-        given(testDraftRepository.findByIdForUpdate(10L)).willReturn(Optional.of(draft));
-
-        assertThatThrownBy(() -> testPublishService.publish(20L))
-                .isInstanceOf(server.MATE.global.common.exception.BaseException.class)
-                .hasMessageContaining("게시할 수 없는 테스트 초안입니다.");
-    }
-
-    @Test
-    @DisplayName("질문 payload가 QuestionCreateRequest로 변환되거나 검증되지 못하면 DRAFT_004 예외가 발생한다")
-    void throwsDraft004WhenQuestionPayloadIsInvalid() {
-        TestDraft draft = TestDraft.builder()
-                .makerId(1L)
-                .title("테스트 제목")
-                .description("테스트 설명")
-                .serviceName("서비스명")
-                .serviceDescription("서비스 설명")
                 .categories(List.of("DAILY"))
                 .goalPpl(100)
                 .reward(300)
-                .questionsPayload(Map.of(
-                        "questions", "invalid-payload"
-                ))
+                .closedAt(LocalDateTime.parse("2099-05-31T23:59:59"))
+                .questionsPayload(Map.of("questions", List.of(Map.of("type", "SUBJECTIVE", "title", "질문"))))
                 .status(TestDraftStatus.PAYMENT_CREATED)
                 .build();
         ReflectionTestUtils.setField(draft, "id", 10L);
@@ -226,9 +189,11 @@ class TestPublishServiceTest {
 
         given(paymentRepository.findByIdForUpdate(20L)).willReturn(Optional.of(payment));
         given(testDraftRepository.findByIdForUpdate(10L)).willReturn(Optional.of(draft));
+        given(testDraftValidator.validateForPublish(any(TestDraft.class)))
+                .willThrow(new BaseException(BaseErrorCode.DRAFT_006));
 
         assertThatThrownBy(() -> testPublishService.publish(20L))
-                .isInstanceOf(server.MATE.global.common.exception.BaseException.class)
-                .hasMessageContaining("게시할 수 없는 테스트 초안입니다.");
+                .isInstanceOf(BaseException.class)
+                .hasMessageContaining("게시에 필요한 필수 정보가 부족합니다.");
     }
 }
