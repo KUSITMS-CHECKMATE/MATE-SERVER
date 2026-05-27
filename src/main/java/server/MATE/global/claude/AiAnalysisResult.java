@@ -6,15 +6,15 @@ import java.util.Map;
 
 public record AiAnalysisResult(String aiSummary, List<ClusterResult> clusters) {
 
-    public record ClusterResult(String tag, String representative, int count) {}
+    public record ClusterResult(String tag, String representative, int count, List<String> responses) {}
 
     public List<Map<String, Object>> toClusterMaps() {
         return clusters.stream()
                 .map(c -> {
                     Map<String, Object> m = new LinkedHashMap<>();
-                    m.put("tag", c.tag());
                     m.put("representative", c.representative());
                     m.put("count", c.count());
+                    m.put("responses", c.responses());
                     return m;
                 })
                 .toList();
