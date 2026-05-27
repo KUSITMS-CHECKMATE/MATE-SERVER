@@ -65,39 +65,41 @@ const server = http.createServer(async (req, res) => {
 
       console.log(`Generating PDF for testId=${testId}...`);
       const browser = await chromium.launch({ headless: true });
-      const page = await browser.newPage();
+      try {
+        const page = await browser.newPage();
 
-      // 브라우저 콘솔 로그를 터미널에 출력
-      page.on('console', msg => {
-        console.log(`[page:${msg.type()}]`, msg.text());
-      });
-      page.on('pageerror', err => {
-        console.error('[page:error]', err.message);
-      });
+        // 브라우저 콘솔 로그를 터미널에 출력
+        page.on('console', msg => {
+          console.log(`[page:${msg.type()}]`, msg.text());
+        });
+        page.on('pageerror', err => {
+          console.error('[page:error]', err.message);
+        });
 
-      // API 데이터를 전역 변수로 주입 (브라우저 CORS 우회)
-      await page.addInitScript(`window.__REPORT_DATA__ = ${JSON.stringify(reportJson)};`);
+        // API 데이터를 전역 변수로 주입 (브라우저 CORS 우회)
+        await page.addInitScript(`window.__REPORT_DATA__ = ${JSON.stringify(reportJson)};`);
 
-      await page.setViewportSize({ width: 595, height: 842 });
-      await page.goto(HTML_URL, { waitUntil: 'load' });
+        await page.setViewportSize({ width: 595, height: 842 });
+        await page.goto(HTML_URL, { waitUntil: 'load' });
 
-      // async 렌더링이 완전히 끝날 때까지 대기
-      await page.waitForSelector('[data-rendered]', { timeout: 30_000 });
-      console.log('[pdf-server] 렌더링 완료 확인, PDF 생성 시작');
+        // async 렌더링이 완전히 끝날 때까지 대기
+        await page.waitForSelector('[data-rendered]', { timeout: 30_000 });
+        console.log('[pdf-server] 렌더링 완료 확인, PDF 생성 시작');
 
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: { top: '0', right: '0', bottom: '0', left: '0' },
-      });
+        const pdfBuffer = await page.pdf({
+          format: 'A4',
+          printBackground: true,
+          margin: { top: '0', right: '0', bottom: '0', left: '0' },
+        });
 
-      await browser.close();
+        const base64 = pdfBuffer.toString('base64');
+        console.log(`PDF generated: ${Math.round(pdfBuffer.length / 1024)}KB`);
 
-      const base64 = pdfBuffer.toString('base64');
-      console.log(`PDF generated: ${Math.round(pdfBuffer.length / 1024)}KB`);
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ data: base64 }));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ data: base64 }));
+      } finally {
+        await browser.close();
+      }
     } catch (error) {
       console.error('PDF generation error:', error);
       res.writeHead(500, { 'Content-Type': 'application/json' });
