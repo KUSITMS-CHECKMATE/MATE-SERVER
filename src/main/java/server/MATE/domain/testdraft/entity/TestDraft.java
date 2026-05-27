@@ -196,6 +196,9 @@ public class TestDraft extends BaseEntity {
     }
 
     private boolean isValidCategory(String category) {
+        if (category == null) {
+            return false;
+        }
         try {
             server.MATE.domain.test.entity.Category.valueOf(category);
             return true;
