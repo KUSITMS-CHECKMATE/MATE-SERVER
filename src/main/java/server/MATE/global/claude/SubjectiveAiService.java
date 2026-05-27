@@ -50,7 +50,7 @@ public class SubjectiveAiService {
     public Optional<AiAnalysisResult> analyze(List<String> texts) {
         try {
             String rawJson = callClaude(texts);
-            return Optional.of(parseAndValidate(rawJson, texts.size()));
+            return Optional.of(parseAndValidate(rawJson, texts));
         } catch (Exception e) {
             log.warn("Claude AI 분석 실패, 폴백 처리: {}", e.getMessage());
             return Optional.empty();
@@ -114,7 +114,7 @@ public class SubjectiveAiService {
     }
 
     @SuppressWarnings("unchecked")
-    private AiAnalysisResult parseAndValidate(String json, int textCount) throws Exception {
+    private AiAnalysisResult parseAndValidate(String json, List<String> texts) throws Exception {
         Map<String, Object> parsed = objectMapper.readValue(json, new TypeReference<>() {});
         if (parsed == null) {
             throw new IllegalStateException("JSON 파싱 결과가 null입니다.");
@@ -128,8 +128,8 @@ public class SubjectiveAiService {
             throw new IllegalStateException("LLM 응답에 필수 필드(aiSummary, clusters, mappings)가 누락되었습니다.");
         }
 
-        if (rawMappings.size() != textCount) {
-            throw new IllegalStateException("mappings 길이 불일치: " + rawMappings.size() + " != " + textCount);
+        if (rawMappings.size() != texts.size()) {
+            throw new IllegalStateException("mappings 길이 불일치: " + rawMappings.size() + " != " + texts.size());
         }
 
         int[] mappings = rawMappings.stream()
@@ -152,6 +152,13 @@ public class SubjectiveAiService {
             throw new IllegalStateException("클러스터 수 범위 초과: " + countByCluster.size());
         }
 
+        Map<Integer, List<String>> responsesByCluster = IntStream.range(0, mappings.length)
+                .boxed()
+                .collect(Collectors.groupingBy(
+                        i -> mappings[i],
+                        Collectors.mapping(texts::get, Collectors.toList())
+                ));
+
         List<AiAnalysisResult.ClusterResult> clusters = IntStream.range(0, rawClusters.size())
                 .mapToObj(i -> {
                     Map<String, Object> c = rawClusters.get(i);
@@ -159,10 +166,12 @@ public class SubjectiveAiService {
                         throw new IllegalStateException("클러스터 정보가 올바르지 않습니다 (null).");
                     }
                     int count = countByCluster.getOrDefault(i, 0L).intValue();
+                    List<String> responses = responsesByCluster.getOrDefault(i, List.of());
                     return new AiAnalysisResult.ClusterResult(
                             (String) c.get("tag"),
                             (String) c.get("representative"),
-                            count
+                            count,
+                            responses
                     );
                 })
                 .filter(c -> c.count() > 0)

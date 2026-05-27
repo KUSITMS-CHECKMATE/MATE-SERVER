@@ -84,6 +84,8 @@ public class ObjectiveReportHandler implements ReportHandler {
 
     private void appendAiResult(Map<String, Object> result, List<String> texts) {
         if (texts.size() < aiService.getMinResponseThreshold()) {
+            result.put("aiSummary", null);
+            result.put("clusters", List.of());
             result.put("otherTexts", texts);
             return;
         }
@@ -95,8 +97,9 @@ public class ObjectiveReportHandler implements ReportHandler {
                     result.put("otherTexts", ReportHandlerUtils.sampleTexts(texts));
                 },
                 () -> {
+                    result.put("aiSummary", null);
                     result.put("clusters", ReportHandlerUtils.buildClusters(texts));
-                    result.put("otherTexts", texts);
+                    result.put("otherTexts", ReportHandlerUtils.sampleTexts(texts));
                 }
         );
     }
