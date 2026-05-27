@@ -73,7 +73,7 @@ class ReportAggregateServiceTest {
         Report report1 = report(101L);
         Report report2 = report(102L);
 
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(2L);
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(2L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(2L);
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
         given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report1, report2));
@@ -91,7 +91,7 @@ class ReportAggregateServiceTest {
         Report report1 = report(101L);
         Report report2 = report(102L);
 
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(2L);
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(2L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(2L);
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
         given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report1, report2));
@@ -106,7 +106,7 @@ class ReportAggregateServiceTest {
     @Test
     @DisplayName("부분 생성된 리포트만 존재하면 FAILED로 복구하고 빈 리스트를 반환한다")
     void recover_whenReportsArePartiallyCreated_returnsEmptyListAndMarksFailed() {
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(3L);
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(3L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(1L);
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
@@ -120,7 +120,7 @@ class ReportAggregateServiceTest {
     @Test
     @DisplayName("일반 예외이고 리포트가 없으면 FAILED로 복구하고 빈 리스트를 반환한다")
     void recover_whenGenericExceptionAndNoReportsExist_returnsEmptyListAndMarksFailed() {
-        given(questionRepository.countByTestIdAndDeletedAtIsNull(TEST_ID)).willReturn(2L);
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(2L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 

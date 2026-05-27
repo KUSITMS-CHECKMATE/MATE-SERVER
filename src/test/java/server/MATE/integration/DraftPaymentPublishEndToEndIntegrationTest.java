@@ -174,7 +174,7 @@ class DraftPaymentPublishEndToEndIntegrationTest {
         assertThat(savedTest.getGoalPpl()).isEqualTo(5);
         assertThat(savedTest.getReward()).isEqualTo(300);
         assertThat(savedTest.getTestStatus()).isEqualTo(TestStatus.WAITING);
-        assertThat(questionRepository.countByTestIdAndDeletedAtIsNull(testId)).isEqualTo(1);
+        assertThat(questionRepository.countQuestionsInTest(testId)).isEqualTo(1);
 
         JsonNode questions = getQuestions(testId, makerToken);
         assertThat(questions).hasSize(1);
@@ -203,7 +203,7 @@ class DraftPaymentPublishEndToEndIntegrationTest {
 
         assertThat(secondTestId).isEqualTo(firstTestId);
         assertThat(testRepository.count()).isEqualTo(1);
-        assertThat(questionRepository.countByTestIdAndDeletedAtIsNull(firstTestId)).isEqualTo(1);
+        assertThat(questionRepository.countQuestionsInTest(firstTestId)).isEqualTo(1);
     }
 
     @Test
@@ -244,7 +244,7 @@ class DraftPaymentPublishEndToEndIntegrationTest {
         assertThat(testDraftRepository.findById(draftId)).isEmpty();
         assertThat(linkedPayment.getTestId()).isEqualTo(publishedTestId);
         assertThat(testRepository.count()).isEqualTo(1);
-        assertThat(questionRepository.countByTestIdAndDeletedAtIsNull(publishedTestId)).isEqualTo(1);
+        assertThat(questionRepository.countQuestionsInTest(publishedTestId)).isEqualTo(1);
     }
 
     @Test

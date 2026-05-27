@@ -131,7 +131,7 @@ class QuestionServiceTest {
         setQuestionId(scaleQuestion, 202L);
 
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-        given(questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID))
+        given(questionRepository.findQuestionsInTest(TEST_ID))
                 .willReturn(List.of(scaleQuestion, objectiveQuestion));
         given(objectiveFetcher.fetch(List.of(objectiveQuestion))).willReturn(Map.of(
                 201L,
@@ -178,7 +178,7 @@ class QuestionServiceTest {
     @DisplayName("질문이 없는 테스트 조회는 빈 questions 배열을 반환한다")
     void returnsEmptyQuestionListWhenTestHasNoQuestions() {
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-        given(questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID))
+        given(questionRepository.findQuestionsInTest(TEST_ID))
                 .willReturn(List.of());
 
         QuestionsDetailResponse response = questionService.getQuestionsDetails(TEST_ID);
@@ -202,7 +202,7 @@ class QuestionServiceTest {
         setQuestionId(objectiveQuestion, 201L);
 
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-        given(questionRepository.findByIdAndTestIdAndDeletedAtIsNull(201L, TEST_ID))
+        given(questionRepository.findQuestionByIdInTest(201L, TEST_ID))
                 .willReturn(Optional.of(objectiveQuestion));
         given(objectiveFetcher.fetch(List.of(objectiveQuestion))).willReturn(Map.of(
                 201L,
@@ -235,7 +235,7 @@ class QuestionServiceTest {
         setTestPplCount(test, 12L);
 
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-        given(questionRepository.findQuestionSummariesByTestId(TEST_ID)).willReturn(List.of(
+        given(questionRepository.findQuestionSummariesInTest(TEST_ID)).willReturn(List.of(
                 new QuestionSummaryItem(202L, 1L, "척도 질문", QuestionType.SCALE),
                 new QuestionSummaryItem(201L, 2L, "객관식 질문", QuestionType.OBJECTIVE)
         ));
@@ -257,7 +257,7 @@ class QuestionServiceTest {
         setTestStatus(test, TestStatus.IN_PROGRESS);
         setTestPplCount(test, 3L);
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-        given(questionRepository.findQuestionSummariesByTestId(TEST_ID)).willReturn(List.of(
+        given(questionRepository.findQuestionSummariesInTest(TEST_ID)).willReturn(List.of(
                 new QuestionSummaryItem(301L, 1L, "진행 중 질문", QuestionType.SUBJECTIVE)
         ));
 
@@ -281,7 +281,7 @@ class QuestionServiceTest {
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_005);
 
-        verify(questionRepository, never()).findQuestionSummariesByTestId(TEST_ID);
+        verify(questionRepository, never()).findQuestionSummariesInTest(TEST_ID);
     }
 
     @Test
@@ -294,7 +294,7 @@ class QuestionServiceTest {
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_004);
 
-        verify(questionRepository, never()).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
+        verify(questionRepository, never()).findQuestionsInTest(TEST_ID);
         verify(objectiveFetcher, never()).fetch(anyList());
         verify(scaleFetcher, never()).fetch(anyList());
     }
@@ -309,7 +309,7 @@ class QuestionServiceTest {
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_004);
 
-        verify(questionRepository, never()).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
+        verify(questionRepository, never()).findQuestionsInTest(TEST_ID);
         verify(objectiveFetcher, never()).fetch(anyList());
         verify(scaleFetcher, never()).fetch(anyList());
     }
@@ -324,14 +324,14 @@ class QuestionServiceTest {
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_004);
 
-        verify(questionRepository, never()).findByIdAndTestIdAndDeletedAtIsNull(any(), any());
+        verify(questionRepository, never()).findQuestionByIdInTest(any(), any());
     }
 
     @Test
     @DisplayName("문항 상세 조회 대상 문항이 없으면 QUESTION_005 예외가 발생한다")
     void getQuestionDetailThrowsQuestion005WhenQuestionDoesNotExist() {
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-        given(questionRepository.findByIdAndTestIdAndDeletedAtIsNull(201L, TEST_ID))
+        given(questionRepository.findQuestionByIdInTest(201L, TEST_ID))
                 .willReturn(Optional.empty());
 
         assertThatThrownBy(() -> questionService.getQuestionDetail(TEST_ID, 201L))
@@ -353,7 +353,7 @@ class QuestionServiceTest {
         setQuestionId(scaleQuestion, 202L);
 
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-        given(questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID))
+        given(questionRepository.findQuestionsInTest(TEST_ID))
                 .willReturn(List.of(scaleQuestion));
         given(scaleFetcher.fetch(List.of(scaleQuestion))).willReturn(Map.of(
                 202L,
@@ -374,7 +374,7 @@ class QuestionServiceTest {
         QuestionsDetailResponse response = questionService.getQuestionsDetails(TEST_ID);
 
         assertThat(response.questions()).hasSize(1);
-        verify(questionRepository).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
+        verify(questionRepository).findQuestionsInTest(TEST_ID);
         verify(scaleFetcher).fetch(List.of(scaleQuestion));
     }
 
