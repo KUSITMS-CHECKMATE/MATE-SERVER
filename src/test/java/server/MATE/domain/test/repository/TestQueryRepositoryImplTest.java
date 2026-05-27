@@ -190,6 +190,15 @@ class TestQueryRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("findAvailableTestsForUser: 필수 인자가 없으면 빈 리스트를 반환한다")
+    void findAvailableTestsForUser_missingRequiredArgs_returnsEmpty() {
+        assertThat(testRepository.findAvailableTestsForUser(null, LocalDateTime.now(), 10L)).isEmpty();
+        assertThat(testRepository.findAvailableTestsForUser(List.of(), LocalDateTime.now(), 10L)).isEmpty();
+        assertThat(testRepository.findAvailableTestsForUser(List.of(TestStatus.IN_PROGRESS), null, 10L)).isEmpty();
+        assertThat(testRepository.findAvailableTestsForUser(List.of(TestStatus.IN_PROGRESS), LocalDateTime.now(), null)).isEmpty();
+    }
+
+    @Test
     @DisplayName("findAvailableTestsForUser: 삭제된 테스트는 결과에 포함하지 않는다")
     void findAvailableTestsForUser_excludesDeletedTests() {
         em.getEntityManager()
@@ -258,6 +267,12 @@ class TestQueryRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("findByMakerId: makerId가 null이면 빈 리스트를 반환한다")
+    void findByMakerId_nullMakerId_returnsEmpty() {
+        assertThat(testRepository.findByMakerId(null)).isEmpty();
+    }
+
+    @Test
     @DisplayName("findLikedTests: 유저가 좋아요한 테스트 목록을 반환한다")
     void findLikedTests_returnsLikedTests() {
         testLikeRepository.save(
@@ -287,5 +302,31 @@ class TestQueryRepositoryImplTest {
         );
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findLikedTests: 필수 인자가 없으면 빈 리스트를 반환한다")
+    void findLikedTests_missingRequiredArgs_returnsEmpty() {
+        assertThat(testRepository.findLikedTests(null, List.of(TestStatus.IN_PROGRESS))).isEmpty();
+        assertThat(testRepository.findLikedTests(10L, null)).isEmpty();
+        assertThat(testRepository.findLikedTests(10L, List.of())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findActiveById: id가 null이면 빈 Optional을 반환한다")
+    void findActiveById_nullId_returnsEmpty() {
+        assertThat(testRepository.findActiveById(null)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findWithCategoriesById: id가 null이면 빈 Optional을 반환한다")
+    void findWithCategoriesById_nullId_returnsEmpty() {
+        assertThat(testRepository.findWithCategoriesById(null)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findByIdForUpdate: id가 null이면 빈 Optional을 반환한다")
+    void findByIdForUpdate_nullId_returnsEmpty() {
+        assertThat(testRepository.findByIdForUpdate(null)).isEmpty();
     }
 }
