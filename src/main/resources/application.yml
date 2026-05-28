@@ -50,6 +50,11 @@ claude:
     model: claude-sonnet-4-6
     min-response-threshold: 20
 
+mate:
+  pdf:
+    base-url: http://localhost:3001
+    timeout: 90s
+
 toss:
   api:
     base-url: https://apps-in-toss-api.toss.im

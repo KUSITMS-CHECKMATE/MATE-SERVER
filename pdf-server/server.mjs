@@ -6,30 +6,15 @@ import path from 'path';
 
 const PORT = 3001;
 const MATE_API_BASE_URL = (process.env.MATE_API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '');
-const CORS_ALLOWED_ORIGINS = (process.env.CORS_ALLOWED_ORIGINS ?? 'http://localhost:3000')
-  .split(',')
-  .map(origin => origin.trim())
-  .filter(Boolean);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HTML_PATH = path.resolve(__dirname, './stats-report.html');
 
-function setCorsHeaders(req, res) {
-  const origin = req.headers.origin;
-  if (origin && CORS_ALLOWED_ORIGINS.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
-}
-
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
-  setCorsHeaders(req, res);
 
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204);
-    res.end();
+  if (req.method === 'GET' && url.pathname === '/health') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('ok');
     return;
   }
 
@@ -128,6 +113,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`PDF server ready → http://localhost:${PORT}/generate`);
+  console.log(`PDF server ready (ClusterIP only) → http://localhost:${PORT}/generate`);
   console.log(`MATE API base URL: ${MATE_API_BASE_URL}`);
 });
