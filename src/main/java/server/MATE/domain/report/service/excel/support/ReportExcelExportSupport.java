@@ -16,7 +16,7 @@ public class ReportExcelExportSupport {
     private final TestRepository testRepository;
 
     public Test requireExportReadyTest(Long testId, Long makerId) {
-        Test test = testRepository.findByIdAndDeletedAtIsNull(testId)
+        Test test = testRepository.findActiveById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         if (!test.getMakerId().equals(makerId)) {
             throw new BaseException(BaseErrorCode.TEST_005);

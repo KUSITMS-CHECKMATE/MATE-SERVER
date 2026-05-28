@@ -43,12 +43,15 @@ public enum BaseErrorCode implements ErrorCode {
     TEST_005(HttpStatus.FORBIDDEN, "TEST_005", "테스트 메이커만 조회할 수 있습니다."),
     TEST_006(HttpStatus.BAD_REQUEST, "TEST_006", "테스트가 종료된 후에 조회할 수 있습니다."),
     TEST_007(HttpStatus.BAD_REQUEST, "TEST_007", "현재 상태에서는 변경할 수 없습니다."),
+    TEST_008(HttpStatus.BAD_REQUEST, "TEST_008", "테스트 마감 기한은 필수입니다."),
 
     // Test Draft
     DRAFT_001(HttpStatus.NOT_FOUND, "DRAFT_001", "테스트 초안을 찾을 수 없습니다."),
     DRAFT_002(HttpStatus.FORBIDDEN, "DRAFT_002", "테스트 초안에 접근할 권한이 없습니다."),
     DRAFT_003(HttpStatus.BAD_REQUEST, "DRAFT_003", "결제를 생성할 수 없는 테스트 초안입니다."),
     DRAFT_004(HttpStatus.BAD_REQUEST, "DRAFT_004", "게시할 수 없는 테스트 초안입니다."),
+    DRAFT_005(HttpStatus.BAD_REQUEST, "DRAFT_005", "결제 금액 산정에 필요한 정보가 부족합니다."),
+    DRAFT_006(HttpStatus.BAD_REQUEST, "DRAFT_006", "게시에 필요한 필수 정보가 부족합니다."),
 
     // Question
     QUESTION_001(HttpStatus.BAD_REQUEST, "QUESTION_001", "최소 선택 개수는 1 이상이어야 합니다."),
@@ -81,7 +84,7 @@ public enum BaseErrorCode implements ErrorCode {
     PAYMENT_002(HttpStatus.BAD_REQUEST, "PAYMENT_002", "결제를 생성할 수 없는 상태입니다."),
     PAYMENT_003(HttpStatus.BAD_REQUEST, "PAYMENT_003", "결제를 실행할 수 없는 상태입니다."),
     PAYMENT_004(HttpStatus.BAD_REQUEST, "PAYMENT_004", "환불할 수 없는 상태입니다."),
-    PAYMENT_005(HttpStatus.BAD_REQUEST, "PAYMENT_005", "결제 금액 계산에 필요한 값이 누락되었습니다."),
+
 
     // Report
     REPORT_001(HttpStatus.BAD_REQUEST, "REPORT_001", "엑셀 보고서는 질문 20개 이하 테스트만 지원합니다."),

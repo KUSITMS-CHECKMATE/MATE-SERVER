@@ -92,6 +92,7 @@ class QuestionServiceTest {
                 .serviceName("서비스")
                 .serviceDescription("서비스 설명")
                 .imageKeys(List.of())
+                .closedAt(LocalDateTime.of(2099, 12, 31, 23, 59, 59))
                 .build();
         lenient().when(objectiveHandler.supports()).thenReturn(QuestionType.OBJECTIVE);
         lenient().when(scaleHandler.supports()).thenReturn(QuestionType.SCALE);
@@ -129,8 +130,8 @@ class QuestionServiceTest {
         setQuestionId(objectiveQuestion, 201L);
         setQuestionId(scaleQuestion, 202L);
 
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
-        given(questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID))
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findQuestionsInTest(TEST_ID))
                 .willReturn(List.of(scaleQuestion, objectiveQuestion));
         given(objectiveFetcher.fetch(List.of(objectiveQuestion))).willReturn(Map.of(
                 201L,
@@ -176,8 +177,8 @@ class QuestionServiceTest {
     @Test
     @DisplayName("질문이 없는 테스트 조회는 빈 questions 배열을 반환한다")
     void returnsEmptyQuestionListWhenTestHasNoQuestions() {
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
-        given(questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID))
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findQuestionsInTest(TEST_ID))
                 .willReturn(List.of());
 
         QuestionsDetailResponse response = questionService.getQuestionsDetails(TEST_ID);
@@ -200,8 +201,8 @@ class QuestionServiceTest {
                 .build();
         setQuestionId(objectiveQuestion, 201L);
 
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
-        given(questionRepository.findByIdAndTestIdAndDeletedAtIsNull(201L, TEST_ID))
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findQuestionByIdInTest(201L, TEST_ID))
                 .willReturn(Optional.of(objectiveQuestion));
         given(objectiveFetcher.fetch(List.of(objectiveQuestion))).willReturn(Map.of(
                 201L,
@@ -233,8 +234,8 @@ class QuestionServiceTest {
         setTestStatus(test, TestStatus.COMPLETED);
         setTestPplCount(test, 12L);
 
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
-        given(questionRepository.findQuestionSummariesByTestId(TEST_ID)).willReturn(List.of(
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findQuestionSummariesInTest(TEST_ID)).willReturn(List.of(
                 new QuestionSummaryItem(202L, 1L, "척도 질문", QuestionType.SCALE),
                 new QuestionSummaryItem(201L, 2L, "객관식 질문", QuestionType.OBJECTIVE)
         ));
@@ -255,8 +256,8 @@ class QuestionServiceTest {
     void getQuestionSummaryReturnsWhenTestIsInProgress() {
         setTestStatus(test, TestStatus.IN_PROGRESS);
         setTestPplCount(test, 3L);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
-        given(questionRepository.findQuestionSummariesByTestId(TEST_ID)).willReturn(List.of(
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findQuestionSummariesInTest(TEST_ID)).willReturn(List.of(
                 new QuestionSummaryItem(301L, 1L, "진행 중 질문", QuestionType.SUBJECTIVE)
         ));
 
@@ -273,27 +274,27 @@ class QuestionServiceTest {
     @DisplayName("질문 요약 조회 요청자가 제작자가 아니면 TEST_005 예외가 발생한다")
     void getQuestionSummaryThrowsTest005WhenMakerDoesNotMatch() {
         setTestStatus(test, TestStatus.COMPLETED);
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
         assertThatThrownBy(() -> questionService.getQuestionSummary(TEST_ID, MAKER_ID + 1))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_005);
 
-        verify(questionRepository, never()).findQuestionSummariesByTestId(TEST_ID);
+        verify(questionRepository, never()).findQuestionSummariesInTest(TEST_ID);
     }
 
     @Test
     @DisplayName("조회 대상 테스트가 없으면 TEST_004 예외가 발생한다")
     void getQuestionsThrowsTest004WhenTestDoesNotExist() {
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.empty());
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> questionService.getQuestionsDetails(TEST_ID))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_004);
 
-        verify(questionRepository, never()).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
+        verify(questionRepository, never()).findQuestionsInTest(TEST_ID);
         verify(objectiveFetcher, never()).fetch(anyList());
         verify(scaleFetcher, never()).fetch(anyList());
     }
@@ -301,14 +302,14 @@ class QuestionServiceTest {
     @Test
     @DisplayName("삭제된 테스트는 조회 시 TEST_004 예외가 발생한다")
     void getQuestionsThrowsTest004WhenTestIsDeleted() {
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.empty());
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> questionService.getQuestionsDetails(TEST_ID))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_004);
 
-        verify(questionRepository, never()).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
+        verify(questionRepository, never()).findQuestionsInTest(TEST_ID);
         verify(objectiveFetcher, never()).fetch(anyList());
         verify(scaleFetcher, never()).fetch(anyList());
     }
@@ -316,21 +317,21 @@ class QuestionServiceTest {
     @Test
     @DisplayName("문항 상세 조회 대상 테스트가 없으면 TEST_004 예외가 발생한다")
     void getQuestionDetailThrowsTest004WhenTestDoesNotExist() {
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.empty());
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> questionService.getQuestionDetail(TEST_ID, 201L))
                 .isInstanceOf(BaseException.class)
                 .extracting(ex -> ((BaseException) ex).getErrorCode())
                 .isEqualTo(BaseErrorCode.TEST_004);
 
-        verify(questionRepository, never()).findByIdAndTestIdAndDeletedAtIsNull(any(), any());
+        verify(questionRepository, never()).findQuestionByIdInTest(any(), any());
     }
 
     @Test
     @DisplayName("문항 상세 조회 대상 문항이 없으면 QUESTION_005 예외가 발생한다")
     void getQuestionDetailThrowsQuestion005WhenQuestionDoesNotExist() {
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
-        given(questionRepository.findByIdAndTestIdAndDeletedAtIsNull(201L, TEST_ID))
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findQuestionByIdInTest(201L, TEST_ID))
                 .willReturn(Optional.empty());
 
         assertThatThrownBy(() -> questionService.getQuestionDetail(TEST_ID, 201L))
@@ -351,8 +352,8 @@ class QuestionServiceTest {
                 .build();
         setQuestionId(scaleQuestion, 202L);
 
-        given(testRepository.findByIdAndDeletedAtIsNull(TEST_ID)).willReturn(Optional.of(test));
-        given(questionRepository.findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID))
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.findQuestionsInTest(TEST_ID))
                 .willReturn(List.of(scaleQuestion));
         given(scaleFetcher.fetch(List.of(scaleQuestion))).willReturn(Map.of(
                 202L,
@@ -373,14 +374,14 @@ class QuestionServiceTest {
         QuestionsDetailResponse response = questionService.getQuestionsDetails(TEST_ID);
 
         assertThat(response.questions()).hasSize(1);
-        verify(questionRepository).findAllByTestIdAndDeletedAtIsNullOrderBySequenceAsc(TEST_ID);
+        verify(questionRepository).findQuestionsInTest(TEST_ID);
         verify(scaleFetcher).fetch(List.of(scaleQuestion));
     }
 
     @Test
     @DisplayName("여러 문항을 요청 순서대로 등록하고 이미지 정리 이벤트를 한 번 발행한다")
     void createQuestionsInRequestOrderAndPublishSingleCleanupEvent() {
-        given(testRepository.findByIdAndDeletedAtIsNullForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
         given(questionRepository.findMaxSequenceByTestId(TEST_ID)).willReturn(5L);
 
         ObjectiveCreateRequest objective = new ObjectiveCreateRequest(
@@ -439,7 +440,7 @@ class QuestionServiceTest {
     @Test
     @DisplayName("혼합 요청은 OBJECTIVE, SCALE, TREE_TEST 순서대로 sequence가 부여된다")
     void assignsSequenceInMixedRequestOrder() {
-        given(testRepository.findByIdAndDeletedAtIsNullForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
         given(questionRepository.findMaxSequenceByTestId(TEST_ID)).willReturn(3L);
 
         ObjectiveCreateRequest objective = new ObjectiveCreateRequest(
@@ -497,7 +498,7 @@ class QuestionServiceTest {
     @Test
     @DisplayName("이미지가 없는 경우 정리 이벤트를 발행하지 않는다")
     void doesNotPublishCleanupEventWhenNoImagesExist() {
-        given(testRepository.findByIdAndDeletedAtIsNullForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
         given(questionRepository.findMaxSequenceByTestId(TEST_ID)).willReturn(0L);
 
         ScaleCreateRequest scale = new ScaleCreateRequest(
@@ -520,7 +521,7 @@ class QuestionServiceTest {
     @Test
     @DisplayName("테스트가 없으면 TEST_004 예외가 발생한다")
     void throwsTest004WhenTestDoesNotExist() {
-        given(testRepository.findByIdAndDeletedAtIsNullForUpdate(TEST_ID)).willReturn(Optional.empty());
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.empty());
 
         QuestionCreateRequest request = new QuestionCreateRequest(List.of(
                 new ScaleCreateRequest("척도 질문", "설명", null, "낮음", "높음", 5)
@@ -536,7 +537,7 @@ class QuestionServiceTest {
     @DisplayName("삭제된 테스트면 TEST_004 예외가 발생한다")
     void throwsTest004WhenTestIsDeleted() {
         test.delete(LocalDateTime.now());
-        given(testRepository.findByIdAndDeletedAtIsNullForUpdate(TEST_ID)).willReturn(Optional.empty());
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.empty());
 
         QuestionCreateRequest request = new QuestionCreateRequest(List.of(
                 new ScaleCreateRequest("척도 질문", "설명", null, "낮음", "높음", 5)
@@ -551,7 +552,7 @@ class QuestionServiceTest {
     @Test
     @DisplayName("제작자가 아니면 TEST_005 예외가 발생한다")
     void throwsTest005WhenMakerDoesNotMatch() {
-        given(testRepository.findByIdAndDeletedAtIsNullForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
 
         QuestionCreateRequest request = new QuestionCreateRequest(List.of(
                 new ScaleCreateRequest("척도 질문", "설명", null, "낮음", "높음", 5)
@@ -566,7 +567,7 @@ class QuestionServiceTest {
     @Test
     @DisplayName("핸들러 검증에서 실패하면 저장과 이벤트 발행이 중단된다")
     void stopsPersistenceAndEventPublishingWhenHandlerValidationFails() {
-        given(testRepository.findByIdAndDeletedAtIsNullForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
         given(questionRepository.findMaxSequenceByTestId(TEST_ID)).willReturn(0L);
 
         ScaleCreateRequest scale = new ScaleCreateRequest(
@@ -593,7 +594,7 @@ class QuestionServiceTest {
     @Test
     @DisplayName("중간 문항 처리에서 실패하면 이후 문항 처리와 이벤트 발행이 중단된다")
     void stopsProcessingRemainingItemsWhenIntermediateItemFails() {
-        given(testRepository.findByIdAndDeletedAtIsNullForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
         given(questionRepository.findMaxSequenceByTestId(TEST_ID)).willReturn(0L);
 
         ObjectiveCreateRequest objective = new ObjectiveCreateRequest(
@@ -644,7 +645,7 @@ class QuestionServiceTest {
     @Test
     @DisplayName("이미지가 포함된 문항이 모두 성공하면 cleanup 이벤트를 한 번만 발행한다")
     void publishesCleanupEventOnlyWhenRequestSucceeds() {
-        given(testRepository.findByIdAndDeletedAtIsNullForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
         given(questionRepository.findMaxSequenceByTestId(TEST_ID)).willReturn(10L);
 
         ObjectiveCreateRequest objective = new ObjectiveCreateRequest(
@@ -683,7 +684,7 @@ class QuestionServiceTest {
     @Test
     @DisplayName("중간 실패가 발생하면 cleanup 이벤트를 발행하지 않는다")
     void doesNotPublishCleanupEventWhenIntermediateItemFails() {
-        given(testRepository.findByIdAndDeletedAtIsNullForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
         given(questionRepository.findMaxSequenceByTestId(TEST_ID)).willReturn(0L);
 
         ObjectiveCreateRequest objective = new ObjectiveCreateRequest(

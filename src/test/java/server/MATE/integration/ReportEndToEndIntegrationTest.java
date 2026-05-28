@@ -104,6 +104,9 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0);
         assertThat(result.path("type").asText()).isEqualTo("SUBJECTIVE");
         JsonNode resultData = result.path("result");
+        assertThat(resultData.path("aiSummary").isNull()).isTrue();
+        assertThat(resultData.path("clusters").isArray()).isTrue();
+        assertThat(resultData.path("clusters")).isEmpty();
         JsonNode texts = resultData.path("texts");
         assertThat(texts).hasSize(1);
         assertThat(texts.get(0).asText()).isEqualTo("주관식 응답");
@@ -185,6 +188,9 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0);
         assertThat(result.path("type").asText()).isEqualTo("FIVE_SECOND");
         JsonNode resultData = result.path("result");
+        assertThat(resultData.path("aiSummary").isNull()).isTrue();
+        assertThat(resultData.path("clusters").isArray()).isTrue();
+        assertThat(resultData.path("clusters")).isEmpty();
         JsonNode texts = resultData.path("texts");
         assertThat(texts).hasSize(1);
         assertThat(texts.get(0).asText()).isEqualTo("5초 주관 응답");
@@ -369,29 +375,35 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("응답이 없는 SUBJECTIVE 질문의 리포트는 texts가 빈 리스트다")
+    @DisplayName("응답이 없는 SUBJECTIVE 질문의 리포트는 aiSummary가 null이고 clusters가 빈 배열이며 texts가 빈 리스트다")
     void getReport_withNoSubjectiveAnswers_returnsEmptyTexts() throws Exception {
         TestActors actors = createActors();
         createSingleSubjectiveQuestion(actors.testId(), actors.makerToken());
         completeTest(actors.testId());
 
-        JsonNode texts = reportData(actors.testId(), actors.makerToken())
-                .path("reports").get(0).path("result").path("texts");
-        assertThat(texts.isArray()).isTrue();
-        assertThat(texts).isEmpty();
+        JsonNode result = reportData(actors.testId(), actors.makerToken())
+                .path("reports").get(0).path("result");
+        assertThat(result.path("aiSummary").isNull()).isTrue();
+        assertThat(result.path("clusters").isArray()).isTrue();
+        assertThat(result.path("clusters")).isEmpty();
+        assertThat(result.path("texts").isArray()).isTrue();
+        assertThat(result.path("texts")).isEmpty();
     }
 
     @Test
-    @DisplayName("응답이 없는 FIVE_SECOND 주관식 질문의 리포트는 texts가 빈 리스트다")
+    @DisplayName("응답이 없는 FIVE_SECOND 주관식 질문의 리포트는 aiSummary가 null이고 clusters가 빈 배열이며 texts가 빈 리스트다")
     void getReport_withNoFiveSecondSubjectiveAnswers_returnsEmptyTexts() throws Exception {
         TestActors actors = createActors();
         createFiveSecondSubjectiveQuestion(actors.testId(), actors.makerToken());
         completeTest(actors.testId());
 
-        JsonNode texts = reportData(actors.testId(), actors.makerToken())
-                .path("reports").get(0).path("result").path("texts");
-        assertThat(texts.isArray()).isTrue();
-        assertThat(texts).isEmpty();
+        JsonNode result = reportData(actors.testId(), actors.makerToken())
+                .path("reports").get(0).path("result");
+        assertThat(result.path("aiSummary").isNull()).isTrue();
+        assertThat(result.path("clusters").isArray()).isTrue();
+        assertThat(result.path("clusters")).isEmpty();
+        assertThat(result.path("texts").isArray()).isTrue();
+        assertThat(result.path("texts")).isEmpty();
     }
 
     @Test
@@ -792,7 +804,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("OBJECTIVE isOther=true 응답 시 리포트에 clusters와 texts가 포함된다")
+    @DisplayName("OBJECTIVE isOther=true 응답 시 threshold 미만이면 aiSummary가 null이고 clusters가 빈 배열이며 otherTexts가 반환된다")
     void getReport_withObjectiveOtherText_returnsClustersAndTexts() throws Exception {
         TestActors actors = createActors();
         createObjectiveQuestion(actors.testId(), actors.makerToken(), false, null, null, true);
@@ -810,6 +822,9 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
+        assertThat(result.path("aiSummary").isNull()).isTrue();
+        assertThat(result.path("clusters").isArray()).isTrue();
+        assertThat(result.path("clusters")).isEmpty();
         JsonNode otherTexts = result.path("otherTexts");
         assertThat(otherTexts).hasSize(1);
         assertThat(otherTexts.get(0).asText()).isEqualTo("직접 입력 응답");
@@ -1159,7 +1174,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
     }
 
     @Test
-    @DisplayName("FIVE_SECOND isOther=true 응답 시 리포트에 clusters와 texts가 포함된다")
+    @DisplayName("FIVE_SECOND isOther=true 응답 시 threshold 미만이면 aiSummary가 null이고 clusters가 빈 배열이며 otherTexts가 반환된다")
     void getReport_withFiveSecondOtherText_returnsClustersAndTexts() throws Exception {
         TestActors actors = createActors();
         createFiveSecondObjectiveQuestion(actors.testId(), actors.makerToken(), false, null, null, true);
@@ -1184,6 +1199,9 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
         completeTest(actors.testId());
 
         JsonNode result = reportData(actors.testId(), actors.makerToken()).path("reports").get(0).path("result");
+        assertThat(result.path("aiSummary").isNull()).isTrue();
+        assertThat(result.path("clusters").isArray()).isTrue();
+        assertThat(result.path("clusters")).isEmpty();
         JsonNode otherTexts = result.path("otherTexts");
         assertThat(otherTexts).hasSize(1);
         assertThat(otherTexts.get(0).asText()).isEqualTo("5초 기타 응답");
