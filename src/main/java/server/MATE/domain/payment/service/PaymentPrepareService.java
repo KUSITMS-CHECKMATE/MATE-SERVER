@@ -11,6 +11,7 @@ import server.MATE.domain.payment.policy.PaymentAmountCalculator;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.testdraft.entity.TestDraft;
 import server.MATE.domain.testdraft.repository.TestDraftRepository;
+import server.MATE.domain.testdraft.validator.TestDraftValidator;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
@@ -23,6 +24,7 @@ public class PaymentPrepareService {
     private final TestDraftRepository testDraftRepository;
     private final PaymentRepository paymentRepository;
     private final PaymentAmountCalculator paymentAmountCalculator;
+    private final TestDraftValidator testDraftValidator;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public PaymentPreparation prepare(Long draftId, Long makerId, boolean isTestPayment) {
@@ -31,7 +33,7 @@ public class PaymentPrepareService {
         if (!draft.getMakerId().equals(makerId)) {
             throw new BaseException(BaseErrorCode.DRAFT_002);
         }
-        draft.validateReadyForPayment();
+        testDraftValidator.validateForPayment(draft);
 
         int amount = paymentAmountCalculator.totalAmount(draft.getGoalPpl(), draft.getReward());
         Payment existingPayment = paymentRepository.findByDraftId(draftId).orElse(null);
