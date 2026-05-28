@@ -140,6 +140,7 @@ jobs:
   update-kustomization:
     needs: [changes, mate, pdf]
     if: >
+      always() &&
       github.event_name == 'push' &&
       github.actor != 'github-actions[bot]' &&
       (needs.mate.result == 'success' || needs.pdf.result == 'success')
