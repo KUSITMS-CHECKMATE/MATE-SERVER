@@ -12,12 +12,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import server.MATE.domain.report.dto.response.ReportResponse;
 import server.MATE.domain.report.dto.response.TestReportExcelDownload;
+import server.MATE.domain.report.dto.response.TestReportPdfDownload;
 import server.MATE.domain.report.service.ReportService;
 import server.MATE.domain.report.service.excel.TestReportExcelService;
+import server.MATE.domain.report.service.pdf.TestReportPdfService;
 import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
@@ -30,6 +33,7 @@ public class ReportController {
 
     private final ReportService reportService;
     private final TestReportExcelService testReportExcelService;
+    private final TestReportPdfService testReportPdfService;
 
     @Operation(
             summary = "✔️ 리포트 전체 조회",
@@ -405,6 +409,28 @@ public class ReportController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(download.content());
+    }
+
+    @Operation(
+            summary = "➰ 리포트 통계 PDF 파일 다운로드",
+            description = """
+                    테스트 전체 리포트를 PDF 파일로 다운로드합니다.
+                    - 테스트 메이커만 다운로드할 수 있습니다.
+                    - 테스트 종료 및 리포트 집계 완료(`report_status = COMPLETED`) 후 다운로드 가능합니다.
+                    - 클러스터 내부 PDF 서비스(mate-pdf)를 호출해 생성합니다.
+                    """
+    )
+    @GetMapping("/pdf")
+    public ResponseEntity<byte[]> downloadPdfReport(
+            @PathVariable Long testId,
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization
+    ) {
+        TestReportPdfDownload download = testReportPdfService.export(testId, user.getId(), authorization);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
                 .body(download.content());
     }
 }

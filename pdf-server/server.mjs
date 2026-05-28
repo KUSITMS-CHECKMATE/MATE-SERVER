@@ -5,22 +5,19 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 
 const PORT = 3001;
+const MATE_API_BASE_URL = (process.env.MATE_API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '');
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const HTML_PATH = path.resolve(__dirname, './stats-report.html'); // 같은 폴더에 위치
+const HTML_PATH = path.resolve(__dirname, './stats-report.html');
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
 
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204);
-    res.end();
+  if (req.method === 'GET' && url.pathname === '/health') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('ok');
     return;
   }
 
-  // stats-report.html을 HTTP로 서빙 (file:// 대신 http:// 사용해야 쿼리 파라미터가 정상 동작)
   if (req.method === 'GET' && url.pathname === '/stats-report.html') {
     try {
       const html = fs.readFileSync(HTML_PATH, 'utf-8');
@@ -36,25 +33,31 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/generate') {
     try {
       const testId = url.searchParams.get('testId') ?? '';
-      const token = url.searchParams.get('token') ?? '';
-      const apiBase = url.searchParams.get('apiBase') ?? '';
       const title = url.searchParams.get('title') ?? '';
+      const authorization = req.headers.authorization ?? '';
 
-      console.log('[pdf-server] /generate 요청 수신');
-      console.log('[pdf-server] 받은 params:', { testId, token: token ? '있음' : '없음', apiBase, title });
+      if (!testId) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'testId is required' }));
+        return;
+      }
+      if (!authorization) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Authorization header is required' }));
+        return;
+      }
 
-      const params = new URLSearchParams({ testId, token, apiBase, ...(title ? { title } : {}) });
-      // http:// 로 서빙해야 location.search 쿼리 파라미터가 정상 동작함
+      console.log('[pdf-server] /generate 요청 수신', { testId, title: title || '(없음)' });
+
+      const params = new URLSearchParams({ testId, ...(title ? { title } : {}) });
       const HTML_URL = `http://localhost:${PORT}/stats-report.html?${params.toString()}`;
 
-      console.log('[pdf-server] HTML URL:', HTML_URL);
-
-      // Node.js에서 직접 API 호출 (CORS 없음)
-      console.log(`[pdf-server] API 호출: ${apiBase}/api/v1/tests/${testId}/report`);
-      const apiRes = await fetch(`${apiBase}/api/v1/tests/${testId}/report`, {
+      const reportUrl = `${MATE_API_BASE_URL}/api/v1/tests/${testId}/report`;
+      console.log(`[pdf-server] API 호출: ${reportUrl}`);
+      const apiRes = await fetch(reportUrl, {
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: authorization,
         },
       });
       if (!apiRes.ok) {
@@ -68,7 +71,6 @@ const server = http.createServer(async (req, res) => {
       try {
         const page = await browser.newPage();
 
-        // 브라우저 콘솔 로그를 터미널에 출력
         page.on('console', msg => {
           console.log(`[page:${msg.type()}]`, msg.text());
         });
@@ -76,13 +78,11 @@ const server = http.createServer(async (req, res) => {
           console.error('[page:error]', err.message);
         });
 
-        // API 데이터를 전역 변수로 주입 (브라우저 CORS 우회)
         await page.addInitScript(`window.__REPORT_DATA__ = ${JSON.stringify(reportJson)};`);
 
         await page.setViewportSize({ width: 595, height: 842 });
         await page.goto(HTML_URL, { waitUntil: 'load' });
 
-        // async 렌더링이 완전히 끝날 때까지 대기
         await page.waitForSelector('[data-rendered]', { timeout: 30_000 });
         console.log('[pdf-server] 렌더링 완료 확인, PDF 생성 시작');
 
@@ -113,5 +113,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`PDF server ready → http://localhost:${PORT}/generate`);
+  console.log(`PDF server ready (ClusterIP only) → http://localhost:${PORT}/generate`);
+  console.log(`MATE API base URL: ${MATE_API_BASE_URL}`);
 });
