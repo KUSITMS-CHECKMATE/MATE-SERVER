@@ -764,7 +764,7 @@ class QuestionServiceIntegrationTest {
                 .serviceName("서비스")
                 .serviceDescription("서비스 설명")
                 .imageKeys(List.of())
-                .closedAt(LocalDateTime.of(2099, 12, 31, 23, 59, 59))
+                .closedAt(TestEntityFixtures.DEFAULT_CLOSED_AT)
                 .build());
     }
 }
