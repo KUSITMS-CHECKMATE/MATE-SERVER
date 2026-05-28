@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: mate
 resources:
+<<<<<<< HEAD
 - namespace.yaml
 - secretstore-azurekv.yaml
 - externalsecret-mate-env.yaml
@@ -13,6 +14,18 @@ resources:
 - deployment-pdf.yaml
 - service-pdf.yaml
 - ingress-pdf.yaml
+=======
+  - namespace.yaml
+  - secretstore-azurekv.yaml
+  - externalsecret-mate-env.yaml
+  - externalsecret-mate-mtls.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - deployment-pdf.yaml
+  - service-pdf.yaml
+  - ingress-pdf.yaml
+>>>>>>> e70e73b (refactor: 미사용 secret 값 제거(#191))
 images:
 - name: kusitmsmateacr.azurecr.io/mate
   newTag: gha-37
