@@ -69,6 +69,11 @@ jwt:
     REFRESH:
       expiration: 1209600000
 
+mate:
+  pdf:
+    base-url: http://mate-pdf
+    timeout: 90s
+
 security:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
