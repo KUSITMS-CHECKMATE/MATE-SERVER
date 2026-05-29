@@ -32,4 +32,8 @@ public class TestCategory {
         this.test = test;
         this.category = category;
     }
+
+    public void delete(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
 }

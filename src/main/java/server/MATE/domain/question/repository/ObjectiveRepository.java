@@ -17,4 +17,7 @@ public interface ObjectiveRepository extends JpaRepository<Objective, Long> {
     @EntityGraph(attributePaths = "options")
     @Query("SELECT o FROM Objective o WHERE o.id = :id")
     Optional<Objective> findWithOptionsById(@Param("id") Long id);
+
+    @EntityGraph(attributePaths = "options")
+    List<Objective> findAllByQuestion_IdIn(Iterable<Long> questionIds);
 }
