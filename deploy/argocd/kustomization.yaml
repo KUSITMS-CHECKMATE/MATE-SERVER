@@ -5,5 +5,7 @@ resources:
   - applications/ingress-nginx-application.yaml
   - applications/external-secrets-operator-application.yaml
   - applications/platform-application.yaml
+  - applications/kube-prometheus-stack-application.yaml
+  - applications/loki-stack-application.yaml
   - applications/mate-application.yaml
   - applications/monitoring-application.yaml
