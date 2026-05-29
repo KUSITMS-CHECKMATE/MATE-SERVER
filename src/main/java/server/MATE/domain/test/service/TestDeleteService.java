@@ -25,6 +25,7 @@ import server.MATE.global.storage.event.FileDeleteEvent;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -120,9 +121,10 @@ public class TestDeleteService {
 
     private void deleteQuestionDetails(List<Question> questions, List<String> fileKeys) {
         Map<QuestionType, List<Long>> questionIdsByType = questions.stream()
-                .collect(HashMap::new,
-                        (map, question) -> map.computeIfAbsent(question.getQuestionType(), key -> new ArrayList<>()).add(question.getId()),
-                        HashMap::putAll);
+                .collect(Collectors.groupingBy(
+                        Question::getQuestionType,
+                        Collectors.mapping(Question::getId, Collectors.toList())
+                ));
 
         deleteObjectives(questionIdsByType.get(QuestionType.OBJECTIVE), fileKeys);
         deleteSubjectives(questionIdsByType.get(QuestionType.SUBJECTIVE), fileKeys);
