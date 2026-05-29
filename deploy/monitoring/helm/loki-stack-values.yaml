@@ -1,9 +1,3 @@
-# loki-stack Helm values (release: loki, namespace: monitoring)
-#
-# 적용:
-#   helm upgrade loki grafana/loki-stack -n monitoring \
-#     -f deploy/monitoring/helm/loki-stack-values.yaml
-
 fluent-bit:
   enabled: false
 grafana:
