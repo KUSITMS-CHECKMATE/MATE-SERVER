@@ -14,7 +14,7 @@ import reactor.netty.http.client.HttpClient;
 @EnableConfigurationProperties(MatePdfProperties.class)
 public class MatePdfConfig {
 
-    private static final int MAX_IN_MEMORY_SIZE = 10 * 1024 * 1024; // 10MB
+    private static final int MAX_IN_MEMORY_SIZE = 10 * 1024 * 1024;
 
     @Bean
     @Qualifier("matePdfWebClient")
