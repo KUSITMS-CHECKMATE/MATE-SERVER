@@ -1,5 +1,4 @@
-# kube-prometheus-stack Helm 설치 후, ArgoCD `monitoring` 앱으로 Ingress·ServiceMonitor를 Sync합니다.
-# Grafana/Prometheus/Loki Helm values는 deploy/monitoring/helm/ 및 README.md 참고.
+# Ingress·ServiceMonitor Kustomize. Helm 스택은 kube-prometheus-stack / loki-stack Application이 관리합니다.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
