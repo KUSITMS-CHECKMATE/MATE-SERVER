@@ -2,7 +2,6 @@ package server.MATE.domain.report.service.excel;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.service.excel.support.ReportExcelExportSupport;
 import server.MATE.domain.test.entity.Test;
@@ -16,25 +15,25 @@ public class TestReportExcelService {
     private final ReportExcelExportSupport reportExcelExportSupport;
     private final FileStorageService fileStorageService;
 
-    @Transactional
     public TestReportExcelDownload export(Long testId, Long makerId) {
         Test test = reportExcelExportSupport.requireExportReadyTest(testId, makerId);
+        String filename = buildFilename(testId);
 
         if (test.getExcelKey() != null) {
             return new TestReportExcelDownload(
-                    fileStorageService.generateDownloadUrl(test.getExcelKey()),
-                    buildFilename(testId)
+                    fileStorageService.generateDownloadUrl(test.getExcelKey(), filename),
+                    filename
             );
         }
 
         byte[] excelBytes = combinedTestReportExcelService.export(testId, makerId);
         String excelKey = "reports/excel/" + testId + ".xlsx";
         fileStorageService.upload(excelKey, excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        test.saveExcelKey(excelKey);
+        reportExcelExportSupport.saveExcelKey(testId, excelKey);
 
         return new TestReportExcelDownload(
-                fileStorageService.generateDownloadUrl(excelKey),
-                buildFilename(testId)
+                fileStorageService.generateDownloadUrl(excelKey, filename),
+                filename
         );
     }
 
