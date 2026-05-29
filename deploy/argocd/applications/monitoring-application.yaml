@@ -1,4 +1,4 @@
-# Ingress·ServiceMonitor Kustomize. kube-prometheus-stack/loki는 Helm(values: deploy/monitoring/helm/)으로 관리.
+# Ingress·ServiceMonitor·Grafana PVC Kustomize. kube-prometheus-stack/loki는 Helm(values) + existingClaim.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
