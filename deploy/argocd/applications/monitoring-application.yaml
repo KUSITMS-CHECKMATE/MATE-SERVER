@@ -1,4 +1,5 @@
-# kube-prometheus-stack 설치 후 Sync. ServiceMonitor CRD는 Prometheus Operator가 제공.
+# kube-prometheus-stack Helm 설치 후, ArgoCD `monitoring` 앱으로 Ingress·ServiceMonitor를 Sync합니다.
+# Grafana/Prometheus/Loki Helm values는 deploy/monitoring/helm/ 및 README.md 참고.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
