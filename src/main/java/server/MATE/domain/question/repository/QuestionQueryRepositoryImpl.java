@@ -11,6 +11,7 @@ import server.MATE.domain.question.entity.Question;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 import static server.MATE.domain.question.entity.QQuestion.question;
 
@@ -78,6 +79,19 @@ public class QuestionQueryRepositoryImpl implements QuestionQueryRepository {
     }
 
     @Override
+    public List<Question> findQuestionsInTestIncludingDeleted(Long testId) {
+        if (testId == null) {
+            return List.of();
+        }
+
+        return queryFactory
+                .selectFrom(question)
+                .where(testIdEq(testId))
+                .orderBy(question.sequence.asc())
+                .fetch();
+    }
+
+    @Override
     public List<AnswerQuestionTypeView> findAnswerQuestionTypesInTest(Long testId) {
         if (testId == null) {
             return List.of();
@@ -112,5 +126,18 @@ public class QuestionQueryRepositoryImpl implements QuestionQueryRepository {
                 .where(testIdEq(testId), notDeleted())
                 .orderBy(question.sequence.asc())
                 .fetch();
+    }
+
+    @Override
+    public long softDeleteByTestId(Long testId, LocalDateTime deletedAt) {
+        if (testId == null || deletedAt == null) {
+            return 0L;
+        }
+
+        return queryFactory
+                .update(question)
+                .set(question.deletedAt, deletedAt)
+                .where(testIdEq(testId), notDeleted())
+                .execute();
     }
 }

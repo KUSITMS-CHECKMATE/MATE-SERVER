@@ -28,6 +28,7 @@ import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.storage.FileStorageService;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -80,6 +81,8 @@ class TestServiceTest {
         test.addCategories(List.of(Category.FOOD));
         lenient().when(fileStorageService.generateDownloadUrl(anyString())).thenReturn("https://example.com/url");
         lenient().when(clock.withZone(ZoneId.of("Asia/Seoul"))).thenReturn(Clock.system(ZoneId.of("Asia/Seoul")));
+        lenient().when(clock.instant()).thenReturn(Instant.parse("2026-05-30T00:00:00Z"));
+        lenient().when(clock.getZone()).thenReturn(ZoneId.of("Asia/Seoul"));
     }
 
     @Test
@@ -323,4 +326,5 @@ class TestServiceTest {
         ReflectionTestUtils.setField(listTest, "id", id);
         return listTest;
     }
+
 }

@@ -36,4 +36,8 @@ public class Participation extends BaseEntity {
         this.testerId = testerId;
     }
 
+    public void delete(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
 }

@@ -8,4 +8,6 @@ import java.util.List;
 public interface AbTestRepository extends JpaRepository<AbTest, Long> {
 
     List<AbTest> findAllByIdIn(Iterable<Long> ids);
+
+    List<AbTest> findAllByQuestion_IdIn(Iterable<Long> questionIds);
 }
