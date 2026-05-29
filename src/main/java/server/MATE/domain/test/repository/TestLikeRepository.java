@@ -1,6 +1,7 @@
 package server.MATE.domain.test.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import server.MATE.domain.test.entity.TestLike;
@@ -22,4 +23,12 @@ public interface TestLikeRepository extends JpaRepository<TestLike, Long> {
               and tl.testId in :testIds
             """)
     List<Long> findLikedTestIds(@Param("userId") Long userId, @Param("testIds") Collection<Long> testIds);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            delete
+            from TestLike tl
+            where tl.testId = :testId
+            """)
+    int deleteAllByTestId(@Param("testId") Long testId);
 }
