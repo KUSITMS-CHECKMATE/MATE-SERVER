@@ -1,0 +1,22 @@
+# loki-stack Helm values (release: loki, namespace: monitoring)
+#
+# 적용:
+#   helm upgrade loki grafana/loki-stack -n monitoring \
+#     -f deploy/monitoring/helm/loki-stack-values.yaml
+
+fluent-bit:
+  enabled: false
+grafana:
+  enabled: false
+  sidecar:
+    datasources:
+      enabled: true
+loki:
+  enabled: true
+  isDefault: false
+  image:
+    tag: 2.9.3
+prometheus:
+  enabled: false
+promtail:
+  enabled: false
