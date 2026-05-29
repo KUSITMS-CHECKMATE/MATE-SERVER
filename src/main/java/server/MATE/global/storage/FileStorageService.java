@@ -6,4 +6,5 @@ public interface FileStorageService {
     String generatePresignedUrl(String key);
     String generateDownloadUrl(String key);
     void deleteFiles(List<String> keys);
+    void upload(String key, byte[] content, String contentType);
 }
