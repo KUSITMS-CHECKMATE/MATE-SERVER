@@ -17,4 +17,7 @@ public interface FiveSecondRepository extends JpaRepository<FiveSecond, Long> {
     @EntityGraph(attributePaths = "options")
     @Query("SELECT f FROM FiveSecond f WHERE f.id = :id")
     Optional<FiveSecond> findWithOptionsById(@Param("id") Long id);
+
+    @EntityGraph(attributePaths = "options")
+    List<FiveSecond> findAllByQuestion_IdIn(Iterable<Long> questionIds);
 }

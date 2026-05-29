@@ -8,4 +8,6 @@ import java.util.List;
 public interface SubjectiveRepository extends JpaRepository<Subjective, Long> {
 
     List<Subjective> findAllByIdIn(Iterable<Long> ids);
+
+    List<Subjective> findAllByQuestion_IdIn(Iterable<Long> questionIds);
 }
