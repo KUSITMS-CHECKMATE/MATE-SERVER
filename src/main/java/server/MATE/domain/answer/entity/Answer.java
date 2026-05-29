@@ -46,4 +46,8 @@ public class Answer extends BaseEntity {
         this.questionType = questionType;
         this.answer = answer;
     }
+
+    public void delete(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
 }

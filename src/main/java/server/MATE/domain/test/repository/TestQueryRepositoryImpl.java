@@ -130,6 +130,33 @@ public class TestQueryRepositoryImpl implements TestQueryRepository {
     }
 
     @Override
+    public Optional<Test> findByIdIncludingDeleted(Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable(
+                queryFactory
+                        .selectFrom(test)
+                        .where(idEq(id))
+                        .fetchOne()
+        );
+    }
+
+    @Override
+    public long softDeleteById(Long id, LocalDateTime deletedAt) {
+        if (id == null || deletedAt == null) {
+            return 0L;
+        }
+
+        return queryFactory
+                .update(test)
+                .set(test.deletedAt, deletedAt)
+                .where(idEq(id), notDeleted())
+                .execute();
+    }
+
+    @Override
     public Optional<Test> findWithCategoriesById(Long id) {
         if (id == null) {
             return Optional.empty();
