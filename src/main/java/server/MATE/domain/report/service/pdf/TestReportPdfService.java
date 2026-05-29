@@ -11,9 +11,12 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 <<<<<<< HEAD
+<<<<<<< HEAD
 import org.springframework.web.util.UriComponentsBuilder;
 =======
 >>>>>>> origin/dev
+=======
+>>>>>>> origin/feat/ci
 
 import reactor.core.publisher.Mono;
 import server.MATE.domain.report.config.MatePdfProperties;
@@ -50,6 +53,7 @@ public class TestReportPdfService {
         }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         String uri = UriComponentsBuilder.fromPath("/generate")
                 .queryParam("testId", testId)
                 .queryParam("title", test.getTitle())
@@ -62,6 +66,8 @@ public class TestReportPdfService {
             responseBody = matePdfWebClient.get()
                     .uri(uri)
 =======
+=======
+>>>>>>> origin/feat/ci
         String responseBody;
         try {
             responseBody = matePdfWebClient.get()
@@ -70,7 +76,10 @@ public class TestReportPdfService {
                             .queryParam("testId", testId)
                             .queryParam("title", test.getTitle())
                             .build())
+<<<<<<< HEAD
 >>>>>>> origin/dev
+=======
+>>>>>>> origin/feat/ci
                     .header(HttpHeaders.AUTHORIZATION, authorization)
                     .retrieve()
                     .onStatus(HttpStatusCode::isError, response -> response.bodyToMono(String.class)
