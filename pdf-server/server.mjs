@@ -18,6 +18,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // stats-report.html을 HTTP로 서빙 (file:// 대신 http:// 사용해야 쿼리 파라미터가 정상 동작)
   if (req.method === 'GET' && url.pathname === '/stats-report.html') {
     try {
       const html = fs.readFileSync(HTML_PATH, 'utf-8');
