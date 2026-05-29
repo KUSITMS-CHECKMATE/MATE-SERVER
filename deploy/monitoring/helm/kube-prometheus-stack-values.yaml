@@ -4,13 +4,13 @@ grafana:
   deploymentStrategy:
     # RWO PVC는 단일 Pod만 마운트 가능 → RollingUpdate 대신 Recreate
     type: Recreate
+  # local-path + 기존 볼륨 데이터 시 chown Permission denied → persistence와 독립된 키
+  initChownData:
+    enabled: false
   persistence:
     enabled: true
     type: pvc
     existingClaim: monitoring-grafana
-    initChownData:
-      # local-path + 기존 볼륨 데이터 시 chown Permission denied → fsGroup(472) 사용
-      enabled: false
 
 prometheus:
   prometheusSpec:

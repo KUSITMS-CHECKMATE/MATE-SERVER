@@ -23,6 +23,31 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
+  ignoreDifferences:
+    - group: ""
+      kind: Service
+      name: monitoring-kube-prometheus-coredns
+      namespace: kube-system
+      jsonPointers:
+        - /metadata/labels
+        - /metadata/annotations
+    - group: apps
+      kind: Deployment
+      name: monitoring-kube-prometheus-operator
+      namespace: monitoring
+      managedFieldsManagers:
+        - kube-controller-manager
+    - group: monitoring.coreos.com
+      kind: PrometheusRule
+      namespace: monitoring
+      jsonPointers:
+        - /metadata/annotations
+    - group: ""
+      kind: Secret
+      name: monitoring-grafana
+      namespace: monitoring
+      jsonPointers:
+        - /data
   syncPolicy:
     automated:
       prune: true
@@ -30,3 +55,4 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
