@@ -1,13 +1,3 @@
-# kube-prometheus-stack Helm values (release: monitoring, namespace: monitoring)
-#
-# 적용:
-#   helm upgrade monitoring prometheus-community/kube-prometheus-stack \
-#     -n monitoring -f deploy/monitoring/helm/kube-prometheus-stack-values.yaml \
-#     --reuse-values
-#
-# Grafana UI에서 만든 대시보드·설정은 /var/lib/grafana (PVC)에 저장됩니다.
-# Pod 재시작·ReplicaSet 교체 후에도 유지됩니다.
-
 grafana:
   deploymentStrategy:
     # RWO PVC는 단일 Pod만 마운트 가능 → RollingUpdate 대신 Recreate
