@@ -1,4 +1,5 @@
-# release: monitoring. PVC는 deploy/monitoring/grafana-pvc.yaml (ArgoCD) → existingClaim 참조.
+# release: monitoring. Grafana PVC는 deploy/monitoring/grafana-pvc.yaml (ArgoCD) → existingClaim 참조.
+# Prometheus PVC는 StatefulSet VolumeClaimTemplate으로 Operator가 직접 관리.
 grafana:
   deploymentStrategy:
     # RWO PVC는 단일 Pod만 마운트 가능 → RollingUpdate 대신 Recreate
@@ -10,3 +11,15 @@ grafana:
     initChownData:
       # local-path + 기존 볼륨 데이터 시 chown Permission denied → fsGroup(472) 사용
       enabled: false
+
+prometheus:
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 20Gi
