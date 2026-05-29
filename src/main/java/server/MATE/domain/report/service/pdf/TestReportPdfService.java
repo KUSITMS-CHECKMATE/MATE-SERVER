@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import reactor.core.publisher.Mono;
@@ -18,6 +19,7 @@ import server.MATE.domain.report.service.excel.support.ReportExcelExportSupport;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
+import server.MATE.global.storage.FileStorageService;
 
 @Service
 public class TestReportPdfService {
@@ -26,32 +28,56 @@ public class TestReportPdfService {
     private final ObjectMapper objectMapper;
     private final MatePdfProperties matePdfProperties;
     private final WebClient matePdfWebClient;
+    private final FileStorageService fileStorageService;
 
     public TestReportPdfService(
             ReportExcelExportSupport reportExcelExportSupport,
             ObjectMapper objectMapper,
             MatePdfProperties matePdfProperties,
-            @Qualifier("matePdfWebClient") WebClient matePdfWebClient
+            @Qualifier("matePdfWebClient") WebClient matePdfWebClient,
+            FileStorageService fileStorageService
     ) {
         this.reportExcelExportSupport = reportExcelExportSupport;
         this.objectMapper = objectMapper;
         this.matePdfProperties = matePdfProperties;
         this.matePdfWebClient = matePdfWebClient;
+        this.fileStorageService = fileStorageService;
     }
 
+    @Transactional
     public TestReportPdfDownload export(Long testId, Long makerId, String authorization) {
         Test test = reportExcelExportSupport.requireExportReadyTest(testId, makerId);
+
+        if (test.getPdfKey() != null) {
+            return new TestReportPdfDownload(
+                    fileStorageService.generateDownloadUrl(test.getPdfKey()),
+                    buildFilename(testId)
+            );
+        }
+
         if (authorization == null || authorization.isBlank()) {
             throw new BaseException(BaseErrorCode.REPORT_012);
         }
 
+        byte[] pdfBytes = generatePdf(testId, test.getTitle(), authorization);
+        String pdfKey = "reports/pdf/" + testId + ".pdf";
+        fileStorageService.upload(pdfKey, pdfBytes, "application/pdf");
+        test.savePdfKey(pdfKey);
+
+        return new TestReportPdfDownload(
+                fileStorageService.generateDownloadUrl(pdfKey),
+                buildFilename(testId)
+        );
+    }
+
+    private byte[] generatePdf(Long testId, String title, String authorization) {
         String responseBody;
         try {
             responseBody = matePdfWebClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/generate")
                             .queryParam("testId", testId)
-                            .queryParam("title", test.getTitle())
+                            .queryParam("title", title)
                             .build())
                     .header(HttpHeaders.AUTHORIZATION, authorization)
                     .retrieve()
@@ -76,8 +102,7 @@ public class TestReportPdfService {
             if (base64 == null || base64.isBlank()) {
                 throw new BaseException(BaseErrorCode.REPORT_012);
             }
-            byte[] pdfBytes = Base64.getDecoder().decode(base64);
-            return new TestReportPdfDownload(pdfBytes, buildFilename(testId));
+            return Base64.getDecoder().decode(base64);
         } catch (IllegalArgumentException | JsonProcessingException exception) {
             throw new BaseException(BaseErrorCode.REPORT_012);
         }
