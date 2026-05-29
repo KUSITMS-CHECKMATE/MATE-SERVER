@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import reactor.core.publisher.Mono;
@@ -44,14 +43,14 @@ public class TestReportPdfService {
         this.fileStorageService = fileStorageService;
     }
 
-    @Transactional
     public TestReportPdfDownload export(Long testId, Long makerId, String authorization) {
         Test test = reportExcelExportSupport.requireExportReadyTest(testId, makerId);
+        String filename = buildFilename(testId);
 
         if (test.getPdfKey() != null) {
             return new TestReportPdfDownload(
-                    fileStorageService.generateDownloadUrl(test.getPdfKey()),
-                    buildFilename(testId)
+                    fileStorageService.generateDownloadUrl(test.getPdfKey(), filename),
+                    filename
             );
         }
 
@@ -62,11 +61,11 @@ public class TestReportPdfService {
         byte[] pdfBytes = generatePdf(testId, test.getTitle(), authorization);
         String pdfKey = "reports/pdf/" + testId + ".pdf";
         fileStorageService.upload(pdfKey, pdfBytes, "application/pdf");
-        test.savePdfKey(pdfKey);
+        reportExcelExportSupport.savePdfKey(testId, pdfKey);
 
         return new TestReportPdfDownload(
-                fileStorageService.generateDownloadUrl(pdfKey),
-                buildFilename(testId)
+                fileStorageService.generateDownloadUrl(pdfKey, filename),
+                filename
         );
     }
 
