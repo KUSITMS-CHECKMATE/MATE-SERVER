@@ -1,4 +1,4 @@
-# Ingress·ServiceMonitor Kustomize. Helm 스택은 kube-prometheus-stack / loki-stack Application이 관리합니다.
+# Ingress·ServiceMonitor Kustomize. kube-prometheus-stack/loki는 Helm(values: deploy/monitoring/helm/)으로 관리.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

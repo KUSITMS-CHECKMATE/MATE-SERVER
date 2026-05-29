@@ -5,7 +5,9 @@ grafana:
   persistence:
     enabled: true
     type: pvc
+    initChownData:
+      enabled: false
     accessModes:
       - ReadWriteOnce
     size: 10Gi
-    # storageClassName: managed-csi  # 클러스터 기본 StorageClass 사용 시 주석 유지
+    storageClassName: local-path
