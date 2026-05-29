@@ -51,6 +51,8 @@ claude:
     min-response-threshold: 20
 
 mate:
+  admin:
+    hard-delete-key: hard-confirm
   pdf:
     base-url: http://localhost:3001
     timeout: 90s

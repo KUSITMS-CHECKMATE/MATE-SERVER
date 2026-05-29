@@ -3,6 +3,7 @@ package server.MATE.domain.promotion.repository;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import server.MATE.domain.promotion.entity.PromotionReward;
@@ -20,4 +21,12 @@ public interface PromotionRewardRepository extends JpaRepository<PromotionReward
             """)
     Long sumRewardAmountByTesterIdAndStatus(@Param("testerId") Long testerId,
                                             @Param("status") PromotionRewardStatus status);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            delete
+            from PromotionReward pr
+            where pr.testId = :testId
+            """)
+    int deleteAllByTestId(@Param("testId") Long testId);
 }

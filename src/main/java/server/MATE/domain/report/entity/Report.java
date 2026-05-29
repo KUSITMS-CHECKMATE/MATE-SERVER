@@ -9,6 +9,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import server.MATE.domain.question.entity.QuestionType;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import server.MATE.global.common.entity.BaseEntity;
 
@@ -37,11 +38,17 @@ public class Report extends BaseEntity {
     @Column(nullable = false, columnDefinition = "jsonb")
     private Map<String, Object> result;
 
+    private LocalDateTime deletedAt;
+
     @Builder
     public Report(Long testId, Long questionId, QuestionType questionType, Map<String, Object> result) {
         this.testId = testId;
         this.questionId = questionId;
         this.questionType = questionType;
         this.result = result;
+    }
+
+    public void delete(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

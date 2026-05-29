@@ -2,6 +2,7 @@ package server.MATE.domain.payment.repository;
 
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
@@ -24,4 +25,12 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             where p.id = :id
             """)
     Optional<Payment> findByIdForUpdate(@Param("id") Long id);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            delete
+            from Payment p
+            where p.testId = :testId
+            """)
+    int deleteAllByTestId(@Param("testId") Long testId);
 }
