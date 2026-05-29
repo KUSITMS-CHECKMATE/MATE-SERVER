@@ -54,3 +54,7 @@ security:
     max-age-seconds: 3600
   token-encryption:
     key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+
+mate:
+  admin:
+    hard-delete-key: test-hard-delete-key

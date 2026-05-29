@@ -20,7 +20,7 @@ import server.MATE.global.security.handler.CustomAuthenticationEntryPoint;
 
 @Configuration
 @EnableWebSecurity
-@EnableConfigurationProperties(CorsProperties.class)
+@EnableConfigurationProperties({CorsProperties.class, AdminProperties.class})
 @RequiredArgsConstructor
 public class SecurityConfig {
 
