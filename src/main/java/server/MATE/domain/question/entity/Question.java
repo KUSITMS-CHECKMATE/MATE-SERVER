@@ -49,4 +49,8 @@ public class Question extends BaseEntity {
         this.sequence = sequence == null ? 0L : sequence;
     }
 
+    public void delete(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
 }

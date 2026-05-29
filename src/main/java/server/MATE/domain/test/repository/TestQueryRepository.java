@@ -17,6 +17,10 @@ public interface TestQueryRepository {
 
     Optional<Test> findActiveById(Long id);
 
+    Optional<Test> findByIdIncludingDeleted(Long id);
+
+    long softDeleteById(Long id, LocalDateTime deletedAt);
+
     Optional<Test> findWithCategoriesById(Long id);
 
     Optional<Test> findByIdForUpdate(Long id);

@@ -4,21 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.participation.repository.ParticipationRepository;
-import server.MATE.domain.test.dto.response.LikedTestSummaryItem;
-import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
-import server.MATE.domain.test.dto.response.MyTestSummaryItem;
-import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
-import server.MATE.domain.test.dto.response.TestDetailResponse;
-import server.MATE.domain.test.dto.response.TestLikeResponse;
-import server.MATE.domain.test.dto.response.TestStatusUpdateResponse;
-import server.MATE.domain.users.entity.Role;
-import server.MATE.domain.test.dto.response.TestSummaryListResponse;
-import server.MATE.domain.test.dto.response.TestSummaryResponse;
+import server.MATE.domain.test.dto.response.*;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestLike;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
+import server.MATE.domain.users.entity.Role;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.storage.FileStorageService;
@@ -167,7 +159,6 @@ public class TestService {
                 .map(test -> TestSummaryResponse.from(test, likedTestIds.contains(test.getId()), toThumbnailUrl(test.getImageKeys())))
                 .toList();
     }
-
 
     private Set<Long> findLikedTestIds(Long userId, List<Test> tests) {
         if (tests.isEmpty()) {
