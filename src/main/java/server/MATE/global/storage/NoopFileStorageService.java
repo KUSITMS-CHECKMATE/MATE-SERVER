@@ -24,6 +24,11 @@ public class NoopFileStorageService implements FileStorageService {
     }
 
     @Override
+    public String generateDownloadUrl(String key, String downloadFilename) {
+        return key;
+    }
+
+    @Override
     public void deleteFiles(List<String> keys) {
         // storage가 비활성화된 환경에서는 삭제 작업을 수행하지 않는다.
     }
