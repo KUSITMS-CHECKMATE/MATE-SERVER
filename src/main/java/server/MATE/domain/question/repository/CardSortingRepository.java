@@ -8,4 +8,6 @@ import java.util.List;
 public interface CardSortingRepository extends JpaRepository<CardSorting, Long> {
 
     List<CardSorting> findAllByIdIn(Iterable<Long> ids);
+
+    List<CardSorting> findAllByQuestion_IdIn(Iterable<Long> questionIds);
 }
