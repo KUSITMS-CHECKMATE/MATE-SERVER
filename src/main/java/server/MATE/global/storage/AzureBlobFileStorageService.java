@@ -67,6 +67,19 @@ public class AzureBlobFileStorageService implements FileStorageService {
     }
 
     @Override
+    public String generateDownloadUrl(String key, String downloadFilename) {
+        BlobClient blobClient = getContainerClient(key).getBlobClient(key);
+        if (isPublic(key)) {
+            return blobClient.getBlobUrl();
+        }
+        BlobSasPermission permission = new BlobSasPermission().setReadPermission(true);
+        BlobServiceSasSignatureValues values = new BlobServiceSasSignatureValues(
+                OffsetDateTime.now().plusMinutes(properties.getDownloadSasExpiryMinutes()), permission)
+                .setContentDisposition("attachment; filename=\"" + downloadFilename + "\"");
+        return blobClient.getBlobUrl() + "?" + blobClient.generateSas(values);
+    }
+
+    @Override
     public void deleteFiles(List<String> keys) {
         keys.forEach(key -> getContainerClient(key).getBlobClient(key).deleteIfExists());
     }

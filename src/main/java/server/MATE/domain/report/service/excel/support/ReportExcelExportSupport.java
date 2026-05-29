@@ -2,6 +2,7 @@ package server.MATE.domain.report.service.excel.support;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestStatus;
@@ -30,5 +31,17 @@ public class ReportExcelExportSupport {
             throw new BaseException(BaseErrorCode.REPORT_007);
         }
         return test;
+    }
+
+    @Transactional
+    public void savePdfKey(Long testId, String pdfKey) {
+        testRepository.findActiveById(testId)
+                .ifPresent(test -> test.savePdfKey(pdfKey));
+    }
+
+    @Transactional
+    public void saveExcelKey(Long testId, String excelKey) {
+        testRepository.findActiveById(testId)
+                .ifPresent(test -> test.saveExcelKey(excelKey));
     }
 }
