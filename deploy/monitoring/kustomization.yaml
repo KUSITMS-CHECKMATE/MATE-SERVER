@@ -5,3 +5,4 @@ resources:
   - grafana-pvc.yaml
   - servicemonitor-mate-backend.yaml
   - ingress-grafana.yaml
+  - dashboards/mate-application.yaml
