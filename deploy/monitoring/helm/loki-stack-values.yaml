@@ -17,4 +17,4 @@ loki:
 prometheus:
   enabled: false
 promtail:
-  enabled: false
+  enabled: true
