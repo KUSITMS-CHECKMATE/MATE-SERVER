@@ -47,6 +47,12 @@ module "storage" {
   location               = var.location
   storage_account_name   = var.storage_account_name
   storage_container_name = var.storage_container_name
+  blob_cors_allowed_origins = [
+    "https://mate.apps.tossmini.com",
+    "https://mate.private-apps.tossmini.com",
+    "https://developers-apps-in-toss.toss.im",
+    "https://apps-in-toss.toss.im",
+  ]
 }
 
 module "container_registry" {
