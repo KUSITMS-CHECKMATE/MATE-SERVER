@@ -11,7 +11,6 @@ import server.MATE.domain.question.dto.response.QuestionSummaryItem;
 import server.MATE.domain.question.entity.FiveSecond;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.excel.abtest.AbTestReportExcelWriter;
 import server.MATE.domain.report.excel.fivesecond.FiveSecondObjectiveReportExcelData;
 import server.MATE.domain.report.excel.fivesecond.FiveSecondObjectiveReportExcelWriter;
@@ -108,12 +107,11 @@ class CombinedTestReportExcelServiceTest {
         stubObjectiveData(context);
         stubFiveSecondObjectiveData(context);
 
-        TestReportExcelDownload download = combinedTestReportExcelService.export(TEST_ID, MAKER_ID);
+        byte[] excelBytes = combinedTestReportExcelService.export(TEST_ID, MAKER_ID);
 
-        assertThat(download.filename()).isEqualTo("mate-report-10.xlsx");
-        assertThat(download.content()).isNotEmpty();
+        assertThat(excelBytes).isNotEmpty();
 
-        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(download.content()))) {
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(excelBytes))) {
             assertThat(workbook.getNumberOfSheets()).isEqualTo(9);
             assertThat(workbook.getSheetName(0)).isEqualTo(CombinedTestReportExcelService.SHEET_BASIC_INFO);
             assertThat(workbook.getSheetName(8)).isEqualTo(CombinedTestReportExcelService.SHEET_FIVE_SECOND);
