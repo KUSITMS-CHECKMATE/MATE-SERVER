@@ -36,12 +36,14 @@ public class ReportExcelExportSupport {
     @Transactional
     public void savePdfKey(Long testId, String pdfKey) {
         testRepository.findActiveById(testId)
-                .ifPresent(test -> test.savePdfKey(pdfKey));
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004))
+                .savePdfKey(pdfKey);
     }
 
     @Transactional
     public void saveExcelKey(Long testId, String excelKey) {
         testRepository.findActiveById(testId)
-                .ifPresent(test -> test.saveExcelKey(excelKey));
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004))
+                .saveExcelKey(excelKey);
     }
 }
