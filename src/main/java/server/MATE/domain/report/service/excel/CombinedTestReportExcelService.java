@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.question.dto.response.QuestionSummaryItem;
 import server.MATE.domain.question.entity.FiveSecond;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.excel.abtest.AbTestReportExcelData;
 import server.MATE.domain.report.excel.abtest.AbTestReportExcelWriter;
 import server.MATE.domain.report.excel.cardsorting.CardSortingReportExcelData;
@@ -87,7 +86,7 @@ public class CombinedTestReportExcelService {
     private final FiveSecondObjectiveReportExcelWriter fiveSecondObjectiveReportExcelWriter;
     private final FiveSecondSubjectiveReportExcelWriter fiveSecondSubjectiveReportExcelWriter;
 
-    public TestReportExcelDownload export(Long testId, Long makerId) {
+    public byte[] export(Long testId, Long makerId) {
         ReportExcelExportContext context = reportExcelExportContextLoader.load(testId, makerId);
         Test test = context.test();
         List<QuestionSummaryItem> questions = context.questionSummaries();
@@ -119,7 +118,7 @@ public class CombinedTestReportExcelService {
             writeFiveSecondSheet(workbook.createSheet(SHEET_FIVE_SECOND), session, questions);
 
             workbook.write(outputStream);
-            return new TestReportExcelDownload(outputStream.toByteArray(), buildFilename(testId));
+            return outputStream.toByteArray();
         } catch (IOException e) {
             throw new UncheckedIOException("통합 엑셀 보고서 생성에 실패했습니다.", e);
         }
@@ -381,10 +380,6 @@ public class CombinedTestReportExcelService {
         String start = DATE_FORMAT.format(test.getCreatedAt());
         String end = DATE_FORMAT.format(test.getClosedAt());
         return start + " ~ " + end;
-    }
-
-    private String buildFilename(Long testId) {
-        return "mate-report-" + testId + ".xlsx";
     }
 
     private record ExportSession(

@@ -68,6 +68,12 @@ public class Test extends BaseEntity {
 
     private LocalDateTime deletedAt;
 
+    @Column
+    private String pdfKey;
+
+    @Column
+    private String excelKey;
+
     @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
     @BatchSize(size = 100)
     private List<TestCategory> categories = new ArrayList<>();
@@ -143,6 +149,14 @@ public class Test extends BaseEntity {
 
     public void failReportAggregation() {
         this.reportStatus = ReportStatus.FAILED;
+    }
+
+    public void savePdfKey(String pdfKey) {
+        this.pdfKey = pdfKey;
+    }
+
+    public void saveExcelKey(String excelKey) {
+        this.excelKey = excelKey;
     }
 
     public void delete(LocalDateTime deletedAt) {
