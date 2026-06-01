@@ -1,9 +1,12 @@
 package server.MATE.global.storage;
 
+import com.azure.core.util.BinaryData;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.blob.models.BlobHttpHeaders;
+import com.azure.storage.blob.options.BlobParallelUploadOptions;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import jakarta.annotation.PostConstruct;
@@ -64,8 +67,29 @@ public class AzureBlobFileStorageService implements FileStorageService {
     }
 
     @Override
+    public String generateDownloadUrl(String key, String downloadFilename) {
+        BlobClient blobClient = getContainerClient(key).getBlobClient(key);
+        if (isPublic(key)) {
+            return blobClient.getBlobUrl();
+        }
+        BlobSasPermission permission = new BlobSasPermission().setReadPermission(true);
+        BlobServiceSasSignatureValues values = new BlobServiceSasSignatureValues(
+                OffsetDateTime.now().plusMinutes(properties.getDownloadSasExpiryMinutes()), permission)
+                .setContentDisposition("attachment; filename=\"" + downloadFilename + "\"");
+        return blobClient.getBlobUrl() + "?" + blobClient.generateSas(values);
+    }
+
+    @Override
     public void deleteFiles(List<String> keys) {
         keys.forEach(key -> getContainerClient(key).getBlobClient(key).deleteIfExists());
+    }
+
+    @Override
+    public void upload(String key, byte[] content, String contentType) {
+        BlobClient blobClient = getContainerClient(key).getBlobClient(key);
+        BlobParallelUploadOptions options = new BlobParallelUploadOptions(BinaryData.fromBytes(content))
+                .setHeaders(new BlobHttpHeaders().setContentType(contentType));
+        blobClient.uploadWithResponse(options, null, null);
     }
 
     private BlobContainerClient getContainerClient(String key) {
