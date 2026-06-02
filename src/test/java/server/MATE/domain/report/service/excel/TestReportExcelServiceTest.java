@@ -46,36 +46,36 @@ class TestReportExcelServiceTest {
     }
 
     @Test
-    void excelKey가_없으면_생성_후_업로드하고_URL을_반환한다() {
+    void excelKey가_없으면_생성_후_업로드하고_바이너리를_반환한다() {
         server.MATE.domain.test.entity.Test test = completedTest(null);
-        String filename = "mate-report-" + TEST_ID + ".xlsx";
+        byte[] excelBytes = {1, 2, 3};
         given(reportExcelExportSupport.requireExportReadyTest(TEST_ID, MAKER_ID)).willReturn(test);
-        given(combinedTestReportExcelService.export(TEST_ID, MAKER_ID)).willReturn(new byte[]{1, 2, 3});
-        given(fileStorageService.generateDownloadUrl("reports/excel/" + TEST_ID + ".xlsx", filename))
-                .willReturn("https://blob.example.com/reports/excel/" + TEST_ID + ".xlsx");
+        given(combinedTestReportExcelService.export(TEST_ID, MAKER_ID)).willReturn(excelBytes);
 
         TestReportExcelDownload result = testReportExcelService.export(TEST_ID, MAKER_ID);
 
-        assertThat(result.downloadUrl()).isEqualTo("https://blob.example.com/reports/excel/" + TEST_ID + ".xlsx");
+        assertThat(result.data()).isEqualTo(excelBytes);
+        assertThat(result.filename()).isEqualTo("mate-report-" + TEST_ID + ".xlsx");
         verify(fileStorageService).upload(
                 eq("reports/excel/" + TEST_ID + ".xlsx"),
-                eq(new byte[]{1, 2, 3}),
+                eq(excelBytes),
                 eq("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         );
         verify(reportExcelExportSupport).saveExcelKey(TEST_ID, "reports/excel/" + TEST_ID + ".xlsx");
     }
 
     @Test
-    void excelKey가_있으면_재생성_없이_캐싱된_URL을_반환한다() {
-        server.MATE.domain.test.entity.Test test = completedTest("reports/excel/" + TEST_ID + ".xlsx");
-        String filename = "mate-report-" + TEST_ID + ".xlsx";
+    void excelKey가_있으면_재생성_없이_저장된_파일을_바이너리로_반환한다() {
+        String excelKey = "reports/excel/" + TEST_ID + ".xlsx";
+        server.MATE.domain.test.entity.Test test = completedTest(excelKey);
+        byte[] cachedBytes = {4, 5, 6};
         given(reportExcelExportSupport.requireExportReadyTest(TEST_ID, MAKER_ID)).willReturn(test);
-        given(fileStorageService.generateDownloadUrl("reports/excel/" + TEST_ID + ".xlsx", filename))
-                .willReturn("https://blob.example.com/cached.xlsx");
+        given(fileStorageService.download(excelKey)).willReturn(cachedBytes);
 
         TestReportExcelDownload result = testReportExcelService.export(TEST_ID, MAKER_ID);
 
-        assertThat(result.downloadUrl()).isEqualTo("https://blob.example.com/cached.xlsx");
+        assertThat(result.data()).isEqualTo(cachedBytes);
+        assertThat(result.filename()).isEqualTo("mate-report-" + TEST_ID + ".xlsx");
         verify(combinedTestReportExcelService, never()).export(any(), any());
         verify(fileStorageService, never()).upload(any(), any(byte[].class), any());
     }
