@@ -121,9 +121,9 @@ public class TestController {
             description = """
                     테스트 상태를 변경합니다.
 
-                    - `COMPLETED`: 메이커 본인만 가능, 현재 상태가 `IN_PROGRESS`일 때만 허용
-                    - `IN_PROGRESS`: 관리자만 가능 (테스트 승인)
-                    - `REJECTED`: 관리자만 가능 (테스트 반려)
+                    - `IN_PROGRESS`: 관리자만 가능 (테스트 승인), 현재 상태가 `WAITING`일 때만 허용
+                    - `REJECTED`: 관리자만 가능 (테스트 반려), 현재 상태가 `WAITING`일 때만 허용
+                    - `COMPLETED`: 마감일(closedAt) 경과 시 스케줄러가 자동 처리 (매일 00:00 KST)
                     """
     )
     @PatchMapping("/{testId}/status")

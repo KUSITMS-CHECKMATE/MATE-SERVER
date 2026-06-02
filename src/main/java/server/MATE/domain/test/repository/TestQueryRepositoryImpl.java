@@ -188,4 +188,20 @@ public class TestQueryRepositoryImpl implements TestQueryRepository {
                         .fetchOne()
         );
     }
+
+    @Override
+    public List<Test> findExpiredInProgressTests(LocalDateTime now) {
+        if (now == null) {
+            return List.of();
+        }
+
+        return queryFactory
+                .selectFrom(test)
+                .where(
+                        test.testStatus.eq(TestStatus.IN_PROGRESS),
+                        test.closedAt.lt(now),
+                        notDeleted()
+                )
+                .fetch();
+    }
 }
