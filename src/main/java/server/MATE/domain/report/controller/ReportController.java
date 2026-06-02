@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -427,9 +428,12 @@ public class ReportController {
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization
     ) {
         TestReportPdfDownload download = testReportPdfService.export(testId, user.getId(), authorization);
+        ContentDisposition contentDisposition = ContentDisposition.attachment()
+                .filename(download.filename(), java.nio.charset.StandardCharsets.UTF_8)
+                .build();
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
                 .body(download.data());
     }
 }
