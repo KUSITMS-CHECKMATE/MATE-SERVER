@@ -3,6 +3,7 @@ package server.MATE.domain.participation.repository;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import server.MATE.domain.answer.dto.response.MyAnswerItemView;
@@ -18,6 +19,7 @@ import static server.MATE.domain.test.entity.QTest.test;
 public class ParticipationQueryRepositoryImpl implements ParticipationQueryRepository {
 
     private final JPAQueryFactory queryFactory;
+    private final EntityManager em;
 
     private static BooleanExpression participationNotDeleted() {
         return participation.deletedAt.isNull();
@@ -77,11 +79,14 @@ public class ParticipationQueryRepositoryImpl implements ParticipationQueryRepos
             return 0L;
         }
 
-        return queryFactory
+        em.flush();
+        long affected = queryFactory
                 .update(participation)
                 .set(participation.deletedAt, deletedAt)
                 .where(testIdEq(testId), participationNotDeleted())
                 .execute();
+        em.clear();
+        return affected;
     }
 
     @Override
@@ -90,9 +95,12 @@ public class ParticipationQueryRepositoryImpl implements ParticipationQueryRepos
             return 0L;
         }
 
-        return queryFactory
+        em.flush();
+        long affected = queryFactory
                 .delete(participation)
                 .where(testIdEq(testId))
                 .execute();
+        em.clear();
+        return affected;
     }
 }
