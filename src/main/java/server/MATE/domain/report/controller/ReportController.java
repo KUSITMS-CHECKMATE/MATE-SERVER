@@ -393,23 +393,28 @@ public class ReportController {
     @Operation(
             summary = "➰ 리포트 통계 xlsx 파일 다운로드",
             description = """
-                    테스트 전체 리포트 엑셀의 다운로드 URL을 반환합니다.
+                    테스트 전체 리포트 엑셀 파일을 binary로 반환합니다.
                     - 테스트 메이커만 다운로드할 수 있습니다.
                     - 테스트 종료 및 리포트 집계 완료(`report_status = COMPLETED`) 후 다운로드 가능합니다.
                     - 시트 구성: 기본 정보, 마스터 템플릿, 객관식, 주관식, AB 테스트, 척도 테스트, 카드소팅, 트리테스트, 5초 테스트
                     - 질문 유형별 시트에는 해당 테스트에 포함된 질문 통계가 순서대로 기록됩니다.
                     - 5초 테스트는 객관/주관 설정에 따라 시트 내 템플릿이 달라집니다.
-                    - 최초 요청 시 엑셀을 생성해 Blob Storage에 저장하고, 이후 요청은 저장된 파일의 URL을 반환합니다.
-                    - 반환된 URL은 30분간 유효합니다.
+                    - 최초 요청 시 엑셀을 생성해 Blob Storage에 저장하고, 이후 요청은 저장된 파일을 binary로 반환합니다.
                     """
     )
     @GetMapping("/excel")
-    public ResponseEntity<ApiResponse<String>> downloadExcelReport(
+    public ResponseEntity<byte[]> downloadExcelReport(
             @PathVariable Long testId,
             @AuthenticationPrincipal AuthenticatedUser user
     ) {
         TestReportExcelDownload download = testReportExcelService.export(testId, user.getId());
-        return ResponseEntity.ok(ApiResponse.ok("엑셀 다운로드 URL이 발급되었습니다.", download.downloadUrl()));
+        ContentDisposition contentDisposition = ContentDisposition.attachment()
+                .filename(download.filename(), java.nio.charset.StandardCharsets.UTF_8)
+                .build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
+                .body(download.data());
     }
 
     @Operation(
