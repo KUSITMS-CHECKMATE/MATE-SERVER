@@ -125,7 +125,7 @@ class TestDeleteServiceTest {
 
         verify(reportRepository).softDeleteAllByTestId(eq(TEST_ID), any(LocalDateTime.class));
         verify(answerRepository).softDeleteAllByQuestionIds(eq(List.of(101L)), any(LocalDateTime.class));
-        verify(participationRepository).softDeleteAllByTestId(eq(TEST_ID), any(LocalDateTime.class));
+        verify(participationRepository).softDeleteByTestId(eq(TEST_ID), any(LocalDateTime.class));
         verify(questionRepository).softDeleteByTestId(eq(TEST_ID), any(LocalDateTime.class));
         verify(testCategoryRepository, never()).softDeleteAllByTestId(anyLong(), any(LocalDateTime.class));
         verify(testRepository).softDeleteById(eq(TEST_ID), any(LocalDateTime.class));
@@ -152,7 +152,7 @@ class TestDeleteServiceTest {
         verify(subjectiveRepository).deleteAllInBatch(anyList());
         verify(questionRepository).deleteAllInBatch(anyList());
         verify(testCategoryRepository).deleteAllByTestId(TEST_ID);
-        verify(participationRepository).deleteAllByTestId(TEST_ID);
+        verify(participationRepository).deleteByTestId(TEST_ID);
         verify(paymentRepository).deleteAllByTestId(TEST_ID);
         verify(testRepository).delete(test);
 
