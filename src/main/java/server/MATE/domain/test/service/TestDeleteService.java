@@ -86,7 +86,7 @@ public class TestDeleteService {
         if (!questionIds.isEmpty()) {
             answerRepository.softDeleteAllByQuestionIds(questionIds, deletedAt);
         }
-        participationRepository.softDeleteAllByTestId(testId, deletedAt);
+        participationRepository.softDeleteByTestId(testId, deletedAt);
         questionRepository.softDeleteByTestId(testId, deletedAt);
         testRepository.softDeleteById(testId, deletedAt);
     }
@@ -112,7 +112,7 @@ public class TestDeleteService {
             questionRepository.deleteAllInBatch(questions);
         }
         testCategoryRepository.deleteAllByTestId(test.getId());
-        participationRepository.deleteAllByTestId(test.getId());
+        participationRepository.deleteByTestId(test.getId());
         paymentRepository.deleteAllByTestId(test.getId());
         testRepository.delete(test);
 
