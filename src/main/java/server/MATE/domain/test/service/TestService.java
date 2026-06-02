@@ -72,7 +72,7 @@ public class TestService {
     public TestDetailResponse getTest(Long testId, Long userId) {
         Test test = testRepository.findWithCategoriesById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
-        boolean hasResponded = participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(testId, userId);
+        boolean hasResponded = participationRepository.existsActiveParticipation(testId, userId);
         return TestDetailResponse.from(test, toImageUrls(test.getImageKeys()), hasResponded);
     }
 
