@@ -8,6 +8,9 @@ import java.util.List;
 
 @Schema(description = "테스트 리포트 전체 조회 응답")
 public record ReportResponse(
+        @Schema(description = "테스트 제목", example = "MATE 사용성 테스트")
+        String title,
+
         @Schema(description = "테스트 상태 (IN_PROGRESS / COMPLETED)", example = "COMPLETED")
         TestStatus testStatus,
 

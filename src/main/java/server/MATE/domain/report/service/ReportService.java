@@ -44,6 +44,7 @@ public class ReportService {
             case WAITING, IN_PROGRESS, REJECTED -> {
                 // 완료 전 상태이므로 집계 결과 없이 현재 리포트 상태만 반환함
                 return new ReportResponse(
+                        test.getTitle(),
                         test.getTestStatus(),
                         reportStatus,
                         questionCount,
@@ -55,6 +56,7 @@ public class ReportService {
                 // 테스트는 종료됐지만 집계가 끝나지 않았으면 빈 결과를 반환함
                 if (reportStatus != ReportStatus.COMPLETED) {
                     return new ReportResponse(
+                            test.getTitle(),
                             TestStatus.COMPLETED,
                             reportStatus,
                             questionCount,
@@ -81,6 +83,7 @@ public class ReportService {
             log.error("테스트 {} 리포트 조회 중 활성 질문 리포트 누락 감지: questionCount={}, reportCount={}, missingQuestionIds={}",
                     testId, questionCount, aggregations.size(), missingQuestionIds);
             return new ReportResponse(
+                    test.getTitle(),
                     test.getTestStatus(),
                     ReportStatus.FAILED,
                     questionCount,
@@ -101,6 +104,7 @@ public class ReportService {
                 .toList();
 
         return new ReportResponse(
+                test.getTitle(),
                 TestStatus.COMPLETED,
                 ReportStatus.COMPLETED,
                 questionCount,
