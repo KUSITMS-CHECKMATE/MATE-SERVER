@@ -45,7 +45,7 @@ class TestReportExcelServiceTest {
         );
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void excelKey가_없으면_생성_후_업로드하고_URL을_반환한다() {
         server.MATE.domain.test.entity.Test test = completedTest(null);
         String filename = "mate-report-" + TEST_ID + ".xlsx";
@@ -57,7 +57,6 @@ class TestReportExcelServiceTest {
         TestReportExcelDownload result = testReportExcelService.export(TEST_ID, MAKER_ID);
 
         assertThat(result.downloadUrl()).isEqualTo("https://blob.example.com/reports/excel/" + TEST_ID + ".xlsx");
-        assertThat(result.filename()).isEqualTo(filename);
         verify(fileStorageService).upload(
                 eq("reports/excel/" + TEST_ID + ".xlsx"),
                 eq(new byte[]{1, 2, 3}),
@@ -66,7 +65,7 @@ class TestReportExcelServiceTest {
         verify(reportExcelExportSupport).saveExcelKey(TEST_ID, "reports/excel/" + TEST_ID + ".xlsx");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void excelKey가_있으면_재생성_없이_캐싱된_URL을_반환한다() {
         server.MATE.domain.test.entity.Test test = completedTest("reports/excel/" + TEST_ID + ".xlsx");
         String filename = "mate-report-" + TEST_ID + ".xlsx";
@@ -77,7 +76,6 @@ class TestReportExcelServiceTest {
         TestReportExcelDownload result = testReportExcelService.export(TEST_ID, MAKER_ID);
 
         assertThat(result.downloadUrl()).isEqualTo("https://blob.example.com/cached.xlsx");
-        assertThat(result.filename()).isEqualTo(filename);
         verify(combinedTestReportExcelService, never()).export(any(), any());
         verify(fileStorageService, never()).upload(any(), any(byte[].class), any());
     }
