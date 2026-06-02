@@ -975,6 +975,11 @@ body {
 
 
   // 렌더링 완료 마커 (pdf-server가 이걸 기다렸다가 PDF 생성)
+  try {
+    await document.fonts.ready;
+  } catch (e) {
+    console.error('[stats-report] 폰트 로드 중 오류 발생:', e);
+  }
   document.body.setAttribute('data-rendered', 'true');
   console.log('[stats-report] 렌더링 완료');
 })();
