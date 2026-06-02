@@ -245,7 +245,7 @@ variable "kubernetes_worker_vm_name" {
 variable "kubernetes_control_vm_size" {
   description = "Control VM SKU."
   type        = string
-  default     = "Standard_D2s_v3"
+  default     = "Standard_B2s_v2"
 }
 
 variable "kubernetes_worker_vm_size" {
