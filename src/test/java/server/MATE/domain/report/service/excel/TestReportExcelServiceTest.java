@@ -45,7 +45,7 @@ class TestReportExcelServiceTest {
         );
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void excelKey가_없으면_생성_후_업로드하고_URL을_반환한다() {
         server.MATE.domain.test.entity.Test test = completedTest(null);
         String filename = "mate-report-" + TEST_ID + ".xlsx";
@@ -66,7 +66,7 @@ class TestReportExcelServiceTest {
         verify(reportExcelExportSupport).saveExcelKey(TEST_ID, "reports/excel/" + TEST_ID + ".xlsx");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void excelKey가_있으면_재생성_없이_캐싱된_URL을_반환한다() {
         server.MATE.domain.test.entity.Test test = completedTest("reports/excel/" + TEST_ID + ".xlsx");
         String filename = "mate-report-" + TEST_ID + ".xlsx";
