@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -413,20 +414,22 @@ public class ReportController {
     @Operation(
             summary = "➰ 리포트 통계 PDF 파일 다운로드",
             description = """
-                    테스트 전체 리포트 PDF의 다운로드 URL을 반환합니다.
+                    테스트 전체 리포트 PDF 파일을 binary로 반환합니다.
                     - 테스트 메이커만 다운로드할 수 있습니다.
                     - 테스트 종료 및 리포트 집계 완료(`report_status = COMPLETED`) 후 다운로드 가능합니다.
-                    - 최초 요청 시 PDF를 생성해 Blob Storage에 저장하고, 이후 요청은 저장된 파일의 URL을 반환합니다.
-                    - 반환된 URL은 30분간 유효합니다.
+                    - 최초 요청 시 PDF를 생성해 Blob Storage에 저장하고, 이후 요청은 저장된 파일을 binary로 반환합니다.
                     """
     )
     @GetMapping("/pdf")
-    public ResponseEntity<ApiResponse<String>> downloadPdfReport(
+    public ResponseEntity<byte[]> downloadPdfReport(
             @PathVariable Long testId,
             @AuthenticationPrincipal AuthenticatedUser user,
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization
     ) {
         TestReportPdfDownload download = testReportPdfService.export(testId, user.getId(), authorization);
-        return ResponseEntity.ok(ApiResponse.ok("PDF 다운로드 URL이 발급되었습니다.", download.downloadUrl()));
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.filename() + "\"")
+                .body(download.data());
     }
 }
