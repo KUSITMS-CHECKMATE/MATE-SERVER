@@ -329,4 +329,70 @@ class TestQueryRepositoryImplTest {
     void findByIdForUpdate_nullId_returnsEmpty() {
         assertThat(testRepository.findByIdForUpdate(null)).isEmpty();
     }
+
+    @Test
+    @DisplayName("findExpiredInProgressTests: IN_PROGRESS 상태이고 closedAt이 지난 테스트를 반환한다")
+    void findExpiredInProgressTests_returnsExpiredTests() {
+        em.getEntityManager()
+                .createQuery("update Test t set t.closedAt = :past where t.id = :id")
+                .setParameter("past", LocalDateTime.now().minusDays(1))
+                .setParameter("id", savedTest.getId())
+                .executeUpdate();
+        em.clear();
+
+        List<server.MATE.domain.test.entity.Test> result =
+                testRepository.findExpiredInProgressTests(LocalDateTime.now());
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(savedTest.getId());
+    }
+
+    @Test
+    @DisplayName("findExpiredInProgressTests: closedAt이 지나지 않은 테스트는 포함하지 않는다")
+    void findExpiredInProgressTests_excludesNotExpiredTests() {
+        List<server.MATE.domain.test.entity.Test> result =
+                testRepository.findExpiredInProgressTests(LocalDateTime.now());
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findExpiredInProgressTests: IN_PROGRESS가 아닌 테스트는 포함하지 않는다")
+    void findExpiredInProgressTests_excludesNonInProgressTests() {
+        em.getEntityManager()
+                .createQuery("update Test t set t.closedAt = :past, t.testStatus = :status where t.id = :id")
+                .setParameter("past", LocalDateTime.now().minusDays(1))
+                .setParameter("status", TestStatus.WAITING)
+                .setParameter("id", savedTest.getId())
+                .executeUpdate();
+        em.clear();
+
+        List<server.MATE.domain.test.entity.Test> result =
+                testRepository.findExpiredInProgressTests(LocalDateTime.now());
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findExpiredInProgressTests: 삭제된 테스트는 포함하지 않는다")
+    void findExpiredInProgressTests_excludesDeletedTests() {
+        em.getEntityManager()
+                .createQuery("update Test t set t.closedAt = :past, t.deletedAt = :now where t.id = :id")
+                .setParameter("past", LocalDateTime.now().minusDays(1))
+                .setParameter("now", LocalDateTime.now())
+                .setParameter("id", savedTest.getId())
+                .executeUpdate();
+        em.clear();
+
+        List<server.MATE.domain.test.entity.Test> result =
+                testRepository.findExpiredInProgressTests(LocalDateTime.now());
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findExpiredInProgressTests: now가 null이면 빈 리스트를 반환한다")
+    void findExpiredInProgressTests_nullNow_returnsEmpty() {
+        assertThat(testRepository.findExpiredInProgressTests(null)).isEmpty();
+    }
 }
