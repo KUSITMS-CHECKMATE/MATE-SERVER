@@ -217,36 +217,14 @@ class TestServiceTest {
     }
 
     @Test
-    void 메이커가_진행_중인_테스트를_종료한다() {
+    void COMPLETED_상태로_변경을_시도하면_예외가_발생한다() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
-        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-
-        TestStatusUpdateResponse response = testService.updateTestStatus(TEST_ID, MAKER_ID, Role.USER, TestStatus.COMPLETED);
-
-        assertThat(response.testId()).isEqualTo(TEST_ID);
-        assertThat(response.testStatus()).isEqualTo(TestStatus.COMPLETED);
-    }
-
-    @Test
-    void 진행_중이_아닌_테스트를_종료하면_예외가_발생한다() {
-        ReflectionTestUtils.setField(test, "testStatus", TestStatus.WAITING);
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
         BaseException exception = Assertions.assertThrows(BaseException.class,
                 () -> testService.updateTestStatus(TEST_ID, MAKER_ID, Role.USER, TestStatus.COMPLETED));
 
-        assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.TEST_007);
-    }
-
-    @Test
-    void 메이커가_아닌_사용자가_테스트를_종료하면_예외가_발생한다() {
-        ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
-        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-
-        BaseException exception = Assertions.assertThrows(BaseException.class,
-                () -> testService.updateTestStatus(TEST_ID, 999L, Role.USER, TestStatus.COMPLETED));
-
-        assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.COMMON_009);
+        assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.COMMON_002);
     }
 
     @Test
