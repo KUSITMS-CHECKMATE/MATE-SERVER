@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.payment.service.MockPaymentService;
 import server.MATE.domain.test.entity.Test;
+import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.event.TestCompleteEvent;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
@@ -27,8 +28,13 @@ public class TestCloseProcessor {
 
     @Transactional
     public void process(Long testId) {
-        Test test = testRepository.findActiveById(testId)
+        Test test = testRepository.findByIdForUpdate(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        if (test.getTestStatus() != TestStatus.IN_PROGRESS) {
+            log.warn("테스트 {} 처리 스킵 - 현재 상태: {}", testId, test.getTestStatus());
+            return;
+        }
 
         long threshold = (long) Math.ceil(test.getGoalPpl() * 0.2);
         test.complete();
