@@ -141,7 +141,7 @@ class AnswerServiceTest {
                 .build();
 
         given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
-        given(participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(TEST_ID, TESTER_ID)).willReturn(false);
+        given(participationRepository.existsActiveParticipation(TEST_ID, TESTER_ID)).willReturn(false);
         given(questionRepository.findAnswerQuestionTypesInTest(TEST_ID)).willReturn(List.of(
                 new AnswerQuestionTypeView(QUESTION_ID, QuestionType.SUBJECTIVE)
         ));
