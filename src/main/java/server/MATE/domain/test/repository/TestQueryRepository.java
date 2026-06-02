@@ -24,4 +24,6 @@ public interface TestQueryRepository {
     Optional<Test> findWithCategoriesById(Long id);
 
     Optional<Test> findByIdForUpdate(Long id);
+
+    List<Test> findExpiredInProgressTests(LocalDateTime now);
 }
