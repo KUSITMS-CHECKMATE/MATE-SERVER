@@ -29,3 +29,9 @@ variable "account_replication_type" {
   type        = string
   default     = "LRS"
 }
+
+variable "blob_cors_allowed_origins" {
+  description = "CORS allowed origins for Blob Storage."
+  type        = list(string)
+  default     = []
+}

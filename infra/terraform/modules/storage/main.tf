@@ -4,6 +4,19 @@ resource "azurerm_storage_account" "this" {
   location                 = var.location
   account_tier             = var.account_tier
   account_replication_type = var.account_replication_type
+
+  blob_properties {
+    dynamic "cors_rule" {
+      for_each = length(var.blob_cors_allowed_origins) > 0 ? [1] : []
+      content {
+        allowed_headers    = ["*"]
+        allowed_methods    = ["GET", "PUT", "OPTIONS"]
+        allowed_origins    = var.blob_cors_allowed_origins
+        exposed_headers    = ["*"]
+        max_age_in_seconds = 86400
+      }
+    }
+  }
 }
 
 resource "azurerm_storage_container" "app" {
