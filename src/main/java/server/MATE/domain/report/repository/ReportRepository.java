@@ -21,23 +21,6 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     List<Report> findAllByTestId(@Param("testId") Long testId);
 
     @Query("""
-            select r
-            from Report r
-            where r.testId = :testId
-              and r.questionId = :questionId
-              and r.deletedAt is null
-            """)
-    Optional<Report> findByTestIdAndQuestionId(@Param("testId") Long testId, @Param("questionId") Long questionId);
-
-    @Query("""
-            select (count(r) > 0)
-            from Report r
-            where r.testId = :testId
-              and r.deletedAt is null
-            """)
-    boolean existsByTestId(@Param("testId") Long testId);
-
-    @Query("""
             select count(r)
             from Report r
             where r.testId = :testId
