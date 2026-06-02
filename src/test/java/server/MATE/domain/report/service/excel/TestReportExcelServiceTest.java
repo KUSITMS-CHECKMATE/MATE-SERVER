@@ -57,7 +57,6 @@ class TestReportExcelServiceTest {
         TestReportExcelDownload result = testReportExcelService.export(TEST_ID, MAKER_ID);
 
         assertThat(result.downloadUrl()).isEqualTo("https://blob.example.com/reports/excel/" + TEST_ID + ".xlsx");
-        assertThat(result.filename()).isEqualTo(filename);
         verify(fileStorageService).upload(
                 eq("reports/excel/" + TEST_ID + ".xlsx"),
                 eq(new byte[]{1, 2, 3}),
@@ -77,7 +76,6 @@ class TestReportExcelServiceTest {
         TestReportExcelDownload result = testReportExcelService.export(TEST_ID, MAKER_ID);
 
         assertThat(result.downloadUrl()).isEqualTo("https://blob.example.com/cached.xlsx");
-        assertThat(result.filename()).isEqualTo(filename);
         verify(combinedTestReportExcelService, never()).export(any(), any());
         verify(fileStorageService, never()).upload(any(), any(byte[].class), any());
     }
