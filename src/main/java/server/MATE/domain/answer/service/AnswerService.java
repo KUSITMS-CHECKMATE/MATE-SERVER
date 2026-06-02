@@ -82,7 +82,7 @@ public class AnswerService {
     }
 
     public MyAnswerResponse listMyAnswers(Long testerId) {
-        List<MyAnswerItem> answers = participationRepository.findMyAnswerItemsByTesterIdOrderByCreatedAtDesc(testerId)
+        List<MyAnswerItem> answers = participationRepository.findMyAnswerItemsByTesterId(testerId)
                 .stream()
                 .map(MyAnswerItem::from)
                 .toList();
@@ -102,7 +102,7 @@ public class AnswerService {
 
         test.validateCanParticipate();
 
-        if (participationRepository.existsByTestIdAndTesterIdAndDeletedAtIsNull(testId, testerId)) {
+        if (participationRepository.existsActiveParticipation(testId, testerId)) {
             throw new BaseException(BaseErrorCode.PARTICIPATION_003);
         }
 
