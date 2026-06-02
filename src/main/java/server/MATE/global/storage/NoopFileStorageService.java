@@ -37,4 +37,9 @@ public class NoopFileStorageService implements FileStorageService {
     public void upload(String key, byte[] content, String contentType) {
         // storage가 비활성화된 환경에서는 업로드 작업을 수행하지 않는다.
     }
+
+    @Override
+    public byte[] download(String key) {
+        return new byte[0];
+    }
 }

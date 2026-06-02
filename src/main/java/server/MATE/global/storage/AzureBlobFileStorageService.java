@@ -92,6 +92,12 @@ public class AzureBlobFileStorageService implements FileStorageService {
         blobClient.uploadWithResponse(options, null, null);
     }
 
+    @Override
+    public byte[] download(String key) {
+        BlobClient blobClient = getContainerClient(key).getBlobClient(key);
+        return blobClient.downloadContent().toBytes();
+    }
+
     private BlobContainerClient getContainerClient(String key) {
         return isPublic(key) ? publicContainerClient : privateContainerClient;
     }
