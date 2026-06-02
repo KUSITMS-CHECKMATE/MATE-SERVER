@@ -18,7 +18,34 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // stats-report.html을 HTTP로 서빙 (file:// 대신 http:// 사용해야 쿼리 파라미터가 정상 동작)
+  if (req.method === 'GET' && url.pathname.startsWith('/fonts/')) {
+    const fontFile = path.basename(url.pathname);
+    const fontPath = path.resolve(__dirname, 'fonts', fontFile);
+    try {
+      const data = fs.readFileSync(fontPath);
+      res.writeHead(200, { 'Content-Type': 'font/woff2' });
+      res.end(data);
+    } catch {
+      res.writeHead(404);
+      res.end('Font not found');
+    }
+    return;
+  }
+
+  if (req.method === 'GET' && url.pathname.startsWith('/img/')) {
+    const imgFile = path.basename(url.pathname);
+    const imgPath = path.resolve(__dirname, 'img', imgFile);
+    try {
+      const data = fs.readFileSync(imgPath);
+      res.writeHead(200, { 'Content-Type': 'image/svg+xml' });
+      res.end(data);
+    } catch {
+      res.writeHead(404);
+      res.end('Image not found');
+    }
+    return;
+  }
+
   if (req.method === 'GET' && url.pathname === '/stats-report.html') {
     try {
       const html = fs.readFileSync(HTML_PATH, 'utf-8');
@@ -50,9 +77,6 @@ const server = http.createServer(async (req, res) => {
 
       console.log('[pdf-server] /generate 요청 수신', { testId, title: title || '(없음)' });
 
-      const params = new URLSearchParams({ testId, ...(title ? { title } : {}) });
-      const HTML_URL = `http://localhost:${PORT}/stats-report.html?${params.toString()}`;
-
       const reportUrl = `${MATE_API_BASE_URL}/api/v1/tests/${testId}/report`;
       console.log(`[pdf-server] API 호출: ${reportUrl}`);
       const apiRes = await fetch(reportUrl, {
@@ -66,6 +90,12 @@ const server = http.createServer(async (req, res) => {
       }
       const reportJson = await apiRes.json();
       console.log('[pdf-server] API 응답 data.reports 개수:', reportJson?.data?.reports?.length ?? 0);
+
+      const resolvedTitle = title || reportJson?.data?.title || '';
+      console.log('[pdf-server] 사용할 title:', resolvedTitle || '(없음)');
+
+      const params = new URLSearchParams({ testId, ...(resolvedTitle ? { title: resolvedTitle } : {}) });
+      const HTML_URL = `http://localhost:${PORT}/stats-report.html?${params.toString()}`;
 
       console.log(`Generating PDF for testId=${testId}...`);
       const browser = await chromium.launch({ headless: true });
