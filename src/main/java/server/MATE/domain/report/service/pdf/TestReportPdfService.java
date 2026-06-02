@@ -48,10 +48,7 @@ public class TestReportPdfService {
         String filename = buildFilename(testId);
 
         if (test.getPdfKey() != null) {
-            return new TestReportPdfDownload(
-                    fileStorageService.generateDownloadUrl(test.getPdfKey(), filename),
-                    filename
-            );
+            return new TestReportPdfDownload(fileStorageService.download(test.getPdfKey()), filename);
         }
 
         if (authorization == null || authorization.isBlank()) {
@@ -63,10 +60,7 @@ public class TestReportPdfService {
         fileStorageService.upload(pdfKey, pdfBytes, "application/pdf");
         reportExcelExportSupport.savePdfKey(testId, pdfKey);
 
-        return new TestReportPdfDownload(
-                fileStorageService.generateDownloadUrl(pdfKey, filename),
-                filename
-        );
+        return new TestReportPdfDownload(pdfBytes, filename);
     }
 
     private byte[] generatePdf(Long testId, String title, String authorization) {
