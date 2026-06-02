@@ -1,7 +1,7 @@
 package server.MATE.domain.report.dto.response;
 
 public record TestReportPdfDownload(
-        String downloadUrl,
+        byte[] data,
         String filename
 ) {
 }

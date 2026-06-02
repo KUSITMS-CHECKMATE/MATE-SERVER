@@ -21,8 +21,7 @@ public class TestReportExcelService {
 
         if (test.getExcelKey() != null) {
             return new TestReportExcelDownload(
-                    fileStorageService.generateDownloadUrl(test.getExcelKey(), filename),
-                    filename
+                    fileStorageService.generateDownloadUrl(test.getExcelKey(), filename)
             );
         }
 
@@ -32,8 +31,7 @@ public class TestReportExcelService {
         reportExcelExportSupport.saveExcelKey(testId, excelKey);
 
         return new TestReportExcelDownload(
-                fileStorageService.generateDownloadUrl(excelKey, filename),
-                filename
+                fileStorageService.generateDownloadUrl(excelKey, filename)
         );
     }
 
