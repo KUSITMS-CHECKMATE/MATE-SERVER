@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.question.entity.FiveSecond;
-import server.MATE.domain.question.entity.FiveSecondOption;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.report.excel.fivesecond.FiveSecondObjectiveReportExcelData;
@@ -18,11 +17,8 @@ import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -39,23 +35,14 @@ public class FiveSecondReportExcelService {
         }
         Map<String, Object> reportResult = context.requireReportResult(questionId, QuestionType.OBJECTIVE);
 
-        List<FiveSecondOption> options = fiveSecond.getOptions().stream()
-                .sorted(Comparator.comparingInt(FiveSecondOption::getSequence))
-                .toList();
-        Map<Long, String> optionContentById = options.stream()
-                .collect(Collectors.toMap(
-                        FiveSecondOption::getId,
-                        FiveSecondOption::getContent,
-                        (a, b) -> a,
-                        LinkedHashMap::new
-                ));
+        Map<Long, String> optionContentById = ReportExcelResultMapper.buildOptionContentFromReport(reportResult);
 
         List<Answer> answers = context.answers(questionId);
         return new FiveSecondObjectiveReportExcelData(
                 String.format("Q%02d", question.getSequence()),
                 question.getTitle(),
                 buildObjectiveRespondentRows(answers, optionContentById),
-                ReportExcelResultMapper.toFiveSecondOptionStats(options, reportResult),
+                ReportExcelResultMapper.toFiveSecondOptionStats(reportResult),
                 answers.size()
         );
     }
