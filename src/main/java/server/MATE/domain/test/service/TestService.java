@@ -81,15 +81,6 @@ public class TestService {
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         switch (status) {
-            case COMPLETED -> {
-                if (!test.getMakerId().equals(userId)) {
-                    throw new BaseException(BaseErrorCode.COMMON_009);
-                }
-                if (test.getTestStatus() != TestStatus.IN_PROGRESS) {
-                    throw new BaseException(BaseErrorCode.TEST_007);
-                }
-                test.complete();
-            }
             case IN_PROGRESS -> {
                 if (role != Role.ADMIN) {
                     throw new BaseException(BaseErrorCode.COMMON_009);

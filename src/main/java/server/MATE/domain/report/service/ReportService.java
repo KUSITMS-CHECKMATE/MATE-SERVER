@@ -57,7 +57,7 @@ public class ReportService {
                 if (reportStatus != ReportStatus.COMPLETED) {
                     return new ReportResponse(
                             test.getTitle(),
-                            TestStatus.COMPLETED,
+                            test.getTestStatus(),
                             reportStatus,
                             questionCount,
                             test.getPplCount(),
