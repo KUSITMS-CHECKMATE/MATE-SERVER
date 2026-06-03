@@ -4,7 +4,6 @@ import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.question.dto.response.QuestionSummaryItem;
 import server.MATE.domain.question.entity.CardSorting;
 import server.MATE.domain.question.entity.FiveSecond;
-import server.MATE.domain.question.entity.Objective;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Scale;
@@ -29,7 +28,6 @@ public final class ReportExcelExportContext {
     private final Map<Long, Question> questionById;
     private final Map<Long, Map<String, Object>> reportResultByQuestionId;
     private final Map<Long, List<Answer>> answersByQuestionId;
-    private final Map<Long, Objective> objectiveByQuestionId;
     private final Map<Long, FiveSecond> fiveSecondByQuestionId;
     private final Map<Long, Scale> scaleByQuestionId;
     private final Map<Long, CardSorting> cardSortingByQuestionId;
@@ -42,7 +40,6 @@ public final class ReportExcelExportContext {
             Map<Long, Question> questionById,
             Map<Long, Map<String, Object>> reportResultByQuestionId,
             Map<Long, List<Answer>> answersByQuestionId,
-            Map<Long, Objective> objectiveByQuestionId,
             Map<Long, FiveSecond> fiveSecondByQuestionId,
             Map<Long, Scale> scaleByQuestionId,
             Map<Long, CardSorting> cardSortingByQuestionId,
@@ -54,7 +51,6 @@ public final class ReportExcelExportContext {
         this.questionById = Map.copyOf(questionById);
         this.reportResultByQuestionId = Map.copyOf(reportResultByQuestionId);
         this.answersByQuestionId = Map.copyOf(answersByQuestionId);
-        this.objectiveByQuestionId = Map.copyOf(objectiveByQuestionId);
         this.fiveSecondByQuestionId = Map.copyOf(fiveSecondByQuestionId);
         this.scaleByQuestionId = Map.copyOf(scaleByQuestionId);
         this.cardSortingByQuestionId = Map.copyOf(cardSortingByQuestionId);
@@ -103,14 +99,6 @@ public final class ReportExcelExportContext {
         return answersByQuestionId.getOrDefault(questionId, List.of());
     }
 
-    public Objective requireObjective(Long questionId) {
-        Objective objective = objectiveByQuestionId.get(questionId);
-        if (objective == null) {
-            throw new BaseException(BaseErrorCode.QUESTION_005);
-        }
-        return objective;
-    }
-
     public FiveSecond requireFiveSecond(Long questionId) {
         FiveSecond fiveSecond = fiveSecondByQuestionId.get(questionId);
         if (fiveSecond == null) {
@@ -150,7 +138,6 @@ public final class ReportExcelExportContext {
         private Map<Long, Question> questionById = Map.of();
         private Map<Long, Map<String, Object>> reportResultByQuestionId = Map.of();
         private Map<Long, List<Answer>> answersByQuestionId = Map.of();
-        private Map<Long, Objective> objectiveByQuestionId = Map.of();
         private Map<Long, FiveSecond> fiveSecondByQuestionId = Map.of();
         private Map<Long, Scale> scaleByQuestionId = Map.of();
         private Map<Long, CardSorting> cardSortingByQuestionId = Map.of();
@@ -186,11 +173,6 @@ public final class ReportExcelExportContext {
             return this;
         }
 
-        public Builder objectiveByQuestionId(Map<Long, Objective> objectiveByQuestionId) {
-            this.objectiveByQuestionId = objectiveByQuestionId;
-            return this;
-        }
-
         public Builder fiveSecondByQuestionId(Map<Long, FiveSecond> fiveSecondByQuestionId) {
             this.fiveSecondByQuestionId = fiveSecondByQuestionId;
             return this;
@@ -219,7 +201,6 @@ public final class ReportExcelExportContext {
                     questionById,
                     reportResultByQuestionId,
                     answersByQuestionId,
-                    objectiveByQuestionId,
                     fiveSecondByQuestionId,
                     scaleByQuestionId,
                     cardSortingByQuestionId,
