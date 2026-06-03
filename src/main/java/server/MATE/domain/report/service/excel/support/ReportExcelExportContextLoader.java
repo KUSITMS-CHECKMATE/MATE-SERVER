@@ -7,14 +7,13 @@ import server.MATE.domain.answer.repository.AnswerRepository;
 import server.MATE.domain.question.dto.response.QuestionSummaryItem;
 import server.MATE.domain.question.entity.CardSorting;
 import server.MATE.domain.question.entity.FiveSecond;
-import server.MATE.domain.question.entity.Objective;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Scale;
 import server.MATE.domain.question.entity.TreeTest;
 import server.MATE.domain.question.repository.CardSortingRepository;
 import server.MATE.domain.question.repository.FiveSecondRepository;
-import server.MATE.domain.question.repository.ObjectiveRepository;
+
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.question.repository.ScaleRepository;
 import server.MATE.domain.question.repository.TreeTestRepository;
@@ -38,7 +37,6 @@ public class ReportExcelExportContextLoader {
     private final QuestionRepository questionRepository;
     private final ReportRepository reportRepository;
     private final AnswerRepository answerRepository;
-    private final ObjectiveRepository objectiveRepository;
     private final FiveSecondRepository fiveSecondRepository;
     private final ScaleRepository scaleRepository;
     private final CardSortingRepository cardSortingRepository;
@@ -77,12 +75,8 @@ public class ReportExcelExportContextLoader {
                         Collectors.mapping(QuestionSummaryItem::questionId, Collectors.toList())
                 ));
 
-        Map<Long, Objective> objectiveByQuestionId = objectiveRepository
-                .findAllByIdIn(questionIdsByType.getOrDefault(QuestionType.OBJECTIVE, List.of()))
-                .stream()
-                .collect(Collectors.toMap(Objective::getId, Function.identity()));
         Map<Long, FiveSecond> fiveSecondByQuestionId = fiveSecondRepository
-                .findAllByIdIn(questionIdsByType.getOrDefault(QuestionType.FIVE_SECOND, List.of()))
+                .findAllById(questionIdsByType.getOrDefault(QuestionType.FIVE_SECOND, List.of()))
                 .stream()
                 .collect(Collectors.toMap(FiveSecond::getId, Function.identity()));
         Map<Long, Scale> scaleByQuestionId = scaleRepository
@@ -106,7 +100,6 @@ public class ReportExcelExportContextLoader {
                 .questionById(questionById)
                 .reportResultByQuestionId(reportResultByQuestionId)
                 .answersByQuestionId(answersByQuestionId)
-                .objectiveByQuestionId(objectiveByQuestionId)
                 .fiveSecondByQuestionId(fiveSecondByQuestionId)
                 .scaleByQuestionId(scaleByQuestionId)
                 .cardSortingByQuestionId(cardSortingByQuestionId)

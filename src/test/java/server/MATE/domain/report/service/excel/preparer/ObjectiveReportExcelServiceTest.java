@@ -6,8 +6,6 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import server.MATE.domain.answer.entity.Answer;
-import server.MATE.domain.question.entity.Objective;
-import server.MATE.domain.question.entity.ObjectiveOption;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.report.excel.objective.ObjectiveReportExcelData;
@@ -37,19 +35,6 @@ class ObjectiveReportExcelServiceTest {
                 .build();
         ReflectionTestUtils.setField(question, "id", 20L);
 
-        ObjectiveOption option = ObjectiveOption.builder()
-                .content("선택1")
-                .sequence(1)
-                .build();
-        ReflectionTestUtils.setField(option, "id", 1L);
-
-        Objective objective = Objective.builder()
-                .question(question)
-                .isDuplicate(false)
-                .build();
-        ReflectionTestUtils.setField(objective, "id", 20L);
-        objective.addOption(option);
-
         Answer answer = Answer.builder()
                 .participationId(100L)
                 .questionId(20L)
@@ -66,7 +51,6 @@ class ObjectiveReportExcelServiceTest {
                 .questionById(Map.of(20L, question))
                 .reportResultByQuestionId(Map.of(20L, reportResult))
                 .answersByQuestionId(Map.of(20L, List.of(answer)))
-                .objectiveByQuestionId(Map.of(20L, objective))
                 .build();
 
         ObjectiveReportExcelData data = objectiveReportExcelService.prepareData(context, 20L);
