@@ -1,7 +1,5 @@
 package server.MATE.domain.report.service.excel.support;
 
-import server.MATE.domain.question.entity.FiveSecondOption;
-import server.MATE.domain.question.entity.ObjectiveOption;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.report.excel.cardsorting.CardSortingCategoryStatRow;
 import server.MATE.domain.report.excel.fivesecond.FiveSecondOptionStatRow;
@@ -13,8 +11,10 @@ import server.MATE.global.common.exception.BaseException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public final class ReportExcelResultMapper {
 
@@ -41,60 +41,48 @@ public final class ReportExcelResultMapper {
         }
     }
 
-    public static List<ObjectiveOptionStatRow> toObjectiveOptionStats(
-            List<ObjectiveOption> options,
-            Map<String, Object> reportResult
-    ) {
-        Map<Long, Integer> countByOptionId = new HashMap<>();
-        Map<Long, Double> ratioByOptionId = new HashMap<>();
+    public static Map<Long, String> buildOptionContentFromReport(Map<String, Object> reportResult) {
+        Map<Long, String> contentById = new LinkedHashMap<>();
         for (Map<String, Object> optionStat : readOptionStats(reportResult)) {
             Object optionIdObject = optionStat.get("optionId");
-            if (!(optionIdObject instanceof Number optionIdNumber)) {
-                continue;
+            Long optionId = null;
+            if (optionIdObject instanceof Number n) {
+                optionId = n.longValue();
+            } else if (optionIdObject instanceof String s) {
+                try {
+                    optionId = Long.parseLong(s);
+                } catch (NumberFormatException ignored) {
+                }
             }
-            long optionId = optionIdNumber.longValue();
-            countByOptionId.put(optionId, readInt(optionStat.get("count")));
-            ratioByOptionId.put(optionId, readDouble(optionStat.get("ratio")));
+            if (optionId != null) {
+                contentById.put(optionId, Objects.toString(optionStat.get("content"), ""));
+            }
         }
+        return contentById;
+    }
 
+    public static List<ObjectiveOptionStatRow> toObjectiveOptionStats(Map<String, Object> reportResult) {
+        List<Map<String, Object>> optionStats = readOptionStats(reportResult);
         List<ObjectiveOptionStatRow> stats = new ArrayList<>();
-        for (int index = 0; index < options.size(); index++) {
-            ObjectiveOption option = options.get(index);
-            int count = countByOptionId.getOrDefault(option.getId(), 0);
-            double ratio = ratioByOptionId.getOrDefault(option.getId(), 0.0);
+        for (int index = 0; index < optionStats.size(); index++) {
+            Map<String, Object> optionStat = optionStats.get(index);
             stats.add(new ObjectiveOptionStatRow(
                     "선지 " + (index + 1),
-                    count,
-                    formatObjectiveRatioPercent(ratio)
+                    readInt(optionStat.get("count")),
+                    formatObjectiveRatioPercent(readDouble(optionStat.get("ratio")))
             ));
         }
         return stats;
     }
 
-    public static List<FiveSecondOptionStatRow> toFiveSecondOptionStats(
-            List<FiveSecondOption> options,
-            Map<String, Object> reportResult
-    ) {
-        Map<Long, Integer> countByOptionId = new HashMap<>();
-        Map<Long, Double> ratioByOptionId = new HashMap<>();
-        for (Map<String, Object> optionStat : readOptionStats(reportResult)) {
-            Object optionIdObject = optionStat.get("optionId");
-            if (!(optionIdObject instanceof Number optionIdNumber)) {
-                continue;
-            }
-            long optionId = optionIdNumber.longValue();
-            countByOptionId.put(optionId, readInt(optionStat.get("count")));
-            ratioByOptionId.put(optionId, readDouble(optionStat.get("ratio")));
-        }
-
+    public static List<FiveSecondOptionStatRow> toFiveSecondOptionStats(Map<String, Object> reportResult) {
         List<FiveSecondOptionStatRow> stats = new ArrayList<>();
-        for (FiveSecondOption option : options) {
-            int count = countByOptionId.getOrDefault(option.getId(), 0);
-            double ratio = ratioByOptionId.getOrDefault(option.getId(), 0.0);
+        for (Map<String, Object> optionStat : readOptionStats(reportResult)) {
+            String content = Objects.toString(optionStat.get("content"), "");
             stats.add(new FiveSecondOptionStatRow(
-                    option.getContent(),
-                    count,
-                    formatObjectiveRatioPercent(ratio)
+                    content,
+                    readInt(optionStat.get("count")),
+                    formatObjectiveRatioPercent(readDouble(optionStat.get("ratio")))
             ));
         }
         return stats;
