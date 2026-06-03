@@ -20,10 +20,7 @@ public class TestReportExcelService {
         String filename = buildFilename(testId);
 
         if (test.getExcelKey() != null) {
-            return new TestReportExcelDownload(
-                    fileStorageService.generateDownloadUrl(test.getExcelKey(), filename),
-                    filename
-            );
+            return new TestReportExcelDownload(fileStorageService.download(test.getExcelKey()), filename);
         }
 
         byte[] excelBytes = combinedTestReportExcelService.export(testId, makerId);
@@ -31,10 +28,7 @@ public class TestReportExcelService {
         fileStorageService.upload(excelKey, excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         reportExcelExportSupport.saveExcelKey(testId, excelKey);
 
-        return new TestReportExcelDownload(
-                fileStorageService.generateDownloadUrl(excelKey, filename),
-                filename
-        );
+        return new TestReportExcelDownload(excelBytes, filename);
     }
 
     private String buildFilename(Long testId) {
