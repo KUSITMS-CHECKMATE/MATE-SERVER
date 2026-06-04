@@ -27,7 +27,7 @@ public class AnswerController {
 
     private final AnswerService answerService;
 
-    @Operation(summary = "➰ 응답 전체 등록", description = """
+    @Operation(summary = "응답 전체 등록", description = """
             참여자가 테스트의 모든 문항에 대한 응답을 한 번에 제출합니다. TT01-01 화면에 해당하는 api 입니다.
             - 테스트가 진행 중(`IN_PROGRESS`) 상태여야 합니다.
             - 목표 인원 수(`goalPpl`)이 초과된 경우 참여 불가합니다.
@@ -190,7 +190,7 @@ public class AnswerController {
     }
 
     @Operation(
-            summary = "✔️ 내 응답 목록 조회",
+            summary = "내 응답 목록 조회",
             description = """
                     현재 로그인한 사용자가 응답한 테스트 목록을 최신순으로 조회합니다. 참여기록20 화면에 해당하는 api 입니다.
                     - createdAt은 yyyy.MM.dd 형식으로 반환합니다.
