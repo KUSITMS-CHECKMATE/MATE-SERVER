@@ -45,10 +45,17 @@ public final class ReportExcelResultMapper {
         Map<Long, String> contentById = new LinkedHashMap<>();
         for (Map<String, Object> optionStat : readOptionStats(reportResult)) {
             Object optionIdObject = optionStat.get("optionId");
-
-            Object contentObject = optionStat.get("content");
+            Long optionId = null;
             if (optionIdObject instanceof Number n) {
-                contentById.put(n.longValue(), contentObject instanceof String s ? s : "");
+                optionId = n.longValue();
+            } else if (optionIdObject instanceof String s) {
+                try {
+                    optionId = Long.parseLong(s);
+                } catch (NumberFormatException ignored) {
+                }
+            }
+            if (optionId != null) {
+                contentById.put(optionId, Objects.toString(optionStat.get("content"), ""));
             }
         }
         return contentById;
@@ -71,7 +78,7 @@ public final class ReportExcelResultMapper {
     public static List<FiveSecondOptionStatRow> toFiveSecondOptionStats(Map<String, Object> reportResult) {
         List<FiveSecondOptionStatRow> stats = new ArrayList<>();
         for (Map<String, Object> optionStat : readOptionStats(reportResult)) {
-            String content = optionStat.get("content") instanceof String s ? s : "";
+            String content = Objects.toString(optionStat.get("content"), "");
             stats.add(new FiveSecondOptionStatRow(
                     content,
                     readInt(optionStat.get("count")),
