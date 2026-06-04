@@ -75,11 +75,12 @@ public class ReportExcelExportContextLoader {
                         Collectors.mapping(QuestionSummaryItem::questionId, Collectors.toList())
                 ));
 
-        List<Long> fiveSecondIds = questionIdsByType.getOrDefault(QuestionType.FIVE_SECOND, List.of());
-        Map<Long, FiveSecond> fiveSecondByQuestionId = fiveSecondIds.isEmpty()
-                ? Map.of()
-                : fiveSecondRepository.findAllById(fiveSecondIds).stream()
-                        .collect(Collectors.toMap(FiveSecond::getId, Function.identity()));
+
+        Map<Long, FiveSecond> fiveSecondByQuestionId = fiveSecondRepository
+                .findAllById(questionIdsByType.getOrDefault(QuestionType.FIVE_SECOND, List.of()))
+                .stream()
+                .collect(Collectors.toMap(FiveSecond::getId, Function.identity()));
+
         Map<Long, Scale> scaleByQuestionId = scaleRepository
                 .findAllByIdIn(questionIdsByType.getOrDefault(QuestionType.SCALE, List.of()))
                 .stream()
