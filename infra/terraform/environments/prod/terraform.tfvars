@@ -42,7 +42,7 @@ kubernetes_vm_ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHCcRTcz5A5n
 kubernetes_control_vm_name   = "mate-k8s-control"
 kubernetes_worker_vm_name    = "mate-k8s-worker"
 
-kubernetes_control_vm_size = "Standard_B2ms"
+kubernetes_control_vm_size = "Standard_B2s_v2"
 kubernetes_worker_vm_size  = "Standard_B2ls_v2"
 
 # NSG: SSH(22) — 출발지 Any (*). 보안상 이후 수정
