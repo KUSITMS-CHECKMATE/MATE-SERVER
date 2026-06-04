@@ -29,7 +29,7 @@ public class QuestionController {
 
     private final QuestionService questionService;
 
-    @Operation(summary = "➰ 질문 전체 조회", description = """
+    @Operation(summary = "질문 전체 조회", description = """
             testId에 해당한 테스트의 모든 질문 문항을 상세조회합니다. TT01-01 화면에 해당하는 api 입니다.
             - 응답 루트에 `testId`와 `questions`를 함께 반환합니다.
             - `questions` 배열은 `sequence` 오름차순입니다.
@@ -301,7 +301,7 @@ public class QuestionController {
         return ResponseEntity.ok(ApiResponse.ok("문항을 조회했습니다.", questionsDetailResponse));
     }
 
-    @Operation(summary = "➰ 질문 상세 조회", description = """
+    @Operation(summary = "질문 상세 조회", description = """
             testId에 해당하는 테스트의 특정 질문 문항 하나를 상세조회합니다. 통계의 질문 탭 MKST_01-1 화면에 해당하는 api입니다.
             - 응답 루트에 `testId`와 `question`을 함께 반환합니다.
             - `question`은 공통 필드와 유형별 상세 필드를 모두 포함합니다.
@@ -528,7 +528,7 @@ public class QuestionController {
         return ResponseEntity.ok(ApiResponse.ok("질문 상세 조회했습니다.", questionDetailResponse));
     }
 
-    @Operation(summary = "✔️ 질문 목록 조회", description = """
+    @Operation(summary = "질문 목록 조회", description = """
             testId에 해당하는 테스트의 질문 목록 정보를 조회합니다. 통계의 질문 탭 MKST_01 29 화면에 해당하는 api입니다.
             - 테스트 메이커만 조회할 수 있습니다.
             - 테스트 종료 여부와 관계없이 조회할 수 있습니다.
