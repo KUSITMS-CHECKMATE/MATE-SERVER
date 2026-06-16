@@ -5,6 +5,11 @@ spring:
   config:
     activate:
       on-profile: prod
+
+logging:
+  structured:
+    format:
+      console: ecs
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}

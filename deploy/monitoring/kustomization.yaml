@@ -10,3 +10,4 @@ resources:
   - alertmanagerconfig-discord.yaml
   - prometheusrule-platform-alerts.yaml
   - dashboards/mate-application.yaml
+  - dashboards/mate-logs.yaml
