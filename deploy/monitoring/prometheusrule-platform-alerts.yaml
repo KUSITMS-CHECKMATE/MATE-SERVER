@@ -1,0 +1,59 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: mate-platform-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: mate.platform.alerts
+      rules:
+        - alert: MateJvmHeapUsageHigh
+          expr: (jvm_memory_used_bytes{application="mate", area="heap"} / jvm_memory_max_bytes{application="mate", area="heap"}) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            service: mate
+          annotations:
+            summary: "JVM heap usage is high"
+            description: "Mate JVM heap usage is above 85% for 5 minutes."
+
+        - alert: MatePodPendingTooLong
+          expr: max_over_time(kube_pod_status_phase{namespace="mate", phase="Pending"}[10m]) == 1
+          for: 2m
+          labels:
+            severity: warning
+            service: mate
+          annotations:
+            summary: "Mate pod is Pending for too long"
+            description: "A mate namespace pod stayed Pending for over 10 minutes. Check scheduler, anti-affinity, and node resources."
+
+        - alert: MatePodCrashLooping
+          expr: increase(kube_pod_container_status_restarts_total{namespace="mate"}[10m]) > 3
+          for: 5m
+          labels:
+            severity: critical
+            service: mate
+          annotations:
+            summary: "Mate pod restart storm detected"
+            description: "Pod restarts exceeded 3 within 10 minutes in mate namespace."
+
+        - alert: KubernetesNodeMemoryPressure
+          expr: kube_node_status_condition{condition="MemoryPressure", status="true"} == 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Node memory pressure detected"
+            description: "At least one Kubernetes node reports MemoryPressure=true."
+
+        - alert: MateDeploymentReplicasMismatch
+          expr: kube_deployment_status_replicas_unavailable{namespace="mate", deployment="mate"} > 0
+          for: 5m
+          labels:
+            severity: warning
+            service: mate
+          annotations:
+            summary: "Mate deployment has unavailable replicas"
+            description: "Mate deployment has unavailable replicas for more than 5 minutes."
