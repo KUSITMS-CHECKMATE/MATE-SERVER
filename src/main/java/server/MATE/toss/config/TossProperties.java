@@ -8,6 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record TossProperties(
         boolean enabled,
         String baseUrl,
+        String paymentBaseUrl,
         Timeout timeout,
         Ssl ssl
 ) {
@@ -15,6 +16,9 @@ public record TossProperties(
     public TossProperties {
         if (baseUrl == null || baseUrl.isBlank()) {
             baseUrl = "https://apps-in-toss-api.toss.im";
+        }
+        if (paymentBaseUrl == null || paymentBaseUrl.isBlank()) {
+            paymentBaseUrl = "https://pay-apps-in-toss-api.toss.im";
         }
         if (timeout == null) {
             timeout = new Timeout(null, null);
