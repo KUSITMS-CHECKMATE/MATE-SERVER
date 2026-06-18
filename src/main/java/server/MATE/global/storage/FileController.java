@@ -28,7 +28,7 @@ public class FileController {
 
     private static final long MAX_FILE_SIZE_BYTES = 50L * 1024 * 1024;
 
-    @Operation(summary = "✔️ 파일 업로드 URL 발급", description = """
+    @Operation(summary = "파일 업로드 URL 발급", description = """
             파일 업로드용 Presigned URL을 발급합니다. 클라이언트는 서버를 경유하지 않고 Azure Blob Storage에 직접 업로드합니다.
 
             **[허용 확장자]**
@@ -74,7 +74,7 @@ public class FileController {
                 new UploadUrlResponse(presignedUrl, fileKey)));
     }
 
-    @Operation(summary = "✔️ 파일 다운로드 URL 발급", description = """
+    @Operation(summary = "파일 다운로드 URL 발급", description = """
             저장된 파일의 다운로드용 Presigned URL을 발급합니다.
 
             **[URL 유효시간]** 30분
