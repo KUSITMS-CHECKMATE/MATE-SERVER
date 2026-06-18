@@ -10,31 +10,31 @@ fi
 
 # 필수 도구 확인
 if ! command -v gh &>/dev/null; then
-  echo "⚠️  gh CLI가 설치되어 있지 않습니다. PR 자동 생성을 건너뜁니다."
-  echo "   설치: brew install gh && gh auth login"
+  echo "️  gh CLI가 설치되어 있지 않습니다. PR 자동 생성을 건너뜁니다."
+  echo "  설치: brew install gh && gh auth login"
   exit 0
 fi
 
 if ! command -v claude &>/dev/null; then
-  echo "⚠️  claude CLI가 설치되어 있지 않습니다. PR 자동 생성을 건너뜁니다."
+  echo "  claude CLI가 설치되어 있지 않습니다. PR 자동 생성을 건너뜁니다."
   exit 0
 fi
 
 if [[ -z "$GITHUB_TOKEN" ]]; then
-  echo "⚠️  GITHUB_TOKEN 환경변수가 설정되어 있지 않습니다. PR 자동 생성을 건너뜁니다."
-  echo "   설정: export GITHUB_TOKEN=ghp_xxxx"
+  echo "  GITHUB_TOKEN 환경변수가 설정되어 있지 않습니다. PR 자동 생성을 건너뜁니다."
+  echo "  설정: export GITHUB_TOKEN=ghp_xxxx"
   exit 0
 fi
 
 # 이미 PR이 존재하면 skip
 EXISTING_PR=$(gh pr list --head "$BRANCH" --base "$BASE_BRANCH" --json number --jq '.[0].number' 2>/dev/null)
 if [[ -n "$EXISTING_PR" ]]; then
-  echo "ℹ️  이미 PR이 존재합니다 (#${EXISTING_PR}). 건너뜁니다."
+  echo "️  이미 PR이 존재합니다 (#${EXISTING_PR}). 건너뜁니다."
   exit 0
 fi
 
 echo ""
-echo "🤖 PR 자동 생성 중... (백그라운드 실행)"
+echo " PR 자동 생성 중... (백그라운드 실행)"
 echo ""
 
 # 백그라운드로 실행해서 터미널 블로킹 방지
@@ -72,5 +72,5 @@ nohup claude -p "
 PR 제목은 브랜치명과 커밋 내용을 보고 한국어로 간결하게 작성해줘.
 " >> /tmp/claude-pr-$(echo "$BRANCH" | tr '/' '-').log 2>&1 &
 
-echo "✅ PR 생성 작업이 백그라운드에서 실행 중입니다."
+echo " PR 생성 작업이 백그라운드에서 실행 중입니다."
 echo "   로그 확인: tail -f /tmp/claude-pr-$(echo "$BRANCH" | tr '/' '-').log"
