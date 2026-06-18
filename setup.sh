@@ -55,5 +55,5 @@ if [[ $FAILED -eq 1 ]]; then
   echo "  위 항목을 해결한 후 다시 ./setup.sh 를 실행해주세요."
   exit 1
 else
-  echo "  모든 설정 완료! git push 하면 PR이 자동 생성됩니다."
+  echo "  모든 설정 완료! Claude에게 PR 생성을 요청하여 작업을 진행할 수 있습니다."
 fi

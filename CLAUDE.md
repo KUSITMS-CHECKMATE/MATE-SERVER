@@ -42,17 +42,12 @@ Claude가 자동으로 이슈 템플릿에 맞게 생성해줘.
 
 ---
 
-## PR 자동 생성
+## PR 생성 요청
 
-**기능 브랜치에서 push하면 자동으로 PR이 생성돼.**
+**기능 브랜치에서 작업 완료 후 Claude에게 PR 생성을 요청할 수 있습니다.**
 
-```bash
-git push origin feat/#123-some-feature
-# → Claude가 자동으로 PR 생성
-```
+> "현재 브랜치 기준으로 dev 브랜치로의 PR 생성해줘"
 
-- `main`, `dev`, `feat/ci` 브랜치는 자동 생성 skip
-- 이미 PR이 존재하면 skip
 - base 브랜치: `dev`
 
 ---
