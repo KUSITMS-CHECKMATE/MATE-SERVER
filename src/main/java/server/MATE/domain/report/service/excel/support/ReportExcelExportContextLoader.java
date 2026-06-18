@@ -74,7 +74,6 @@ public class ReportExcelExportContextLoader {
                         QuestionSummaryItem::type,
                         Collectors.mapping(QuestionSummaryItem::questionId, Collectors.toList())
                 ));
-
         List<Long> fiveSecondIds = questionIdsByType.getOrDefault(QuestionType.FIVE_SECOND, List.of());
         Map<Long, FiveSecond> fiveSecondByQuestionId = fiveSecondIds.isEmpty()
                 ? Map.of()

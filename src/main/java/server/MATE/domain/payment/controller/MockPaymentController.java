@@ -33,7 +33,7 @@ public class MockPaymentController {
 
     private final MockPaymentService mockPaymentService;
 
-    @Operation(summary = "✔️ 결제 등록",
+    @Operation(summary = "결제 등록",
             description = """
                           테스트 초안을 기준으로 mock 결제를 등록하고 payToken을 반환합니다.
                           """
@@ -52,7 +52,7 @@ public class MockPaymentController {
                 .body(ApiResponse.created("결제를 등록했습니다.", response));
     }
 
-    @Operation(summary = "✔️ 결제 실행",
+    @Operation(summary = "결제 실행",
             description = """
                           mock 결제를 실행하고 승인 결과를 반환합니다.
                           """
