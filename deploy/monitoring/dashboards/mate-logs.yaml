@@ -1,0 +1,149 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-mate-logs
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  mate-logs.json: |
+    {
+      "title": "MATE 로그 분석",
+      "editable": true,
+      "liveNow": false,
+      "timeSettings": {
+        "from": "now-1h",
+        "to": "now",
+        "autoRefresh": "30s",
+        "timezone": "browser"
+      },
+      "tags": ["loki", "logs"],
+      "variables": [
+        {
+          "name": "namespace",
+          "type": "custom",
+          "label": "Namespace",
+          "current": { "value": "mate" },
+          "options": [
+            { "text": "mate (앱)", "value": "mate" },
+            { "text": "kube-system (K8s)", "value": "kube-system" },
+            { "text": "monitoring", "value": "monitoring" }
+          ]
+        },
+        {
+          "name": "level",
+          "type": "custom",
+          "label": "Log Level",
+          "current": { "value": "ERROR" },
+          "options": [
+            { "text": "ERROR", "value": "ERROR" },
+            { "text": "WARN", "value": "WARN" },
+            { "text": "INFO", "value": "INFO" }
+          ]
+        }
+      ],
+      "panels": [
+        {
+          "id": 1,
+          "title": "ERROR 로그 수 (시간별)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 7 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [
+            {
+              "expr": "sum by (namespace) (count_over_time({namespace=\"$namespace\"} | json | `log.level`=\"ERROR\" [1m]))",
+              "legendFormat": "{{namespace}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "로그 스트림 ($level)",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 7, "w": 24, "h": 12 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "options": {
+            "showTime": true,
+            "showLabels": false,
+            "wrapLogMessage": true,
+            "sortOrder": "Descending",
+            "dedupStrategy": "none"
+          },
+          "targets": [
+            {
+              "expr": "{namespace=\"$namespace\"} | json | `log.level`=\"$level\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Exception 발생 로그",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 19, "w": 24, "h": 10 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "options": {
+            "showTime": true,
+            "wrapLogMessage": true,
+            "sortOrder": "Descending"
+          },
+          "targets": [
+            {
+              "expr": "{namespace=\"$namespace\"} | json | `error.type` != \"\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "K8s 시스템 에러 (kube-system)",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 29, "w": 24, "h": 10 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "options": {
+            "showTime": true,
+            "wrapLogMessage": true,
+            "sortOrder": "Descending"
+          },
+          "targets": [
+            {
+              "expr": "{namespace=\"kube-system\"} |~ \"(?i)(error|failed|fatal|panic)\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "레벨별 로그 비율",
+          "type": "piechart",
+          "gridPos": { "x": 0, "y": 39, "w": 8, "h": 8 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [
+            {
+              "expr": "sum by (`log.level`) (count_over_time({namespace=\"$namespace\"} | json [1h]))",
+              "legendFormat": "{{log.level}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "WARN 로그 스트림",
+          "type": "logs",
+          "gridPos": { "x": 8, "y": 39, "w": 16, "h": 8 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "options": {
+            "showTime": true,
+            "wrapLogMessage": true,
+            "sortOrder": "Descending"
+          },
+          "targets": [
+            {
+              "expr": "{namespace=\"$namespace\"} | json | `log.level`=\"WARN\"",
+              "refId": "A"
+            }
+          ]
+        }
+      ]
+    }

@@ -24,6 +24,11 @@ spring:
             certificate: ${TOSS_MTLS_CERT_PATH:false}
             private-key: ${TOSS_MTLS_KEY_PATH:false}
 
+logging:
+  structured:
+    format:
+      console: ecs
+
 deploy:
   env: ${DEPLOY_ENV:prod}
 
