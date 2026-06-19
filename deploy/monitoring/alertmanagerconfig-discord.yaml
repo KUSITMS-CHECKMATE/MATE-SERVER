@@ -19,7 +19,7 @@ spec:
   receivers:
     - name: discord
       slackConfigs:
-        - apiUrl:
+        - apiURL:
             name: monitoring-alerts-secrets
             key: DISCORD_WEBHOOK_URL
           sendResolved: true
