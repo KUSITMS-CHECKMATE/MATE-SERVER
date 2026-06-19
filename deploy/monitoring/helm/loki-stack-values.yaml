@@ -18,6 +18,7 @@ loki:
     compactor:
       retention_enabled: true
       working_directory: /data/loki/compactor
+      shared_store: filesystem
     limits_config:
       retention_period: 336h
 prometheus:
