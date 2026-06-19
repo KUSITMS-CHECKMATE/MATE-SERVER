@@ -23,12 +23,34 @@ spec:
             name: monitoring-alerts-secrets
             key: DISCORD_WEBHOOK_URL
           sendResolved: true
-          title: "[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}"
-          text: >-
+          title: '{{ if eq .Status "firing" }}🚨 {{ .CommonLabels.alertname }}{{ else }}✅ {{ .CommonLabels.alertname }}{{ end }}'
+          text: |-
+            {{ if eq .Status "firing" -}}
+            @here PROD 환경에서 알람이 발생했습니다!
             {{ range .Alerts -}}
-            *Namespace:* {{ .Labels.namespace }}{{ if .Labels.pod }} | *Pod:* {{ .Labels.pod }}{{ end }}
-            \n*Severity:* {{ .Labels.severity }}
-            \n*Summary:* {{ .Annotations.summary }}
-            \n*Description:* {{ .Annotations.description }}
-            \n
-            {{ end }}
+            {{ .Annotations.summary }}
+
+            1. 상태 변경
+            정상 → ALARM
+            2. 환경
+            PROD
+            3. Namespace
+            {{ .Labels.namespace }}{{ if .Labels.pod }} | Pod: {{ .Labels.pod }}{{ end }}
+            4. 심각도
+            {{ .Labels.severity | toUpper }}
+            5. 상세 정보
+            {{ .Annotations.description }}
+            {{ end -}}
+            {{- else -}}
+            @here PROD 환경의 알람이 해소되었습니다.
+            {{ range .Alerts -}}
+            {{ .Annotations.summary }}
+
+            1. 상태 변경
+            ALARM → 정상
+            2. 환경
+            PROD
+            3. Namespace
+            {{ .Labels.namespace }}{{ if .Labels.pod }} | Pod: {{ .Labels.pod }}{{ end }}
+            {{- end }}
+            {{- end }}

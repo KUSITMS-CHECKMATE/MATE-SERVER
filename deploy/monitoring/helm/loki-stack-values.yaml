@@ -14,6 +14,12 @@ loki:
     enabled: true
     storageClassName: local-path
     size: 10Gi
+  config:
+    compactor:
+      retention_enabled: true
+      working_directory: /data/loki/compactor
+    limits_config:
+      retention_period: 336h
 prometheus:
   enabled: false
 promtail:

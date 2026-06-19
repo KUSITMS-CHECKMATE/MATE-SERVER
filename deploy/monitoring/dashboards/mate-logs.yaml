@@ -51,7 +51,7 @@ data:
           "datasource": { "type": "loki", "uid": "loki" },
           "targets": [
             {
-              "expr": "sum by (namespace) (count_over_time({namespace=~\"mate|kube-system|monitoring\"} | json | `log.level`=\"ERROR\" [1m]))",
+              "expr": "sum by (namespace) (count_over_time({namespace=\"$namespace\"} | json | `log.level`=\"ERROR\" [1m]))",
               "legendFormat": "{{namespace}}",
               "refId": "A"
             }
@@ -59,7 +59,7 @@ data:
         },
         {
           "id": 2,
-          "title": "앱 ERROR 로그 스트림",
+          "title": "로그 스트림 ($level)",
           "type": "logs",
           "gridPos": { "x": 0, "y": 7, "w": 24, "h": 12 },
           "datasource": { "type": "loki", "uid": "loki" },
@@ -72,7 +72,7 @@ data:
           },
           "targets": [
             {
-              "expr": "{namespace=\"mate\"} | json | `log.level`=\"ERROR\"",
+              "expr": "{namespace=\"$namespace\"} | json | `log.level`=\"$level\"",
               "refId": "A"
             }
           ]
@@ -90,7 +90,7 @@ data:
           },
           "targets": [
             {
-              "expr": "{namespace=\"mate\"} | json | `error.type` != \"\"",
+              "expr": "{namespace=\"$namespace\"} | json | `error.type` != \"\"",
               "refId": "A"
             }
           ]
@@ -121,7 +121,7 @@ data:
           "datasource": { "type": "loki", "uid": "loki" },
           "targets": [
             {
-              "expr": "sum by (`log.level`) (count_over_time({namespace=\"mate\"} | json [1h]))",
+              "expr": "sum by (`log.level`) (count_over_time({namespace=\"$namespace\"} | json [1h]))",
               "legendFormat": "{{log.level}}",
               "refId": "A"
             }
@@ -140,7 +140,7 @@ data:
           },
           "targets": [
             {
-              "expr": "{namespace=\"mate\"} | json | `log.level`=\"WARN\"",
+              "expr": "{namespace=\"$namespace\"} | json | `log.level`=\"WARN\"",
               "refId": "A"
             }
           ]

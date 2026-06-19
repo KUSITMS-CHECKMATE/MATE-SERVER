@@ -57,3 +57,23 @@ spec:
           annotations:
             summary: "Mate deployment has unavailable replicas"
             description: "Mate deployment has unavailable replicas for more than 5 minutes."
+
+        - alert: MateHighErrorRate
+          expr: rate(http_server_requests_seconds_count{application="mate", status=~"5.."}[1m]) > 0.1
+          for: 2m
+          labels:
+            severity: critical
+            service: mate
+          annotations:
+            summary: "Mate 5xx error rate is high"
+            description: "Mate is returning 5xx errors at more than 0.1 rps for 2 minutes."
+
+        - alert: MateSlowResponse
+          expr: histogram_quantile(0.99, rate(http_server_requests_seconds_bucket{application="mate"}[5m])) > 2
+          for: 5m
+          labels:
+            severity: warning
+            service: mate
+          annotations:
+            summary: "Mate p99 response time exceeded 2s"
+            description: "Mate p99 latency has been above 2 seconds for 5 minutes."
