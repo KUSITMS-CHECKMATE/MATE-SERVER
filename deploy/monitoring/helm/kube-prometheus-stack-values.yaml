@@ -23,3 +23,12 @@ prometheus:
           resources:
             requests:
               storage: 20Gi
+
+alertmanager:
+  alertmanagerSpec:
+    alertmanagerConfigSelector:
+      matchLabels:
+        release: monitoring
+    alertmanagerConfigNamespaceSelector:
+      matchNames:
+        - monitoring

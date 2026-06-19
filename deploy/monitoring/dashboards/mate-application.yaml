@@ -860,7 +860,7 @@ data:
                         "kind": "DataQuery",
                         "spec": {
                           "editorMode": "code",
-                          "expr": "rate(process_cpu_usage{application=\"mate\"}[1m]) * 100",
+                          "expr": "process_cpu_usage{application=\"mate\"} * 100",
                           "legendFormat": "__auto",
                           "range": true
                         },
@@ -1358,7 +1358,7 @@ data:
       "preload": false,
       "tags": [],
       "timeSettings": {
-        "autoRefresh": "",
+        "autoRefresh": "30s",
         "autoRefreshIntervals": [
           "5s",
           "10s",

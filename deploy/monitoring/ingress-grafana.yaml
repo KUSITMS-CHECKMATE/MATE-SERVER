@@ -6,8 +6,13 @@ metadata:
     app: grafana
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - grafana.kusitms-mate.cloud
+      secretName: grafana-tls
   rules:
     - host: grafana.kusitms-mate.cloud
       http:

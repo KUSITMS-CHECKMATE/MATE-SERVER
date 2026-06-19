@@ -5,4 +5,9 @@ resources:
   - grafana-pvc.yaml
   - servicemonitor-mate-backend.yaml
   - ingress-grafana.yaml
+  - secretstore-azurekv.yaml
+  - externalsecret-alerts.yaml
+  - alertmanagerconfig-discord.yaml
+  - prometheusrule-platform-alerts.yaml
   - dashboards/mate-application.yaml
+  - dashboards/mate-logs.yaml

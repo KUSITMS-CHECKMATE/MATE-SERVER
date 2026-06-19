@@ -34,6 +34,26 @@ public class TossClientConfig {
             SslBundles sslBundles,
             TossProperties properties
     ) {
+        return buildWebClient(builder, sslBundles, properties, properties.baseUrl());
+    }
+
+    @Bean
+    @Qualifier("tossPaymentWebClient")
+    @ConditionalOnProperty(prefix = "toss.api", name = "enabled", havingValue = "true")
+    public WebClient tossPaymentWebClient(
+            WebClient.Builder builder,
+            SslBundles sslBundles,
+            TossProperties properties
+    ) {
+        return buildWebClient(builder, sslBundles, properties, properties.paymentBaseUrl());
+    }
+
+    private WebClient buildWebClient(
+            WebClient.Builder builder,
+            SslBundles sslBundles,
+            TossProperties properties,
+            String baseUrl
+    ) {
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(properties.timeout().connect().toMillis()))
                 .responseTimeout(properties.timeout().read());
@@ -48,7 +68,7 @@ public class TossClientConfig {
         }
 
         return builder
-                .baseUrl(properties.baseUrl())
+                .baseUrl(baseUrl)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
