@@ -127,17 +127,6 @@ public class TestDraft extends BaseEntity {
         }
     }
 
-    public void markPaymentCreated(String orderNo, Integer expectedAmount, String payToken) {
-        this.orderNo = orderNo;
-        this.expectedAmount = expectedAmount;
-        this.payToken = payToken;
-        this.status = TestDraftStatus.PAYMENT_CREATED;
-    }
-
-    public void markPaymentFailed() {
-        this.status = TestDraftStatus.PAYMENT_FAILED;
-    }
-
     public void markPublishing() {
         this.status = TestDraftStatus.PUBLISHING;
     }
