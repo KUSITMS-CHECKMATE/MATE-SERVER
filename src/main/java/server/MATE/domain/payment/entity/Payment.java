@@ -1,20 +1,10 @@
 package server.MATE.domain.payment.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import server.MATE.global.common.exception.BaseErrorCode;
-import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
@@ -80,76 +70,8 @@ public class Payment extends BaseEntity {
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
 
-    public void markCreated(String payToken) {
-        this.payToken = payToken;
-        this.payStatus = PayStatus.PAY_CREATED;
-    }
-
-    public void prepareForRetry(String orderNo,
-                                Integer goalPpl,
-                                Integer reward,
-                                Integer amount,
-                                Boolean isTestPayment) {
-        this.orderNo = orderNo;
-        this.goalPpl = goalPpl;
-        this.reward = reward;
-        this.amount = amount;
-        this.isTestPayment = isTestPayment;
-        this.payToken = null;
-        this.transactionId = null;
-        this.paidAmount = null;
-        this.payMethod = null;
-        this.accountBankCode = null;
-        this.cardCompanyCode = null;
-        this.approvedAt = null;
-        this.payStatus = PayStatus.PAY_STANDBY;
-    }
-
-    public void markFailed() {
-        this.payStatus = PayStatus.PAY_FAILED;
-    }
-
-    public void markSucceeded(String transactionId,
-                              Integer paidAmount,
-                              PayMethod payMethod,
-                              String accountBankCode,
-                              String cardCompanyCode,
-                              LocalDateTime approvedAt) {
-        this.transactionId = transactionId;
-        this.paidAmount = paidAmount;
-        this.payMethod = payMethod;
-        this.accountBankCode = accountBankCode;
-        this.cardCompanyCode = cardCompanyCode;
-        this.approvedAt = approvedAt;
-        this.payStatus = PayStatus.PAY_SUCCEEDED;
-    }
-
-    public void markRefundPending() {
-        this.payStatus = PayStatus.REFUND_PENDING;
-    }
-
-    public void markRefunded() {
-        this.payStatus = PayStatus.REFUNDED;
-    }
-
-    public void markRefundFailed() {
-        this.payStatus = PayStatus.REFUND_FAILED;
-    }
-
     public void linkTest(Long testId) {
         this.testId = testId;
-    }
-
-    public void validateReadyToExecute() {
-        if (this.payStatus != PayStatus.PAY_CREATED) {
-            throw new BaseException(BaseErrorCode.PAYMENT_003);
-        }
-    }
-
-    public void validateRefundable() {
-        if (this.payStatus != PayStatus.PAY_SUCCEEDED) {
-            throw new BaseException(BaseErrorCode.PAYMENT_004);
-        }
     }
 
     @Builder
