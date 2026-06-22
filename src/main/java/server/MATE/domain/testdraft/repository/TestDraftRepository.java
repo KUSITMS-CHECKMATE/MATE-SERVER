@@ -19,8 +19,6 @@ public interface TestDraftRepository extends JpaRepository<TestDraft, Long> {
 
     List<TestDraft> findAllByStatus(TestDraftStatus status);
 
-    Optional<TestDraft> findByOrderNo(String orderNo);
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select td

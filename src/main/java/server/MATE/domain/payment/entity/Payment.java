@@ -35,8 +35,6 @@ public class Payment extends BaseEntity {
     @Column(name = "order_no", nullable = false, length = 50)
     private String orderNo;
 
-    private String payToken;
-
     private String transactionId;
 
     @Enumerated(EnumType.STRING)
@@ -58,12 +56,6 @@ public class Payment extends BaseEntity {
     @Column(length = 20)
     private PayMethod payMethod;
 
-    @Column(length = 10)
-    private String accountBankCode;
-
-    @Column(length = 10)
-    private String cardCompanyCode;
-
     @Column(nullable = false)
     private Boolean isTestPayment;
 
@@ -79,7 +71,6 @@ public class Payment extends BaseEntity {
                    Long testId,
                    Long makerId,
                    String orderNo,
-                   String payToken,
                    String transactionId,
                    PayStatus payStatus,
                    Integer goalPpl,
@@ -87,25 +78,20 @@ public class Payment extends BaseEntity {
                    Integer amount,
                    Integer paidAmount,
                    PayMethod payMethod,
-                   String accountBankCode,
-                   String cardCompanyCode,
                    Boolean isTestPayment,
                    LocalDateTime approvedAt) {
         this.draftId = draftId;
         this.testId = testId;
         this.makerId = makerId;
         this.orderNo = orderNo;
-        this.payToken = payToken;
         this.transactionId = transactionId;
-        this.payStatus = payStatus == null ? PayStatus.PAY_STANDBY : payStatus;
+        this.payStatus = payStatus;
         this.goalPpl = goalPpl;
         this.reward = reward;
         this.amount = amount;
         this.paidAmount = paidAmount;
         this.payMethod = payMethod;
-        this.accountBankCode = accountBankCode;
-        this.cardCompanyCode = cardCompanyCode;
-        this.isTestPayment = isTestPayment == null ? Boolean.TRUE : isTestPayment;
+        this.isTestPayment = isTestPayment == null ? Boolean.FALSE : isTestPayment;
         this.approvedAt = approvedAt;
     }
 }

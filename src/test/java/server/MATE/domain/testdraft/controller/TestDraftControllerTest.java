@@ -232,9 +232,6 @@ class TestDraftControllerTest {
                 payload,
                 TestDraftStatus.DRAFT,
                 null,
-                null,
-                null,
-                null,
                 LocalDateTime.parse("2026-05-25T11:00:00"),
                 LocalDateTime.parse("2026-05-25T12:00:00")
         );
