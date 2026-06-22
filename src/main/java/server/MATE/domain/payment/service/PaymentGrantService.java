@@ -23,6 +23,8 @@ import server.MATE.toss.dto.response.IapOrderStatus;
 import server.MATE.toss.dto.response.IapOrderStatusResponse;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 
 @Service
 @ConditionalOnProperty(prefix = "toss.api", name = "enabled", havingValue = "true")
@@ -42,12 +44,22 @@ public class PaymentGrantService {
     public boolean grant(String orderId, Long draftId, Long makerId) {
         Payment existing = paymentRepository.findByOrderNo(orderId).orElse(null);
         if (existing != null) {
+            if (!existing.getMakerId().equals(makerId)) {
+                throw new BaseException(BaseErrorCode.COMMON_009);
+            }
             if (existing.getPayStatus() == PayStatus.PAY_SUCCEEDED) {
                 testPublishService.publish(existing.getId());
                 return true;
             }
             return false;
         }
+
+        TestDraft draft = testDraftRepository.findById(draftId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.DRAFT_001));
+        if (!draft.getMakerId().equals(makerId)) {
+            throw new BaseException(BaseErrorCode.DRAFT_002);
+        }
+        draft.validateAmountFields();
 
         TossAccount tossAccount = tossAccountRepository.findByUserId(makerId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_005));
@@ -64,14 +76,8 @@ public class PaymentGrantService {
             return false;
         }
 
-        TestDraft draft = testDraftRepository.findById(draftId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.DRAFT_001));
-        if (!draft.getMakerId().equals(makerId)) {
-            throw new BaseException(BaseErrorCode.DRAFT_002);
-        }
-
         int amount = paymentAmountCalculator.totalAmount(draft.getGoalPpl(), draft.getReward());
-        LocalDateTime approvedAt = LocalDateTime.parse(statusResponse.statusDeterminedAt());
+        LocalDateTime approvedAt = parseApprovedAt(statusResponse.statusDeterminedAt());
 
         Payment payment = paymentRepository.save(Payment.builder()
                 .draftId(draftId)
@@ -90,6 +96,14 @@ public class PaymentGrantService {
 
         testPublishService.publish(payment.getId());
         return true;
+    }
+
+    private LocalDateTime parseApprovedAt(String value) {
+        try {
+            return OffsetDateTime.parse(value).toLocalDateTime();
+        } catch (DateTimeParseException e) {
+            return LocalDateTime.parse(value);
+        }
     }
 
     public PaymentOrderStatusResponse getOrderStatus(String orderId, Long makerId) {
