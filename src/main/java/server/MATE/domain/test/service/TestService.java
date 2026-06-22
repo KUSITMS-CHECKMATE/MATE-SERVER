@@ -34,6 +34,7 @@ public class TestService {
     private final TestLikeRepository testLikeRepository;
     private final ParticipationRepository participationRepository;
     private final FileStorageService fileStorageService;
+    private final TestCloseProcessor testCloseProcessor;
     private final Clock clock;
 
     @Transactional(readOnly = true)
@@ -131,6 +132,33 @@ public class TestService {
                 });
 
         return new TestLikeResponse(test.getId(), false, test.getLikeCount());
+    }
+
+    public void closeTestByMaker(Long testId, Long makerId) {
+        Test test = testRepository.findByIdForUpdate(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+        if (!test.getMakerId().equals(makerId)) {
+            throw new BaseException(BaseErrorCode.COMMON_009);
+        }
+        if (test.getTestStatus() != TestStatus.IN_PROGRESS) {
+            throw new BaseException(BaseErrorCode.TEST_007);
+        }
+
+        test.markClosedByMaker();
+        testCloseProcessor.processClose(test);
+    }
+
+    public void waiveRefund(Long testId, Long makerId) {
+        Test test = testRepository.findByIdForUpdate(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+        if (!test.getMakerId().equals(makerId)) {
+            throw new BaseException(BaseErrorCode.COMMON_009);
+        }
+        if (test.getTestStatus() != TestStatus.IN_PROGRESS) {
+            throw new BaseException(BaseErrorCode.TEST_007);
+        }
+
+        test.waiveRefund();
     }
 
     private List<String> toImageUrls(List<String> keys) {

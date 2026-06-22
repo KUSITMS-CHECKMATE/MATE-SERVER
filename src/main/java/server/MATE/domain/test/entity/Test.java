@@ -66,6 +66,12 @@ public class Test extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime closedAt;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean closedByMaker = false;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean refundWaived = false;
+
     private LocalDateTime deletedAt;
 
     @Column
@@ -129,6 +135,31 @@ public class Test extends BaseEntity {
 
     public void complete() {
         this.testStatus = TestStatus.COMPLETED;
+    }
+
+    public void markClosedByMaker() {
+        this.closedByMaker = true;
+    }
+
+    public void waiveRefund() {
+        this.refundWaived = true;
+    }
+
+    public boolean isClosedByMaker() {
+        return Boolean.TRUE.equals(this.closedByMaker);
+    }
+
+    public boolean isRefundWaived() {
+        return Boolean.TRUE.equals(this.refundWaived);
+    }
+
+    public boolean isDataViewed() {
+        return this.pdfKey != null || this.excelKey != null;
+    }
+
+    public double getAchievementRate() {
+        if (this.goalPpl == null || this.goalPpl == 0) return 0.0;
+        return (double) this.pplCount / this.goalPpl;
     }
 
     public void start() {
