@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import server.MATE.domain.payment.dto.request.PaymentGrantRequest;
+import server.MATE.domain.payment.dto.request.PaymentRestoreRequest;
 import server.MATE.domain.payment.dto.response.PaymentOrderStatusResponse;
 import server.MATE.domain.payment.service.PaymentGrantService;
 import server.MATE.global.common.response.ApiResponse;
@@ -49,6 +50,27 @@ public class PaymentController {
                 authenticatedUser.getId()
         );
         return ResponseEntity.ok(ApiResponse.ok("상품 지급 처리가 완료됐습니다.", granted));
+    }
+
+    @Operation(
+            summary = "미결 주문 복원 (상품 지급 재시도)",
+            description = """
+                    getPendingOrders로 조회된 미결 주문의 상품 지급을 재시도합니다.<br>
+                    이전 grant 호출에서 Payment가 저장됐으면 orderId만으로 publish를 재시도합니다.<br>
+                    Payment가 없으면 draftId를 함께 전달해야 합니다.
+                    """
+    )
+    @PostMapping("/restore")
+    public ResponseEntity<ApiResponse<Boolean>> restore(
+            @RequestBody @Valid PaymentRestoreRequest request,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        boolean restored = paymentGrantService.restore(
+                request.orderId(),
+                request.draftId(),
+                authenticatedUser.getId()
+        );
+        return ResponseEntity.ok(ApiResponse.ok("상품 지급 복원이 완료됐습니다.", restored));
     }
 
     @Operation(

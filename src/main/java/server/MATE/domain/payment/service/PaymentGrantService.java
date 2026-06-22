@@ -46,18 +46,61 @@ public class PaymentGrantService {
     private final PaymentAmountCalculator paymentAmountCalculator;
     private final TestPublishService testPublishService;
 
-    @Transactional
+    /**
+     * processProductGrant 콜백에서 호출.
+     * Payment 저장 후 publish를 best-effort로 시도하되,
+     * publish 실패해도 true를 반환해서 30초 타임아웃을 지킨다.
+     * publish가 안 된 건은 restore로 재시도.
+     */
     public boolean grant(String orderId, Long draftId, Long makerId) {
+        Payment payment = resolvePayment(orderId, draftId, makerId);
+        if (payment == null) {
+            return false;
+        }
+
+        try {
+            testPublishService.publish(payment.getId());
+        } catch (Exception e) {
+            log.warn("Publish failed after grant for paymentId={}, will be retried via restore",
+                    payment.getId(), e);
+        }
+        return true;
+    }
+
+    /**
+     * getPendingOrders 복원 플로우에서 호출.
+     * Payment가 이미 있으면 orderId만으로 publish를 재시도한다.
+     * Payment가 없으면 draftId를 사용해 결제 검증부터 수행한다.
+     * publish 실패 시 예외를 전파해서 클라이언트가 재시도를 판단한다.
+     */
+    public boolean restore(String orderId, Long draftId, Long makerId) {
+        Payment payment = resolvePayment(orderId, draftId, makerId);
+        if (payment == null) {
+            return false;
+        }
+
+        testPublishService.publish(payment.getId());
+        return true;
+    }
+
+    /**
+     * orderId로 기존 Payment를 찾거나, 없으면 Toss API를 검증해서 새로 저장한다.
+     * @return 지급 가능한 Payment, 또는 null (Toss 상태가 결제 완료가 아닌 경우)
+     */
+    private Payment resolvePayment(String orderId, Long draftId, Long makerId) {
         Payment existing = paymentRepository.findByOrderNo(orderId).orElse(null);
         if (existing != null) {
             if (!existing.getMakerId().equals(makerId)) {
                 throw new BaseException(BaseErrorCode.COMMON_009);
             }
             if (existing.getPayStatus() == PayStatus.PAY_SUCCEEDED) {
-                testPublishService.publish(existing.getId());
-                return true;
+                return existing;
             }
-            return false;
+            return null;
+        }
+
+        if (draftId == null) {
+            throw new BaseException(BaseErrorCode.PAYMENT_001);
         }
 
         TestDraft draft = testDraftRepository.findById(draftId)
@@ -81,15 +124,19 @@ public class PaymentGrantService {
 
         if (statusResponse.status() != IapOrderStatus.PURCHASED
                 && statusResponse.status() != IapOrderStatus.PAYMENT_COMPLETED) {
-            return false;
+            return null;
         }
 
         int amount = paymentAmountCalculator.totalAmount(draft.getGoalPpl(), draft.getReward());
         LocalDateTime approvedAt = parseApprovedAt(statusResponse.statusDeterminedAt());
 
-        Payment payment;
+        return savePaymentOrFallback(orderId, draftId, makerId, draft, amount, approvedAt);
+    }
+
+    private Payment savePaymentOrFallback(String orderId, Long draftId, Long makerId,
+                                          TestDraft draft, int amount, LocalDateTime approvedAt) {
         try {
-            payment = paymentWriter.save(Payment.builder()
+            return paymentWriter.save(Payment.builder()
                     .draftId(draftId)
                     .makerId(makerId)
                     .orderNo(orderId)
@@ -104,17 +151,14 @@ public class PaymentGrantService {
                     .approvedAt(approvedAt)
                     .build());
         } catch (DataIntegrityViolationException e) {
-            // orderId UNIQUE 충돌 — 동시 요청에서 다른 스레드가 먼저 저장함
             log.warn("Duplicate grant attempt for orderId={}, falling back to existing record", orderId);
-            payment = paymentRepository.findByOrderNo(orderId)
+            Payment fallback = paymentRepository.findByOrderNo(orderId)
                     .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_001));
-            if (!payment.getMakerId().equals(makerId)) {
+            if (!fallback.getMakerId().equals(makerId)) {
                 throw new BaseException(BaseErrorCode.COMMON_009);
             }
+            return fallback;
         }
-
-        testPublishService.publish(payment.getId());
-        return true;
     }
 
     private void validateSku(String sku) {
