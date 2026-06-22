@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +25,7 @@ import server.MATE.global.security.principal.AuthenticatedUser;
 @RequestMapping("/api/v1/payments")
 @SecurityRequirement(name = "JWT")
 @RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "toss.api", name = "enabled", havingValue = "true")
 public class PaymentController {
 
     private final PaymentGrantService paymentGrantService;

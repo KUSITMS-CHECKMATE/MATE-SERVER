@@ -1,6 +1,7 @@
 package server.MATE.toss.config;
 
 import java.time.Duration;
+import java.util.List;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -9,7 +10,8 @@ public record TossProperties(
         boolean enabled,
         String baseUrl,
         Timeout timeout,
-        Ssl ssl
+        Ssl ssl,
+        Iap iap
 ) {
 
     public TossProperties {
@@ -21,6 +23,9 @@ public record TossProperties(
         }
         if (ssl == null) {
             ssl = new Ssl(false, null);
+        }
+        if (iap == null) {
+            iap = new Iap(List.of());
         }
     }
 
@@ -47,6 +52,14 @@ public record TossProperties(
         public Ssl {
             if (bundle == null || bundle.isBlank()) {
                 bundle = "toss";
+            }
+        }
+    }
+
+    public record Iap(List<String> allowedSkus) {
+        public Iap {
+            if (allowedSkus == null) {
+                allowedSkus = List.of();
             }
         }
     }

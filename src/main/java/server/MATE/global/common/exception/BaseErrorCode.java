@@ -87,6 +87,7 @@ public enum BaseErrorCode implements ErrorCode {
     PAYMENT_003(HttpStatus.BAD_REQUEST, "PAYMENT_003", "결제를 실행할 수 없는 상태입니다."),
     PAYMENT_004(HttpStatus.BAD_REQUEST, "PAYMENT_004", "환불할 수 없는 상태입니다."),
     PAYMENT_005(HttpStatus.BAD_REQUEST, "PAYMENT_005", "토스 계정이 연결되어 있지 않아 결제를 처리할 수 없습니다."),
+    PAYMENT_006(HttpStatus.BAD_REQUEST, "PAYMENT_006", "허용되지 않은 SKU입니다."),
 
 
     // Report
