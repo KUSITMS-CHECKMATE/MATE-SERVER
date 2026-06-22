@@ -178,7 +178,7 @@ public class TestDraft extends BaseEntity {
         if (this.publishedTestId != null && this.status == TestDraftStatus.PUBLISHED) {
             return;
         }
-        if (this.status != TestDraftStatus.PAYMENT_CREATED && this.status != TestDraftStatus.PUBLISH_FAILED) {
+        if (this.status != TestDraftStatus.DRAFT && this.status != TestDraftStatus.PUBLISH_FAILED) {
             throw new BaseException(BaseErrorCode.DRAFT_004);
         }
     }
