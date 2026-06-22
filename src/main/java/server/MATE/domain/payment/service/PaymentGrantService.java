@@ -100,12 +100,13 @@ public class PaymentGrantService {
 
     private LocalDateTime parseApprovedAt(String value) {
         try {
-            return OffsetDateTime.parse(value).toLocalDateTime();
-        } catch (DateTimeParseException e) {
             return LocalDateTime.parse(value);
+        } catch (DateTimeParseException e) {
+            return OffsetDateTime.parse(value).toLocalDateTime();
         }
     }
 
+    @Transactional(readOnly = true)
     public PaymentOrderStatusResponse getOrderStatus(String orderId, Long makerId) {
         TossAccount tossAccount = tossAccountRepository.findByUserId(makerId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_005));
