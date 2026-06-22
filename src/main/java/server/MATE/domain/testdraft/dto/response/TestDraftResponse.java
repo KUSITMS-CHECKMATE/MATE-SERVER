@@ -22,9 +22,6 @@ public record TestDraftResponse(
         JsonNode questionsPayload,
         TestDraftStatus status,
         Long publishedTestId,
-        String orderNo,
-        Integer expectedAmount,
-        String payToken,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -44,9 +41,6 @@ public record TestDraftResponse(
                 questionsPayload,
                 draft.getStatus(),
                 draft.getPublishedTestId(),
-                draft.getOrderNo(),
-                draft.getExpectedAmount(),
-                draft.getPayToken(),
                 draft.getCreatedAt(),
                 draft.getUpdatedAt()
         );

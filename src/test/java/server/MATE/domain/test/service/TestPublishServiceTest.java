@@ -89,7 +89,7 @@ class TestPublishServiceTest {
                                 Map.of("type", "SUBJECTIVE", "title", "질문 제목", "description", "질문 설명")
                         )
                 ))
-                .status(TestDraftStatus.PAYMENT_CREATED)
+                .status(TestDraftStatus.DRAFT)
                 .build();
         ReflectionTestUtils.setField(draft, "id", 10L);
 
@@ -102,7 +102,7 @@ class TestPublishServiceTest {
                 .amount(30000)
                 .paidAmount(30000)
                 .payStatus(PayStatus.PAY_SUCCEEDED)
-                .payMethod(PayMethod.TOSS_MONEY)
+                .payMethod(PayMethod.IN_APP_PURCHASE)
                 .transactionId("tx-1")
                 .isTestPayment(true)
                 .approvedAt(LocalDateTime.parse("2026-05-25T12:00:00"))
@@ -173,7 +173,7 @@ class TestPublishServiceTest {
                 .reward(300)
                 .closedAt(LocalDateTime.parse("2099-05-31T23:59:59"))
                 .questionsPayload(Map.of("questions", List.of(Map.of("type", "SUBJECTIVE", "title", "질문"))))
-                .status(TestDraftStatus.PAYMENT_CREATED)
+                .status(TestDraftStatus.DRAFT)
                 .build();
         ReflectionTestUtils.setField(draft, "id", 10L);
 

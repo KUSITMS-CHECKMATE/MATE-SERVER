@@ -29,35 +29,11 @@ class TestDraftValidatorTest {
     }
 
     @Test
-    @DisplayName("결제 등록 검증은 금액/게시 필수값과 questionsPayload를 함께 검증한다")
-    void validateForPayment_validPayload_returnsRequest() {
-        TestDraft draft = TestDraft.builder()
-                .makerId(1L)
-                .goalPpl(5)
-                .reward(300)
-                .closedAt(java.time.LocalDateTime.now().plusDays(3))
-                .title("제목")
-                .description("설명")
-                .categories(List.of("FOOD"))
-                .questionsPayload(Map.of("questions", List.of(
-                        Map.of("type", "SUBJECTIVE",
-                               "title", "어떤 점이 불편했나요?",
-                               "description", "자유롭게 작성해주세요.")
-                )))
-                .build();
-
-        QuestionCreateRequest result = testDraftValidator.validateForPayment(draft);
-
-        assertThat(result).isNotNull();
-        assertThat(result.questions()).hasSize(1);
-    }
-
-    @Test
     @DisplayName("게시 검증에서 questions 값이 List가 아니면 DRAFT_006")
     void validateForPublish_questionsNotList_throwsDraft006() {
         TestDraft draft = TestDraft.builder()
                 .makerId(1L)
-                .status(server.MATE.domain.testdraft.entity.TestDraftStatus.PAYMENT_CREATED)
+                .status(server.MATE.domain.testdraft.entity.TestDraftStatus.PUBLISH_FAILED)
                 .title("제목")
                 .description("설명")
                 .categories(List.of("FOOD"))
@@ -70,11 +46,11 @@ class TestDraftValidatorTest {
     }
 
     @Test
-    @DisplayName("게시 검증에서 상태가 PAYMENT_CREATED가 아니면 DRAFT_004")
+    @DisplayName("게시 검증에서 상태가 PUBLISHING이면 DRAFT_004")
     void validateForPublish_invalidState_throwsDraft004() {
         TestDraft draft = TestDraft.builder()
                 .makerId(1L)
-                .status(server.MATE.domain.testdraft.entity.TestDraftStatus.DRAFT)
+                .status(server.MATE.domain.testdraft.entity.TestDraftStatus.PUBLISHING)
                 .title("제목")
                 .description("설명")
                 .categories(List.of("FOOD"))
