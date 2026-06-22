@@ -62,8 +62,20 @@ public class Payment extends BaseEntity {
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
 
+    @Column(length = 200)
+    private String refundReason;
+
     public void linkTest(Long testId) {
         this.testId = testId;
+    }
+
+    public void requestRefund(String reason) {
+        this.payStatus = PayStatus.REFUND_PENDING;
+        this.refundReason = reason;
+    }
+
+    public void completeRefund() {
+        this.payStatus = PayStatus.REFUNDED;
     }
 
     @Builder

@@ -14,6 +14,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findByOrderNo(String orderNo);
 
+    Optional<Payment> findByTestId(Long testId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select p
