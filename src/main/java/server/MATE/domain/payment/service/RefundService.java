@@ -7,6 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.payment.entity.PayStatus;
 import server.MATE.domain.payment.entity.Payment;
 import server.MATE.domain.payment.repository.PaymentRepository;
+import server.MATE.global.common.exception.BaseErrorCode;
+import server.MATE.global.common.exception.BaseException;
 
 @Slf4j
 @Service
@@ -30,5 +32,18 @@ public class RefundService {
         payment.requestRefund(reason);
         log.info("환불 요청 완료 - paymentId={}, testId={}, amount={}, reason={}",
                 payment.getId(), testId, payment.getPaidAmount(), reason);
+    }
+
+    @Transactional
+    public void completeRefund(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_001));
+
+        if (payment.getPayStatus() != PayStatus.REFUND_PENDING) {
+            throw new BaseException(BaseErrorCode.PAYMENT_007);
+        }
+
+        payment.completeRefund();
+        log.info("환불 완료 처리 - paymentId={}, orderId={}", payment.getId(), payment.getOrderNo());
     }
 }

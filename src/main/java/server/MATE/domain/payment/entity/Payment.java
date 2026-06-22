@@ -14,7 +14,8 @@ import java.time.LocalDateTime;
 @Table(
         name = "payment",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = "order_no")
+                @UniqueConstraint(columnNames = "order_no"),
+                @UniqueConstraint(columnNames = "test_id")
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -27,6 +28,7 @@ public class Payment extends BaseEntity {
     @Column(nullable = false)
     private Long draftId;
 
+    @Column(name = "test_id")
     private Long testId;
 
     @Column(nullable = false)

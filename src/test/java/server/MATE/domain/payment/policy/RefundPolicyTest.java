@@ -64,10 +64,19 @@ class RefundPolicyTest {
     }
 
     @Test
-    @DisplayName("결과 데이터가 열람된 경우 환불 불가이다")
-    void ineligibleWhenDataViewed() {
+    @DisplayName("PDF/Excel 다운로드된 경우 환불 불가이다")
+    void ineligibleWhenFileDownloaded() {
         server.MATE.domain.test.entity.Test test = testWith(100, 5);
         test.savePdfKey("some-pdf-key");
+
+        assertThat(refundPolicy.isEligibleForRefund(test)).isFalse();
+    }
+
+    @Test
+    @DisplayName("리포트 화면 열람된 경우 환불 불가이다")
+    void ineligibleWhenResultViewed() {
+        server.MATE.domain.test.entity.Test test = testWith(100, 5);
+        test.markResultViewed();
 
         assertThat(refundPolicy.isEligibleForRefund(test)).isFalse();
     }
