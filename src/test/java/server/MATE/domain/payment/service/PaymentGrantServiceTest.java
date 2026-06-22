@@ -42,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -278,6 +279,96 @@ class PaymentGrantServiceTest {
             ArgumentCaptor<Payment> captor = ArgumentCaptor.forClass(Payment.class);
             verify(paymentWriter).save(captor.capture());
             assertThat(captor.getValue().getApprovedAt()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("publish가 실패해도 grant는 true를 반환한다")
+        void returnsTrueEvenWhenPublishFails() {
+            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
+            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
+            when(tossHttpClient.post(any(), any(), any(Consumer.class), eq(IapOrderStatusResponse.class)))
+                    .thenReturn(new IapOrderStatusResponse(ORDER_ID, null, "2025-09-12T16:57:12", IapOrderStatus.PURCHASED, null));
+            when(paymentAmountCalculator.totalAmount(any(Integer.class), any(Integer.class))).thenReturn(5500);
+            Payment saved = savedPayment(200L);
+            when(paymentWriter.save(any())).thenReturn(saved);
+            doThrow(new RuntimeException("publish failed")).when(testPublishService).publish(200L);
+
+            boolean result = paymentGrantService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
+
+            assertThat(result).isTrue();
+            verify(paymentWriter).save(any());
+        }
+    }
+
+    @Nested
+    class RestoreTest {
+
+        @Test
+        @DisplayName("기존 Payment가 있으면 orderId만으로 publish를 재시도한다")
+        void publishesWithOrderIdOnlyWhenPaymentExists() {
+            Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
+            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
+
+            boolean result = paymentGrantService.restore(ORDER_ID, null, MAKER_ID);
+
+            assertThat(result).isTrue();
+            verify(testPublishService).publish(100L);
+            verify(tossHttpClient, never()).post(any(), any(), any(Consumer.class), any());
+        }
+
+        @Test
+        @DisplayName("Payment가 없고 draftId가 null이면 PAYMENT_001 예외를 던진다")
+        void throwsPayment001WhenNoPaymentAndNoDraftId() {
+            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> paymentGrantService.restore(ORDER_ID, null, MAKER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.PAYMENT_001);
+        }
+
+        @Test
+        @DisplayName("Payment가 없지만 draftId가 있으면 Toss 검증 후 저장하고 publish한다")
+        void verifiesAndPublishesWhenNoPaymentButDraftIdProvided() {
+            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
+            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
+            when(tossHttpClient.post(any(), any(), any(Consumer.class), eq(IapOrderStatusResponse.class)))
+                    .thenReturn(new IapOrderStatusResponse(ORDER_ID, null, "2025-09-12T16:57:12", IapOrderStatus.PURCHASED, null));
+            when(paymentAmountCalculator.totalAmount(any(Integer.class), any(Integer.class))).thenReturn(5500);
+            Payment saved = savedPayment(200L);
+            when(paymentWriter.save(any())).thenReturn(saved);
+
+            boolean result = paymentGrantService.restore(ORDER_ID, DRAFT_ID, MAKER_ID);
+
+            assertThat(result).isTrue();
+            verify(paymentWriter).save(any());
+            verify(testPublishService).publish(200L);
+        }
+
+        @Test
+        @DisplayName("restore에서 publish가 실패하면 예외를 전파한다")
+        void propagatesExceptionWhenPublishFailsOnRestore() {
+            Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
+            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
+            doThrow(new RuntimeException("publish failed")).when(testPublishService).publish(100L);
+
+            assertThatThrownBy(() -> paymentGrantService.restore(ORDER_ID, null, MAKER_ID))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("publish failed");
+        }
+
+        @Test
+        @DisplayName("다른 makerId로 복원을 시도하면 COMMON_009 예외를 던진다")
+        void throwsCommon009WhenMakerIdMismatchOnRestore() {
+            Payment existing = existingPayment(100L, 999L, PayStatus.PAY_SUCCEEDED);
+            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> paymentGrantService.restore(ORDER_ID, null, MAKER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.COMMON_009);
         }
     }
 
