@@ -2,5 +2,6 @@ package server.MATE.domain.payment.entity;
 
 public enum PayMethod {
     TOSS_MONEY,
-    CARD
+    CARD,
+    IN_APP_PURCHASE
 }
