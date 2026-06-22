@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.payment.entity.PayMethod;
 import server.MATE.domain.payment.entity.PayStatus;
 import server.MATE.domain.payment.entity.Payment;
+import server.MATE.domain.payment.dto.response.PaymentOrderStatusResponse;
 import server.MATE.domain.payment.policy.PaymentAmountCalculator;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.test.service.TestPublishService;
@@ -89,5 +90,23 @@ public class PaymentGrantService {
 
         testPublishService.publish(payment.getId());
         return true;
+    }
+
+    public PaymentOrderStatusResponse getOrderStatus(String orderId, Long makerId) {
+        TossAccount tossAccount = tossAccountRepository.findByUserId(makerId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_005));
+
+        IapOrderStatusResponse statusResponse = tossHttpClient.post(
+                IAP_ORDER_STATUS_PATH,
+                new IapOrderStatusRequest(orderId),
+                headers -> headers.set("x-toss-user-key", String.valueOf(tossAccount.getTossUserKey())),
+                IapOrderStatusResponse.class
+        );
+
+        return new PaymentOrderStatusResponse(
+                statusResponse.status(),
+                statusResponse.reason(),
+                statusResponse.statusDeterminedAt()
+        );
     }
 }
