@@ -24,7 +24,6 @@ import server.MATE.global.common.exception.BaseException;
 
 @Slf4j
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ReportService {
 
@@ -32,6 +31,7 @@ public class ReportService {
     private final QuestionRepository questionRepository;
     private final ReportRepository reportRepository;
 
+    @Transactional
     public ReportResponse getReport(Long testId, Long userId, Role role) {
         Test test = testRepository.findActiveById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
@@ -67,7 +67,8 @@ public class ReportService {
             }
         }
 
-        // 테스트가 종료됐고 리포트 집계가 끝났다면 리포트를 반환함
+        markResultViewedIfNeeded(test);
+
         List<Report> aggregations = reportRepository.findAllByTestId(testId);
         List<QuestionSummaryItem> questionSummaries = questionRepository.findQuestionSummariesInTest(testId);
 
@@ -111,5 +112,11 @@ public class ReportService {
                 test.getPplCount(),
                 reports
         );
+    }
+
+    private void markResultViewedIfNeeded(Test test) {
+        if (test.getResultViewedAt() == null) {
+            test.markResultViewed();
+        }
     }
 }

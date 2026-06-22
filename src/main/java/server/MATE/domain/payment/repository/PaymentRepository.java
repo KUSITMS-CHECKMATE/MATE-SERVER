@@ -8,9 +8,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
 import server.MATE.domain.payment.entity.Payment;
 
+import java.util.List;
 import java.util.Optional;
 
+import server.MATE.domain.payment.entity.PayStatus;
+
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
+
+    List<Payment> findByPayStatus(PayStatus payStatus);
 
     Optional<Payment> findByOrderNo(String orderNo);
 
