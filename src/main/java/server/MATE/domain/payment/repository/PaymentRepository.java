@@ -8,22 +8,25 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
 import server.MATE.domain.payment.entity.Payment;
 
+import java.util.List;
 import java.util.Optional;
+
+import server.MATE.domain.payment.entity.PayStatus;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
-    Optional<Payment> findByIdAndMakerId(Long id, Long makerId);
+    List<Payment> findByPayStatus(PayStatus payStatus);
 
-    Optional<Payment> findByDraftId(Long draftId);
+    Optional<Payment> findByOrderNo(String orderNo);
 
     Optional<Payment> findByTestId(Long testId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("""
-            select p
-            from Payment p
-            where p.id = :id
-            """)
+    @Query("select p from Payment p where p.testId = :testId")
+    Optional<Payment> findByTestIdForUpdate(@Param("testId") Long testId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Payment p where p.id = :id")
     Optional<Payment> findByIdForUpdate(@Param("id") Long id);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

@@ -33,12 +33,15 @@ gh auth login
 
 Claude가 자동으로 이슈 템플릿에 맞게 생성해줘.
 
-### 이슈 유형별 라벨
-| 유형 | 라벨 | 제목 prefix |
-|------|------|-------------|
-| 버그 | `fix` | `fix: ` |
-| 기능 | `feat` | `feat: ` |
-| 작업 | - | `chore:` / `refactor:` 등 |
+### ⚠️ 필수 규칙: 이슈 생성 전 반드시 템플릿 파일을 읽어야 한다
+
+이슈를 생성하기 전에 **반드시** 아래 파일을 Read 도구로 읽고, 그 구조를 그대로 body에 사용해야 한다. 절대로 기억이나 추측으로 템플릿을 작성하지 않는다.
+
+| 유형 | 템플릿 파일 | 라벨 | 제목 prefix |
+|------|------------|------|-------------|
+| 버그 | `.github/ISSUE_TEMPLATE/bug_report.md` | `fix` | `fix: ` |
+| 기능 | `.github/ISSUE_TEMPLATE/feature_request.md` | `feat` | `feat: ` |
+| 작업 | `.github/ISSUE_TEMPLATE/task.md` | - | `chore:` / `refactor:` 등 |
 
 ---
 
@@ -49,6 +52,10 @@ Claude가 자동으로 이슈 템플릿에 맞게 생성해줘.
 > "현재 브랜치 기준으로 dev 브랜치로의 PR 생성해줘"
 
 - base 브랜치: `dev`
+
+### ⚠️ 필수 규칙: PR 생성 전 반드시 템플릿 파일을 읽어야 한다
+
+PR을 생성하기 전에 **반드시** `.github/pull_request_template.md` 파일을 Read 도구로 읽고, 그 구조를 그대로 body에 사용해야 한다. 절대로 기억이나 추측으로 템플릿을 작성하지 않는다.
 
 ---
 

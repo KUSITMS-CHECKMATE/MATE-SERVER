@@ -16,24 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestDraftValidationTest {
 
-    @Test
-    @DisplayName("PUBLISHED 상태에서 validatePaymentState 호출 시 DRAFT_003")
-    void validatePaymentState_published_throwsDraft003() {
-        TestDraft draft = TestDraft.builder().makerId(1L).status(TestDraftStatus.PUBLISHED).build();
-
-        BaseException ex = assertThrows(BaseException.class, draft::validatePaymentState);
-        assertThat(ex.getErrorCode()).isEqualTo(BaseErrorCode.DRAFT_003);
-    }
-
-    @Test
-    @DisplayName("PUBLISHING 상태에서 validatePaymentState 호출 시 DRAFT_003")
-    void validatePaymentState_publishing_throwsDraft003() {
-        TestDraft draft = TestDraft.builder().makerId(1L).status(TestDraftStatus.PUBLISHING).build();
-
-        BaseException ex = assertThrows(BaseException.class, draft::validatePaymentState);
-        assertThat(ex.getErrorCode()).isEqualTo(BaseErrorCode.DRAFT_003);
-    }
-
    @Test
     @DisplayName("goalPpl 없으면 DRAFT_005")
     void validateAmountFields_missingGoalPpl_throwsDraft005() {
@@ -223,9 +205,9 @@ class TestDraftValidationTest {
     }
 
     @Test
-    @DisplayName("PAYMENT_CREATED 상태이면 예외 없음")
-    void validatePublishState_paymentCreated_doesNotThrow() {
-        TestDraft draft = TestDraft.builder().makerId(1L).status(TestDraftStatus.PAYMENT_CREATED).build();
+    @DisplayName("DRAFT 상태이면 예외 없음")
+    void validatePublishState_draftStatus_doesNotThrow() {
+        TestDraft draft = TestDraft.builder().makerId(1L).status(TestDraftStatus.DRAFT).build();
         assertThatCode(draft::validatePublishState).doesNotThrowAnyException();
     }
 
@@ -237,18 +219,18 @@ class TestDraftValidationTest {
     }
 
     @Test
-    @DisplayName("DRAFT 상태이면 DRAFT_004")
-    void validatePublishState_draftStatus_throwsDraft004() {
-        TestDraft draft = TestDraft.builder().makerId(1L).status(TestDraftStatus.DRAFT).build();
+    @DisplayName("PUBLISHING 상태이면 DRAFT_004")
+    void validatePublishState_publishing_throwsDraft004() {
+        TestDraft draft = TestDraft.builder().makerId(1L).status(TestDraftStatus.PUBLISHING).build();
 
         BaseException ex = assertThrows(BaseException.class, draft::validatePublishState);
         assertThat(ex.getErrorCode()).isEqualTo(BaseErrorCode.DRAFT_004);
     }
 
     @Test
-    @DisplayName("PAYMENT_FAILED 상태이면 DRAFT_004")
-    void validatePublishState_paymentFailed_throwsDraft004() {
-        TestDraft draft = TestDraft.builder().makerId(1L).status(TestDraftStatus.PAYMENT_FAILED).build();
+    @DisplayName("EXPIRED 상태이면 DRAFT_004")
+    void validatePublishState_expired_throwsDraft004() {
+        TestDraft draft = TestDraft.builder().makerId(1L).status(TestDraftStatus.EXPIRED).build();
 
         BaseException ex = assertThrows(BaseException.class, draft::validatePublishState);
         assertThat(ex.getErrorCode()).isEqualTo(BaseErrorCode.DRAFT_004);
