@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.payment.entity.PayMethod;
 import server.MATE.domain.payment.entity.PayStatus;
 import server.MATE.domain.payment.entity.Payment;
@@ -73,7 +72,6 @@ public class PaymentGrantService {
      * Payment가 없으면 draftId를 사용해 결제 검증부터 수행한다.
      * publish 실패 시 예외를 전파해서 클라이언트가 재시도를 판단한다.
      */
-    @Transactional
     public boolean restore(String orderId, Long draftId, Long makerId) {
         Payment payment = resolvePayment(orderId, draftId, makerId);
         if (payment == null) {
@@ -188,7 +186,6 @@ public class PaymentGrantService {
         }
     }
 
-    @Transactional(readOnly = true)
     public PaymentOrderStatusResponse getOrderStatus(String orderId, Long makerId) {
         paymentRepository.findByOrderNo(orderId).ifPresent(payment -> {
             if (!payment.getMakerId().equals(makerId)) {
