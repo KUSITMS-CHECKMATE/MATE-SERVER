@@ -24,6 +24,7 @@ import server.MATE.global.common.exception.BaseException;
 
 @Slf4j
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ReportService {
 
