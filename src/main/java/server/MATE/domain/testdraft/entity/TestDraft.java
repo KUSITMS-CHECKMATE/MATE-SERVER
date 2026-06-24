@@ -26,12 +26,7 @@ import java.util.Map;
 
 @Getter
 @Entity
-@Table(
-        name = "test_draft",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = "order_no")
-        }
-)
+@Table(name = "test_draft")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class TestDraft extends BaseEntity {
 
@@ -78,13 +73,6 @@ public class TestDraft extends BaseEntity {
 
     private Long publishedTestId;
 
-    @Column(name = "order_no", length = 50)
-    private String orderNo;
-
-    private Integer expectedAmount;
-
-    private String payToken;
-
     public void update(String title,
                        String description,
                        String serviceName,
@@ -127,17 +115,6 @@ public class TestDraft extends BaseEntity {
         }
     }
 
-    public void markPaymentCreated(String orderNo, Integer expectedAmount, String payToken) {
-        this.orderNo = orderNo;
-        this.expectedAmount = expectedAmount;
-        this.payToken = payToken;
-        this.status = TestDraftStatus.PAYMENT_CREATED;
-    }
-
-    public void markPaymentFailed() {
-        this.status = TestDraftStatus.PAYMENT_FAILED;
-    }
-
     public void markPublishing() {
         this.status = TestDraftStatus.PUBLISHING;
     }
@@ -149,12 +126,6 @@ public class TestDraft extends BaseEntity {
 
     public void markPublishFailed() {
         this.status = TestDraftStatus.PUBLISH_FAILED;
-    }
-
-    public void validatePaymentState() {
-        if (this.status == TestDraftStatus.PUBLISHED || this.status == TestDraftStatus.PUBLISHING) {
-            throw new BaseException(BaseErrorCode.DRAFT_003);
-        }
     }
 
     public void validateAmountFields() {
@@ -189,7 +160,7 @@ public class TestDraft extends BaseEntity {
         if (this.publishedTestId != null && this.status == TestDraftStatus.PUBLISHED) {
             return;
         }
-        if (this.status != TestDraftStatus.PAYMENT_CREATED && this.status != TestDraftStatus.PUBLISH_FAILED) {
+        if (this.status != TestDraftStatus.DRAFT && this.status != TestDraftStatus.PUBLISH_FAILED) {
             throw new BaseException(BaseErrorCode.DRAFT_004);
         }
     }
@@ -223,10 +194,7 @@ public class TestDraft extends BaseEntity {
                      LocalDateTime closedAt,
                      Map<String, Object> questionsPayload,
                      TestDraftStatus status,
-                     Long publishedTestId,
-                     String orderNo,
-                     Integer expectedAmount,
-                     String payToken) {
+                     Long publishedTestId) {
         this.makerId = makerId;
         this.title = title;
         this.description = description;
@@ -244,8 +212,5 @@ public class TestDraft extends BaseEntity {
         this.questionsPayload = questionsPayload;
         this.status = status == null ? TestDraftStatus.DRAFT : status;
         this.publishedTestId = publishedTestId;
-        this.orderNo = orderNo;
-        this.expectedAmount = expectedAmount;
-        this.payToken = payToken;
     }
 }

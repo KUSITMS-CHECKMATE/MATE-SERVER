@@ -1,6 +1,7 @@
 package server.MATE.toss.config;
 
 import java.time.Duration;
+import java.util.List;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -8,23 +9,23 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record TossProperties(
         boolean enabled,
         String baseUrl,
-        String paymentBaseUrl,
         Timeout timeout,
-        Ssl ssl
+        Ssl ssl,
+        Iap iap
 ) {
 
     public TossProperties {
         if (baseUrl == null || baseUrl.isBlank()) {
             baseUrl = "https://apps-in-toss-api.toss.im";
         }
-        if (paymentBaseUrl == null || paymentBaseUrl.isBlank()) {
-            paymentBaseUrl = "https://pay-apps-in-toss-api.toss.im";
-        }
         if (timeout == null) {
             timeout = new Timeout(null, null);
         }
         if (ssl == null) {
             ssl = new Ssl(false, null);
+        }
+        if (iap == null) {
+            iap = new Iap(List.of());
         }
     }
 
@@ -51,6 +52,14 @@ public record TossProperties(
         public Ssl {
             if (bundle == null || bundle.isBlank()) {
                 bundle = "toss";
+            }
+        }
+    }
+
+    public record Iap(List<String> allowedSkus) {
+        public Iap {
+            if (allowedSkus == null) {
+                allowedSkus = List.of();
             }
         }
     }

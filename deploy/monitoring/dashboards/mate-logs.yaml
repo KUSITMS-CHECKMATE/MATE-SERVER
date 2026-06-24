@@ -51,7 +51,7 @@ data:
           "datasource": { "type": "loki", "uid": "loki" },
           "targets": [
             {
-              "expr": "sum by (namespace) (count_over_time({namespace=\"$namespace\"} | json | `log.level`=\"ERROR\" [1m]))",
+              "expr": "sum by (namespace) (count_over_time({namespace=\"$namespace\"} | json | log_level=\"ERROR\" [1m]))",
               "legendFormat": "{{namespace}}",
               "refId": "A"
             }
@@ -72,7 +72,7 @@ data:
           },
           "targets": [
             {
-              "expr": "{namespace=\"$namespace\"} | json | `log.level`=\"$level\"",
+              "expr": "{namespace=\"$namespace\"} | json | log_level=\"$level\"",
               "refId": "A"
             }
           ]
@@ -90,7 +90,7 @@ data:
           },
           "targets": [
             {
-              "expr": "{namespace=\"$namespace\"} | json | `error.type` != \"\"",
+              "expr": "{namespace=\"$namespace\"} | json | error_type != \"\"",
               "refId": "A"
             }
           ]
@@ -121,8 +121,8 @@ data:
           "datasource": { "type": "loki", "uid": "loki" },
           "targets": [
             {
-              "expr": "sum by (`log.level`) (count_over_time({namespace=\"$namespace\"} | json [1h]))",
-              "legendFormat": "{{log.level}}",
+              "expr": "sum by (log_level) (count_over_time({namespace=\"$namespace\"} | json [1h]))",
+              "legendFormat": "{{log_level}}",
               "refId": "A"
             }
           ]
@@ -140,7 +140,7 @@ data:
           },
           "targets": [
             {
-              "expr": "{namespace=\"$namespace\"} | json | `log.level`=\"WARN\"",
+              "expr": "{namespace=\"$namespace\"} | json | log_level=\"WARN\"",
               "refId": "A"
             }
           ]

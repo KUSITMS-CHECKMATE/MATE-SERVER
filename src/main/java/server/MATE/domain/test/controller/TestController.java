@@ -137,6 +137,39 @@ public class TestController {
         return ResponseEntity.ok(ApiResponse.ok("테스트 상태가 변경되었습니다.", response));
     }
 
+    @Operation(
+            summary = "테스트 수동 종료",
+            description = """
+                    메이커가 진행 중인 테스트를 직접 종료합니다.<br>
+                    수동 종료 시 달성률과 관계없이 환불이 불가능합니다.<br>
+                    달성률 20% 이상이면 리포트 집계가 시작됩니다.
+                    """
+    )
+    @PostMapping("/{testId}/close")
+    public ResponseEntity<ApiResponse<Void>> closeTest(
+            @PathVariable Long testId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        testService.closeTestByMaker(testId, authenticatedUser.getId());
+        return ResponseEntity.ok(ApiResponse.ok("테스트를 종료했습니다.", null));
+    }
+
+    @Operation(
+            summary = "환불 포기 (현재 인원으로 진행)",
+            description = """
+                    메이커가 목표 미달 상태에서도 테스트 진행 의사를 표시합니다.<br>
+                    이 선택 이후에는 달성률 20% 미만으로 자동 종료되더라도 환불이 불가능합니다.
+                    """
+    )
+    @PostMapping("/{testId}/waive-refund")
+    public ResponseEntity<ApiResponse<Void>> waiveRefund(
+            @PathVariable Long testId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        testService.waiveRefund(testId, authenticatedUser.getId());
+        return ResponseEntity.ok(ApiResponse.ok("환불 포기가 처리되었습니다.", null));
+    }
+
     @Operation(summary = "테스트 찜하기",
             description = "테스트를 찜하고 해당 테스트의 찜 개수를 1 증가시킵니다. HM_01 화면에 해당하는 api 입니다. 이미 찜한 테스트면 현재 상태를 반환합니다.")
     @PostMapping("/{testId}/likes")

@@ -37,17 +37,6 @@ public class TossClientConfig {
         return buildWebClient(builder, sslBundles, properties, properties.baseUrl());
     }
 
-    @Bean
-    @Qualifier("tossPaymentWebClient")
-    @ConditionalOnProperty(prefix = "toss.api", name = "enabled", havingValue = "true")
-    public WebClient tossPaymentWebClient(
-            WebClient.Builder builder,
-            SslBundles sslBundles,
-            TossProperties properties
-    ) {
-        return buildWebClient(builder, sslBundles, properties, properties.paymentBaseUrl());
-    }
-
     private WebClient buildWebClient(
             WebClient.Builder builder,
             SslBundles sslBundles,

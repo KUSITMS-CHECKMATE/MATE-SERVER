@@ -19,13 +19,6 @@ public class TestDraftValidator {
     private final ObjectMapper objectMapper;
     private final Validator validator;
 
-    public QuestionCreateRequest validateForPayment(TestDraft draft) {
-        draft.validatePaymentState();
-        draft.validateAmountFields();
-        draft.validatePublishableFields();
-        return resolveQuestionsPayload(draft);
-    }
-
     public QuestionCreateRequest validateForPublish(TestDraft draft) {
         draft.validatePublishState();
         draft.validatePublishableFields();
