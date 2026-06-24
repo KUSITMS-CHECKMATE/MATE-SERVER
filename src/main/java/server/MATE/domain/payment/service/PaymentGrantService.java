@@ -73,6 +73,7 @@ public class PaymentGrantService {
      * Payment가 없으면 draftId를 사용해 결제 검증부터 수행한다.
      * publish 실패 시 예외를 전파해서 클라이언트가 재시도를 판단한다.
      */
+    @Transactional
     public boolean restore(String orderId, Long draftId, Long makerId) {
         Payment payment = resolvePayment(orderId, draftId, makerId);
         if (payment == null) {
@@ -178,12 +179,23 @@ public class PaymentGrantService {
         try {
             return LocalDateTime.parse(value);
         } catch (DateTimeParseException e) {
-            return OffsetDateTime.parse(value).toLocalDateTime();
+            try {
+                return OffsetDateTime.parse(value).toLocalDateTime();
+            } catch (DateTimeParseException ex) {
+                log.warn("Unrecognized approvedAt format='{}', falling back to now", value);
+                return LocalDateTime.now();
+            }
         }
     }
 
     @Transactional(readOnly = true)
     public PaymentOrderStatusResponse getOrderStatus(String orderId, Long makerId) {
+        paymentRepository.findByOrderNo(orderId).ifPresent(payment -> {
+            if (!payment.getMakerId().equals(makerId)) {
+                throw new BaseException(BaseErrorCode.COMMON_009);
+            }
+        });
+
         TossAccount tossAccount = tossAccountRepository.findByUserId(makerId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_005));
 
