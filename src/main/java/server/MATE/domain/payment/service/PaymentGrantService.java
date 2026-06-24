@@ -26,6 +26,7 @@ import server.MATE.toss.dto.response.IapOrderStatusResponse;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 
 @Slf4j
@@ -35,6 +36,7 @@ import java.time.format.DateTimeParseException;
 public class PaymentGrantService {
 
     private static final String IAP_ORDER_STATUS_PATH = "/api-partner/v1/apps-in-toss/order/get-order-status";
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
     private final TossHttpClient tossHttpClient;
     private final TossProperties tossProperties;
@@ -172,16 +174,16 @@ public class PaymentGrantService {
 
     private LocalDateTime parseApprovedAt(String value) {
         if (value == null || value.isBlank()) {
-            return LocalDateTime.now();
+            return LocalDateTime.now(KST);
         }
         try {
             return LocalDateTime.parse(value);
         } catch (DateTimeParseException e) {
             try {
-                return OffsetDateTime.parse(value).toLocalDateTime();
+                return OffsetDateTime.parse(value).atZoneSameInstant(KST).toLocalDateTime();
             } catch (DateTimeParseException ex) {
                 log.warn("Unrecognized approvedAt format='{}', falling back to now", value);
-                return LocalDateTime.now();
+                return LocalDateTime.now(KST);
             }
         }
     }
