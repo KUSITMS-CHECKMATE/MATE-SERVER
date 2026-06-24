@@ -134,6 +134,7 @@ public class TestService {
         return new TestLikeResponse(test.getId(), false, test.getLikeCount());
     }
 
+    @Transactional
     public void closeTestByMaker(Long testId, Long makerId) {
         Test test = testRepository.findByIdForUpdate(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
@@ -148,6 +149,7 @@ public class TestService {
         testCloseProcessor.processClose(test);
     }
 
+    @Transactional
     public void waiveRefund(Long testId, Long makerId) {
         Test test = testRepository.findByIdForUpdate(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
