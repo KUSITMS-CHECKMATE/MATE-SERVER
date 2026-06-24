@@ -22,11 +22,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByTestId(Long testId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("""
-            select p
-            from Payment p
-            where p.id = :id
-            """)
+    @Query("select p from Payment p where p.testId = :testId")
+    Optional<Payment> findByTestIdForUpdate(@Param("testId") Long testId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Payment p where p.id = :id")
     Optional<Payment> findByIdForUpdate(@Param("id") Long id);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

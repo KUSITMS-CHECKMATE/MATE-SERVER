@@ -19,7 +19,7 @@ public class RefundService {
 
     @Transactional
     public void requestRefund(Long testId, String reason) {
-        Payment payment = paymentRepository.findByTestId(testId).orElse(null);
+        Payment payment = paymentRepository.findByTestIdForUpdate(testId).orElse(null);
         if (payment == null) {
             log.warn("환불 대상 결제 없음 - testId={}", testId);
             return;
@@ -36,7 +36,7 @@ public class RefundService {
 
     @Transactional
     public void completeRefund(Long paymentId) {
-        Payment payment = paymentRepository.findById(paymentId)
+        Payment payment = paymentRepository.findByIdForUpdate(paymentId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_001));
 
         if (payment.getPayStatus() != PayStatus.REFUND_PENDING) {
