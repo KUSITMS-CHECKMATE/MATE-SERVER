@@ -13,11 +13,11 @@ import server.MATE.toss.gateway.TossPromotionGateway;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class MockPromotionService {
+public class PromotionService {
 
-    private static final String MOCK_PROMOTION_ERROR_CODE_GATEWAY = "MOCK_PROMOTION_GATEWAY_ERROR";
-    private static final String MOCK_PROMOTION_ERROR_CODE_EXECUTION_FAILED = "MOCK_PROMOTION_EXECUTION_FAILED";
-    private static final String MOCK_PROMOTION_ERROR_REASON_EXECUTION_FAILED = "Mock promotion execution result is FAILED.";
+    private static final String ERROR_CODE_GATEWAY = "PROMOTION_GATEWAY_ERROR";
+    private static final String ERROR_CODE_EXECUTION_FAILED = "PROMOTION_EXECUTION_FAILED";
+    private static final String ERROR_REASON_EXECUTION_FAILED = "Promotion execution result is FAILED.";
 
     private final PromotionPrepareService promotionPrepareService;
     private final PromotionIssueStateService promotionIssueStateService;
@@ -30,7 +30,7 @@ public class MockPromotionService {
                 promotionPrepareService.prepare(participationId, testId, testerId, rewardAmount);
 
         if (preparation.skipped()) {
-            log.debug("MOCK_PROMOTION skipped. participationId={}, testId={}, testerId={}",
+            log.debug("PROMOTION skipped. participationId={}, testId={}, testerId={}",
                     participationId, testId, testerId);
             return;
         }
@@ -40,7 +40,7 @@ public class MockPromotionService {
                     preparation.errorCode(),
                     preparation.errorReason()
             );
-            log.warn("MOCK_PROMOTION preparation failed. participationId={}, testId={}, testerId={}, code={}",
+            log.warn("PROMOTION preparation failed. participationId={}, testId={}, testerId={}, code={}",
                     participationId, testId, testerId, preparation.errorCode());
             return;
         }
@@ -54,7 +54,7 @@ public class MockPromotionService {
                     preparation.promotionCode(),
                     keyResponse.key()
             );
-            log.info("MOCK_PROMOTION key issued. participationId={}, rewardId={}",
+            log.info("PROMOTION key issued. participationId={}, rewardId={}",
                     participationId, preparation.rewardId());
 
             tossPromotionGateway.executePromotion(new TossPromotionExecuteRequest(
@@ -64,7 +64,7 @@ public class MockPromotionService {
                     preparation.rewardAmount()
             ));
             promotionExecuteStateService.markExecuted(preparation.rewardId());
-            log.info("MOCK_PROMOTION execute requested. participationId={}, rewardId={}",
+            log.info("PROMOTION execute requested. participationId={}, rewardId={}",
                     participationId, preparation.rewardId());
 
             var result = tossPromotionGateway.getExecutionResult(new TossPromotionResultRequest(
@@ -75,40 +75,40 @@ public class MockPromotionService {
 
             if (result.status() == TossPromotionExecutionStatus.SUCCESS) {
                 promotionExecuteStateService.markSucceeded(preparation.rewardId());
-                log.info("MOCK_PROMOTION succeeded. participationId={}, rewardId={}",
+                log.info("PROMOTION succeeded. participationId={}, rewardId={}",
                         participationId, preparation.rewardId());
                 return;
             }
             if (result.status() == TossPromotionExecutionStatus.PENDING) {
                 promotionExecuteStateService.markPending(preparation.rewardId());
-                log.info("MOCK_PROMOTION pending. participationId={}, rewardId={}",
+                log.info("PROMOTION pending. participationId={}, rewardId={}",
                         participationId, preparation.rewardId());
                 return;
             }
 
             promotionFailureStateService.markFailed(
                     preparation.rewardId(),
-                    MOCK_PROMOTION_ERROR_CODE_EXECUTION_FAILED,
-                    MOCK_PROMOTION_ERROR_REASON_EXECUTION_FAILED
+                    ERROR_CODE_EXECUTION_FAILED,
+                    ERROR_REASON_EXECUTION_FAILED
             );
-            log.warn("MOCK_PROMOTION failed by result. participationId={}, rewardId={}",
+            log.warn("PROMOTION failed by result. participationId={}, rewardId={}",
                     participationId, preparation.rewardId());
         } catch (TossApiException e) {
             promotionFailureStateService.markFailed(
                     preparation.rewardId(),
-                    "MOCK_" + e.getErrorCode().getCode(),
+                    e.getErrorCode().getCode(),
                     e.getMessage()
             );
-            log.warn("MOCK_PROMOTION gateway failed with toss exception. participationId={}, code={}",
+            log.warn("PROMOTION gateway failed with toss exception. participationId={}, code={}",
                     participationId, e.getErrorCode().getCode(), e);
             throw e;
         } catch (RuntimeException e) {
             promotionFailureStateService.markFailed(
                     preparation.rewardId(),
-                    MOCK_PROMOTION_ERROR_CODE_GATEWAY,
+                    ERROR_CODE_GATEWAY,
                     e.getMessage()
             );
-            log.warn("MOCK_PROMOTION gateway failed. participationId={}", participationId, e);
+            log.warn("PROMOTION gateway failed. participationId={}", participationId, e);
             throw e;
         }
     }

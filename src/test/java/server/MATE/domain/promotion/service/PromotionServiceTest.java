@@ -20,7 +20,7 @@ import server.MATE.toss.dto.response.TossPromotionResultResponse;
 import server.MATE.toss.gateway.TossPromotionGateway;
 
 @ExtendWith(MockitoExtension.class)
-class MockPromotionServiceTest {
+class PromotionServiceTest {
 
     @Mock
     private PromotionPrepareService promotionPrepareService;
@@ -37,11 +37,11 @@ class MockPromotionServiceTest {
     @Mock
     private TossPromotionGateway tossPromotionGateway;
 
-    private MockPromotionService mockPromotionService;
+    private PromotionService promotionService;
 
     @BeforeEach
     void setUp() {
-        mockPromotionService = new MockPromotionService(
+        promotionService = new PromotionService(
                 promotionPrepareService,
                 promotionIssueStateService,
                 promotionExecuteStateService,
@@ -62,7 +62,7 @@ class MockPromotionServiceTest {
         given(tossPromotionGateway.getExecutionResult(any(TossPromotionResultRequest.class)))
                 .willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.SUCCESS));
 
-        mockPromotionService.grant(10L, 20L, 30L, 300);
+        promotionService.grant(10L, 20L, 30L, 300);
 
         verify(promotionIssueStateService).markKeyIssued(1L, "promo-answer", "reward-key");
         verify(promotionExecuteStateService).markExecuted(1L);
@@ -75,7 +75,7 @@ class MockPromotionServiceTest {
         given(promotionPrepareService.prepare(10L, 20L, 30L, 300))
                 .willReturn(PromotionPrepareService.PromotionPreparation.skip());
 
-        mockPromotionService.grant(10L, 20L, 30L, 300);
+        promotionService.grant(10L, 20L, 30L, 300);
 
         verify(promotionPrepareService).prepare(10L, 20L, 30L, 300);
     }
@@ -90,7 +90,7 @@ class MockPromotionServiceTest {
                         "연결된 토스 계정을 찾을 수 없습니다."
                 ));
 
-        mockPromotionService.grant(10L, 20L, 30L, 300);
+        promotionService.grant(10L, 20L, 30L, 300);
 
         verify(promotionFailureStateService).markFailed(
                 1L,
@@ -111,7 +111,7 @@ class MockPromotionServiceTest {
         given(tossPromotionGateway.getExecutionResult(any(TossPromotionResultRequest.class)))
                 .willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.PENDING));
 
-        mockPromotionService.grant(10L, 20L, 30L, 300);
+        promotionService.grant(10L, 20L, 30L, 300);
 
         verify(promotionExecuteStateService).markPending(1L);
     }
