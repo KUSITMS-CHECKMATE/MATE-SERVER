@@ -1,17 +1,26 @@
 package server.MATE.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 
 import java.time.Duration;
 
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import server.MATE.domain.promotion.entity.PromotionRewardStatus;
+import server.MATE.toss.dto.response.TossPromotionExecuteResponse;
+import server.MATE.toss.dto.response.TossPromotionExecutionStatus;
+import server.MATE.toss.dto.response.TossPromotionKeyResponse;
+import server.MATE.toss.dto.response.TossPromotionResultResponse;
+import server.MATE.toss.gateway.TossPromotionGateway;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -22,8 +31,18 @@ import server.MATE.domain.promotion.entity.PromotionRewardStatus;
 })
 class QuestionAnswerPromotionIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
+    @MockitoBean
+    TossPromotionGateway tossPromotionGateway;
+
+    @BeforeEach
+    void setUpGateway() {
+        given(tossPromotionGateway.getKey(any())).willReturn(new TossPromotionKeyResponse("test-key"));
+        given(tossPromotionGateway.executePromotion(any())).willReturn(new TossPromotionExecuteResponse("test-key"));
+        given(tossPromotionGateway.getExecutionResult(any())).willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.SUCCESS));
+    }
+
     @Test
-    @DisplayName("응답 등록 후 linked toss account가 있으면 mock promotion 지급 row가 성공 상태로 저장된다")
+    @DisplayName("응답 등록 후 linked toss account가 있으면 promotion 지급 row가 성공 상태로 저장된다")
     void submitsAnswerAndCreatesSucceededPromotionReward() throws Exception {
         TestActors actors = createActors();
         linkTossAccount(usersRepository.findById(actors.testerId()).orElseThrow(), 777L);
