@@ -1,0 +1,18 @@
+{
+  "title": "LOADTEST_DRAFT_소형",
+  "description": "부하테스트용 소형 draft입니다.",
+  "goalPpl": 50,
+  "reward": 1000,
+  "closedAt": "2026-12-31",
+  "questions": [
+    {
+      "type": "SCALE",
+      "sequence": 1,
+      "title": "전반적인 만족도는?",
+      "description": "1~5점으로 응답해주세요.",
+      "minLabel": "매우 불만족",
+      "maxLabel": "매우 만족",
+      "range": 5
+    }
+  ]
+}

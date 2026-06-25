@@ -1,0 +1,207 @@
+{
+  "title": "LOADTEST_DRAFT_대형",
+  "description": "부하테스트용 대형 draft. 대용량 payload autosave 성능 측정용.",
+  "goalPpl": 200,
+  "reward": 5000,
+  "closedAt": "2026-12-31",
+  "questions": [
+    {
+      "type": "SCALE",
+      "sequence": 1,
+      "title": "[대형] 질문 01 - 척도",
+      "description": "설명",
+      "minLabel": "낮음",
+      "maxLabel": "높음",
+      "range": 5
+    },
+    {
+      "type": "SUBJECTIVE",
+      "sequence": 2,
+      "title": "[대형] 질문 02 - 주관식",
+      "description": "설명"
+    },
+    {
+      "type": "OBJECTIVE",
+      "sequence": 3,
+      "title": "[대형] 질문 03 - 객관식",
+      "description": "설명",
+      "isDuplicate": false,
+      "isOther": true,
+      "options": [
+        {
+          "content": "옵션 A",
+          "sequence": 1
+        },
+        {
+          "content": "옵션 B",
+          "sequence": 2
+        },
+        {
+          "content": "옵션 C",
+          "sequence": 3
+        },
+        {
+          "content": "옵션 D",
+          "sequence": 4
+        },
+        {
+          "content": "옵션 E",
+          "sequence": 5
+        },
+        {
+          "content": "기타",
+          "sequence": 6
+        }
+      ]
+    },
+    {
+      "type": "AB_TEST",
+      "sequence": 4,
+      "title": "[대형] 질문 04 - AB",
+      "description": "설명"
+    },
+    {
+      "type": "SCALE",
+      "sequence": 5,
+      "title": "[대형] 질문 05 - 척도",
+      "description": "설명",
+      "minLabel": "최저",
+      "maxLabel": "최고",
+      "range": 7
+    },
+    {
+      "type": "SUBJECTIVE",
+      "sequence": 6,
+      "title": "[대형] 질문 06 - 주관식",
+      "description": "설명"
+    },
+    {
+      "type": "OBJECTIVE",
+      "sequence": 7,
+      "title": "[대형] 질문 07 - 객관식",
+      "description": "설명",
+      "isDuplicate": true,
+      "isOther": false,
+      "options": [
+        {
+          "content": "항목 1",
+          "sequence": 1
+        },
+        {
+          "content": "항목 2",
+          "sequence": 2
+        },
+        {
+          "content": "항목 3",
+          "sequence": 3
+        },
+        {
+          "content": "항목 4",
+          "sequence": 4
+        }
+      ]
+    },
+    {
+      "type": "SUBJECTIVE",
+      "sequence": 8,
+      "title": "[대형] 질문 08 - 주관식",
+      "description": "설명"
+    },
+    {
+      "type": "SCALE",
+      "sequence": 9,
+      "title": "[대형] 질문 09 - 척도",
+      "description": "설명",
+      "minLabel": "전혀 아님",
+      "maxLabel": "매우 그러함",
+      "range": 5
+    },
+    {
+      "type": "OBJECTIVE",
+      "sequence": 10,
+      "title": "[대형] 질문 10 - 객관식",
+      "description": "설명",
+      "isDuplicate": false,
+      "isOther": false,
+      "options": [
+        {
+          "content": "선택지 가",
+          "sequence": 1
+        },
+        {
+          "content": "선택지 나",
+          "sequence": 2
+        },
+        {
+          "content": "선택지 다",
+          "sequence": 3
+        }
+      ]
+    },
+    {
+      "type": "AB_TEST",
+      "sequence": 11,
+      "title": "[대형] 질문 11 - AB",
+      "description": "설명"
+    },
+    {
+      "type": "SUBJECTIVE",
+      "sequence": 12,
+      "title": "[대형] 질문 12 - 주관식",
+      "description": "설명"
+    },
+    {
+      "type": "SCALE",
+      "sequence": 13,
+      "title": "[대형] 질문 13 - 척도",
+      "description": "설명",
+      "minLabel": "1",
+      "maxLabel": "10",
+      "range": 10
+    },
+    {
+      "type": "OBJECTIVE",
+      "sequence": 14,
+      "title": "[대형] 질문 14 - 객관식",
+      "description": "설명",
+      "isDuplicate": true,
+      "isOther": true,
+      "options": [
+        {
+          "content": "A",
+          "sequence": 1
+        },
+        {
+          "content": "B",
+          "sequence": 2
+        },
+        {
+          "content": "C",
+          "sequence": 3
+        },
+        {
+          "content": "D",
+          "sequence": 4
+        },
+        {
+          "content": "E",
+          "sequence": 5
+        },
+        {
+          "content": "F",
+          "sequence": 6
+        },
+        {
+          "content": "기타",
+          "sequence": 7
+        }
+      ]
+    },
+    {
+      "type": "SUBJECTIVE",
+      "sequence": 15,
+      "title": "[대형] 질문 15 - 주관식 마지막",
+      "description": "마지막 질문입니다."
+    }
+  ]
+}
