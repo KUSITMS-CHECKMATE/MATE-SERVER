@@ -10,9 +10,9 @@
  *   "questions": {
  *     "hotTestId": 123,
  *     "distributedPool": [124, 125, 126],
- *     "setsA": [10문항 testId, ...],
- *     "setsB": [30문항 testId, ...],
- *     "setsC": [100문항 testId, ...]
+ *     "setsA": [7문항 testId, ...],
+ *     "setsB": [28문항 testId, ...],
+ *     "setsC": [98문항 testId, ...]
  *   },
  *   "answers": {
  *     "contention": {
