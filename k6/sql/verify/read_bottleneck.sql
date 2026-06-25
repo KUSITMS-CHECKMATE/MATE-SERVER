@@ -14,7 +14,7 @@ SELECT ARRAY_AGG(id ORDER BY title) FROM test WHERE title LIKE 'LT_DIST_%';
 
 -- questions.hotTestId
 SELECT '=== questions.hotTestId ===' AS section;
-SELECT id FROM test WHERE title = 'LT_HOT_001';
+SELECT id FROM test WHERE title = 'LT_QS_B_01';
 
 -- questions 세트 ID
 SELECT '=== questions.setsA ===' AS section;
@@ -26,7 +26,7 @@ SELECT ARRAY_AGG(id ORDER BY title) FROM test WHERE title LIKE 'LT_QS_B_%';
 SELECT '=== questions.setsC ===' AS section;
 SELECT ARRAY_AGG(id ORDER BY title) FROM test WHERE title LIKE 'LT_QS_C_%';
 
--- 질문 수 확인 (A=10, B=30, C=100)
+-- 질문 수 확인 (A=7, B=28, C=98)
 SELECT '=== 질문 수 ===' AS section;
 SELECT t.title, COUNT(q.id) AS question_count
 FROM test t LEFT JOIN question q ON q.test_id = t.id
