@@ -94,3 +94,6 @@ crash.log
 
 # AI 통합 테스트 (Claude API 크레딧 소모, 로컬 전용)
 src/test/java/server/MATE/global/claude/SubjectiveAiServiceIntegrationTest.java
+
+# k6 부하테스트 — 런타임 생성 파일 (JWT 토큰, 민감 정보)
+k6/data/tokens.json
