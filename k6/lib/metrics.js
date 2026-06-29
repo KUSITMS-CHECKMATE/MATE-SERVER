@@ -7,13 +7,13 @@ import { Trend, Counter, Rate } from 'k6/metrics';
 
 // 응답 body 크기 추적
 /** GET /api/v1/tests 응답 크기 */
-export const listBodySize = new Trend('list_body_size_bytes', true);
+export const listBodySize = new Trend('list_body_size_bytes');
 
 /** GET /api/v1/tests/{testId} 응답 크기 */
-export const detailBodySize = new Trend('detail_body_size_bytes', true);
+export const detailBodySize = new Trend('detail_body_size_bytes');
 
 /** GET /api/v1/tests/{testId}/questions 응답 크기 */
-export const questionsBodySize = new Trend('questions_body_size_bytes', true);
+export const questionsBodySize = new Trend('questions_body_size_bytes');
 
 
 // 정합성 실패 카운터
