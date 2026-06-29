@@ -92,8 +92,11 @@ export function pickQuestionsTestId() {
  * @param {'A'|'B'|'C'} variant
  */
 export function getQuestionsSetTestId(variant) {
-  const key = `sets${variant}`;
+  const key = `sets${String(variant).toUpperCase()}`;
   const set = assets().questions[key];
+  if (!set || set.length === 0) {
+    throw new Error(`Questions set for variant '${variant}' (key: ${key}) is empty or not found in test-ids.json`);
+  }
   return set[Math.floor(Math.random() * set.length)];
 }
 
@@ -141,6 +144,10 @@ export function getLikeTestId() {
  * @param {number} vuIndex - vu.idInTest 값
  */
 export function getDraftId(size, vuIndex) {
-  const pool = assets().drafts[size];
+  const normalizedSize = String(size).toLowerCase();
+  const pool = assets().drafts[normalizedSize];
+  if (!pool || pool.length === 0) {
+    throw new Error(`Draft pool for size '${size}' (key: ${normalizedSize}) is empty or not found in test-ids.json`);
+  }
   return pool[(vuIndex || 0) % pool.length];
 }
