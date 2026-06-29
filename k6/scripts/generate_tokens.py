@@ -59,10 +59,14 @@ def make_jwt(user_id: int, role: str, secret: str, hours: int = 8) -> str:
 def query_psql(host: str, port: str, dbname: str, user: str, password: str, sql: str) -> list[str]:
     env = {**os.environ, "PGPASSWORD": password}
     conn_str = f"host={host} port={port} dbname={dbname} user={user} sslmode=require"
-    result = subprocess.run(
-        ["psql", conn_str, "-t", "-A", "-F|", "-c", sql],
-        capture_output=True, text=True, env=env
-    )
+    try:
+        result = subprocess.run(
+            ["psql", conn_str, "-t", "-A", "-F|", "-c", sql],
+            capture_output=True, text=True, env=env
+        )
+    except FileNotFoundError:
+        print("오류: 'psql' 명령어를 찾을 수 없습니다. PostgreSQL 클라이언트가 설치되어 있는지 확인해주세요.", file=sys.stderr)
+        sys.exit(1)
     if result.returncode != 0:
         print(f"[DB 오류]\n{result.stderr}", file=sys.stderr)
         sys.exit(1)
