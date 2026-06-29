@@ -14,7 +14,6 @@
 import { sleep } from 'k6';
 import { getUserToken, authHeaders } from '../../lib/auth.js';
 import {
-  pickQuestionsTestId,
   getHotQuestionsTestId,
   getDistributedQuestionsTestId,
   getQuestionsSetTestId,
