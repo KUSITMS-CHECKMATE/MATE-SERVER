@@ -25,9 +25,10 @@ import { getUserTokenByIteration, authHeaders } from '../../lib/auth.js';
 import { post, checkStatus } from '../../lib/request.js';
 import { answerSubmitSuccess, answerSubmitFailure, integrityFailures } from '../../lib/metrics.js';
 
-// 400/409는 예상된 응답 — http_req_failed 에서 제외
+// 400은 예상된 응답 — http_req_failed 에서 제외
+// (5xx, 네트워크 오류만 http_req_failed 로 카운트)
 http.setResponseCallback(http.expectedStatuses(
-  { min: 200, max: 399 }, 400, 409
+  { min: 200, max: 399 }, 400
 ));
 
 const assetData = new SharedArray('testIds', function () {
@@ -101,8 +102,7 @@ export default function () {
   );
 
   // 201: 정상 제출 성공
-  // 409: 중복 제출
-  // 400: 정원 초과 또는 유효성 실패
+  // 400: 중복 제출(PARTICIPATION_003), 정원 초과(PARTICIPATION_004), 유효성 실패
   // 5xx: 서버 오류 → 정합성 이슈 가능성
   if (res.status === 201) {
     answerSubmitSuccess.add(1);
@@ -112,8 +112,6 @@ export default function () {
     answerSubmitFailure.add(1, { reason: 'expected' });
 
     // 예상된 에러 코드가 아니면 정합성 이슈
-    // PARTICIPATION_003: 이미 참여한 테스트 (중복 제출)
-    // PARTICIPATION_004: 테스트 참여 인원 마감 (정원 초과)
     try {
       const body = res.json();
       if (body && body.code !== 'PARTICIPATION_003'
