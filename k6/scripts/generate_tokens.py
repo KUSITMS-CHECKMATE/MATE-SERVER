@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-부하테스트용 JWT 토큰 생성 스크립트 (외부 패키지 불필요 - stdlib only)
+부하테스트용 JWT 토큰 생성 스크립트
 
 사전 조건:
   1. kubectl port-forward 로 DB 접속 (127.0.0.1:15432)
@@ -31,7 +31,7 @@ import time
 from pathlib import Path
 
 
-# ── JWT 생성 (HS256, stdlib only) ─────────────────────────────────────────
+# JWT 생성
 def _b64url(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
 
@@ -55,7 +55,7 @@ def make_jwt(user_id: int, role: str, secret: str, hours: int = 8) -> str:
     return f"{signing_input}.{sig}"
 
 
-# ── DB 조회 (psql subprocess) ──────────────────────────────────────────────
+# DB 조회
 def query_psql(host: str, port: str, dbname: str, user: str, password: str, sql: str) -> list[str]:
     env = {**os.environ, "PGPASSWORD": password}
     conn_str = f"host={host} port={port} dbname={dbname} user={user} sslmode=require"
@@ -82,7 +82,6 @@ def parse_rows(rows: list[str]) -> list[dict]:
     return result
 
 
-# ── 메인 ───────────────────────────────────────────────────────────────────
 def main():
     p = argparse.ArgumentParser(description="LOADTEST 계정 JWT 토큰 생성")
     p.add_argument("--host",     default="127.0.0.1",         help="DB host")
