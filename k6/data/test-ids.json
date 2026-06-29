@@ -1,0 +1,57 @@
+{
+  "_comment": "loadtest_verify.sql 실행 결과로 채운 실제 ID (2026-06-25 재실행 — 7유형 균등 배분)",
+
+  "read": {
+    "_comment": "hot test 상세 조회 / 질문 조회 시나리오용",
+    "hotTestId": 574,
+    "distributedPool": [575, 576, 577, 578, 579, 580, 581, 582, 583, 584]
+  },
+
+  "questions": {
+    "_comment": "질문 조회 시나리오용. setsA=7문항, setsB=28문항, setsC=98문항 (유형별 1/4/14개 균등 배분)",
+    "hotTestId": 587,
+    "distributedPool": [585, 586, 588],
+    "setsA": [585, 586],
+    "setsB": [587, 588],
+    "setsC": [589, 590]
+  },
+
+  "answers": {
+    "contention": {
+      "_comment": "응답 제출 경합용. 모든 VU가 hotTestId에 집중",
+      "hotTestId": 74,
+      "distributedPool": [75, 76, 77]
+    },
+    "failure": {
+      "_comment": "실패 시나리오용. DUP=사전 participation 50개 삽입됨, CAP=pplCount=goalPpl=10",
+      "duplicateTestId": 78,
+      "capacityExceededTestId": 79
+    }
+  },
+
+  "likes": {
+    "_comment": "hot like/unlike churn 시나리오용",
+    "hotTestId": 80,
+    "distributedPool": [81, 82, 83]
+  },
+
+  "drafts": {
+    "_comment": "메이커 계정별 draft. small/medium/large는 payload 크기 실험군",
+    "small":  [148, 149, 150, 151, 152],
+    "medium": [153, 154, 155, 156, 157],
+    "large":  [158, 159, 160, 161, 162]
+  },
+
+  "answerPayloads": {
+    "_comment": "LT_ANS_CTN_HOT 의 실제 questionId (verify 섹션 6 결과)",
+    "contention": {
+      "answers": [
+        { "type": "SCALE", "questionId": 693, "value": 3 },
+        { "type": "SCALE", "questionId": 694, "value": 4 },
+        { "type": "SCALE", "questionId": 695, "value": 2 },
+        { "type": "SCALE", "questionId": 696, "value": 5 },
+        { "type": "SCALE", "questionId": 697, "value": 1 }
+      ]
+    }
+  }
+}
