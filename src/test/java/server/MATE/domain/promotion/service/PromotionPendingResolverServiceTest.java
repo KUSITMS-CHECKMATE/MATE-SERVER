@@ -84,7 +84,7 @@ class PromotionPendingResolverServiceTest {
     @DisplayName("PENDING 건의 결과가 SUCCESS면 SUCCEEDED로 업데이트한다")
     void resolvesSuccessFromPending() {
         PromotionReward reward = pendingReward(1L);
-        given(promotionRewardRepository.findAllByStatusIn(any())).willReturn(List.of(reward));
+        given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(reward));
         given(tossPromotionGateway.getExecutionResult(any(TossPromotionResultRequest.class)))
                 .willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.SUCCESS));
 
@@ -98,7 +98,7 @@ class PromotionPendingResolverServiceTest {
     @DisplayName("PENDING 건의 결과가 FAILED면 FAILED로 업데이트한다")
     void resolvesFailedFromPending() {
         PromotionReward reward = pendingReward(1L);
-        given(promotionRewardRepository.findAllByStatusIn(any())).willReturn(List.of(reward));
+        given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(reward));
         given(tossPromotionGateway.getExecutionResult(any(TossPromotionResultRequest.class)))
                 .willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.FAILED));
 
@@ -112,7 +112,7 @@ class PromotionPendingResolverServiceTest {
     @DisplayName("PENDING 건의 결과가 여전히 PENDING이면 상태를 변경하지 않는다")
     void doesNothingWhenStillPending() {
         PromotionReward reward = pendingReward(1L);
-        given(promotionRewardRepository.findAllByStatusIn(any())).willReturn(List.of(reward));
+        given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(reward));
         given(tossPromotionGateway.getExecutionResult(any(TossPromotionResultRequest.class)))
                 .willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.PENDING));
 
@@ -126,7 +126,7 @@ class PromotionPendingResolverServiceTest {
     @DisplayName("EXECUTED 건의 결과가 SUCCESS면 SUCCEEDED로 업데이트한다")
     void resolvesSuccessFromExecuted() {
         PromotionReward reward = executedReward(2L);
-        given(promotionRewardRepository.findAllByStatusIn(any())).willReturn(List.of(reward));
+        given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(reward));
         given(tossPromotionGateway.getExecutionResult(any(TossPromotionResultRequest.class)))
                 .willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.SUCCESS));
 
@@ -140,7 +140,7 @@ class PromotionPendingResolverServiceTest {
     void continuesProcessingOnPartialFailure() {
         PromotionReward failingReward = pendingReward(1L);
         PromotionReward successReward = pendingReward(2L);
-        given(promotionRewardRepository.findAllByStatusIn(any())).willReturn(List.of(failingReward, successReward));
+        given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(failingReward, successReward));
         given(tossPromotionGateway.getExecutionResult(any(TossPromotionResultRequest.class)))
                 .willThrow(new RuntimeException("Toss API 오류"))
                 .willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.SUCCESS));
@@ -151,9 +151,28 @@ class PromotionPendingResolverServiceTest {
     }
 
     @Test
+    @DisplayName("tossUserKey, promotionCode, rewardKey 중 하나라도 null이면 FAILED 처리한다")
+    void marksFailedWhenRequiredFieldsAreMissing() {
+        PromotionReward reward = PromotionReward.builder()
+                .participationId(1L)
+                .testId(1L)
+                .testerId(1L)
+                .rewardAmount(300)
+                .status(PromotionRewardStatus.PENDING)
+                .build();
+        ReflectionTestUtils.setField(reward, "id", 1L);
+        given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(reward));
+
+        resolverService.resolveAll();
+
+        verify(promotionFailureStateService).markFailed(eq(1L), any(), any());
+        verify(tossPromotionGateway, never()).getExecutionResult(any());
+    }
+
+    @Test
     @DisplayName("처리할 건이 없으면 gateway를 호출하지 않는다")
     void doesNothingWhenNoPendingRewards() {
-        given(promotionRewardRepository.findAllByStatusIn(any())).willReturn(List.of());
+        given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of());
 
         resolverService.resolveAll();
 
@@ -164,7 +183,7 @@ class PromotionPendingResolverServiceTest {
     @DisplayName("gateway 호출 시 저장된 tossUserKey, promotionCode, rewardKey를 그대로 사용한다")
     void usesStoredCredentialsForGatewayCall() {
         PromotionReward reward = pendingReward(1L);
-        given(promotionRewardRepository.findAllByStatusIn(any())).willReturn(List.of(reward));
+        given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(reward));
         given(tossPromotionGateway.getExecutionResult(any(TossPromotionResultRequest.class)))
                 .willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.SUCCESS));
 
