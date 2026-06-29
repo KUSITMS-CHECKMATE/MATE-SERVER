@@ -18,6 +18,8 @@ public class PromotionPendingResolverService {
 
     private static final String ERROR_CODE_EXECUTION_FAILED = "PROMOTION_EXECUTION_FAILED";
     private static final String ERROR_REASON_EXECUTION_FAILED = "Promotion execution result is FAILED.";
+    private static final String ERROR_CODE_INVALID_STATE = "INVALID_PROMOTION_STATE";
+    private static final String ERROR_REASON_INVALID_STATE = "Required fields are missing.";
 
     private final PromotionRewardRepository promotionRewardRepository;
     private final PromotionExecuteStateService promotionExecuteStateService;
@@ -25,7 +27,7 @@ public class PromotionPendingResolverService {
     private final TossPromotionGateway tossPromotionGateway;
 
     public void resolveAll() {
-        List<PromotionReward> pendingRewards = promotionRewardRepository.findAllByStatusIn(
+        List<PromotionReward> pendingRewards = promotionRewardRepository.findTop100ByStatusIn(
                 List.of(PromotionRewardStatus.EXECUTED, PromotionRewardStatus.PENDING)
         );
 
@@ -39,6 +41,12 @@ public class PromotionPendingResolverService {
     }
 
     private void resolve(PromotionReward reward) {
+        if (reward.getTossUserKey() == null || reward.getPromotionCode() == null || reward.getRewardKey() == null) {
+            log.error("PROMOTION PENDING resolve skipped due to missing required fields. rewardId={}", reward.getId());
+            promotionFailureStateService.markFailed(reward.getId(), ERROR_CODE_INVALID_STATE, ERROR_REASON_INVALID_STATE);
+            return;
+        }
+
         var result = tossPromotionGateway.getExecutionResult(
                 new TossPromotionResultRequest(reward.getTossUserKey(), reward.getPromotionCode(), reward.getRewardKey())
         );

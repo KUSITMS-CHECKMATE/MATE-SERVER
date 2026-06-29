@@ -14,7 +14,7 @@ public interface PromotionRewardRepository extends JpaRepository<PromotionReward
 
     Optional<PromotionReward> findByParticipationId(Long participationId);
 
-    List<PromotionReward> findAllByStatusIn(List<PromotionRewardStatus> statuses);
+    List<PromotionReward> findTop100ByStatusIn(List<PromotionRewardStatus> statuses);
 
     @Query("""
             select coalesce(sum(pr.rewardAmount), 0)
