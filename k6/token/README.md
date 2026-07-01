@@ -80,7 +80,7 @@ psql "host=127.0.0.1 port=15432 dbname=mate user=mateadmin sslmode=require"
 **A. Step 1 포트포워딩 연결 후 로컬에서 실행:**
 ```bash
 psql "host=127.0.0.1 port=15432 dbname=mate user=mateadmin sslmode=require" \
-  -f k6/token/seed-accounts.sql
+  -f k6/token/pdf-excel.sql
 ```
 
 **B. 포트포워딩 없이 k8s 안에서 직접 실행 (더 간단):**
@@ -92,7 +92,7 @@ PG_PASS=$(kubectl get secret mate-app-secrets -n mate \
 
 kubectl run psql-tmp --rm -it --image=postgres:16 -n mate --restart=Never \
   --env="PGPASSWORD=${PG_PASS}" \
-  -- psql "$PG_URL" -f /dev/stdin < k6/token/seed-accounts.sql
+  -- psql "$PG_URL" -f /dev/stdin < k6/token/pdf-excel.sql
 ```
 
 생성되는 계정:
@@ -213,5 +213,5 @@ k6 run k6/scenarios/read-baseline/01-test-list.js \
 테스트 완료 후 계정을 삭제하려면:
 ```bash
 psql "host=127.0.0.1 port=15432 dbname=mate user=mateadmin sslmode=require" \
-  -f k6/token/cleanup-accounts.sql
+  -f k6/token/pdf-excel.sql
 ```
