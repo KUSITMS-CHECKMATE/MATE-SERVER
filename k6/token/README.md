@@ -191,17 +191,17 @@ node k6/token/issue-tokens.mjs
 실행 예시:
 ```bash
 # like-toggle: 각 VU가 서로 다른 user 토큰 사용
-k6 run k6/write-baseline/03-like-toggle.js \
+k6 run k6/scenarios/write-baseline/03-like-toggle.js \
   -e BASE_URL=https://api.kusitms-mate.cloud \
   -e TEST_ID=<테스트ID>
 
 # pdf 생성: TEST_IDS 개수만큼 VU, 각각 다른 maker 토큰
-k6 run k6/pdf-excel/02-pdf-generate.js \
+k6 run k6/scenarios/pdf-excel/02-pdf-generate.js \
   -e BASE_URL=https://api.kusitms-mate.cloud \
   -e TEST_IDS=1001,1002,1003,...
 
 # smoke 테스트 (10명으로 빠른 확인)
-k6 run k6/read-baseline/01-test-list.js \
+k6 run k6/scenarios/read-baseline/01-test-list.js \
   -e BASE_URL=https://api.kusitms-mate.cloud \
   -e K6_PROFILE=smoke
 ```

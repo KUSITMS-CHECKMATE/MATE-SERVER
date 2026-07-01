@@ -5,8 +5,8 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
 import { Trend, Rate } from "k6/metrics";
-import { BASE_URL, authHeaders, getMakerToken, getMakerTokenByIndex } from "../config.js";
-import { rampScenario } from "../lib/profiles.js";
+import { BASE_URL, authHeaders, getMakerToken, getMakerTokenByIndex } from "../../config.js";
+import { rampScenario } from "../../lib/profiles.js";
 
 const testIds = (__ENV.TEST_IDS || __ENV.TEST_ID || "1").split(",");
 
