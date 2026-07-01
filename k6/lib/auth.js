@@ -1,17 +1,14 @@
 /**
  * 토큰 풀에서 VU별 토큰을 할당하고 공통 인증 헤더를 반환합니다.
  *
- * data/tokens.json 구조
+ * data/tokens.json 구조 (issue-tokens.mjs 로 발급)
  * {
- *   "users":  [ { "userId": 1, "accessToken": "eyJ..." }, ... ],
+ *   "users":  [ { "userId": 1, "accessToken": "eyJ...", "refreshToken": "..." }, ... ],
  *   "makers": [ { "userId": 101, "accessToken": "eyJ..." }, ... ]
  * }
  *
- * 준비 방법
- *   1. 테스트 계정으로 로그인 → access token 수집
- *   2. tokens.json 에 배열로 저장
- *   3. users: 일반 사용자 (조회, 응답 제출, like)
- *      makers: 메이커 계정 (draft 수정, report 조회)
+ * users: 일반 사용자 (조회, 응답 제출, like)
+ * makers: 메이커 계정 (draft 수정, report 조회)
  */
 
 import { SharedArray } from 'k6/data';
@@ -22,7 +19,14 @@ const userTokens = new SharedArray('userTokens', function () {
 });
 
 const makerTokens = new SharedArray('makerTokens', function () {
-  return JSON.parse(open('../data/tokens.json')).makers;
+  const makers = JSON.parse(open('../data/tokens.json')).makers;
+  return makers.length ? makers : JSON.parse(open('../data/tokens.json')).users;
+});
+
+const refreshTokens = new SharedArray('refreshTokens', function () {
+  return JSON.parse(open('../data/tokens.json'))
+    .users.filter((t) => t.refreshToken)
+    .map((t) => t.refreshToken);
 });
 
 /**
@@ -59,13 +63,28 @@ export function getMakerTokenByIndex(index) {
 }
 
 /**
+ * refresh token 반환 (auth-reissue 시나리오)
+ */
+export function getRefreshToken() {
+  if (!refreshTokens.length) {
+    throw new Error('refreshToken 없음 — issue-tokens.mjs 를 INCLUDE_REFRESH=true 로 실행하세요');
+  }
+  return refreshTokens[vu.idInTest % refreshTokens.length];
+}
+
+/**
  * Authorization 헤더 반환
- * @param {{ accessToken: string }} token
+ * @param {{ accessToken: string }} [token]
  */
 export function authHeaders(token) {
+  const t = token || getUserToken();
   return {
-    'Authorization': `Bearer ${token.accessToken}`,
+    Authorization: `Bearer ${t.accessToken}`,
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    Accept: 'application/json',
   };
+}
+
+export function tokenPoolSize() {
+  return userTokens.length;
 }

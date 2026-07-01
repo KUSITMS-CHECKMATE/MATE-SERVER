@@ -130,9 +130,9 @@ variable "redis_cache_name" {
 }
 
 variable "redis_capacity" {
-  description = "Azure Cache for Redis capacity. 1 means C1 for Basic/Standard."
+  description = "Azure Cache for Redis capacity. 0=C0 (250MB). C1→C0 in-place 다운그레이드는 Azure가 불가 — 변경 시 redis cache replace 필요."
   type        = number
-  default     = 1
+  default     = 0
 }
 
 variable "redis_family" {
