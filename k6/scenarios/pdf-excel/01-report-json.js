@@ -4,8 +4,9 @@
  */
 import http from "k6/http";
 import { check, sleep } from "k6";
+import { vu } from "k6/execution";
 import { Trend, Rate } from "k6/metrics";
-import { BASE_URL, authHeaders, getMakerToken, getMakerTokenByIndex } from "../../config.js";
+import { BASE_URL, authHeaders, getMakerTokenByIndex } from "../../config.js";
 import { rampScenario } from "../../lib/profiles.js";
 
 const testIds = (__ENV.TEST_IDS || __ENV.TEST_ID || "1").split(",");
@@ -25,7 +26,7 @@ export const options = {
 export default function () {
   // VU별로 서로 다른 testId + 해당 testId 소유 maker 토큰 사용
   // 전제: testIds[N] 은 makerTokens[N] 소유 (seed-report-data.md SQL로 maker_id 배분 필요)
-  const idx = (__VU - 1) % testIds.length;
+  const idx = (vu.idInTest - 1) % testIds.length;
   const testId = testIds[idx];
 
   const res = http.get(

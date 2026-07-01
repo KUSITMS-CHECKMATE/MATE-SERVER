@@ -7,9 +7,10 @@
  */
 import http from "k6/http";
 import { check, sleep } from "k6";
+import { vu } from "k6/execution";
 import { Trend, Rate } from "k6/metrics";
-import { BASE_URL, authHeaders, getUserToken } from "../config.js";
-import { rampScenario } from "../lib/profiles.js";
+import { BASE_URL, authHeaders, getUserToken } from "../../config.js";
+import { rampScenario } from "../../lib/profiles.js";
 
 const latency = new Trend("test_list_latency", true);
 const bodySize = new Trend("test_list_body_bytes");
@@ -42,7 +43,7 @@ export default function () {
 
   successRate.add(ok);
   if (!ok) {
-    console.error(`VU=${__VU} status=${res.status} duration=${res.timings.duration}ms`);
+    console.error(`VU=${vu.idInTest} status=${res.status} duration=${res.timings.duration}ms`);
   }
 
   sleep(1);

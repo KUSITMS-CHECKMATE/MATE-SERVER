@@ -6,9 +6,9 @@
  */
 import http from "k6/http";
 import { check, sleep } from "k6";
+import { vu } from "k6/execution";
 import { Trend, Rate, Counter } from "k6/metrics";
-import { BASE_URL, getUserToken } from "../config.js";
-import { rampScenario } from "../lib/profiles.js";
+import { BASE_URL, authHeaders, getUserToken } from "../../config.js";
 
 // TEST_IDS, Q_IDS 는 같은 순서로 매핑 (testIds[N] 의 질문이 qIds[N])
 const testIds = (__ENV.TEST_IDS || __ENV.TEST_ID || "1").split(",");
@@ -19,7 +19,14 @@ const successRate = new Rate("answer_success");
 const successCount = new Counter("answer_success_count");
 
 export const options = {
-  scenarios: rampScenario("answer_submit"),
+  scenarios: {
+    answer_submit: {
+      executor: "per-vu-iterations",
+      vus: Math.min(testIds.length, 1000),
+      iterations: 1,
+      maxDuration: "120s",
+    },
+  },
   thresholds: {
     answer_latency: ["p(95)<3000"],
     answer_success: ["rate>0.9"],
@@ -27,12 +34,7 @@ export const options = {
 };
 
 export default function () {
-  if (__ITER > 0) {
-    sleep(60);
-    return;
-  }
-
-  const idx = (__VU - 1) % testIds.length;
+  const idx = (vu.idInTest - 1) % testIds.length;
   const testId = testIds[idx];
   const qId = qIds[idx];
   const token = getUserToken();
@@ -42,7 +44,7 @@ export default function () {
       {
         type: "SUBJECTIVE",
         questionId: Number(qId),
-        text: `k6 부하테스트 응답 VU=${__VU}`,
+        text: `k6 부하테스트 응답 VU=${vu.idInTest}`,
       },
     ],
   });
@@ -51,10 +53,7 @@ export default function () {
     `${BASE_URL}/api/v1/tests/${testId}/answers`,
     payload,
     {
-      headers: {
-        Authorization: `Bearer ${token.accessToken}`,
-        "Content-Type": "application/json",
-      },
+      headers: authHeaders(token),
       timeout: "30s",
     }
   );
@@ -73,7 +72,7 @@ export default function () {
   if (ok) successCount.add(1);
 
   if (!ok) {
-    console.error(`VU=${__VU} status=${res.status} body=${res.body?.substring(0, 200)}`);
+    console.error(`VU=${vu.idInTest} status=${res.status} body=${res.body?.substring(0, 200)}`);
   }
 
   sleep(1);
