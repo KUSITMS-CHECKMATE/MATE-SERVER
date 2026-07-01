@@ -5,8 +5,9 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
 import { Trend, Rate } from "k6/metrics";
-import { BASE_URL, authHeaders, getMakerToken } from "../config.js";
-import { rampScenario } from "../lib/profiles.js";
+import { vu } from "k6/execution";
+import { BASE_URL, authHeaders, getMakerTokenByIndex } from "../../config.js";
+import { rampScenario } from "../../lib/profiles.js";
 
 const testIds = (__ENV.TEST_IDS || __ENV.TEST_ID || "1").split(",");
 
@@ -23,10 +24,11 @@ export const options = {
 };
 
 export default function () {
-  const testId = testIds[__VU % testIds.length];
+  const idx = (vu.idInTest - 1) % testIds.length;
+  const testId = testIds[idx];
 
   const res = http.get(`${BASE_URL}/api/v1/tests/${testId}/report`, {
-    headers: authHeaders(getMakerToken()),
+    headers: authHeaders(getMakerTokenByIndex(idx)),
     timeout: "15s",
   });
 
@@ -43,7 +45,7 @@ export default function () {
 
   successRate.add(ok);
 
-  if (ok && __ITER === 0) {
+  if (ok && vu.iterationInScenario === 0) {
     try {
       const data = JSON.parse(res.body).data;
       console.log(
@@ -53,7 +55,7 @@ export default function () {
   }
 
   if (!ok) {
-    console.error(`VU=${__VU} status=${res.status} duration=${res.timings.duration}ms`);
+    console.error(`VU=${vu.idInTest} status=${res.status} duration=${res.timings.duration}ms`);
   }
 
   sleep(1);

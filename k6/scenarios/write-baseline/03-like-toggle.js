@@ -4,9 +4,10 @@
  */
 import http from "k6/http";
 import { check, sleep } from "k6";
+import { vu } from "k6/execution";
 import { Trend, Rate } from "k6/metrics";
-import { BASE_URL, TEST_ID, authHeaders, getUserTokenByIteration } from "../config.js";
-import { rampScenario } from "../lib/profiles.js";
+import { BASE_URL, TEST_ID, authHeaders, getUserTokenByIteration } from "../../config.js";
+import { rampScenario } from "../../lib/profiles.js";
 
 const likeLatency = new Trend("like_latency", true);
 const unlikeLatency = new Trend("unlike_latency", true);
@@ -52,7 +53,7 @@ export default function () {
   successRate.add(likeOk && unlikeOk);
 
   if (!likeOk || !unlikeOk) {
-    console.error(`VU=${__VU} like=${likeRes.status} unlike=${unlikeRes.status}`);
+    console.error(`VU=${vu.idInTest} like=${likeRes.status} unlike=${unlikeRes.status}`);
   }
 
   sleep(1);

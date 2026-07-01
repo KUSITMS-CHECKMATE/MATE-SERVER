@@ -7,8 +7,9 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
 import { Trend, Rate } from "k6/metrics";
-import { BASE_URL, authHeaders, getMakerToken } from "../config.js";
-import { rampScenario } from "../lib/profiles.js";
+import { vu } from "k6/execution";
+import { BASE_URL, authHeaders, getMakerTokenByIndex } from "../../config.js";
+import { rampScenario } from "../../lib/profiles.js";
 
 const draftIds = (__ENV.DRAFT_IDS || __ENV.DRAFT_ID || "1").split(",");
 
@@ -46,14 +47,15 @@ export const options = {
 };
 
 export default function () {
-  const draftId = draftIds[__VU % draftIds.length];
+  const idx = (vu.idInTest - 1) % draftIds.length;
+  const draftId = draftIds[idx];
   const payload = payloads[Math.floor(Math.random() * payloads.length)];
 
   const res = http.patch(
     `${BASE_URL}/api/v1/test-drafts/${draftId}`,
     JSON.stringify(payload),
     {
-      headers: authHeaders(getMakerToken()),
+      headers: authHeaders(getMakerTokenByIndex(idx)),
       timeout: "15s",
     }
   );
@@ -66,7 +68,7 @@ export default function () {
 
   successRate.add(ok);
   if (!ok) {
-    console.error(`VU=${__VU} status=${res.status} duration=${res.timings.duration}ms`);
+    console.error(`VU=${vu.idInTest} status=${res.status} duration=${res.timings.duration}ms`);
   }
 
   sleep(1);
