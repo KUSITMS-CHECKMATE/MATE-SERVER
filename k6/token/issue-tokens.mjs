@@ -171,7 +171,7 @@ async function main() {
   if (INCLUDE_REFRESH) {
     console.log("   refresh tokens → 운영 Redis에 저장됨 (reissue 테스트용)");
   }
-  console.log("\n다음: k6 run k6/read-baseline/01-test-list.js");
+  console.log("\n다음: k6 run k6/scenarios/read-baseline/01-test-list.js");
 }
 
 main().catch((e) => {
