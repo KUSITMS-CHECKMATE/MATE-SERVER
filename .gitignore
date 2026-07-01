@@ -65,6 +65,8 @@ replay_pid*
 # Spring profile and local environment
 .env
 .env.*
+k6/token/.env
+k6/data/tokens.json
 application-local.yml
 src/main/java/server/MATE/domain/auth/controller/LocalTestTokenController.java
 
