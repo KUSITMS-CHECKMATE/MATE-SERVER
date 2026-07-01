@@ -5,8 +5,8 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
 import { Trend, Rate } from "k6/metrics";
-import { BASE_URL, TEST_ID, authHeaders, getMakerToken } from "../config.js";
-import { rampScenario } from "../lib/profiles.js";
+import { BASE_URL, TEST_ID, authHeaders, getMakerToken } from "../../config.js";
+import { rampScenario } from "../../lib/profiles.js";
 
 const latency = new Trend("pdf_dl_latency", true);
 const successRate = new Rate("pdf_dl_success");
