@@ -11,10 +11,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
 
-import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 
 import static org.mockito.BDDMockito.given;
@@ -24,28 +21,17 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class TestCloseScheduleInitializerTest {
 
-    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
-
     @Mock
     private TestRepository testRepository;
 
     @Mock
     private TestCloseScheduler testCloseScheduler;
 
-    @Mock
-    private TestCloseProcessor testCloseProcessor;
-
     private TestCloseScheduleInitializer initializer;
 
     @BeforeEach
     void setUp() {
-        Clock clock = Clock.fixed(Instant.parse("2026-07-12T03:00:00Z"), KST);
-        initializer = new TestCloseScheduleInitializer(
-                testRepository,
-                testCloseScheduler,
-                testCloseProcessor,
-                clock
-        );
+        initializer = new TestCloseScheduleInitializer(testRepository, testCloseScheduler);
     }
 
     @Test
@@ -61,12 +47,11 @@ class TestCloseScheduleInitializerTest {
         initializer.run(new DefaultApplicationArguments(new String[]{}));
 
         verify(testCloseScheduler).schedule(1L, futureTest.getClosedAt());
-        verify(testCloseProcessor, never()).process(1L);
     }
 
     @Test
-    @DisplayName("마감 시각이 지난 진행 중 테스트는 즉시 종료한다")
-    void closesExpiredTestsImmediately() throws Exception {
+    @DisplayName("마감 시각이 지난 진행 중 테스트도 스케줄러에 위임한다 (백그라운드 즉시 실행)")
+    void delegatesExpiredTestsToScheduler() throws Exception {
         server.MATE.domain.test.entity.Test expiredTest = inProgressTest(
                 2L,
                 LocalDateTime.of(2020, 1, 1, 23, 59, 59)
@@ -76,8 +61,7 @@ class TestCloseScheduleInitializerTest {
 
         initializer.run(new DefaultApplicationArguments(new String[]{}));
 
-        verify(testCloseProcessor).process(2L);
-        verify(testCloseScheduler, never()).schedule(2L, expiredTest.getClosedAt());
+        verify(testCloseScheduler).schedule(2L, expiredTest.getClosedAt());
     }
 
     @Test
@@ -94,7 +78,6 @@ class TestCloseScheduleInitializerTest {
         initializer.run(new DefaultApplicationArguments(new String[]{}));
 
         verify(testCloseScheduler, never()).schedule(3L, null);
-        verify(testCloseProcessor, never()).process(3L);
     }
 
     private server.MATE.domain.test.entity.Test inProgressTest(Long id, LocalDateTime closedAt) {
