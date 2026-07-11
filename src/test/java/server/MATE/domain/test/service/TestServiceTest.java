@@ -6,7 +6,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import org.junit.jupiter.api.Assertions;
@@ -58,7 +57,7 @@ class TestServiceTest {
     private FileStorageService fileStorageService;
 
     @Mock
-    private ThreadPoolTaskScheduler taskScheduler;
+    private TestCloseScheduler testCloseScheduler;
 
     @Mock
     private Clock clock;
@@ -239,7 +238,7 @@ class TestServiceTest {
         TestStatusUpdateResponse response = testService.updateTestStatus(TEST_ID, 999L, Role.ADMIN, TestStatus.IN_PROGRESS);
 
         assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
-        verify(taskScheduler).schedule(any(Runnable.class), any(Instant.class));
+        verify(testCloseScheduler).schedule(TEST_ID, test.getClosedAt());
     }
 
     @Test
