@@ -233,7 +233,8 @@ class TestDraftControllerTest {
                 TestDraftStatus.DRAFT,
                 null,
                 LocalDateTime.parse("2026-05-25T11:00:00"),
-                LocalDateTime.parse("2026-05-25T12:00:00")
+                LocalDateTime.parse("2026-05-25T12:00:00"),
+                new server.MATE.domain.testdraft.dto.response.PaymentAmountResponse(30000, 20001, 5001, 55002)
         );
     }
 
