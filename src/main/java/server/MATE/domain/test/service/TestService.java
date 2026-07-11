@@ -199,6 +199,11 @@ public class TestService {
     }
 
     private void scheduleClose(Long testId, LocalDateTime closedAt) {
+        if (closedAt == null) {
+            log.warn("테스트 {} 마감 시각이 없어 자동 종료 예약을 건너뜁니다", testId);
+            return;
+        }
+
         Instant triggerAt = closedAt.atZone(KST).toInstant();
         taskScheduler.schedule(() -> {
             try {
