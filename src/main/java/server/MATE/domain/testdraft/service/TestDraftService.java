@@ -5,10 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import server.MATE.domain.payment.policy.PaymentAmountCalculator;
 import server.MATE.domain.testdraft.dto.request.TestDraftClosedAtParser;
 import server.MATE.domain.testdraft.dto.request.TestDraftUpdateRequest;
 import server.MATE.domain.testdraft.dto.response.MyTestDraftItem;
 import server.MATE.domain.testdraft.dto.response.MyTestDraftResponse;
+import server.MATE.domain.testdraft.dto.response.PaymentAmountResponse;
 import server.MATE.domain.testdraft.dto.response.TestDraftResponse;
 import server.MATE.domain.testdraft.entity.TestDraft;
 import server.MATE.domain.testdraft.repository.TestDraftRepository;
@@ -26,18 +28,19 @@ public class TestDraftService {
 
     private final TestDraftRepository testDraftRepository;
     private final ObjectMapper objectMapper;
+    private final PaymentAmountCalculator paymentAmountCalculator;
 
     public TestDraftResponse createDraft(Long makerId) {
         TestDraft draft = testDraftRepository.save(TestDraft.builder()
                 .makerId(makerId)
                 .build());
-        return TestDraftResponse.from(draft, null);
+        return TestDraftResponse.from(draft, null, null);
     }
 
     @Transactional(readOnly = true)
     public TestDraftResponse getDraft(Long draftId, Long makerId) {
         TestDraft draft = getOwnedDraft(draftId, makerId);
-        return TestDraftResponse.from(draft, toJsonNode(draft.getQuestionsPayload()));
+        return TestDraftResponse.from(draft, toJsonNode(draft.getQuestionsPayload()), computeAmountBreakdown(draft));
     }
 
     @Transactional(readOnly = true)
@@ -63,7 +66,7 @@ public class TestDraftService {
                 parseClosedAt(request.closedAt()),
                 toMap(request.questionsPayload())
         );
-        return TestDraftResponse.from(draft, toJsonNode(draft.getQuestionsPayload()));
+        return TestDraftResponse.from(draft, toJsonNode(draft.getQuestionsPayload()), computeAmountBreakdown(draft));
     }
 
     public void deleteDraft(Long draftId, Long makerId) {
@@ -96,5 +99,12 @@ public class TestDraftService {
         return payload == null || !payload.isObject()
                 ? null
                 : objectMapper.convertValue(payload, Map.class);
+    }
+
+    private PaymentAmountResponse computeAmountBreakdown(TestDraft draft) {
+        if (draft.getGoalPpl() == null || draft.getGoalPpl() <= 0) return null;
+        if (draft.getReward() == null || draft.getReward() <= 0) return null;
+        if (draft.getClosedAt() == null) return null;
+        return PaymentAmountResponse.from(paymentAmountCalculator.breakdown(draft.getGoalPpl(), draft.getReward()));
     }
 }

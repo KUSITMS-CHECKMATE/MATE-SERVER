@@ -17,7 +17,7 @@ postgres_server_name           = "mate-postgres"
 postgres_database_name         = "mate"
 postgres_admin_username        = "mateadmin"
 postgres_version               = "16"
-postgres_sku_name              = "B_Standard_B2s"
+postgres_sku_name              = "B_Standard_B1ms"
 postgres_storage_mb            = 32768
 postgres_backup_retention_days = 7
 

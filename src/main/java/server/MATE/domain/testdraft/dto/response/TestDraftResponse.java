@@ -23,9 +23,10 @@ public record TestDraftResponse(
         TestDraftStatus status,
         Long publishedTestId,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        PaymentAmountResponse amountBreakdown
 ) {
-    public static TestDraftResponse from(TestDraft draft, JsonNode questionsPayload) {
+    public static TestDraftResponse from(TestDraft draft, JsonNode questionsPayload, PaymentAmountResponse amountBreakdown) {
         return new TestDraftResponse(
                 draft.getId(),
                 draft.getMakerId(),
@@ -42,7 +43,8 @@ public record TestDraftResponse(
                 draft.getStatus(),
                 draft.getPublishedTestId(),
                 draft.getCreatedAt(),
-                draft.getUpdatedAt()
+                draft.getUpdatedAt(),
+                amountBreakdown
         );
     }
 }
