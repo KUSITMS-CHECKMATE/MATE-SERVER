@@ -102,9 +102,9 @@ public class TestDraftService {
     }
 
     private PaymentAmountResponse computeAmountBreakdown(TestDraft draft) {
-        if (draft.getGoalPpl() == null || draft.getReward() == null || draft.getClosedAt() == null) {
-            return null;
-        }
+        if (draft.getGoalPpl() == null || draft.getGoalPpl() <= 0) return null;
+        if (draft.getReward() == null || draft.getReward() <= 0) return null;
+        if (draft.getClosedAt() == null) return null;
         return PaymentAmountResponse.from(paymentAmountCalculator.breakdown(draft.getGoalPpl(), draft.getReward()));
     }
 }
