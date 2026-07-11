@@ -3,6 +3,8 @@ package server.MATE.domain.test.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import server.MATE.domain.participation.repository.ParticipationRepository;
 import server.MATE.domain.test.dto.response.*;
 import server.MATE.domain.test.entity.Test;
@@ -91,7 +93,14 @@ public class TestService {
                     throw new BaseException(BaseErrorCode.TEST_007);
                 }
                 test.start();
-                testCloseScheduler.schedule(test.getId(), test.getClosedAt());
+                Long approvedTestId = test.getId();
+                LocalDateTime closedAt = test.getClosedAt();
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        testCloseScheduler.schedule(approvedTestId, closedAt);
+                    }
+                });
             }
             case REJECTED -> {
                 if (role != Role.ADMIN) {
