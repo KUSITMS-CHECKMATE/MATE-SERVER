@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import server.MATE.domain.promotion.entity.PromotionReward;
 import server.MATE.domain.promotion.entity.PromotionRewardStatus;
 import server.MATE.domain.promotion.repository.PromotionRewardRepository;
-import server.MATE.toss.dto.request.TossPromotionResultRequest;
+import server.MATE.toss.gateway.PromotionGatewayExecutionStatus;
 import server.MATE.toss.gateway.TossPromotionGateway;
 
 import java.util.List;
@@ -16,14 +16,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PromotionPendingResolverService {
 
-    private static final String ERROR_CODE_EXECUTION_FAILED = "PROMOTION_EXECUTION_FAILED";
-    private static final String ERROR_REASON_EXECUTION_FAILED = "Promotion execution result is FAILED.";
     private static final String ERROR_CODE_INVALID_STATE = "INVALID_PROMOTION_STATE";
     private static final String ERROR_REASON_INVALID_STATE = "Required fields are missing.";
 
     private final PromotionRewardRepository promotionRewardRepository;
-    private final PromotionExecuteStateService promotionExecuteStateService;
     private final PromotionFailureStateService promotionFailureStateService;
+    private final PromotionExecutionResultApplier promotionExecutionResultApplier;
     private final TossPromotionGateway tossPromotionGateway;
 
     public void resolveAll() {
@@ -35,6 +33,7 @@ public class PromotionPendingResolverService {
             try {
                 resolve(reward);
             } catch (Exception e) {
+                // 상태를 FAILED로 바꾸지 않아 다음 스케줄러 실행에서 재시도된다.
                 log.warn("PROMOTION PENDING resolve failed. rewardId={}", reward.getId(), e);
             }
         }
@@ -47,20 +46,13 @@ public class PromotionPendingResolverService {
             return;
         }
 
-        var result = tossPromotionGateway.getExecutionResult(
-                new TossPromotionResultRequest(reward.getTossUserKey(), reward.getPromotionCode(), reward.getRewardKey())
+        PromotionGatewayExecutionStatus status = tossPromotionGateway.getExecutionStatus(
+                reward.getTossUserKey(), reward.getPromotionCode(), reward.getRewardKey()
         );
-
-        switch (result.status()) {
-            case SUCCESS -> {
-                promotionExecuteStateService.markSucceeded(reward.getId());
-                log.info("PROMOTION PENDING resolved to SUCCEEDED. rewardId={}", reward.getId());
-            }
-            case FAILED -> {
-                promotionFailureStateService.markFailed(reward.getId(), ERROR_CODE_EXECUTION_FAILED, ERROR_REASON_EXECUTION_FAILED);
-                log.warn("PROMOTION PENDING resolved to FAILED. rewardId={}", reward.getId());
-            }
-            case PENDING -> log.debug("PROMOTION still PENDING. rewardId={}", reward.getId());
+        if (status == PromotionGatewayExecutionStatus.PENDING && reward.getStatus() == PromotionRewardStatus.PENDING) {
+            log.debug("PROMOTION still PENDING. rewardId={}", reward.getId());
+            return;
         }
+        promotionExecutionResultApplier.apply(reward.getId(), status);
     }
 }
