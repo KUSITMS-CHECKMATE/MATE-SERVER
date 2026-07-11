@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import server.MATE.domain.auth.jwt.TokenType;
 import server.MATE.domain.testdraft.dto.response.MyTestDraftItem;
 import server.MATE.domain.testdraft.dto.response.MyTestDraftResponse;
+import server.MATE.domain.testdraft.dto.response.PaymentAmountResponse;
 import server.MATE.domain.testdraft.dto.response.TestDraftResponse;
 import server.MATE.domain.testdraft.entity.TestDraftStatus;
 import server.MATE.domain.testdraft.service.TestDraftService;
@@ -93,7 +94,11 @@ class TestDraftControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("테스트 초안을 조회했습니다."))
                 .andExpect(jsonPath("$.data.draftId").value(10L))
-                .andExpect(jsonPath("$.data.questionsPayload.questions[0].type").value("OBJECTIVE"));
+                .andExpect(jsonPath("$.data.questionsPayload.questions[0].type").value("OBJECTIVE"))
+                .andExpect(jsonPath("$.data.amountBreakdown.testerRewardAmount").value(30000))
+                .andExpect(jsonPath("$.data.amountBreakdown.feeAmount").value(20000))
+                .andExpect(jsonPath("$.data.amountBreakdown.vatAmount").value(5000))
+                .andExpect(jsonPath("$.data.amountBreakdown.totalAmount").value(55000));
     }
 
     @Test
@@ -234,7 +239,7 @@ class TestDraftControllerTest {
                 null,
                 LocalDateTime.parse("2026-05-25T11:00:00"),
                 LocalDateTime.parse("2026-05-25T12:00:00"),
-                new server.MATE.domain.testdraft.dto.response.PaymentAmountResponse(30000, 20001, 5001, 55002)
+                new PaymentAmountResponse(30000, 20000, 5000, 55000)
         );
     }
 
