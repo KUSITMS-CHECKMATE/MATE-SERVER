@@ -18,10 +18,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import reactor.core.publisher.Mono;
+import server.MATE.toss.dto.response.TossPromotionKeyResponse;
 import server.MATE.toss.dto.response.TossTokenResponse;
 import server.MATE.toss.exception.TossApiException;
 import server.MATE.toss.exception.TossErrorCode;
 import server.MATE.toss.exception.parser.TossLoginErrorResponseParser;
+import server.MATE.toss.exception.parser.TossPromotionErrorResponseParser;
 
 class TossHttpClientTest {
 
@@ -139,15 +141,72 @@ class TossHttpClientTest {
                 });
     }
 
+    @Test
+    @DisplayName("promotion 경로의 success wrapper를 정상 unwrap 한다")
+    void unwrapsPromotionSuccessResponse() {
+        TossHttpClient tossHttpClient = createPromotionAwareClient(request -> Mono.just(jsonResponse(
+                HttpStatus.OK,
+                """
+                {
+                  "resultType": "SUCCESS",
+                  "success": {
+                    "key": "3oBpxjUgl5r66edcVi7ynHGIjhzr9KOka6FfEKikev0="
+                  }
+                }
+                """
+        )));
+
+        TossPromotionKeyResponse response = tossHttpClient.post(
+                "/api-partner/v1/apps-in-toss/promotion/execute-promotion/get-key",
+                java.util.Map.of(),
+                TossPromotionKeyResponse.class
+        );
+
+        assertThat(response.key()).isEqualTo("3oBpxjUgl5r66edcVi7ynHGIjhzr9KOka6FfEKikev0=");
+    }
+
+    @Test
+    @DisplayName("promotion 경로의 FAIL wrapper는 TossPromotionErrorResponseParser를 통해 구체적인 코드로 변환한다")
+    void convertsPromotionFailWrapperToTossApiException() {
+        TossHttpClient tossHttpClient = createPromotionAwareClient(request -> Mono.just(jsonResponse(
+                HttpStatus.OK,
+                """
+                {
+                  "resultType": "FAIL",
+                  "error": {
+                    "errorCode": "4112",
+                    "reason": "프로모션 머니가 부족해요"
+                  }
+                }
+                """
+        )));
+
+        assertThatThrownBy(() -> tossHttpClient.post(
+                "/api-partner/v1/apps-in-toss/promotion/execute-promotion",
+                java.util.Map.of(),
+                TossPromotionKeyResponse.class
+        ))
+                .isInstanceOf(TossApiException.class)
+                .extracting(exception -> ((TossApiException) exception).getErrorCode())
+                .isEqualTo(TossErrorCode.TOSS_014);
+    }
+
     private TossHttpClient createClient(ExchangeFunction exchangeFunction) {
+        return createClientWithParsers(exchangeFunction, List.of(new TossLoginErrorResponseParser(objectMapper)));
+    }
+
+    private TossHttpClient createPromotionAwareClient(ExchangeFunction exchangeFunction) {
+        return createClientWithParsers(exchangeFunction, List.of(
+                new TossLoginErrorResponseParser(objectMapper),
+                new TossPromotionErrorResponseParser(objectMapper)
+        ));
+    }
+
+    private TossHttpClient createClientWithParsers(ExchangeFunction exchangeFunction, List<server.MATE.toss.exception.parser.TossErrorResponseParser> parsers) {
         WebClient webClient = WebClient.builder()
                 .exchangeFunction(exchangeFunction)
                 .build();
-        return new TossHttpClient(
-                webClient,
-                objectMapper,
-                List.of(new TossLoginErrorResponseParser(objectMapper))
-        );
+        return new TossHttpClient(webClient, objectMapper, parsers);
     }
 
     private ClientResponse jsonResponse(HttpStatus status, String body) {

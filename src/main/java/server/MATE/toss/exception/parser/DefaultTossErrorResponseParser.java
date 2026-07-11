@@ -57,14 +57,4 @@ public class DefaultTossErrorResponseParser implements TossErrorResponseParser {
         ));
     }
 
-    private String textOrDefault(JsonNode node, String defaultValue) {
-        if (node == null || node.isMissingNode() || node.isNull() || node.asText().isBlank()) {
-            return defaultValue;
-        }
-        return node.asText();
-    }
-
-    private TossErrorContext result(TossErrorCode errorCode, TossErrorResponse errorResponse) {
-        return new TossErrorContext(errorCode, errorResponse);
-    }
 }
