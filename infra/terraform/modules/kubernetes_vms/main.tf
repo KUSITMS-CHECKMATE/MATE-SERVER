@@ -199,7 +199,8 @@ resource "azurerm_network_interface" "control" {
   ip_configuration {
     name                          = "primary"
     subnet_id                     = var.subnet_id
-    private_ip_address_allocation = "Dynamic"
+    private_ip_address_allocation = "Static"
+    private_ip_address            = var.control_private_ip
     public_ip_address_id          = azurerm_public_ip.control.id
   }
 
@@ -214,7 +215,8 @@ resource "azurerm_network_interface" "worker" {
   ip_configuration {
     name                          = "primary"
     subnet_id                     = var.subnet_id
-    private_ip_address_allocation = "Dynamic"
+    private_ip_address_allocation = "Static"
+    private_ip_address            = var.worker_private_ip
     # 워커는 사설만 (마스터 경유 SSH / 클러스터 내부 통신)
   }
 

@@ -35,6 +35,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -55,6 +57,9 @@ class TestServiceTest {
 
     @Mock
     private FileStorageService fileStorageService;
+
+    @Mock
+    private TestCloseScheduler testCloseScheduler;
 
     @Mock
     private Clock clock;
@@ -232,9 +237,19 @@ class TestServiceTest {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.WAITING);
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
 
-        TestStatusUpdateResponse response = testService.updateTestStatus(TEST_ID, 999L, Role.ADMIN, TestStatus.IN_PROGRESS);
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            TestStatusUpdateResponse response = testService.updateTestStatus(TEST_ID, 999L, Role.ADMIN, TestStatus.IN_PROGRESS);
 
-        assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+            assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+
+            TransactionSynchronizationManager.getSynchronizations()
+                    .forEach(sync -> sync.afterCommit());
+
+            verify(testCloseScheduler).schedule(TEST_ID, test.getClosedAt());
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 
     @Test
