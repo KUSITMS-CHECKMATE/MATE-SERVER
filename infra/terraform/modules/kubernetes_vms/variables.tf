@@ -46,6 +46,18 @@ variable "tags" {
   default     = {}
 }
 
+variable "control_private_ip" {
+  description = "Control plane VM 사설 IP (Static 고정). 재시작 시 IP 변경 방지."
+  type        = string
+  default     = "10.20.1.5"
+}
+
+variable "worker_private_ip" {
+  description = "Worker VM 사설 IP (Static 고정). 재시작 시 IP 변경 방지."
+  type        = string
+  default     = "10.20.1.4"
+}
+
 variable "control_vm_size" {
   description = "Control plane VM SKU. DASv5 패밀리는 구독·리전별 코어 할당량 0 일 수 있음 → D2s_v3 등 DSv3으로 대체ㅠㅠ"
   type        = string
