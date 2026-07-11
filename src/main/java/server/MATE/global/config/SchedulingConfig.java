@@ -7,11 +7,13 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 @Configuration
 public class SchedulingConfig {
 
-    @Bean
+    @Bean(destroyMethod = "shutdown")
     public ThreadPoolTaskScheduler taskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(4);
         scheduler.setThreadNamePrefix("test-close-");
+        scheduler.setRemoveOnCancelPolicy(true);
+        scheduler.initialize();
         return scheduler;
     }
 }

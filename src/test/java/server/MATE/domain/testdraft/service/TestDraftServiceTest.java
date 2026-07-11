@@ -62,6 +62,28 @@ class TestDraftServiceTest {
         assertThat(response.amountBreakdown()).isNull();
     }
 
+    @Test
+    @DisplayName("리워드가 0원이면 결제 금액 내역을 반환하지 않는다")
+    void returnsNullAmountBreakdownWhenRewardIsZero() {
+        TestDraft draft = draftWith(30, 0, LocalDateTime.parse("2099-06-30T23:59:59"));
+        given(testDraftRepository.findById(10L)).willReturn(Optional.of(draft));
+
+        TestDraftResponse response = testDraftService.getDraft(10L, 1L);
+
+        assertThat(response.amountBreakdown()).isNull();
+    }
+
+    @Test
+    @DisplayName("목표 인원이 0명이면 결제 금액 내역을 반환하지 않는다")
+    void returnsNullAmountBreakdownWhenGoalPplIsZero() {
+        TestDraft draft = draftWith(0, 200, LocalDateTime.parse("2099-06-30T23:59:59"));
+        given(testDraftRepository.findById(10L)).willReturn(Optional.of(draft));
+
+        TestDraftResponse response = testDraftService.getDraft(10L, 1L);
+
+        assertThat(response.amountBreakdown()).isNull();
+    }
+
     private TestDraft draftWith(int goalPpl, int reward, LocalDateTime closedAt) {
         TestDraft draft = TestDraft.builder()
                 .makerId(1L)
