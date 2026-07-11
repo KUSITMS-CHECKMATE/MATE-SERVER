@@ -1,8 +1,6 @@
 package server.MATE.domain.test.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.participation.repository.ParticipationRepository;
@@ -18,7 +16,6 @@ import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.storage.FileStorageService;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -26,7 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -39,7 +35,7 @@ public class TestService {
     private final ParticipationRepository participationRepository;
     private final FileStorageService fileStorageService;
     private final TestCloseProcessor testCloseProcessor;
-    private final ThreadPoolTaskScheduler taskScheduler;
+    private final TestCloseScheduler testCloseScheduler;
     private final Clock clock;
 
     @Transactional(readOnly = true)
@@ -95,7 +91,7 @@ public class TestService {
                     throw new BaseException(BaseErrorCode.TEST_007);
                 }
                 test.start();
-                scheduleClose(test.getId(), test.getClosedAt());
+                testCloseScheduler.schedule(test.getId(), test.getClosedAt());
             }
             case REJECTED -> {
                 if (role != Role.ADMIN) {
@@ -196,22 +192,5 @@ public class TestService {
                 .map(Test::getId)
                 .toList();
         return new HashSet<>(testLikeRepository.findLikedTestIds(userId, testIds));
-    }
-
-    private void scheduleClose(Long testId, LocalDateTime closedAt) {
-        if (closedAt == null) {
-            log.warn("테스트 {} 마감 시각이 없어 자동 종료 예약을 건너뜁니다", testId);
-            return;
-        }
-
-        Instant triggerAt = closedAt.atZone(KST).toInstant();
-        taskScheduler.schedule(() -> {
-            try {
-                testCloseProcessor.process(testId);
-            } catch (Exception e) {
-                log.error("테스트 {} 자동 종료 실패 - 자정 스케줄러에서 재처리됩니다", testId, e);
-            }
-        }, triggerAt);
-        log.info("테스트 {} 자동 종료 예약 완료 - {}", testId, closedAt);
     }
 }
