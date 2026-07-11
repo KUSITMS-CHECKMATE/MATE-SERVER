@@ -16,10 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import server.MATE.domain.promotion.entity.PromotionRewardStatus;
-import server.MATE.toss.dto.response.TossPromotionExecuteResponse;
-import server.MATE.toss.dto.response.TossPromotionExecutionStatus;
-import server.MATE.toss.dto.response.TossPromotionKeyResponse;
-import server.MATE.toss.dto.response.TossPromotionResultResponse;
+import server.MATE.toss.gateway.PromotionGatewayExecutionStatus;
 import server.MATE.toss.gateway.TossPromotionGateway;
 
 @SpringBootTest
@@ -36,9 +33,8 @@ class QuestionAnswerPromotionIntegrationTest extends BaseQuestionAnswerEndToEndT
 
     @BeforeEach
     void setUpGateway() {
-        given(tossPromotionGateway.getKey(any())).willReturn(new TossPromotionKeyResponse("test-key"));
-        given(tossPromotionGateway.executePromotion(any())).willReturn(new TossPromotionExecuteResponse("test-key"));
-        given(tossPromotionGateway.getExecutionResult(any())).willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.SUCCESS));
+        given(tossPromotionGateway.issueKey(any())).willReturn("test-key");
+        given(tossPromotionGateway.getExecutionStatus(any(), any(), any())).willReturn(PromotionGatewayExecutionStatus.SUCCEEDED);
     }
 
     @Test
