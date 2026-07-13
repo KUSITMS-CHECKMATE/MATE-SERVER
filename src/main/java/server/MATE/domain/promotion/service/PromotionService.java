@@ -3,11 +3,8 @@ package server.MATE.domain.promotion.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import server.MATE.toss.dto.request.TossPromotionExecuteRequest;
-import server.MATE.toss.dto.request.TossPromotionGetKeyRequest;
-import server.MATE.toss.dto.request.TossPromotionResultRequest;
-import server.MATE.toss.dto.response.TossPromotionExecutionStatus;
 import server.MATE.toss.exception.TossApiException;
+import server.MATE.toss.gateway.PromotionGatewayExecutionStatus;
 import server.MATE.toss.gateway.TossPromotionGateway;
 
 @Slf4j
@@ -16,13 +13,12 @@ import server.MATE.toss.gateway.TossPromotionGateway;
 public class PromotionService {
 
     private static final String ERROR_CODE_GATEWAY = "PROMOTION_GATEWAY_ERROR";
-    private static final String ERROR_CODE_EXECUTION_FAILED = "PROMOTION_EXECUTION_FAILED";
-    private static final String ERROR_REASON_EXECUTION_FAILED = "Promotion execution result is FAILED.";
 
     private final PromotionPrepareService promotionPrepareService;
     private final PromotionIssueStateService promotionIssueStateService;
     private final PromotionExecuteStateService promotionExecuteStateService;
     private final PromotionFailureStateService promotionFailureStateService;
+    private final PromotionExecutionResultApplier promotionExecutionResultApplier;
     private final TossPromotionGateway tossPromotionGateway;
 
     public void grant(Long participationId, Long testId, Long testerId, Integer rewardAmount) {
@@ -46,53 +42,16 @@ public class PromotionService {
         }
 
         try {
-            var keyResponse = tossPromotionGateway.getKey(
-                    new TossPromotionGetKeyRequest(preparation.tossUserKey())
-            );
+            String rewardKey = tossPromotionGateway.issueKey(preparation.tossUserKey());
             promotionIssueStateService.markKeyIssued(
                     preparation.rewardId(),
                     preparation.promotionCode(),
-                    keyResponse.key()
+                    rewardKey
             );
             log.info("PROMOTION key issued. participationId={}, rewardId={}",
                     participationId, preparation.rewardId());
 
-            tossPromotionGateway.executePromotion(new TossPromotionExecuteRequest(
-                    preparation.tossUserKey(),
-                    preparation.promotionCode(),
-                    keyResponse.key(),
-                    preparation.rewardAmount()
-            ));
-            promotionExecuteStateService.markExecuted(preparation.rewardId());
-            log.info("PROMOTION execute requested. participationId={}, rewardId={}",
-                    participationId, preparation.rewardId());
-
-            var result = tossPromotionGateway.getExecutionResult(new TossPromotionResultRequest(
-                    preparation.tossUserKey(),
-                    preparation.promotionCode(),
-                    keyResponse.key()
-            ));
-
-            if (result.status() == TossPromotionExecutionStatus.SUCCESS) {
-                promotionExecuteStateService.markSucceeded(preparation.rewardId());
-                log.info("PROMOTION succeeded. participationId={}, rewardId={}",
-                        participationId, preparation.rewardId());
-                return;
-            }
-            if (result.status() == TossPromotionExecutionStatus.PENDING) {
-                promotionExecuteStateService.markPending(preparation.rewardId());
-                log.info("PROMOTION pending. participationId={}, rewardId={}",
-                        participationId, preparation.rewardId());
-                return;
-            }
-
-            promotionFailureStateService.markFailed(
-                    preparation.rewardId(),
-                    ERROR_CODE_EXECUTION_FAILED,
-                    ERROR_REASON_EXECUTION_FAILED
-            );
-            log.warn("PROMOTION failed by result. participationId={}, rewardId={}",
-                    participationId, preparation.rewardId());
+            executeAndResolve(participationId, preparation, rewardKey);
         } catch (TossApiException e) {
             promotionFailureStateService.markFailed(
                     preparation.rewardId(),
@@ -111,5 +70,46 @@ public class PromotionService {
             log.warn("PROMOTION gateway failed. participationId={}", participationId, e);
             throw e;
         }
+    }
+
+    private void executeAndResolve(Long participationId, PromotionPrepareService.PromotionPreparation preparation, String rewardKey) {
+        try {
+            tossPromotionGateway.execute(
+                    preparation.tossUserKey(),
+                    preparation.promotionCode(),
+                    rewardKey,
+                    preparation.rewardAmount()
+            );
+            log.info("PROMOTION execute requested. participationId={}, rewardId={}",
+                    participationId, preparation.rewardId());
+        } catch (TossApiException e) {
+            if (!e.isAlreadyUsedPromotionKey()) {
+                throw e;
+            }
+            // 이 rewardKey로 이미 지급이 시도된 상태 -> 실패로 단정하지 않고 실제 결과를 재조회해 확정한다.
+            log.warn("PROMOTION execute reported already-used key; reconciling via execution-result. participationId={}, rewardId={}",
+                    participationId, preparation.rewardId());
+        }
+        promotionExecuteStateService.markExecuted(preparation.rewardId());
+
+        resolveExecutionStatus(participationId, preparation, rewardKey);
+    }
+
+    private void resolveExecutionStatus(Long participationId, PromotionPrepareService.PromotionPreparation preparation, String rewardKey) {
+        PromotionGatewayExecutionStatus status;
+        try {
+            status = tossPromotionGateway.getExecutionStatus(
+                    preparation.tossUserKey(),
+                    preparation.promotionCode(),
+                    rewardKey
+            );
+        } catch (RuntimeException e) {
+            // execute는 이미 확인된 상태이니 결과 조회 실패를 FAILED로 단정하지 않고 PENDING으로 남겨 스케줄러 재조회에 맡긴다.
+            promotionExecuteStateService.markPending(preparation.rewardId());
+            log.warn("PROMOTION execution-result lookup failed after execute; leaving PENDING for scheduler retry. participationId={}, rewardId={}",
+                    participationId, preparation.rewardId(), e);
+            return;
+        }
+        promotionExecutionResultApplier.apply(preparation.rewardId(), status);
     }
 }
