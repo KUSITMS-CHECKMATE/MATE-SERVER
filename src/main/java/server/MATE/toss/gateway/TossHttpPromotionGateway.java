@@ -57,6 +57,9 @@ public class TossHttpPromotionGateway implements TossPromotionGateway {
     }
 
     private PromotionGatewayExecutionStatus toGatewayStatus(TossPromotionExecutionStatus status) {
+        if (status == null) {
+            throw new IllegalStateException("Toss promotion execution status is null.");
+        }
         return switch (status) {
             case SUCCESS -> PromotionGatewayExecutionStatus.SUCCEEDED;
             case PENDING -> PromotionGatewayExecutionStatus.PENDING;

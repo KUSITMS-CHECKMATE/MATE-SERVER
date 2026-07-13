@@ -52,4 +52,13 @@ class PromotionExecutionResultApplierTest {
 
         verify(promotionFailureStateService).markFailed(1L, "PROMOTION_EXECUTION_FAILED", "Promotion execution result is FAILED.");
     }
+
+    @Test
+    @DisplayName("status가 null이면 아무 상태 서비스도 호출하지 않는다")
+    void doesNothingWhenStatusIsNull() {
+        applier.apply(1L, null);
+
+        verifyNoInteractions(promotionExecuteStateService);
+        verifyNoInteractions(promotionFailureStateService);
+    }
 }
