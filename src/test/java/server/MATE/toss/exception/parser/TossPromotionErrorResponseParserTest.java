@@ -101,6 +101,37 @@ class TossPromotionErrorResponseParserTest {
     }
 
     @Test
+    void parsesBlankBodyAsFallbackErrorWithoutThrowing() {
+        TossErrorContext context = parser.parse(HttpStatus.BAD_REQUEST, EXECUTE_PATH, "");
+
+        assertThat(context.errorCode()).isEqualTo(TossErrorCode.TOSS_001);
+        assertThat(context.errorResponse().errorCode()).isEqualTo("TOSS_PROMOTION_UNKNOWN_ERROR");
+    }
+
+    @Test
+    void parsesNullBodyAsFallbackErrorWithoutThrowing() {
+        TossErrorContext context = parser.parse(HttpStatus.BAD_REQUEST, EXECUTE_PATH, null);
+
+        assertThat(context.errorCode()).isEqualTo(TossErrorCode.TOSS_001);
+        assertThat(context.errorResponse().errorCode()).isEqualTo("TOSS_PROMOTION_UNKNOWN_ERROR");
+    }
+
+    @Test
+    void fallsBackToUnknownCodeWhenTextualErrorIsBlank() {
+        TossErrorContext context = parser.parse(
+                HttpStatus.BAD_REQUEST,
+                EXECUTE_PATH,
+                """
+                {
+                  "error": ""
+                }
+                """
+        );
+
+        assertThat(context.errorResponse().errorCode()).isEqualTo("TOSS_PROMOTION_UNKNOWN_ERROR");
+    }
+
+    @Test
     void supportsOnlyTossPromotionApiPath() {
         assertThat(parser.supports(HttpStatus.BAD_REQUEST, EXECUTE_PATH, "{}")).isTrue();
         assertThat(parser.supports(HttpStatus.BAD_REQUEST, "/api-partner/v1/apps-in-toss/user/oauth2/login-me", "{}")).isFalse();
