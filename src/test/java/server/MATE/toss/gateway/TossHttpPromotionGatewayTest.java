@@ -1,6 +1,7 @@
 package server.MATE.toss.gateway;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -57,5 +58,14 @@ class TossHttpPromotionGatewayTest {
 
         assertThat(gateway.getExecutionStatus(777L, "promo-code", "reward-key"))
                 .isEqualTo(PromotionGatewayExecutionStatus.FAILED);
+    }
+
+    @Test
+    void throwsIllegalStateExceptionWhenStatusIsNull() {
+        given(tossHttpClient.post(eq(RESULT_PATH), any(), ArgumentMatchers.<Consumer<HttpHeaders>>any(), eq(TossPromotionExecutionStatus.class)))
+                .willReturn(null);
+
+        assertThatThrownBy(() -> gateway.getExecutionStatus(777L, "promo-code", "reward-key"))
+                .isInstanceOf(IllegalStateException.class);
     }
 }

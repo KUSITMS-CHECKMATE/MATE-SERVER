@@ -17,6 +17,10 @@ public class PromotionExecutionResultApplier {
     private final PromotionFailureStateService promotionFailureStateService;
 
     public void apply(Long rewardId, PromotionGatewayExecutionStatus status) {
+        if (status == null) {
+            log.warn("PROMOTION status is null. rewardId={}", rewardId);
+            return;
+        }
         switch (status) {
             case SUCCEEDED -> {
                 promotionExecuteStateService.markSucceeded(rewardId);
