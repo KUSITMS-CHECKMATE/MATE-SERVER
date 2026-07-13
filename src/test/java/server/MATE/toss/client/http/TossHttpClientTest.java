@@ -191,6 +191,21 @@ class TossHttpClientTest {
                 .isEqualTo(TossErrorCode.TOSS_014);
     }
 
+    @Test
+    @DisplayName("promotion 경로의 네트워크 예외도 TOSS_001 TossApiException으로 변환한다")
+    void convertsPromotionNetworkExceptionToToss001() {
+        TossHttpClient tossHttpClient = createPromotionAwareClient(request -> Mono.error(new IllegalStateException("network failure")));
+
+        assertThatThrownBy(() -> tossHttpClient.post(
+                "/api-partner/v1/apps-in-toss/promotion/execute-promotion/get-key",
+                java.util.Map.of(),
+                TossPromotionKeyResponse.class
+        ))
+                .isInstanceOf(TossApiException.class)
+                .extracting(exception -> ((TossApiException) exception).getErrorCode())
+                .isEqualTo(TossErrorCode.TOSS_001);
+    }
+
     private TossHttpClient createClient(ExchangeFunction exchangeFunction) {
         return createClientWithParsers(exchangeFunction, List.of(new TossLoginErrorResponseParser(objectMapper)));
     }
