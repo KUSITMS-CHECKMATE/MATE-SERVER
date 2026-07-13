@@ -20,7 +20,9 @@ public enum TossErrorCode implements ErrorCode {
     TOSS_009(HttpStatus.TOO_MANY_REQUESTS, "TOSS_009", "토스 인증서 조회 가능 횟수를 초과했습니다."),
     TOSS_010(HttpStatus.BAD_GATEWAY, "TOSS_010", "토스 프로모션 정보를 찾을 수 없습니다."),
     TOSS_011(HttpStatus.BAD_GATEWAY, "TOSS_011", "토스 프로모션이 실행 중이 아닙니다."),
+    // 4110: 토스 문서상 재지급 권장 코드지만 자동 retry는 미구현, 즉시 실패 처리한다.
     TOSS_012(HttpStatus.BAD_GATEWAY, "TOSS_012", "토스 프로모션 실행에 실패했습니다."),
+    // 4111: eventual consistency로 인한 지연일 수 있음, 즉시 실패 처리한다.
     TOSS_013(HttpStatus.BAD_GATEWAY, "TOSS_013", "토스 프로모션 지급 내역을 찾을 수 없습니다."),
     TOSS_014(HttpStatus.BAD_GATEWAY, "TOSS_014", "토스 프로모션 예산이 부족합니다."),
     TOSS_015(HttpStatus.CONFLICT, "TOSS_015", "토스 프로모션 실행 키가 이미 사용되었습니다."),

@@ -24,4 +24,18 @@ class TossApiExceptionTest {
         assertThat(exception.getResponseBody()).isEqualTo("{}");
         assertThat(exception.getMessage()).isEqualTo("인가 코드가 유효하지 않습니다.");
     }
+
+    @Test
+    void isAlreadyUsedPromotionKeyTrueForToss015() {
+        TossApiException exception = new TossApiException(TossErrorCode.TOSS_015, "이미 사용된 key입니다.", null);
+
+        assertThat(exception.isAlreadyUsedPromotionKey()).isTrue();
+    }
+
+    @Test
+    void isAlreadyUsedPromotionKeyFalseForOtherCodes() {
+        TossApiException exception = new TossApiException(TossErrorCode.TOSS_014, "프로모션 머니가 부족해요", null);
+
+        assertThat(exception.isAlreadyUsedPromotionKey()).isFalse();
+    }
 }

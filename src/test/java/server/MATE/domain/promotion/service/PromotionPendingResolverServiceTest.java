@@ -18,9 +18,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import server.MATE.domain.promotion.entity.PromotionReward;
 import server.MATE.domain.promotion.entity.PromotionRewardStatus;
 import server.MATE.domain.promotion.repository.PromotionRewardRepository;
-import server.MATE.toss.dto.request.TossPromotionResultRequest;
-import server.MATE.toss.dto.response.TossPromotionExecutionStatus;
-import server.MATE.toss.dto.response.TossPromotionResultResponse;
+import server.MATE.toss.gateway.PromotionGatewayExecutionStatus;
 import server.MATE.toss.gateway.TossPromotionGateway;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,10 +28,10 @@ class PromotionPendingResolverServiceTest {
     private PromotionRewardRepository promotionRewardRepository;
 
     @Mock
-    private PromotionExecuteStateService promotionExecuteStateService;
+    private PromotionFailureStateService promotionFailureStateService;
 
     @Mock
-    private PromotionFailureStateService promotionFailureStateService;
+    private PromotionExecutionResultApplier promotionExecutionResultApplier;
 
     @Mock
     private TossPromotionGateway tossPromotionGateway;
@@ -44,8 +42,8 @@ class PromotionPendingResolverServiceTest {
     void setUp() {
         resolverService = new PromotionPendingResolverService(
                 promotionRewardRepository,
-                promotionExecuteStateService,
                 promotionFailureStateService,
+                promotionExecutionResultApplier,
                 tossPromotionGateway
         );
     }
@@ -81,58 +79,69 @@ class PromotionPendingResolverServiceTest {
     }
 
     @Test
-    @DisplayName("PENDING 건의 결과가 SUCCESS면 SUCCEEDED로 업데이트한다")
-    void resolvesSuccessFromPending() {
+    @DisplayName("PENDING 건의 결과를 gateway 상태 그대로 applier에 위임한다")
+    void delegatesResultToApplierForPendingReward() {
         PromotionReward reward = pendingReward(1L);
         given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(reward));
-        given(tossPromotionGateway.getExecutionResult(any(TossPromotionResultRequest.class)))
-                .willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.SUCCESS));
+        given(tossPromotionGateway.getExecutionStatus(777L, "promo-answer", "reward-key-1"))
+                .willReturn(PromotionGatewayExecutionStatus.SUCCEEDED);
 
         resolverService.resolveAll();
 
-        verify(promotionExecuteStateService).markSucceeded(1L);
+        verify(promotionExecutionResultApplier).apply(1L, PromotionGatewayExecutionStatus.SUCCEEDED);
+    }
+
+    @Test
+    @DisplayName("결과가 FAILED여도 resolver는 직접 실패 처리하지 않고 applier에 위임한다")
+    void delegatesFailedResultToApplier() {
+        PromotionReward reward = pendingReward(1L);
+        given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(reward));
+        given(tossPromotionGateway.getExecutionStatus(777L, "promo-answer", "reward-key-1"))
+                .willReturn(PromotionGatewayExecutionStatus.FAILED);
+
+        resolverService.resolveAll();
+
+        verify(promotionExecutionResultApplier).apply(1L, PromotionGatewayExecutionStatus.FAILED);
         verify(promotionFailureStateService, never()).markFailed(any(), any(), any());
     }
 
     @Test
-    @DisplayName("PENDING 건의 결과가 FAILED면 FAILED로 업데이트한다")
-    void resolvesFailedFromPending() {
-        PromotionReward reward = pendingReward(1L);
-        given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(reward));
-        given(tossPromotionGateway.getExecutionResult(any(TossPromotionResultRequest.class)))
-                .willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.FAILED));
-
-        resolverService.resolveAll();
-
-        verify(promotionFailureStateService).markFailed(eq(1L), any(), any());
-        verify(promotionExecuteStateService, never()).markSucceeded(any());
-    }
-
-    @Test
-    @DisplayName("PENDING 건의 결과가 여전히 PENDING이면 상태를 변경하지 않는다")
-    void doesNothingWhenStillPending() {
-        PromotionReward reward = pendingReward(1L);
-        given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(reward));
-        given(tossPromotionGateway.getExecutionResult(any(TossPromotionResultRequest.class)))
-                .willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.PENDING));
-
-        resolverService.resolveAll();
-
-        verify(promotionExecuteStateService, never()).markSucceeded(any());
-        verify(promotionFailureStateService, never()).markFailed(any(), any(), any());
-    }
-
-    @Test
-    @DisplayName("EXECUTED 건의 결과가 SUCCESS면 SUCCEEDED로 업데이트한다")
-    void resolvesSuccessFromExecuted() {
+    @DisplayName("EXECUTED 건도 gateway 상태를 applier에 위임한다")
+    void delegatesResultForExecutedReward() {
         PromotionReward reward = executedReward(2L);
         given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(reward));
-        given(tossPromotionGateway.getExecutionResult(any(TossPromotionResultRequest.class)))
-                .willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.SUCCESS));
+        given(tossPromotionGateway.getExecutionStatus(777L, "promo-answer", "reward-key-2"))
+                .willReturn(PromotionGatewayExecutionStatus.SUCCEEDED);
 
         resolverService.resolveAll();
 
-        verify(promotionExecuteStateService).markSucceeded(2L);
+        verify(promotionExecutionResultApplier).apply(2L, PromotionGatewayExecutionStatus.SUCCEEDED);
+    }
+
+    @Test
+    @DisplayName("이미 PENDING인 건이 여전히 PENDING이면 applier를 호출하지 않는다")
+    void skipsApplierWhenStillPending() {
+        PromotionReward reward = pendingReward(1L);
+        given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(reward));
+        given(tossPromotionGateway.getExecutionStatus(777L, "promo-answer", "reward-key-1"))
+                .willReturn(PromotionGatewayExecutionStatus.PENDING);
+
+        resolverService.resolveAll();
+
+        verify(promotionExecutionResultApplier, never()).apply(any(), any());
+    }
+
+    @Test
+    @DisplayName("EXECUTED 건이 PENDING으로 처음 전환되면 applier를 호출한다")
+    void appliesFirstPendingTransitionForExecutedReward() {
+        PromotionReward reward = executedReward(2L);
+        given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(reward));
+        given(tossPromotionGateway.getExecutionStatus(777L, "promo-answer", "reward-key-2"))
+                .willReturn(PromotionGatewayExecutionStatus.PENDING);
+
+        resolverService.resolveAll();
+
+        verify(promotionExecutionResultApplier).apply(2L, PromotionGatewayExecutionStatus.PENDING);
     }
 
     @Test
@@ -141,13 +150,13 @@ class PromotionPendingResolverServiceTest {
         PromotionReward failingReward = pendingReward(1L);
         PromotionReward successReward = pendingReward(2L);
         given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(failingReward, successReward));
-        given(tossPromotionGateway.getExecutionResult(any(TossPromotionResultRequest.class)))
+        given(tossPromotionGateway.getExecutionStatus(any(), any(), any()))
                 .willThrow(new RuntimeException("Toss API 오류"))
-                .willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.SUCCESS));
+                .willReturn(PromotionGatewayExecutionStatus.SUCCEEDED);
 
         resolverService.resolveAll();
 
-        verify(promotionExecuteStateService).markSucceeded(2L);
+        verify(promotionExecutionResultApplier).apply(2L, PromotionGatewayExecutionStatus.SUCCEEDED);
     }
 
     @Test
@@ -166,7 +175,8 @@ class PromotionPendingResolverServiceTest {
         resolverService.resolveAll();
 
         verify(promotionFailureStateService).markFailed(eq(1L), any(), any());
-        verify(tossPromotionGateway, never()).getExecutionResult(any());
+        verify(tossPromotionGateway, never()).getExecutionStatus(any(), any(), any());
+        verify(promotionExecutionResultApplier, never()).apply(any(), any());
     }
 
     @Test
@@ -176,7 +186,7 @@ class PromotionPendingResolverServiceTest {
 
         resolverService.resolveAll();
 
-        verify(tossPromotionGateway, never()).getExecutionResult(any());
+        verify(tossPromotionGateway, never()).getExecutionStatus(any(), any(), any());
     }
 
     @Test
@@ -184,13 +194,11 @@ class PromotionPendingResolverServiceTest {
     void usesStoredCredentialsForGatewayCall() {
         PromotionReward reward = pendingReward(1L);
         given(promotionRewardRepository.findTop100ByStatusIn(any())).willReturn(List.of(reward));
-        given(tossPromotionGateway.getExecutionResult(any(TossPromotionResultRequest.class)))
-                .willReturn(new TossPromotionResultResponse(TossPromotionExecutionStatus.SUCCESS));
+        given(tossPromotionGateway.getExecutionStatus(777L, "promo-answer", "reward-key-1"))
+                .willReturn(PromotionGatewayExecutionStatus.SUCCEEDED);
 
         resolverService.resolveAll();
 
-        verify(tossPromotionGateway).getExecutionResult(
-                new TossPromotionResultRequest(777L, "promo-answer", "reward-key-1")
-        );
+        verify(tossPromotionGateway).getExecutionStatus(777L, "promo-answer", "reward-key-1");
     }
 }
