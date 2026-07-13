@@ -22,6 +22,7 @@ import server.MATE.toss.dto.response.TossPromotionKeyResponse;
 import server.MATE.toss.dto.response.TossTokenResponse;
 import server.MATE.toss.exception.TossApiException;
 import server.MATE.toss.exception.TossErrorCode;
+import server.MATE.toss.exception.parser.TossErrorResponseParser;
 import server.MATE.toss.exception.parser.TossLoginErrorResponseParser;
 import server.MATE.toss.exception.parser.TossPromotionErrorResponseParser;
 
@@ -217,7 +218,7 @@ class TossHttpClientTest {
         ));
     }
 
-    private TossHttpClient createClientWithParsers(ExchangeFunction exchangeFunction, List<server.MATE.toss.exception.parser.TossErrorResponseParser> parsers) {
+    private TossHttpClient createClientWithParsers(ExchangeFunction exchangeFunction, List<TossErrorResponseParser> parsers) {
         WebClient webClient = WebClient.builder()
                 .exchangeFunction(exchangeFunction)
                 .build();

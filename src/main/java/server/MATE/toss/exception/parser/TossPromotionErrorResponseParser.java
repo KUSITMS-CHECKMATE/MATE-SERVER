@@ -33,6 +33,10 @@ public class TossPromotionErrorResponseParser implements TossErrorResponseParser
     @Override
     public TossErrorContext parse(HttpStatusCode statusCode, String path, String responseBody) {
         String defaultReason = defaultReasonFor(path);
+        if (responseBody == null || responseBody.isBlank()) {
+            return result(TossErrorCode.TOSS_001, new TossErrorResponse(UNKNOWN_PROMOTION_ERROR_CODE, defaultReason));
+        }
+
         try {
             JsonNode root = objectMapper.readTree(responseBody);
             JsonNode error = root.path("error");
@@ -46,7 +50,7 @@ public class TossPromotionErrorResponseParser implements TossErrorResponseParser
             }
 
             if (error.isTextual()) {
-                String errorCode = error.asText(UNKNOWN_PROMOTION_ERROR_CODE);
+                String errorCode = textOrDefault(error, UNKNOWN_PROMOTION_ERROR_CODE);
                 TossErrorResponse errorResponse = new TossErrorResponse(
                         errorCode,
                         textOrDefault(root.path("error_description"), defaultReason)
