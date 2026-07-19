@@ -302,9 +302,9 @@ public class TossLoginService {
     private void revokeLinkedState(Users user, TossAccount tossAccount, TossUnlinkReferrer referrer) {
         tossLoginSessionService.clearLoginTokens(user.getId());
         userRefreshTokenStore.delete(user.getId());
-        promotionRewardRepository.clearTossUserKeyByTesterId(user.getId());
         user.anonymizeForTossUnlink();
         tossAccount.markUnlinked(referrer, LocalDateTime.now(clock));
+        promotionRewardRepository.clearTossUserKeyByTesterId(user.getId());
     }
 
     private boolean isInvalidAccessToken(TossApiException e) {
