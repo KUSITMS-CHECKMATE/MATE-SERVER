@@ -24,7 +24,7 @@ public class Users extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = true, unique = true)
     private String ci;
 
     @Column
@@ -46,5 +46,9 @@ public class Users extends BaseEntity {
             return;
         }
         this.name = name;
+    }
+
+    public void anonymizeForTossUnlink() {
+        this.ci = null;
     }
 }
