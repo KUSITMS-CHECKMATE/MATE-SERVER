@@ -70,8 +70,6 @@ public class TestPublishService {
                 .testStatus(TestStatus.WAITING)
                 .build());
 
-        eventPublisher.publishEvent(new TestCreatedEvent(test.getId(), test.getTitle(), test.getReward(), test.getCreatedAt()));
-
         if (draft.getCategories() != null && !draft.getCategories().isEmpty()) {
             test.addCategories(toCategories(draft.getCategories()));
         }
@@ -84,6 +82,9 @@ public class TestPublishService {
         payment.linkTest(test.getId());
         draft.markPublished(test.getId());
         testDraftRepository.delete(draft);
+
+        eventPublisher.publishEvent(new TestCreatedEvent(test.getId(), test.getTitle(), test.getReward(), test.getCreatedAt()));
+
         return test.getId();
     }
 
