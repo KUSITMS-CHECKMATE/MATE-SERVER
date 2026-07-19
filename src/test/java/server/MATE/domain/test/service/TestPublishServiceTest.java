@@ -118,6 +118,7 @@ class TestPublishServiceTest {
         given(testRepository.save(any(server.MATE.domain.test.entity.Test.class))).willAnswer(invocation -> {
             server.MATE.domain.test.entity.Test saved = invocation.getArgument(0);
             ReflectionTestUtils.setField(saved, "id", 99L);
+            ReflectionTestUtils.setField(saved, "createdAt", LocalDateTime.now());
             return saved;
         });
 
@@ -146,6 +147,7 @@ class TestPublishServiceTest {
         assertThat(publishedEvent.testId()).isEqualTo(99L);
         assertThat(publishedEvent.title()).isEqualTo("테스트 제목");
         assertThat(publishedEvent.reward()).isEqualTo(300);
+        assertThat(publishedEvent.createdAt()).isNotNull();
     }
 
     @Test
