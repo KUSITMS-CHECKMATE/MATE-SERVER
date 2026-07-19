@@ -25,6 +25,8 @@ import server.MATE.domain.auth.crypto.TokenEncryptor;
 import server.MATE.domain.auth.dto.response.TossLoginResponse;
 import server.MATE.domain.auth.store.TossTokenStore;
 import server.MATE.domain.auth.store.UserRefreshTokenStore;
+import server.MATE.domain.promotion.entity.PromotionReward;
+import server.MATE.domain.promotion.repository.PromotionRewardRepository;
 import server.MATE.domain.users.entity.TossAccount;
 import server.MATE.domain.users.entity.TossUnlinkReferrer;
 import server.MATE.domain.users.entity.Users;
@@ -67,6 +69,9 @@ class TossLoginIntegrationTest {
     private TossAccountRepository tossAccountRepository;
 
     @Autowired
+    private PromotionRewardRepository promotionRewardRepository;
+
+    @Autowired
     private TokenEncryptor tokenEncryptor;
 
     @MockitoBean
@@ -86,6 +91,7 @@ class TossLoginIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        promotionRewardRepository.deleteAll();
         tossAccountRepository.deleteAll();
         usersRepository.deleteAll();
     }
@@ -182,16 +188,29 @@ class TossLoginIntegrationTest {
                 .lastLoginAt(LocalDateTime.now().minusDays(1))
                 .lastTokenRefreshedAt(LocalDateTime.now().minusDays(1))
                 .build());
+        PromotionReward reward = promotionRewardRepository.save(PromotionReward.builder()
+                .participationId(1L)
+                .testId(10L)
+                .testerId(user.getId())
+                .tossUserKey(777L)
+                .rewardAmount(1000)
+                .build());
 
         when(tossTokenStore.findAccessToken(user.getId())).thenReturn(Optional.of("cached-access"));
 
         tossLoginService.unlinkCurrentUser(user.getId());
 
         TossAccount updatedAccount = tossAccountRepository.findById(tossAccount.getId()).orElseThrow();
+        Users updatedUser = usersRepository.findById(user.getId()).orElseThrow();
+        PromotionReward updatedReward = promotionRewardRepository.findById(reward.getId()).orElseThrow();
         assertThat(updatedAccount.isLinked()).isFalse();
         assertThat(updatedAccount.getUnlinkReferrer()).isEqualTo(TossUnlinkReferrer.UNLINK);
         assertThat(updatedAccount.getUnlinkedAt()).isNotNull();
         assertThat(updatedAccount.getEncryptedTossRefreshToken()).isNull();
+        assertThat(updatedAccount.getTossUserKey()).isNull();
+        assertThat(updatedAccount.getScope()).isNull();
+        assertThat(updatedUser.getCi()).isNull();
+        assertThat(updatedReward.getTossUserKey()).isNull();
 
         verify(tossLoginApiClient).removeByAccessToken("cached-access");
         verify(tossTokenStore).deleteAccessToken(user.getId());
@@ -215,14 +234,27 @@ class TossLoginIntegrationTest {
                 .lastLoginAt(LocalDateTime.now().minusDays(1))
                 .lastTokenRefreshedAt(LocalDateTime.now().minusDays(1))
                 .build());
+        PromotionReward reward = promotionRewardRepository.save(PromotionReward.builder()
+                .participationId(2L)
+                .testId(10L)
+                .testerId(user.getId())
+                .tossUserKey(777L)
+                .rewardAmount(1000)
+                .build());
 
         tossLoginService.handleUnlinkCallback(777L, TossUnlinkReferrer.WITHDRAWAL_TOSS);
 
         TossAccount updatedAccount = tossAccountRepository.findById(tossAccount.getId()).orElseThrow();
+        Users updatedUser = usersRepository.findById(user.getId()).orElseThrow();
+        PromotionReward updatedReward = promotionRewardRepository.findById(reward.getId()).orElseThrow();
         assertThat(updatedAccount.isLinked()).isFalse();
         assertThat(updatedAccount.getUnlinkReferrer()).isEqualTo(TossUnlinkReferrer.WITHDRAWAL_TOSS);
         assertThat(updatedAccount.getUnlinkedAt()).isNotNull();
         assertThat(updatedAccount.getEncryptedTossRefreshToken()).isNull();
+        assertThat(updatedAccount.getTossUserKey()).isNull();
+        assertThat(updatedAccount.getScope()).isNull();
+        assertThat(updatedUser.getCi()).isNull();
+        assertThat(updatedReward.getTossUserKey()).isNull();
 
         verify(tossTokenStore).deleteAccessToken(user.getId());
         verify(tossTokenStore).deleteRefreshToken(user.getId());
