@@ -19,6 +19,7 @@ import server.MATE.domain.auth.jwt.TokenType;
 import server.MATE.domain.auth.crypto.TokenEncryptor;
 import server.MATE.domain.auth.jwt.JwtProvider;
 import server.MATE.domain.auth.store.UserRefreshTokenStore;
+import server.MATE.domain.promotion.repository.PromotionRewardRepository;
 import server.MATE.domain.users.entity.TossAccount;
 import server.MATE.domain.users.dto.response.MeResponse;
 import server.MATE.domain.users.entity.Users;
@@ -51,6 +52,7 @@ public class TossLoginService {
     private final UserRefreshTokenStore userRefreshTokenStore;
     private final TokenEncryptor tokenEncryptor;
     private final TossLoginSessionService tossLoginSessionService;
+    private final PromotionRewardRepository promotionRewardRepository;
     private final Clock clock;
 
     @Value("${toss.callback.basic-auth-header:}")
@@ -300,6 +302,8 @@ public class TossLoginService {
     private void revokeLinkedState(Users user, TossAccount tossAccount, TossUnlinkReferrer referrer) {
         tossLoginSessionService.clearLoginTokens(user.getId());
         userRefreshTokenStore.delete(user.getId());
+        promotionRewardRepository.clearTossUserKeyByTesterId(user.getId());
+        user.anonymizeForTossUnlink();
         tossAccount.markUnlinked(referrer, LocalDateTime.now(clock));
     }
 
