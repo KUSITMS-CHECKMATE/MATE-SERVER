@@ -33,7 +33,7 @@ public class TossAccount extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private Users user;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private Long tossUserKey;
 
     @Column(length = 2000)
@@ -113,7 +113,9 @@ public class TossAccount extends BaseEntity {
 
     public void markUnlinked(TossUnlinkReferrer unlinkReferrer, LocalDateTime unlinkedAt) {
         this.isLinked = false;
+        this.tossUserKey = null;
         this.encryptedTossRefreshToken = null;
+        this.scope = null;
         this.unlinkReferrer = unlinkReferrer;
         this.unlinkedAt = unlinkedAt;
     }
