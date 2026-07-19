@@ -15,6 +15,7 @@ import server.MATE.domain.payment.entity.Payment;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.service.QuestionService;
+import server.MATE.domain.test.event.TestCreatedEvent;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.domain.testdraft.entity.TestDraft;
 import server.MATE.domain.testdraft.entity.TestDraftStatus;
@@ -138,6 +139,13 @@ class TestPublishServiceTest {
 
         verify(questionService).createQuestions(any(Long.class), any(Long.class), any(QuestionCreateRequest.class));
         verify(testDraftRepository).delete(draft);
+
+        ArgumentCaptor<TestCreatedEvent> eventCaptor = ArgumentCaptor.forClass(TestCreatedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        TestCreatedEvent publishedEvent = eventCaptor.getValue();
+        assertThat(publishedEvent.testId()).isEqualTo(99L);
+        assertThat(publishedEvent.title()).isEqualTo("테스트 제목");
+        assertThat(publishedEvent.reward()).isEqualTo(300);
     }
 
     @Test
