@@ -12,6 +12,7 @@ import server.MATE.domain.question.service.QuestionService;
 import server.MATE.domain.test.entity.Category;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestStatus;
+import server.MATE.domain.test.event.TestCreatedEvent;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.domain.testdraft.entity.TestDraft;
 import server.MATE.domain.testdraft.repository.TestDraftRepository;
@@ -81,6 +82,9 @@ public class TestPublishService {
         payment.linkTest(test.getId());
         draft.markPublished(test.getId());
         testDraftRepository.delete(draft);
+
+        eventPublisher.publishEvent(new TestCreatedEvent(test.getId(), test.getTitle(), test.getReward(), test.getCreatedAt()));
+
         return test.getId();
     }
 

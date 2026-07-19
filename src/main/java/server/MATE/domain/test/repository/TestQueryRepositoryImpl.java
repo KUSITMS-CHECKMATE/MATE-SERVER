@@ -67,6 +67,11 @@ public class TestQueryRepositoryImpl implements TestQueryRepository {
         return participatedBy(userId).not();
     }
 
+    // REJECTED 상태가 아닌 경우만 거르는 조건 (사용자-facing 조회에서 반려된 테스트 숨김)
+    private static BooleanExpression statusNotRejected() {
+        return test.testStatus.ne(TestStatus.REJECTED);
+    }
+
 
     @Override
     public List<Test> findAvailableTestsForUser(List<TestStatus> statuses, LocalDateTime closedAt, Long userId) {
@@ -168,7 +173,7 @@ public class TestQueryRepositoryImpl implements TestQueryRepository {
                         // categories를 fetch join하면 테스트가 중복 조회될 수 있어 distinct로 중복 제거함
                         // 컬렉션 fetch join은 하나만 두는 편이 안전함
                         .leftJoin(test.categories).fetchJoin()
-                        .where(idEq(id), notDeleted())
+                        .where(idEq(id), notDeleted(), statusNotRejected())
                         .distinct()
                         .fetchOne()
         );
@@ -203,5 +208,50 @@ public class TestQueryRepositoryImpl implements TestQueryRepository {
                         notDeleted()
                 )
                 .fetch();
+    }
+
+    @Override
+    public List<Test> findByStatusForAdmin(TestStatus status, int offset, int limit) {
+        if (status == null) {
+            return List.of();
+        }
+
+        return queryFactory
+                .selectFrom(test)
+                .where(test.testStatus.eq(status), notDeleted())
+                .orderBy(test.createdAt.desc())
+                .offset(offset)
+                .limit(limit)
+                .fetch();
+    }
+
+    @Override
+    public long countByStatusForAdmin(TestStatus status) {
+        if (status == null) {
+            return 0L;
+        }
+
+        Long count = queryFactory
+                .select(test.count())
+                .from(test)
+                .where(test.testStatus.eq(status), notDeleted())
+                .fetchOne();
+        return count == null ? 0L : count;
+    }
+
+    @Override
+    public Optional<Test> findWithCategoriesByIdForAdmin(Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable(
+                queryFactory
+                        .selectFrom(test)
+                        .leftJoin(test.categories).fetchJoin()
+                        .where(idEq(id), notDeleted())
+                        .distinct()
+                        .fetchOne()
+        );
     }
 }
