@@ -51,9 +51,9 @@ public class AdminTestController {
     @PatchMapping("/{testId}/reject")
     public ResponseEntity<ApiResponse<AdminTestStatusResponse>> reject(
             @PathVariable Long testId,
-            @RequestBody @Valid RejectTestRequest request
+            @RequestBody(required = false) @Valid RejectTestRequest request
     ) {
-        AdminTestStatusResponse data = adminTestService.reject(testId, request.reason());
+        AdminTestStatusResponse data = adminTestService.reject(testId, request == null ? null : request.reason());
         return ResponseEntity.ok(ApiResponse.ok("테스트를 반려했습니다.", data));
     }
 }

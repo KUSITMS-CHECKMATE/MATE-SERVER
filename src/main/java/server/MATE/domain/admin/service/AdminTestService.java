@@ -32,7 +32,7 @@ public class AdminTestService {
     public AdminTestListResponse listTests(TestStatus status, int page, int size) {
         TestStatus filterStatus = status == null ? TestStatus.WAITING : status;
         int safePage = Math.max(page, 1);
-        int safeSize = Math.max(size, 1);
+        int safeSize = Math.min(Math.max(size, 1), 100);
         int offset = (safePage - 1) * safeSize;
 
         List<Test> tests = testRepository.findByStatusForAdmin(filterStatus, offset, safeSize);

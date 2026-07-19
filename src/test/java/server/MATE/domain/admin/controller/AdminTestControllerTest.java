@@ -122,6 +122,19 @@ class AdminTestControllerTest {
     }
 
     @Test
+    @DisplayName("반려: 요청 본문 없이 reject 엔드포인트를 호출해도 성공한다")
+    void reject_callsServiceWithoutBody() throws Exception {
+        given(adminTestService.reject(10L, null))
+                .willReturn(new AdminTestStatusResponse(10L, TestStatus.REJECTED));
+
+        mockMvc.perform(patch("/api/v1/admin/tests/10/reject"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.testStatus").value("REJECTED"));
+
+        verify(adminTestService).reject(10L, null);
+    }
+
+    @Test
     @DisplayName("존재하지 않는 테스트 승인 시 404를 반환한다")
     void approve_notFound_returns404() throws Exception {
         given(adminTestService.approve(999L)).willThrow(new BaseException(BaseErrorCode.TEST_004));
