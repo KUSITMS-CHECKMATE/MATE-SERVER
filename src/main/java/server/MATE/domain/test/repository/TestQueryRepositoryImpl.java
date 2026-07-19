@@ -67,6 +67,11 @@ public class TestQueryRepositoryImpl implements TestQueryRepository {
         return participatedBy(userId).not();
     }
 
+    // REJECTED 상태가 아닌 경우만 거르는 조건 (사용자-facing 조회에서 반려된 테스트 숨김)
+    private static BooleanExpression statusNotRejected() {
+        return test.testStatus.ne(TestStatus.REJECTED);
+    }
+
 
     @Override
     public List<Test> findAvailableTestsForUser(List<TestStatus> statuses, LocalDateTime closedAt, Long userId) {
@@ -168,7 +173,7 @@ public class TestQueryRepositoryImpl implements TestQueryRepository {
                         // categories를 fetch join하면 테스트가 중복 조회될 수 있어 distinct로 중복 제거함
                         // 컬렉션 fetch join은 하나만 두는 편이 안전함
                         .leftJoin(test.categories).fetchJoin()
-                        .where(idEq(id), notDeleted())
+                        .where(idEq(id), notDeleted(), statusNotRejected())
                         .distinct()
                         .fetchOne()
         );
