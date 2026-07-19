@@ -12,6 +12,7 @@ import server.MATE.domain.question.service.QuestionService;
 import server.MATE.domain.test.entity.Category;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestStatus;
+import server.MATE.domain.test.event.TestCreatedEvent;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.domain.testdraft.entity.TestDraft;
 import server.MATE.domain.testdraft.repository.TestDraftRepository;
@@ -68,6 +69,8 @@ public class TestPublishService {
                 .closedAt(draft.getClosedAt())
                 .testStatus(TestStatus.WAITING)
                 .build());
+
+        eventPublisher.publishEvent(new TestCreatedEvent(test.getId(), test.getTitle(), test.getReward(), test.getCreatedAt()));
 
         if (draft.getCategories() != null && !draft.getCategories().isEmpty()) {
             test.addCategories(toCategories(draft.getCategories()));
