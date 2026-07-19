@@ -3,8 +3,6 @@ package server.MATE.domain.test.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import server.MATE.domain.participation.repository.ParticipationRepository;
 import server.MATE.domain.test.dto.response.*;
 import server.MATE.domain.test.entity.Test;
@@ -12,7 +10,6 @@ import server.MATE.domain.test.entity.TestLike;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestLikeRepository;
 import server.MATE.domain.test.repository.TestRepository;
-import server.MATE.domain.users.entity.Role;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.storage.FileStorageService;
@@ -78,43 +75,6 @@ public class TestService {
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         boolean hasResponded = participationRepository.existsActiveParticipation(testId, userId);
         return TestDetailResponse.from(test, toImageUrls(test.getImageKeys()), hasResponded);
-    }
-
-    public TestStatusUpdateResponse updateTestStatus(Long testId, Long userId, Role role, TestStatus status) {
-        Test test = testRepository.findActiveById(testId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
-
-        switch (status) {
-            case IN_PROGRESS -> {
-                if (role != Role.ADMIN) {
-                    throw new BaseException(BaseErrorCode.COMMON_009);
-                }
-                if (test.getTestStatus() != TestStatus.WAITING) {
-                    throw new BaseException(BaseErrorCode.TEST_007);
-                }
-                test.start();
-                Long approvedTestId = test.getId();
-                LocalDateTime closedAt = test.getClosedAt();
-                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        testCloseScheduler.schedule(approvedTestId, closedAt);
-                    }
-                });
-            }
-            case REJECTED -> {
-                if (role != Role.ADMIN) {
-                    throw new BaseException(BaseErrorCode.COMMON_009);
-                }
-                if (test.getTestStatus() != TestStatus.WAITING) {
-                    throw new BaseException(BaseErrorCode.TEST_007);
-                }
-                test.reject();
-            }
-            default -> throw new BaseException(BaseErrorCode.COMMON_002);
-        }
-
-        return new TestStatusUpdateResponse(testId, test.getTestStatus());
     }
 
     public TestLikeResponse likeTest(Long testId, Long userId) {
