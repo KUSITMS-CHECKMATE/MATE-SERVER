@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.util.ReflectionTestUtils;
 import server.MATE.domain.participation.entity.Participation;
 import server.MATE.domain.test.entity.Category;
 import server.MATE.domain.test.entity.TestStatus;
@@ -415,5 +416,83 @@ class TestQueryRepositoryImplTest {
     @DisplayName("findExpiredInProgressTests: now가 null이면 빈 리스트를 반환한다")
     void findExpiredInProgressTests_nullNow_returnsEmpty() {
         assertThat(testRepository.findExpiredInProgressTests(null)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findByStatusForAdmin: 상태로 필터링하고 createdAt desc로 정렬한다")
+    void findByStatusForAdmin_filtersAndSortsByCreatedAtDesc() {
+        server.MATE.domain.test.entity.Test older = em.persistAndFlush(
+                server.MATE.domain.test.entity.Test.builder()
+                        .makerId(1L).title("오래된 대기중").testStatus(TestStatus.WAITING)
+                        .goalPpl(10).reward(300).closedAt(LocalDateTime.now().plusDays(7)).build()
+        );
+        ReflectionTestUtils.setField(older, "createdAt", LocalDateTime.now().minusDays(5));
+        server.MATE.domain.test.entity.Test newer = em.persistAndFlush(
+                server.MATE.domain.test.entity.Test.builder()
+                        .makerId(1L).title("최신 대기중").testStatus(TestStatus.WAITING)
+                        .goalPpl(10).reward(300).closedAt(LocalDateTime.now().plusDays(7)).build()
+        );
+        ReflectionTestUtils.setField(newer, "createdAt", LocalDateTime.now());
+        em.merge(older);
+        em.merge(newer);
+        em.flush();
+        em.clear();
+
+        List<server.MATE.domain.test.entity.Test> result =
+                testRepository.findByStatusForAdmin(TestStatus.WAITING, 0, 10);
+
+        assertThat(result).extracting("title").containsExactly("최신 대기중", "오래된 대기중");
+    }
+
+    @Test
+    @DisplayName("findByStatusForAdmin: offset/limit으로 페이지네이션한다")
+    void findByStatusForAdmin_paginatesWithOffsetAndLimit() {
+        for (int i = 0; i < 3; i++) {
+            em.persistAndFlush(
+                    server.MATE.domain.test.entity.Test.builder()
+                            .makerId(1L).title("테스트" + i).testStatus(TestStatus.WAITING)
+                            .goalPpl(10).reward(300).closedAt(LocalDateTime.now().plusDays(7)).build()
+            );
+        }
+        em.clear();
+
+        List<server.MATE.domain.test.entity.Test> result =
+                testRepository.findByStatusForAdmin(TestStatus.WAITING, 1, 1);
+
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("countByStatusForAdmin: 상태별 개수를 센다")
+    void countByStatusForAdmin_countsByStatus() {
+        em.persistAndFlush(
+                server.MATE.domain.test.entity.Test.builder()
+                        .makerId(1L).title("대기중1").testStatus(TestStatus.WAITING)
+                        .goalPpl(10).reward(300).closedAt(LocalDateTime.now().plusDays(7)).build()
+        );
+        em.persistAndFlush(
+                server.MATE.domain.test.entity.Test.builder()
+                        .makerId(1L).title("진행중1").testStatus(TestStatus.IN_PROGRESS)
+                        .goalPpl(10).reward(300).closedAt(LocalDateTime.now().plusDays(7)).build()
+        );
+        em.clear();
+
+        assertThat(testRepository.countByStatusForAdmin(TestStatus.WAITING)).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("findWithCategoriesByIdForAdmin: REJECTED 테스트도 조회된다")
+    void findWithCategoriesByIdForAdmin_returnsRejectedTest() {
+        server.MATE.domain.test.entity.Test rejectedTest = em.persistAndFlush(
+                server.MATE.domain.test.entity.Test.builder()
+                        .makerId(1L).title("반려됨").testStatus(TestStatus.REJECTED)
+                        .goalPpl(10).reward(300).closedAt(LocalDateTime.now().plusDays(7)).build()
+        );
+        em.clear();
+
+        Optional<server.MATE.domain.test.entity.Test> result =
+                testRepository.findWithCategoriesByIdForAdmin(rejectedTest.getId());
+
+        assertThat(result).isPresent();
     }
 }
