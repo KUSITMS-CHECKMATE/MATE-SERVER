@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
+import java.lang.reflect.Field;
 import java.util.function.Consumer;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -61,7 +62,13 @@ class TossPromotionApiClientTest {
         TossPromotionExecuteResponse response = apiClient.execute(777L, "promo-code", "reward-key", 1000);
 
         assertThat(response.key()).isEqualTo("reward-key");
-        verify(tossHttpClient).post(eq(EXECUTE_PATH), any(), ArgumentMatchers.<Consumer<HttpHeaders>>any(), eq(TossPromotionExecuteResponse.class));
+
+        ArgumentCaptor<Object> bodyCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(tossHttpClient).post(eq(EXECUTE_PATH), bodyCaptor.capture(), ArgumentMatchers.<Consumer<HttpHeaders>>any(), eq(TossPromotionExecuteResponse.class));
+        Object capturedBody = bodyCaptor.getValue();
+        assertThat(getFieldValue(capturedBody, "promotionCode")).isEqualTo("promo-code");
+        assertThat(getFieldValue(capturedBody, "key")).isEqualTo("reward-key");
+        assertThat(getFieldValue(capturedBody, "amount")).isEqualTo(1000);
     }
 
     @Test
@@ -72,5 +79,21 @@ class TossPromotionApiClientTest {
         TossPromotionExecutionStatus status = apiClient.getExecutionStatus(777L, "promo-code", "reward-key");
 
         assertThat(status).isEqualTo(TossPromotionExecutionStatus.SUCCESS);
+
+        ArgumentCaptor<Object> bodyCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(tossHttpClient).post(eq(RESULT_PATH), bodyCaptor.capture(), ArgumentMatchers.<Consumer<HttpHeaders>>any(), eq(TossPromotionExecutionStatus.class));
+        Object capturedBody = bodyCaptor.getValue();
+        assertThat(getFieldValue(capturedBody, "promotionCode")).isEqualTo("promo-code");
+        assertThat(getFieldValue(capturedBody, "key")).isEqualTo("reward-key");
+    }
+
+    private Object getFieldValue(Object obj, String fieldName) {
+        try {
+            Field field = obj.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(obj);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new AssertionError("Could not access field: " + fieldName, e);
+        }
     }
 }
