@@ -32,4 +32,12 @@ public interface PromotionRewardRepository extends JpaRepository<PromotionReward
             where pr.testId = :testId
             """)
     int deleteAllByTestId(@Param("testId") Long testId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update PromotionReward pr
+            set pr.tossUserKey = null
+            where pr.testerId = :testerId
+            """)
+    int clearTossUserKeyByTesterId(@Param("testerId") Long testerId);
 }
