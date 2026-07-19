@@ -209,4 +209,49 @@ public class TestQueryRepositoryImpl implements TestQueryRepository {
                 )
                 .fetch();
     }
+
+    @Override
+    public List<Test> findByStatusForAdmin(TestStatus status, int offset, int limit) {
+        if (status == null) {
+            return List.of();
+        }
+
+        return queryFactory
+                .selectFrom(test)
+                .where(test.testStatus.eq(status), notDeleted())
+                .orderBy(test.createdAt.desc())
+                .offset(offset)
+                .limit(limit)
+                .fetch();
+    }
+
+    @Override
+    public long countByStatusForAdmin(TestStatus status) {
+        if (status == null) {
+            return 0L;
+        }
+
+        Long count = queryFactory
+                .select(test.count())
+                .from(test)
+                .where(test.testStatus.eq(status), notDeleted())
+                .fetchOne();
+        return count == null ? 0L : count;
+    }
+
+    @Override
+    public Optional<Test> findWithCategoriesByIdForAdmin(Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable(
+                queryFactory
+                        .selectFrom(test)
+                        .leftJoin(test.categories).fetchJoin()
+                        .where(idEq(id), notDeleted())
+                        .distinct()
+                        .fetchOne()
+        );
+    }
 }
