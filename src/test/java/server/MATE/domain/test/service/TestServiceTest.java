@@ -216,6 +216,16 @@ class TestServiceTest {
         verify(testLikeRepository).delete(testLike);
     }
 
+    @Test
+    void REJECTED_테스트는_상세_조회되지_않는다() {
+        given(testRepository.findWithCategoriesById(TEST_ID)).willReturn(Optional.empty());
+
+        BaseException exception = org.junit.jupiter.api.Assertions.assertThrows(BaseException.class,
+                () -> testService.getTest(TEST_ID, MAKER_ID));
+
+        assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.TEST_004);
+    }
+
     private server.MATE.domain.test.entity.Test createListTest(Long id, String title, TestStatus testStatus) {
         server.MATE.domain.test.entity.Test listTest = server.MATE.domain.test.entity.Test.builder()
                 .makerId(MAKER_ID)

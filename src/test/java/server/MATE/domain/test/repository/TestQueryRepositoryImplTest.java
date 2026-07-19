@@ -325,6 +325,27 @@ class TestQueryRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("findWithCategoriesById: REJECTED 상태 테스트는 조회되지 않는다")
+    void findWithCategoriesById_rejectedTest_returnsEmpty() {
+        server.MATE.domain.test.entity.Test rejectedTest = em.persistAndFlush(
+                server.MATE.domain.test.entity.Test.builder()
+                        .makerId(1L)
+                        .title("반려된 테스트")
+                        .testStatus(TestStatus.REJECTED)
+                        .goalPpl(10)
+                        .reward(300)
+                        .closedAt(LocalDateTime.now().plusDays(7))
+                        .build()
+        );
+        em.clear();
+
+        Optional<server.MATE.domain.test.entity.Test> result =
+                testRepository.findWithCategoriesById(rejectedTest.getId());
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     @DisplayName("findByIdForUpdate: id가 null이면 빈 Optional을 반환한다")
     void findByIdForUpdate_nullId_returnsEmpty() {
         assertThat(testRepository.findByIdForUpdate(null)).isEmpty();
