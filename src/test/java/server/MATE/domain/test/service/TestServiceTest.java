@@ -8,10 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import org.junit.jupiter.api.Assertions;
 import server.MATE.domain.participation.repository.ParticipationRepository;
-import server.MATE.domain.test.dto.response.TestStatusUpdateResponse;
-import server.MATE.domain.users.entity.Role;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.domain.test.dto.response.LikedTestSummaryItem;
@@ -34,8 +31,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -222,87 +217,13 @@ class TestServiceTest {
     }
 
     @Test
-    void COMPLETED_상태로_변경을_시도하면_예외가_발생한다() {
-        ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
-        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+    void REJECTED_테스트는_상세_조회되지_않는다() {
+        given(testRepository.findWithCategoriesById(TEST_ID)).willReturn(Optional.empty());
 
-        BaseException exception = Assertions.assertThrows(BaseException.class,
-                () -> testService.updateTestStatus(TEST_ID, MAKER_ID, Role.USER, TestStatus.COMPLETED));
+        BaseException exception = org.junit.jupiter.api.Assertions.assertThrows(BaseException.class,
+                () -> testService.getTest(TEST_ID, MAKER_ID));
 
-        assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.COMMON_002);
-    }
-
-    @Test
-    void 관리자가_검수_중인_테스트를_승인한다() {
-        ReflectionTestUtils.setField(test, "testStatus", TestStatus.WAITING);
-        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-
-        TransactionSynchronizationManager.initSynchronization();
-        try {
-            TestStatusUpdateResponse response = testService.updateTestStatus(TEST_ID, 999L, Role.ADMIN, TestStatus.IN_PROGRESS);
-
-            assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
-
-            TransactionSynchronizationManager.getSynchronizations()
-                    .forEach(sync -> sync.afterCommit());
-
-            verify(testCloseScheduler).schedule(TEST_ID, test.getClosedAt());
-        } finally {
-            TransactionSynchronizationManager.clearSynchronization();
-        }
-    }
-
-    @Test
-    void 관리자가_검수_중인_테스트를_반려한다() {
-        ReflectionTestUtils.setField(test, "testStatus", TestStatus.WAITING);
-        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-
-        TestStatusUpdateResponse response = testService.updateTestStatus(TEST_ID, 999L, Role.ADMIN, TestStatus.REJECTED);
-
-        assertThat(response.testStatus()).isEqualTo(TestStatus.REJECTED);
-    }
-
-    @Test
-    void 관리자가_검수_중이_아닌_테스트를_승인하면_예외가_발생한다() {
-        ReflectionTestUtils.setField(test, "testStatus", TestStatus.IN_PROGRESS);
-        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-
-        BaseException exception = Assertions.assertThrows(BaseException.class,
-                () -> testService.updateTestStatus(TEST_ID, 999L, Role.ADMIN, TestStatus.IN_PROGRESS));
-
-        assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.TEST_007);
-    }
-
-    @Test
-    void 관리자가_검수_중이_아닌_테스트를_반려하면_예외가_발생한다() {
-        ReflectionTestUtils.setField(test, "testStatus", TestStatus.COMPLETED);
-        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-
-        BaseException exception = Assertions.assertThrows(BaseException.class,
-                () -> testService.updateTestStatus(TEST_ID, 999L, Role.ADMIN, TestStatus.REJECTED));
-
-        assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.TEST_007);
-    }
-
-    @Test
-    void 일반_사용자가_승인을_시도하면_예외가_발생한다() {
-        ReflectionTestUtils.setField(test, "testStatus", TestStatus.WAITING);
-        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-
-        BaseException exception = Assertions.assertThrows(BaseException.class,
-                () -> testService.updateTestStatus(TEST_ID, 999L, Role.USER, TestStatus.IN_PROGRESS));
-
-        assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.COMMON_009);
-    }
-
-    @Test
-    void WAITING_상태로_변경을_시도하면_예외가_발생한다() {
-        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
-
-        BaseException exception = Assertions.assertThrows(BaseException.class,
-                () -> testService.updateTestStatus(TEST_ID, MAKER_ID, Role.USER, TestStatus.WAITING));
-
-        assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.COMMON_002);
+        assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.TEST_004);
     }
 
     private server.MATE.domain.test.entity.Test createListTest(Long id, String title, TestStatus testStatus) {

@@ -63,6 +63,9 @@ public class Test extends BaseEntity {
     @Column(nullable = false, columnDefinition = "bigint default 0")
     private Long likeCount = 0L;
 
+    @Column(length = 500)
+    private String rejectionReason;
+
     @Column(nullable = false)
     private LocalDateTime closedAt;
 
@@ -172,12 +175,22 @@ public class Test extends BaseEntity {
         return (double) this.pplCount / this.goalPpl;
     }
 
-    public void start() {
+    public void approve() {
         this.testStatus = TestStatus.IN_PROGRESS;
+        this.rejectionReason = null;
     }
 
-    public void reject() {
+    public void reject(String reason) {
         this.testStatus = TestStatus.REJECTED;
+        this.rejectionReason = normalizeRejectionReason(reason);
+    }
+
+    private static String normalizeRejectionReason(String reason) {
+        if (reason == null) {
+            return null;
+        }
+        String trimmed = reason.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     public void startReportAggregation() {
