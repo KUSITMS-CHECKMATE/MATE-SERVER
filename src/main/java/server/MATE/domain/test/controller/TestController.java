@@ -14,8 +14,6 @@ import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
 import server.MATE.domain.test.dto.response.TestLikeResponse;
-import server.MATE.domain.test.dto.request.TestStatusUpdateRequest;
-import server.MATE.domain.test.dto.response.TestStatusUpdateResponse;
 import server.MATE.domain.test.dto.response.TestSummaryListResponse;
 import server.MATE.domain.test.dto.response.TestSummaryResponse;
 import server.MATE.domain.test.service.TestDeleteService;
@@ -114,27 +112,6 @@ public class TestController {
     ) {
         TestDetailResponse data = testService.getTest(testId, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트를 조회했습니다.", data));
-    }
-
-    @Operation(
-            summary = "테스트 상태 변경",
-            description = """
-                    테스트 상태를 변경합니다.
-
-                    - `IN_PROGRESS`: 관리자만 가능 (테스트 승인), 현재 상태가 `WAITING`일 때만 허용
-                    - `REJECTED`: 관리자만 가능 (테스트 반려), 현재 상태가 `WAITING`일 때만 허용
-                    - `COMPLETED`: 마감일(closedAt) 경과 시 스케줄러가 자동 처리 (매일 00:00 KST)
-                    """
-    )
-    @PatchMapping("/{testId}/status")
-    public ResponseEntity<ApiResponse<TestStatusUpdateResponse>> updateTestStatus(
-            @PathVariable Long testId,
-            @RequestBody @Valid TestStatusUpdateRequest request,
-            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
-    ) {
-        TestStatusUpdateResponse response = testService.updateTestStatus(
-                testId, authenticatedUser.getId(), authenticatedUser.getRole(), request.status());
-        return ResponseEntity.ok(ApiResponse.ok("테스트 상태가 변경되었습니다.", response));
     }
 
     @Operation(
