@@ -6,12 +6,20 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "toss.iap")
 public record TossIapProperties(
-        List<String> allowedSkus
+        List<Tier> tiers
 ) {
 
     public TossIapProperties {
-        if (allowedSkus == null) {
-            allowedSkus = List.of();
+        if (tiers == null) {
+            tiers = List.of();
         }
+    }
+
+    public record Tier(
+            int goalPpl,
+            int reward,
+            String sku,
+            int displayAmount
+    ) {
     }
 }
