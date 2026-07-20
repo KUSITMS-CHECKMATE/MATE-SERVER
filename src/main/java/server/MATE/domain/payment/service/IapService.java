@@ -5,11 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import server.MATE.domain.payment.dto.response.PaymentOrderStatusResponse;
 import server.MATE.domain.payment.entity.PayMethod;
 import server.MATE.domain.payment.entity.PayStatus;
 import server.MATE.domain.payment.entity.Payment;
-import server.MATE.domain.payment.dto.response.PaymentOrderStatusResponse;
-import server.MATE.domain.payment.policy.PaymentAmountCalculator;
+import server.MATE.domain.payment.policy.IapProductTierCatalog;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.test.service.TestPublishService;
 import server.MATE.domain.testdraft.entity.TestDraft;
@@ -32,12 +32,11 @@ import java.time.LocalDateTime;
 public class IapService {
 
     private final TossIapGateway tossIapGateway;
-    private final TossIapProperties tossIapProperties;
+    private final IapProductTierCatalog iapProductTierCatalog;
     private final TossAccountRepository tossAccountRepository;
     private final PaymentRepository paymentRepository;
     private final PaymentCreateService paymentCreateService;
     private final TestDraftRepository testDraftRepository;
-    private final PaymentAmountCalculator paymentAmountCalculator;
     private final TestPublishService testPublishService;
 
     /**
@@ -78,11 +77,11 @@ public class IapService {
     }
 
     /**
-     * orderId로 기존 Payment를 찾거나, 없으면 Toss API를 검증해서 새로 저장한다.
+     * orderId로 기존 Payment를 찾거나, 없으면 티어 카탈로그 + Toss API를 검증해서 새로 저장한다.
      * @return 지급 가능한 Payment, 또는 null (Toss 상태가 결제 완료가 아닌 경우)
      */
     private Payment resolvePayment(String orderId, Long draftId, Long makerId) {
-        Payment existing = paymentRepository.findByOrderNo(orderId).orElse(null);
+        Payment existing = paymentRepository.findByOrderId(orderId).orElse(null);
         if (existing != null) {
             if (!existing.getMakerId().equals(makerId)) {
                 throw new BaseException(BaseErrorCode.COMMON_009);
@@ -104,21 +103,24 @@ public class IapService {
         }
         draft.validateAmountFields();
 
+        TossIapProperties.Tier tier = iapProductTierCatalog.find(draft.getGoalPpl(), draft.getReward())
+                .orElseThrow(() -> new BaseException(BaseErrorCode.DRAFT_007));
+
         TossAccount tossAccount = tossAccountRepository.findByUserId(makerId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_005));
 
         IapOrderStatusResult result = tossIapGateway.getOrderStatus(tossAccount.getTossUserKey(), orderId);
 
-        validateSku(result.sku());
+        if (!tier.sku().equals(result.sku())) {
+            throw new BaseException(BaseErrorCode.PAYMENT_006);
+        }
 
         if (result.status() != IapOrderState.PURCHASED
                 && result.status() != IapOrderState.PAYMENT_COMPLETED) {
             return null;
         }
 
-        int amount = paymentAmountCalculator.totalAmount(draft.getGoalPpl(), draft.getReward());
-
-        return savePaymentOrFallback(orderId, draftId, makerId, draft, amount, result.statusDeterminedAt());
+        return savePaymentOrFallback(orderId, draftId, makerId, draft, tier.displayAmount(), result.statusDeterminedAt());
     }
 
     private Payment savePaymentOrFallback(String orderId, Long draftId, Long makerId,
@@ -127,20 +129,17 @@ public class IapService {
             return paymentCreateService.save(Payment.builder()
                     .draftId(draftId)
                     .makerId(makerId)
-                    .orderNo(orderId)
+                    .orderId(orderId)
                     .goalPpl(draft.getGoalPpl())
                     .reward(draft.getReward())
                     .amount(amount)
-                    .paidAmount(amount)
                     .payMethod(PayMethod.IN_APP_PURCHASE)
-                    .transactionId(orderId)
                     .payStatus(PayStatus.PAY_SUCCEEDED)
-                    .isTestPayment(false)
                     .approvedAt(approvedAt)
                     .build());
         } catch (DataIntegrityViolationException e) {
             log.warn("Duplicate grant attempt for orderId={}, falling back to existing record", orderId);
-            Payment fallback = paymentRepository.findByOrderNo(orderId)
+            Payment fallback = paymentRepository.findByOrderId(orderId)
                     .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_001));
             if (!fallback.getMakerId().equals(makerId)) {
                 throw new BaseException(BaseErrorCode.COMMON_009);
@@ -149,18 +148,8 @@ public class IapService {
         }
     }
 
-    private void validateSku(String sku) {
-        var allowedSkus = tossIapProperties.allowedSkus();
-        if (allowedSkus.isEmpty()) {
-            return;
-        }
-        if (sku == null || !allowedSkus.contains(sku)) {
-            throw new BaseException(BaseErrorCode.PAYMENT_006);
-        }
-    }
-
     public PaymentOrderStatusResponse getOrderStatus(String orderId, Long makerId) {
-        paymentRepository.findByOrderNo(orderId).ifPresent(payment -> {
+        paymentRepository.findByOrderId(orderId).ifPresent(payment -> {
             if (!payment.getMakerId().equals(makerId)) {
                 throw new BaseException(BaseErrorCode.COMMON_009);
             }
