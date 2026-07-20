@@ -98,4 +98,21 @@ public class TestDraftController {
         testDraftService.deleteDraft(draftId, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("테스트 초안을 삭제했습니다.", null));
     }
+
+    @Operation(
+            summary = "테스트 초안 발행 가능 여부 사전 검증",
+            description = """
+                    Toss 인앱결제 실행 직전에 호출하는 API입니다. 이 draft가 결제 후 정상적으로 발행 가능한 상태인지 확인합니다.<br>
+                    통과하면 200 OK를 반환하고, 실패하면 사유에 맞는 에러 코드(DRAFT_002/004/005/006/007)로 400을 반환합니다.<br>
+                    200을 받았을 때만 프론트에서 Toss IAP.createOneTimePurchaseOrder를 호출해주세요.
+                    """
+    )
+    @GetMapping("/{draftId}/publish-check")
+    public ResponseEntity<ApiResponse<Void>> publishCheck(
+            @PathVariable Long draftId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        testDraftService.publishCheck(draftId, authenticatedUser.getId());
+        return ResponseEntity.ok(ApiResponse.ok("결제를 진행해도 되는 상태입니다.", null));
+    }
 }
