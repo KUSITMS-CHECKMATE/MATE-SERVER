@@ -118,7 +118,12 @@ claude:
     key: ${CLAUDE_API_KEY:}
 
 discord:
-  webhook-url: ${DISCORD_WEBHOOK_URL:}
+  error-webhook-url: ${DISCORD_ERROR_WEBHOOK_URL:}
+  test-alert-webhook-url: ${DISCORD_TEST_ALERT_WEBHOOK_URL:}
+  bot:
+    enabled: ${DISCORD_BOT_ENABLED:false}
+    token: ${DISCORD_BOT_TOKEN:}
+    admin-command-channel-id: ${DISCORD_ADMIN_COMMAND_CHANNEL_ID:}
 
 azure:
   storage:
