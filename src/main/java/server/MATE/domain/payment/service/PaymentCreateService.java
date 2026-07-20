@@ -9,7 +9,7 @@ import server.MATE.domain.payment.repository.PaymentRepository;
 
 @Component
 @RequiredArgsConstructor
-public class PaymentWriter {
+public class PaymentCreateService {
 
     private final PaymentRepository paymentRepository;
 

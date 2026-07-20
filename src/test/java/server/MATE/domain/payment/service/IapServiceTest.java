@@ -26,17 +26,14 @@ import server.MATE.domain.users.entity.Users;
 import server.MATE.domain.users.repository.TossAccountRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.toss.client.http.TossHttpClient;
-import server.MATE.toss.config.TossProperties;
-import server.MATE.toss.dto.request.IapOrderStatusRequest;
-import server.MATE.toss.dto.response.IapOrderStatus;
-import server.MATE.toss.dto.response.IapOrderStatusResponse;
+import server.MATE.toss.config.TossIapProperties;
+import server.MATE.toss.gateway.IapOrderState;
+import server.MATE.toss.gateway.IapOrderStatusResult;
+import server.MATE.toss.gateway.TossIapGateway;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-
-import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,28 +45,28 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class PaymentGrantServiceTest {
+class IapServiceTest {
 
-    @Mock private TossHttpClient tossHttpClient;
+    @Mock private TossIapGateway tossIapGateway;
     @Mock private TossAccountRepository tossAccountRepository;
     @Mock private PaymentRepository paymentRepository;
-    @Mock private PaymentWriter paymentWriter;
+    @Mock private PaymentCreateService paymentCreateService;
     @Mock private TestDraftRepository testDraftRepository;
     @Mock private PaymentAmountCalculator paymentAmountCalculator;
     @Mock private TestPublishService testPublishService;
 
-    private PaymentGrantService paymentGrantService;
+    private IapService iapService;
 
     private static final Long MAKER_ID = 1L;
     private static final Long DRAFT_ID = 10L;
     private static final String ORDER_ID = "order-abc-123";
+    private static final LocalDateTime APPROVED_AT = LocalDateTime.parse("2025-09-12T16:57:12");
 
     @BeforeEach
     void setUp() {
-        TossProperties properties = new TossProperties(true, null, null, null, null);
-        paymentGrantService = new PaymentGrantService(
-                tossHttpClient, properties,
-                tossAccountRepository, paymentRepository, paymentWriter,
+        iapService = new IapService(
+                tossIapGateway, new TossIapProperties(List.of()),
+                tossAccountRepository, paymentRepository, paymentCreateService,
                 testDraftRepository, paymentAmountCalculator, testPublishService
         );
     }
@@ -83,11 +80,11 @@ class PaymentGrantServiceTest {
             Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
 
-            boolean result = paymentGrantService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
+            boolean result = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
 
             assertThat(result).isTrue();
             verify(testPublishService).publish(100L);
-            verify(tossHttpClient, never()).post(any(), any(), any(Consumer.class), any());
+            verify(tossIapGateway, never()).getOrderStatus(any(), any());
         }
 
         @Test
@@ -96,7 +93,7 @@ class PaymentGrantServiceTest {
             Payment existing = existingPayment(100L, 999L, PayStatus.PAY_SUCCEEDED);
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
 
-            assertThatThrownBy(() -> paymentGrantService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
+            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
                     .isInstanceOf(BaseException.class)
                     .extracting(e -> ((BaseException) e).getErrorCode())
                     .isEqualTo(BaseErrorCode.COMMON_009);
@@ -108,7 +105,7 @@ class PaymentGrantServiceTest {
             Payment existing = existingPayment(100L, MAKER_ID, PayStatus.REFUND_PENDING);
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
 
-            boolean result = paymentGrantService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
+            boolean result = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
 
             assertThat(result).isFalse();
             verify(testPublishService, never()).publish(any());
@@ -120,7 +117,7 @@ class PaymentGrantServiceTest {
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> paymentGrantService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
+            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
                     .isInstanceOf(BaseException.class)
                     .extracting(e -> ((BaseException) e).getErrorCode())
                     .isEqualTo(BaseErrorCode.DRAFT_001);
@@ -132,7 +129,7 @@ class PaymentGrantServiceTest {
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(999L)));
 
-            assertThatThrownBy(() -> paymentGrantService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
+            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
                     .isInstanceOf(BaseException.class)
                     .extracting(e -> ((BaseException) e).getErrorCode())
                     .isEqualTo(BaseErrorCode.DRAFT_002);
@@ -145,7 +142,7 @@ class PaymentGrantServiceTest {
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> paymentGrantService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
+            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
                     .isInstanceOf(BaseException.class)
                     .extracting(e -> ((BaseException) e).getErrorCode())
                     .isEqualTo(BaseErrorCode.PAYMENT_005);
@@ -154,35 +151,28 @@ class PaymentGrantServiceTest {
         @Test
         @DisplayName("Toss 상태가 PURCHASED이면 결제를 저장하고 지급 후 true를 반환한다")
         void savesPaymentAndPublishesWhenStatusIsPurchased() {
-            TossProperties skuProps = new TossProperties(true, null, null, null,
-                    new TossProperties.Iap(List.of()));
-            paymentGrantService = new PaymentGrantService(
-                    tossHttpClient, skuProps,
-                    tossAccountRepository, paymentRepository, paymentWriter,
-                    testDraftRepository, paymentAmountCalculator, testPublishService
-            );
-
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
-            when(tossHttpClient.post(any(), any(), any(Consumer.class), eq(IapOrderStatusResponse.class)))
-                    .thenReturn(new IapOrderStatusResponse(ORDER_ID, "test_sku", "2025-09-12T16:57:12", IapOrderStatus.PURCHASED, null));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "test_sku", null, APPROVED_AT));
             when(paymentAmountCalculator.totalAmount(10, 500)).thenReturn(5500);
             Payment saved = savedPayment(200L);
-            when(paymentWriter.save(any())).thenReturn(saved);
+            when(paymentCreateService.save(any())).thenReturn(saved);
 
-            boolean result = paymentGrantService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
+            boolean result = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
 
             assertThat(result).isTrue();
             verify(testPublishService).publish(200L);
 
             ArgumentCaptor<Payment> captor = ArgumentCaptor.forClass(Payment.class);
-            verify(paymentWriter).save(captor.capture());
+            verify(paymentCreateService).save(captor.capture());
             Payment captured = captor.getValue();
             assertThat(captured.getPayStatus()).isEqualTo(PayStatus.PAY_SUCCEEDED);
             assertThat(captured.getPayMethod()).isEqualTo(PayMethod.IN_APP_PURCHASE);
             assertThat(captured.getIsTestPayment()).isFalse();
             assertThat(captured.getAmount()).isEqualTo(5500);
+            assertThat(captured.getApprovedAt()).isEqualTo(APPROVED_AT);
         }
 
         @Test
@@ -191,34 +181,32 @@ class PaymentGrantServiceTest {
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
-            when(tossHttpClient.post(any(), any(), any(Consumer.class), eq(IapOrderStatusResponse.class)))
-                    .thenReturn(new IapOrderStatusResponse(ORDER_ID, "test_sku", "2025-09-12T16:57:12", IapOrderStatus.FAILED, "user_cancel"));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.FAILED, "test_sku", "user_cancel", APPROVED_AT));
 
-            boolean result = paymentGrantService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
+            boolean result = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
 
             assertThat(result).isFalse();
-            verify(paymentWriter, never()).save(any());
+            verify(paymentCreateService, never()).save(any());
             verify(testPublishService, never()).publish(any());
         }
 
         @Test
         @DisplayName("allowedSkus가 설정됐는데 SKU가 불일치하면 PAYMENT_006 예외를 던진다")
         void throwsPayment006WhenSkuNotAllowed() {
-            TossProperties skuProps = new TossProperties(true, null, null, null,
-                    new TossProperties.Iap(List.of("allowed_sku")));
-            paymentGrantService = new PaymentGrantService(
-                    tossHttpClient, skuProps,
-                    tossAccountRepository, paymentRepository, paymentWriter,
+            iapService = new IapService(
+                    tossIapGateway, new TossIapProperties(List.of("allowed_sku")),
+                    tossAccountRepository, paymentRepository, paymentCreateService,
                     testDraftRepository, paymentAmountCalculator, testPublishService
             );
 
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
-            when(tossHttpClient.post(any(), any(), any(Consumer.class), eq(IapOrderStatusResponse.class)))
-                    .thenReturn(new IapOrderStatusResponse(ORDER_ID, "unknown_sku", "2025-09-12T16:57:12", IapOrderStatus.PURCHASED, null));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "unknown_sku", null, APPROVED_AT));
 
-            assertThatThrownBy(() -> paymentGrantService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
+            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
                     .isInstanceOf(BaseException.class)
                     .extracting(e -> ((BaseException) e).getErrorCode())
                     .isEqualTo(BaseErrorCode.PAYMENT_006);
@@ -230,12 +218,12 @@ class PaymentGrantServiceTest {
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
-            when(tossHttpClient.post(any(), any(), any(Consumer.class), eq(IapOrderStatusResponse.class)))
-                    .thenReturn(new IapOrderStatusResponse(ORDER_ID, "any_sku", "2025-09-12T16:57:12", IapOrderStatus.PURCHASED, null));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "any_sku", null, APPROVED_AT));
             when(paymentAmountCalculator.totalAmount(any(Integer.class), any(Integer.class))).thenReturn(5500);
-            when(paymentWriter.save(any())).thenReturn(savedPayment(200L));
+            when(paymentCreateService.save(any())).thenReturn(savedPayment(200L));
 
-            boolean result = paymentGrantService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
+            boolean result = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
 
             assertThat(result).isTrue();
         }
@@ -250,35 +238,15 @@ class PaymentGrantServiceTest {
                     .thenReturn(Optional.of(fallback));
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
-            when(tossHttpClient.post(any(), any(), any(Consumer.class), eq(IapOrderStatusResponse.class)))
-                    .thenReturn(new IapOrderStatusResponse(ORDER_ID, "sku", "2025-09-12T16:57:12", IapOrderStatus.PURCHASED, null));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "sku", null, APPROVED_AT));
             when(paymentAmountCalculator.totalAmount(any(Integer.class), any(Integer.class))).thenReturn(5500);
-            when(paymentWriter.save(any())).thenThrow(new DataIntegrityViolationException("duplicate"));
+            when(paymentCreateService.save(any())).thenThrow(new DataIntegrityViolationException("duplicate"));
 
-            boolean result = paymentGrantService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
+            boolean result = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
 
             assertThat(result).isTrue();
             verify(testPublishService).publish(300L);
-        }
-
-        @Test
-        @DisplayName("statusDeterminedAt이 null이어도 NPE 없이 현재 시각으로 저장한다")
-        void handlesNullStatusDeterminedAtWithoutNpe() {
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
-            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
-            when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
-            when(tossHttpClient.post(any(), any(), any(Consumer.class), eq(IapOrderStatusResponse.class)))
-                    .thenReturn(new IapOrderStatusResponse(ORDER_ID, null, null, IapOrderStatus.PURCHASED, null));
-            when(paymentAmountCalculator.totalAmount(any(Integer.class), any(Integer.class))).thenReturn(5500);
-            when(paymentWriter.save(any())).thenReturn(savedPayment(200L));
-
-            boolean result = paymentGrantService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
-
-            assertThat(result).isTrue();
-
-            ArgumentCaptor<Payment> captor = ArgumentCaptor.forClass(Payment.class);
-            verify(paymentWriter).save(captor.capture());
-            assertThat(captor.getValue().getApprovedAt()).isNotNull();
         }
 
         @Test
@@ -287,17 +255,17 @@ class PaymentGrantServiceTest {
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
-            when(tossHttpClient.post(any(), any(), any(Consumer.class), eq(IapOrderStatusResponse.class)))
-                    .thenReturn(new IapOrderStatusResponse(ORDER_ID, null, "2025-09-12T16:57:12", IapOrderStatus.PURCHASED, null));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, null, null, APPROVED_AT));
             when(paymentAmountCalculator.totalAmount(any(Integer.class), any(Integer.class))).thenReturn(5500);
             Payment saved = savedPayment(200L);
-            when(paymentWriter.save(any())).thenReturn(saved);
+            when(paymentCreateService.save(any())).thenReturn(saved);
             doThrow(new RuntimeException("publish failed")).when(testPublishService).publish(200L);
 
-            boolean result = paymentGrantService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
+            boolean result = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
 
             assertThat(result).isTrue();
-            verify(paymentWriter).save(any());
+            verify(paymentCreateService).save(any());
         }
     }
 
@@ -310,11 +278,11 @@ class PaymentGrantServiceTest {
             Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
 
-            boolean result = paymentGrantService.restore(ORDER_ID, null, MAKER_ID);
+            boolean result = iapService.restore(ORDER_ID, null, MAKER_ID);
 
             assertThat(result).isTrue();
             verify(testPublishService).publish(100L);
-            verify(tossHttpClient, never()).post(any(), any(), any(Consumer.class), any());
+            verify(tossIapGateway, never()).getOrderStatus(any(), any());
         }
 
         @Test
@@ -322,7 +290,7 @@ class PaymentGrantServiceTest {
         void throwsPayment001WhenNoPaymentAndNoDraftId() {
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> paymentGrantService.restore(ORDER_ID, null, MAKER_ID))
+            assertThatThrownBy(() -> iapService.restore(ORDER_ID, null, MAKER_ID))
                     .isInstanceOf(BaseException.class)
                     .extracting(e -> ((BaseException) e).getErrorCode())
                     .isEqualTo(BaseErrorCode.PAYMENT_001);
@@ -334,16 +302,16 @@ class PaymentGrantServiceTest {
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
-            when(tossHttpClient.post(any(), any(), any(Consumer.class), eq(IapOrderStatusResponse.class)))
-                    .thenReturn(new IapOrderStatusResponse(ORDER_ID, null, "2025-09-12T16:57:12", IapOrderStatus.PURCHASED, null));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, null, null, APPROVED_AT));
             when(paymentAmountCalculator.totalAmount(any(Integer.class), any(Integer.class))).thenReturn(5500);
             Payment saved = savedPayment(200L);
-            when(paymentWriter.save(any())).thenReturn(saved);
+            when(paymentCreateService.save(any())).thenReturn(saved);
 
-            boolean result = paymentGrantService.restore(ORDER_ID, DRAFT_ID, MAKER_ID);
+            boolean result = iapService.restore(ORDER_ID, DRAFT_ID, MAKER_ID);
 
             assertThat(result).isTrue();
-            verify(paymentWriter).save(any());
+            verify(paymentCreateService).save(any());
             verify(testPublishService).publish(200L);
         }
 
@@ -354,7 +322,7 @@ class PaymentGrantServiceTest {
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
             doThrow(new RuntimeException("publish failed")).when(testPublishService).publish(100L);
 
-            assertThatThrownBy(() -> paymentGrantService.restore(ORDER_ID, null, MAKER_ID))
+            assertThatThrownBy(() -> iapService.restore(ORDER_ID, null, MAKER_ID))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("publish failed");
         }
@@ -365,7 +333,7 @@ class PaymentGrantServiceTest {
             Payment existing = existingPayment(100L, 999L, PayStatus.PAY_SUCCEEDED);
             when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
 
-            assertThatThrownBy(() -> paymentGrantService.restore(ORDER_ID, null, MAKER_ID))
+            assertThatThrownBy(() -> iapService.restore(ORDER_ID, null, MAKER_ID))
                     .isInstanceOf(BaseException.class)
                     .extracting(e -> ((BaseException) e).getErrorCode())
                     .isEqualTo(BaseErrorCode.COMMON_009);
@@ -380,27 +348,24 @@ class PaymentGrantServiceTest {
         void throwsPayment005WhenTossAccountNotFound() {
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> paymentGrantService.getOrderStatus(ORDER_ID, MAKER_ID))
+            assertThatThrownBy(() -> iapService.getOrderStatus(ORDER_ID, MAKER_ID))
                     .isInstanceOf(BaseException.class)
                     .extracting(e -> ((BaseException) e).getErrorCode())
                     .isEqualTo(BaseErrorCode.PAYMENT_005);
         }
 
         @Test
-        @DisplayName("Toss 응답을 그대로 PaymentOrderStatusResponse로 반환한다")
-        void returnsOrderStatusFromTossResponse() {
+        @DisplayName("게이트웨이 결과를 그대로 PaymentOrderStatusResponse로 반환한다")
+        void returnsOrderStatusFromGatewayResult() {
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
-            when(tossHttpClient.post(any(), any(), any(Consumer.class), eq(IapOrderStatusResponse.class)))
-                    .thenReturn(new IapOrderStatusResponse(ORDER_ID, "test_sku", "2025-09-12T16:57:12", IapOrderStatus.PURCHASED, null));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "test_sku", null, APPROVED_AT));
 
-            PaymentOrderStatusResponse response = paymentGrantService.getOrderStatus(ORDER_ID, MAKER_ID);
+            PaymentOrderStatusResponse response = iapService.getOrderStatus(ORDER_ID, MAKER_ID);
 
-            assertThat(response.status()).isEqualTo(IapOrderStatus.PURCHASED);
-            assertThat(response.statusDeterminedAt()).isEqualTo("2025-09-12T16:57:12");
-
-            ArgumentCaptor<IapOrderStatusRequest> captor = ArgumentCaptor.forClass(IapOrderStatusRequest.class);
-            verify(tossHttpClient).post(any(), captor.capture(), any(Consumer.class), eq(IapOrderStatusResponse.class));
-            assertThat(captor.getValue().orderId()).isEqualTo(ORDER_ID);
+            assertThat(response.status()).isEqualTo(IapOrderState.PURCHASED);
+            assertThat(response.statusDeterminedAt()).isEqualTo(APPROVED_AT);
+            verify(tossIapGateway).getOrderStatus(777L, ORDER_ID);
         }
     }
 
