@@ -111,7 +111,7 @@ public class IapService {
 
         IapOrderStatusResult result = tossIapGateway.getOrderStatus(tossAccount.getTossUserKey(), orderId);
 
-        if (!tier.sku().equals(result.sku())) {
+        if (tier.sku() == null || !tier.sku().equals(result.sku())) {
             throw new BaseException(BaseErrorCode.PAYMENT_006);
         }
 
