@@ -14,7 +14,7 @@ import server.MATE.domain.payment.dto.response.PaymentOrderStatusResponse;
 import server.MATE.domain.payment.entity.PayMethod;
 import server.MATE.domain.payment.entity.PayStatus;
 import server.MATE.domain.payment.entity.Payment;
-import server.MATE.domain.payment.policy.PaymentAmountCalculator;
+import server.MATE.domain.payment.policy.IapProductTierCatalog;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.test.service.TestPublishService;
 import server.MATE.domain.testdraft.entity.TestDraft;
@@ -32,7 +32,6 @@ import server.MATE.toss.gateway.IapOrderStatusResult;
 import server.MATE.toss.gateway.TossIapGateway;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,11 +47,11 @@ import static org.mockito.Mockito.when;
 class IapServiceTest {
 
     @Mock private TossIapGateway tossIapGateway;
+    @Mock private IapProductTierCatalog iapProductTierCatalog;
     @Mock private TossAccountRepository tossAccountRepository;
     @Mock private PaymentRepository paymentRepository;
     @Mock private PaymentCreateService paymentCreateService;
     @Mock private TestDraftRepository testDraftRepository;
-    @Mock private PaymentAmountCalculator paymentAmountCalculator;
     @Mock private TestPublishService testPublishService;
 
     private IapService iapService;
@@ -61,13 +60,15 @@ class IapServiceTest {
     private static final Long DRAFT_ID = 10L;
     private static final String ORDER_ID = "order-abc-123";
     private static final LocalDateTime APPROVED_AT = LocalDateTime.parse("2025-09-12T16:57:12");
+    private static final TossIapProperties.Tier TIER =
+            new TossIapProperties.Tier(10, 500, "sku_10_500", 5500);
 
     @BeforeEach
     void setUp() {
         iapService = new IapService(
-                tossIapGateway, new TossIapProperties(List.of()),
+                tossIapGateway, iapProductTierCatalog,
                 tossAccountRepository, paymentRepository, paymentCreateService,
-                testDraftRepository, paymentAmountCalculator, testPublishService
+                testDraftRepository, testPublishService
         );
     }
 
@@ -78,7 +79,7 @@ class IapServiceTest {
         @DisplayName("이미 PAY_SUCCEEDED 상태인 결제가 있으면 재지급하고 true를 반환한다")
         void republishesAndReturnsTrueWhenAlreadySucceeded() {
             Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
 
             boolean result = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
 
@@ -91,7 +92,7 @@ class IapServiceTest {
         @DisplayName("이미 결제 완료됐지만 다른 makerId로 접근하면 COMMON_009 예외를 던진다")
         void throwsCommon009WhenMakerIdMismatchOnExistingPayment() {
             Payment existing = existingPayment(100L, 999L, PayStatus.PAY_SUCCEEDED);
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
 
             assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
                     .isInstanceOf(BaseException.class)
@@ -103,7 +104,7 @@ class IapServiceTest {
         @DisplayName("결제가 PAY_SUCCEEDED가 아닌 상태이면 false를 반환한다")
         void returnsFalseWhenPaymentNotSucceeded() {
             Payment existing = existingPayment(100L, MAKER_ID, PayStatus.REFUND_PENDING);
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
 
             boolean result = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
 
@@ -114,7 +115,7 @@ class IapServiceTest {
         @Test
         @DisplayName("Draft가 없으면 DRAFT_001 예외를 던진다")
         void throwsDraft001WhenDraftNotFound() {
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
@@ -126,7 +127,7 @@ class IapServiceTest {
         @Test
         @DisplayName("Draft의 makerId가 다르면 DRAFT_002 예외를 던진다")
         void throwsDraft002WhenDraftMakerIdMismatch() {
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(999L)));
 
             assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
@@ -136,10 +137,26 @@ class IapServiceTest {
         }
 
         @Test
+        @DisplayName("goalPpl/reward 조합이 티어 카탈로그에 없으면 DRAFT_007 예외를 던진다")
+        void throwsDraft007WhenTierNotFound() {
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
+            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.DRAFT_007);
+
+            verify(tossAccountRepository, never()).findByUserId(any());
+        }
+
+        @Test
         @DisplayName("TossAccount가 없으면 PAYMENT_005 예외를 던진다")
         void throwsPayment005WhenTossAccountNotFound() {
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
@@ -149,14 +166,49 @@ class IapServiceTest {
         }
 
         @Test
-        @DisplayName("Toss 상태가 PURCHASED이면 결제를 저장하고 지급 후 true를 반환한다")
-        void savesPaymentAndPublishesWhenStatusIsPurchased() {
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
+        @DisplayName("Toss가 반환한 sku가 이 draft에 기대되는 티어의 sku와 다르면 PAYMENT_006 예외를 던진다")
+        void throwsPayment006WhenSkuDoesNotMatchExpectedTier() {
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
             when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
-                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "test_sku", null, APPROVED_AT));
-            when(paymentAmountCalculator.totalAmount(10, 500)).thenReturn(5500);
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "unexpected_sku", null, APPROVED_AT));
+
+            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.PAYMENT_006);
+        }
+
+        @Test
+        @DisplayName("티어에 등록된 sku가 null이면 Toss 응답의 sku가 null이어도 PAYMENT_006 예외를 던진다")
+        void throwsPayment006WhenTierSkuIsNullEvenIfResultSkuIsAlsoNull() {
+            TossIapProperties.Tier tierWithNullSku = new TossIapProperties.Tier(10, 500, null, 5500);
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
+            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(tierWithNullSku));
+            when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, null, null, APPROVED_AT));
+
+            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.PAYMENT_006);
+
+            verify(paymentCreateService, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Toss 상태가 PURCHASED이면 결제를 티어 등록가로 저장하고 지급 후 true를 반환한다")
+        void savesPaymentAndPublishesWhenStatusIsPurchased() {
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
+            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
+            when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "sku_10_500", null, APPROVED_AT));
             Payment saved = savedPayment(200L);
             when(paymentCreateService.save(any())).thenReturn(saved);
 
@@ -170,7 +222,6 @@ class IapServiceTest {
             Payment captured = captor.getValue();
             assertThat(captured.getPayStatus()).isEqualTo(PayStatus.PAY_SUCCEEDED);
             assertThat(captured.getPayMethod()).isEqualTo(PayMethod.IN_APP_PURCHASE);
-            assertThat(captured.getIsTestPayment()).isFalse();
             assertThat(captured.getAmount()).isEqualTo(5500);
             assertThat(captured.getApprovedAt()).isEqualTo(APPROVED_AT);
         }
@@ -178,11 +229,12 @@ class IapServiceTest {
         @Test
         @DisplayName("Toss 상태가 FAILED이면 결제 저장 없이 false를 반환한다")
         void returnsFalseWhenTossStatusIsFailed() {
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
             when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
-                    .thenReturn(new IapOrderStatusResult(IapOrderState.FAILED, "test_sku", "user_cancel", APPROVED_AT));
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.FAILED, "sku_10_500", "user_cancel", APPROVED_AT));
 
             boolean result = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
 
@@ -192,55 +244,18 @@ class IapServiceTest {
         }
 
         @Test
-        @DisplayName("allowedSkus가 설정됐는데 SKU가 불일치하면 PAYMENT_006 예외를 던진다")
-        void throwsPayment006WhenSkuNotAllowed() {
-            iapService = new IapService(
-                    tossIapGateway, new TossIapProperties(List.of("allowed_sku")),
-                    tossAccountRepository, paymentRepository, paymentCreateService,
-                    testDraftRepository, paymentAmountCalculator, testPublishService
-            );
-
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
-            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
-            when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
-            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
-                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "unknown_sku", null, APPROVED_AT));
-
-            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
-                    .isInstanceOf(BaseException.class)
-                    .extracting(e -> ((BaseException) e).getErrorCode())
-                    .isEqualTo(BaseErrorCode.PAYMENT_006);
-        }
-
-        @Test
-        @DisplayName("allowedSkus가 비어있으면 SKU 검증을 건너뛴다")
-        void skipsSkuValidationWhenAllowedSkusEmpty() {
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
-            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
-            when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
-            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
-                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "any_sku", null, APPROVED_AT));
-            when(paymentAmountCalculator.totalAmount(any(Integer.class), any(Integer.class))).thenReturn(5500);
-            when(paymentCreateService.save(any())).thenReturn(savedPayment(200L));
-
-            boolean result = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
-
-            assertThat(result).isTrue();
-        }
-
-        @Test
         @DisplayName("동시 요청으로 DataIntegrityViolationException 발생 시 기존 결제로 fallback해 지급한다")
         void fallsBackToExistingPaymentOnDuplicateKeyConflict() {
             Payment fallback = existingPayment(300L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
 
-            when(paymentRepository.findByOrderNo(ORDER_ID))
+            when(paymentRepository.findByOrderId(ORDER_ID))
                     .thenReturn(Optional.empty())
                     .thenReturn(Optional.of(fallback));
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
             when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
-                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "sku", null, APPROVED_AT));
-            when(paymentAmountCalculator.totalAmount(any(Integer.class), any(Integer.class))).thenReturn(5500);
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "sku_10_500", null, APPROVED_AT));
             when(paymentCreateService.save(any())).thenThrow(new DataIntegrityViolationException("duplicate"));
 
             boolean result = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
@@ -252,12 +267,12 @@ class IapServiceTest {
         @Test
         @DisplayName("publish가 실패해도 grant는 true를 반환한다")
         void returnsTrueEvenWhenPublishFails() {
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
             when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
-                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, null, null, APPROVED_AT));
-            when(paymentAmountCalculator.totalAmount(any(Integer.class), any(Integer.class))).thenReturn(5500);
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "sku_10_500", null, APPROVED_AT));
             Payment saved = savedPayment(200L);
             when(paymentCreateService.save(any())).thenReturn(saved);
             doThrow(new RuntimeException("publish failed")).when(testPublishService).publish(200L);
@@ -276,7 +291,7 @@ class IapServiceTest {
         @DisplayName("기존 Payment가 있으면 orderId만으로 publish를 재시도한다")
         void publishesWithOrderIdOnlyWhenPaymentExists() {
             Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
 
             boolean result = iapService.restore(ORDER_ID, null, MAKER_ID);
 
@@ -288,7 +303,7 @@ class IapServiceTest {
         @Test
         @DisplayName("Payment가 없고 draftId가 null이면 PAYMENT_001 예외를 던진다")
         void throwsPayment001WhenNoPaymentAndNoDraftId() {
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> iapService.restore(ORDER_ID, null, MAKER_ID))
                     .isInstanceOf(BaseException.class)
@@ -299,12 +314,12 @@ class IapServiceTest {
         @Test
         @DisplayName("Payment가 없지만 draftId가 있으면 Toss 검증 후 저장하고 publish한다")
         void verifiesAndPublishesWhenNoPaymentButDraftIdProvided() {
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.empty());
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
             when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
-                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, null, null, APPROVED_AT));
-            when(paymentAmountCalculator.totalAmount(any(Integer.class), any(Integer.class))).thenReturn(5500);
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "sku_10_500", null, APPROVED_AT));
             Payment saved = savedPayment(200L);
             when(paymentCreateService.save(any())).thenReturn(saved);
 
@@ -319,7 +334,7 @@ class IapServiceTest {
         @DisplayName("restore에서 publish가 실패하면 예외를 전파한다")
         void propagatesExceptionWhenPublishFailsOnRestore() {
             Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
             doThrow(new RuntimeException("publish failed")).when(testPublishService).publish(100L);
 
             assertThatThrownBy(() -> iapService.restore(ORDER_ID, null, MAKER_ID))
@@ -331,7 +346,7 @@ class IapServiceTest {
         @DisplayName("다른 makerId로 복원을 시도하면 COMMON_009 예외를 던진다")
         void throwsCommon009WhenMakerIdMismatchOnRestore() {
             Payment existing = existingPayment(100L, 999L, PayStatus.PAY_SUCCEEDED);
-            when(paymentRepository.findByOrderNo(ORDER_ID)).thenReturn(Optional.of(existing));
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
 
             assertThatThrownBy(() -> iapService.restore(ORDER_ID, null, MAKER_ID))
                     .isInstanceOf(BaseException.class)
@@ -359,7 +374,7 @@ class IapServiceTest {
         void returnsOrderStatusFromGatewayResult() {
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
             when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
-                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "test_sku", null, APPROVED_AT));
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "sku_10_500", null, APPROVED_AT));
 
             PaymentOrderStatusResponse response = iapService.getOrderStatus(ORDER_ID, MAKER_ID);
 
@@ -401,15 +416,12 @@ class IapServiceTest {
         Payment payment = Payment.builder()
                 .draftId(DRAFT_ID)
                 .makerId(makerId)
-                .orderNo(ORDER_ID)
+                .orderId(ORDER_ID)
                 .goalPpl(10)
                 .reward(500)
                 .amount(5500)
-                .paidAmount(5500)
                 .payMethod(PayMethod.IN_APP_PURCHASE)
-                .transactionId(ORDER_ID)
                 .payStatus(status)
-                .isTestPayment(false)
                 .approvedAt(LocalDateTime.now())
                 .build();
         ReflectionTestUtils.setField(payment, "id", id);
@@ -418,10 +430,10 @@ class IapServiceTest {
 
     private Payment savedPayment(Long id) {
         Payment payment = Payment.builder()
-                .draftId(DRAFT_ID).makerId(MAKER_ID).orderNo(ORDER_ID)
-                .goalPpl(10).reward(500).amount(5500).paidAmount(5500)
-                .payMethod(PayMethod.IN_APP_PURCHASE).transactionId(ORDER_ID)
-                .payStatus(PayStatus.PAY_SUCCEEDED).isTestPayment(false)
+                .draftId(DRAFT_ID).makerId(MAKER_ID).orderId(ORDER_ID)
+                .goalPpl(10).reward(500).amount(5500)
+                .payMethod(PayMethod.IN_APP_PURCHASE)
+                .payStatus(PayStatus.PAY_SUCCEEDED)
                 .approvedAt(LocalDateTime.now()).build();
         ReflectionTestUtils.setField(payment, "id", id);
         return payment;

@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Table(
         name = "payment",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = "order_no"),
+                @UniqueConstraint(columnNames = "order_id"),
                 @UniqueConstraint(columnNames = "test_id")
         }
 )
@@ -25,6 +25,11 @@ public class Payment extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * TestPublishService가 발행 후 draft를 삭제하므로, 발행 이후에는 존재하지 않는
+     * row를 가리키는 댕글링 참조가 된다. testId가 채워지면 그쪽이 진짜 참조이고,
+     * draftId는 감사/디버깅용 스냅샷이다.
+     */
     @Column(nullable = false)
     private Long draftId;
 
@@ -34,10 +39,8 @@ public class Payment extends BaseEntity {
     @Column(nullable = false)
     private Long makerId;
 
-    @Column(name = "order_no", nullable = false, length = 50)
-    private String orderNo;
-
-    private String transactionId;
+    @Column(name = "order_id", nullable = false, length = 50)
+    private String orderId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -52,14 +55,9 @@ public class Payment extends BaseEntity {
     @Column(nullable = false)
     private Integer amount;
 
-    private Integer paidAmount;
-
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private PayMethod payMethod;
-
-    @Column(nullable = false)
-    private Boolean isTestPayment;
 
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
@@ -84,28 +82,22 @@ public class Payment extends BaseEntity {
     public Payment(Long draftId,
                    Long testId,
                    Long makerId,
-                   String orderNo,
-                   String transactionId,
+                   String orderId,
                    PayStatus payStatus,
                    Integer goalPpl,
                    Integer reward,
                    Integer amount,
-                   Integer paidAmount,
                    PayMethod payMethod,
-                   Boolean isTestPayment,
                    LocalDateTime approvedAt) {
         this.draftId = draftId;
         this.testId = testId;
         this.makerId = makerId;
-        this.orderNo = orderNo;
-        this.transactionId = transactionId;
+        this.orderId = orderId;
         this.payStatus = payStatus;
         this.goalPpl = goalPpl;
         this.reward = reward;
         this.amount = amount;
-        this.paidAmount = paidAmount;
         this.payMethod = payMethod;
-        this.isTestPayment = isTestPayment == null ? Boolean.FALSE : isTestPayment;
         this.approvedAt = approvedAt;
     }
 }
