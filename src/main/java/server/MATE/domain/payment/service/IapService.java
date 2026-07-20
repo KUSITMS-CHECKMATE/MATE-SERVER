@@ -18,31 +18,24 @@ import server.MATE.domain.users.entity.TossAccount;
 import server.MATE.domain.users.repository.TossAccountRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.toss.client.http.TossHttpClient;
-import server.MATE.toss.config.TossProperties;
-import server.MATE.toss.dto.request.IapOrderStatusRequest;
-import server.MATE.toss.dto.response.IapOrderStatus;
-import server.MATE.toss.dto.response.IapOrderStatusResponse;
+import server.MATE.toss.config.TossIapProperties;
+import server.MATE.toss.gateway.IapOrderState;
+import server.MATE.toss.gateway.IapOrderStatusResult;
+import server.MATE.toss.gateway.TossIapGateway;
 
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeParseException;
 
 @Slf4j
 @Service
 @ConditionalOnProperty(prefix = "toss.api", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
-public class PaymentGrantService {
+public class IapService {
 
-    private static final String IAP_ORDER_STATUS_PATH = "/api-partner/v1/apps-in-toss/order/get-order-status";
-    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
-
-    private final TossHttpClient tossHttpClient;
-    private final TossProperties tossProperties;
+    private final TossIapGateway tossIapGateway;
+    private final TossIapProperties tossIapProperties;
     private final TossAccountRepository tossAccountRepository;
     private final PaymentRepository paymentRepository;
-    private final PaymentWriter paymentWriter;
+    private final PaymentCreateService paymentCreateService;
     private final TestDraftRepository testDraftRepository;
     private final PaymentAmountCalculator paymentAmountCalculator;
     private final TestPublishService testPublishService;
@@ -114,30 +107,24 @@ public class PaymentGrantService {
         TossAccount tossAccount = tossAccountRepository.findByUserId(makerId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_005));
 
-        IapOrderStatusResponse statusResponse = tossHttpClient.post(
-                IAP_ORDER_STATUS_PATH,
-                new IapOrderStatusRequest(orderId),
-                headers -> headers.set("x-toss-user-key", String.valueOf(tossAccount.getTossUserKey())),
-                IapOrderStatusResponse.class
-        );
+        IapOrderStatusResult result = tossIapGateway.getOrderStatus(tossAccount.getTossUserKey(), orderId);
 
-        validateSku(statusResponse.sku());
+        validateSku(result.sku());
 
-        if (statusResponse.status() != IapOrderStatus.PURCHASED
-                && statusResponse.status() != IapOrderStatus.PAYMENT_COMPLETED) {
+        if (result.status() != IapOrderState.PURCHASED
+                && result.status() != IapOrderState.PAYMENT_COMPLETED) {
             return null;
         }
 
         int amount = paymentAmountCalculator.totalAmount(draft.getGoalPpl(), draft.getReward());
-        LocalDateTime approvedAt = parseApprovedAt(statusResponse.statusDeterminedAt());
 
-        return savePaymentOrFallback(orderId, draftId, makerId, draft, amount, approvedAt);
+        return savePaymentOrFallback(orderId, draftId, makerId, draft, amount, result.statusDeterminedAt());
     }
 
     private Payment savePaymentOrFallback(String orderId, Long draftId, Long makerId,
                                           TestDraft draft, int amount, LocalDateTime approvedAt) {
         try {
-            return paymentWriter.save(Payment.builder()
+            return paymentCreateService.save(Payment.builder()
                     .draftId(draftId)
                     .makerId(makerId)
                     .orderNo(orderId)
@@ -163,28 +150,12 @@ public class PaymentGrantService {
     }
 
     private void validateSku(String sku) {
-        var allowedSkus = tossProperties.iap().allowedSkus();
+        var allowedSkus = tossIapProperties.allowedSkus();
         if (allowedSkus.isEmpty()) {
             return;
         }
         if (sku == null || !allowedSkus.contains(sku)) {
             throw new BaseException(BaseErrorCode.PAYMENT_006);
-        }
-    }
-
-    private LocalDateTime parseApprovedAt(String value) {
-        if (value == null || value.isBlank()) {
-            return LocalDateTime.now(KST);
-        }
-        try {
-            return LocalDateTime.parse(value);
-        } catch (DateTimeParseException e) {
-            try {
-                return OffsetDateTime.parse(value).atZoneSameInstant(KST).toLocalDateTime();
-            } catch (DateTimeParseException ex) {
-                log.warn("Unrecognized approvedAt format='{}', falling back to now", value);
-                return LocalDateTime.now(KST);
-            }
         }
     }
 
@@ -198,17 +169,12 @@ public class PaymentGrantService {
         TossAccount tossAccount = tossAccountRepository.findByUserId(makerId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_005));
 
-        IapOrderStatusResponse statusResponse = tossHttpClient.post(
-                IAP_ORDER_STATUS_PATH,
-                new IapOrderStatusRequest(orderId),
-                headers -> headers.set("x-toss-user-key", String.valueOf(tossAccount.getTossUserKey())),
-                IapOrderStatusResponse.class
-        );
+        IapOrderStatusResult result = tossIapGateway.getOrderStatus(tossAccount.getTossUserKey(), orderId);
 
         return new PaymentOrderStatusResponse(
-                statusResponse.status(),
-                statusResponse.reason(),
-                statusResponse.statusDeterminedAt()
+                result.status(),
+                result.reason(),
+                result.statusDeterminedAt()
         );
     }
 }

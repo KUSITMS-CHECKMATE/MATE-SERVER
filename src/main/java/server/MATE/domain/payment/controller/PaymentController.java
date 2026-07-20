@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import server.MATE.domain.payment.dto.request.PaymentGrantRequest;
 import server.MATE.domain.payment.dto.request.PaymentRestoreRequest;
 import server.MATE.domain.payment.dto.response.PaymentOrderStatusResponse;
-import server.MATE.domain.payment.service.PaymentGrantService;
+import server.MATE.domain.payment.service.IapService;
 import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
@@ -29,7 +29,7 @@ import server.MATE.global.security.principal.AuthenticatedUser;
 @ConditionalOnProperty(prefix = "toss.api", name = "enabled", havingValue = "true")
 public class PaymentController {
 
-    private final PaymentGrantService paymentGrantService;
+    private final IapService iapService;
 
     @Operation(
             summary = "인앱결제 상품 지급 처리",
@@ -44,7 +44,7 @@ public class PaymentController {
             @RequestBody @Valid PaymentGrantRequest request,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        boolean granted = paymentGrantService.grant(
+        boolean granted = iapService.grant(
                 request.orderId(),
                 request.draftId(),
                 authenticatedUser.getId()
@@ -65,7 +65,7 @@ public class PaymentController {
             @RequestBody @Valid PaymentRestoreRequest request,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        boolean restored = paymentGrantService.restore(
+        boolean restored = iapService.restore(
                 request.orderId(),
                 request.draftId(),
                 authenticatedUser.getId()
@@ -86,7 +86,7 @@ public class PaymentController {
             @PathVariable String orderId,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        PaymentOrderStatusResponse response = paymentGrantService.getOrderStatus(orderId, authenticatedUser.getId());
+        PaymentOrderStatusResponse response = iapService.getOrderStatus(orderId, authenticatedUser.getId());
         return ResponseEntity.ok(ApiResponse.ok("결제 상태를 조회했습니다.", response));
     }
 }

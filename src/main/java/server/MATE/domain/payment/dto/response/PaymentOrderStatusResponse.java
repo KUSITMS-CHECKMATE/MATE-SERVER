@@ -1,10 +1,12 @@
 package server.MATE.domain.payment.dto.response;
 
-import server.MATE.toss.dto.response.IapOrderStatus;
+import java.time.LocalDateTime;
+
+import server.MATE.toss.gateway.IapOrderState;
 
 public record PaymentOrderStatusResponse(
-        IapOrderStatus status,
+        IapOrderState status,
         String reason,
-        String statusDeterminedAt
+        LocalDateTime statusDeterminedAt
 ) {
 }
