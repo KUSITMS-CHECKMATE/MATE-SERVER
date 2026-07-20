@@ -31,7 +31,7 @@ public class RefundService {
 
         payment.requestRefund(reason);
         log.info("환불 요청 완료 - paymentId={}, testId={}, amount={}, reason={}",
-                payment.getId(), testId, payment.getPaidAmount(), reason);
+                payment.getId(), testId, payment.getAmount(), reason);
     }
 
     @Transactional
@@ -44,6 +44,6 @@ public class RefundService {
         }
 
         payment.completeRefund();
-        log.info("환불 완료 처리 - paymentId={}, orderId={}", payment.getId(), payment.getOrderNo());
+        log.info("환불 완료 처리 - paymentId={}, orderId={}", payment.getId(), payment.getOrderId());
     }
 }

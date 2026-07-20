@@ -38,6 +38,68 @@ toss:
     ssl:
       enabled: ${TOSS_API_SSL_ENABLED:true}
       bundle: toss
+  iap:
+    tiers:
+      - goal-ppl: 30
+        reward: 200
+        sku: ${TOSS_IAP_SKU_30_200}
+        display-amount: 11000
+      - goal-ppl: 50
+        reward: 200
+        sku: ${TOSS_IAP_SKU_50_200}
+        display-amount: 18370
+      - goal-ppl: 100
+        reward: 200
+        sku: ${TOSS_IAP_SKU_100_200}
+        display-amount: 36850
+      - goal-ppl: 200
+        reward: 200
+        sku: ${TOSS_IAP_SKU_200_200}
+        display-amount: 73370
+      - goal-ppl: 300
+        reward: 200
+        sku: ${TOSS_IAP_SKU_300_200}
+        display-amount: 110000
+      - goal-ppl: 30
+        reward: 300
+        sku: ${TOSS_IAP_SKU_30_300}
+        display-amount: 16500
+      - goal-ppl: 50
+        reward: 300
+        sku: ${TOSS_IAP_SKU_50_300}
+        display-amount: 27500
+      - goal-ppl: 100
+        reward: 300
+        sku: ${TOSS_IAP_SKU_100_300}
+        display-amount: 55000
+      - goal-ppl: 200
+        reward: 300
+        sku: ${TOSS_IAP_SKU_200_300}
+        display-amount: 110000
+      - goal-ppl: 300
+        reward: 300
+        sku: ${TOSS_IAP_SKU_300_300}
+        display-amount: 165000
+      - goal-ppl: 30
+        reward: 500
+        sku: ${TOSS_IAP_SKU_30_500}
+        display-amount: 27500
+      - goal-ppl: 50
+        reward: 500
+        sku: ${TOSS_IAP_SKU_50_500}
+        display-amount: 45870
+      - goal-ppl: 100
+        reward: 500
+        sku: ${TOSS_IAP_SKU_100_500}
+        display-amount: 91740
+      - goal-ppl: 200
+        reward: 500
+        sku: ${TOSS_IAP_SKU_200_500}
+        display-amount: 183370
+      - goal-ppl: 300
+        reward: 500
+        sku: ${TOSS_IAP_SKU_300_500}
+        display-amount: 275000
   promotion:
     provider: ${TOSS_PROMOTION_PROVIDER:mock}
     answer:
