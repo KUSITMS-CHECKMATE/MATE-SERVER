@@ -182,6 +182,25 @@ class IapServiceTest {
         }
 
         @Test
+        @DisplayName("티어에 등록된 sku가 null이면 Toss 응답의 sku가 null이어도 PAYMENT_006 예외를 던진다")
+        void throwsPayment006WhenTierSkuIsNullEvenIfResultSkuIsAlsoNull() {
+            TossIapProperties.Tier tierWithNullSku = new TossIapProperties.Tier(10, 500, null, 5500);
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
+            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(tierWithNullSku));
+            when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, null, null, APPROVED_AT));
+
+            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.PAYMENT_006);
+
+            verify(paymentCreateService, never()).save(any());
+        }
+
+        @Test
         @DisplayName("Toss 상태가 PURCHASED이면 결제를 티어 등록가로 저장하고 지급 후 true를 반환한다")
         void savesPaymentAndPublishesWhenStatusIsPurchased() {
             when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
