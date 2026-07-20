@@ -1,39 +1,39 @@
-package server.MATE.global.discord;
-
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-import server.MATE.global.common.exception.ErrorCode;
+package server.MATE.global.discord.channel;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
-@Slf4j
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+
+import jakarta.servlet.http.HttpServletRequest;
+import server.MATE.global.common.exception.ErrorCode;
+import server.MATE.global.discord.config.DiscordProperties;
+import server.MATE.global.discord.webhook.DiscordWebhookClient;
+import server.MATE.global.discord.webhook.embed.DiscordEmbed;
+import server.MATE.global.discord.webhook.embed.EmbedColor;
+
 @Component
-public class DiscordWebhookNotifier {
+public class ErrorAlertChannel {
 
-    private final WebClient webClient;
-    private final String webhookUrl;
+    private final DiscordWebhookClient webhookClient;
+    private final DiscordProperties properties;
     private final String deployEnv;
 
-    public DiscordWebhookNotifier(
-            @Value("${discord.webhook-url:}") String webhookUrl,
+    public ErrorAlertChannel(
+            DiscordWebhookClient webhookClient,
+            DiscordProperties properties,
             @Value("${deploy.env:local}") String deployEnv
     ) {
-        this.webhookUrl = webhookUrl;
+        this.webhookClient = webhookClient;
+        this.properties = properties;
         this.deployEnv = deployEnv;
-        this.webClient = WebClient.builder().build();
     }
 
     public void notifyError(ErrorCode errorCode, HttpStatus status, Exception exception, HttpServletRequest request) {
-        if (webhookUrl == null || webhookUrl.isBlank() || "local".equals(deployEnv)) {
+        if ("local".equals(deployEnv)) {
             return;
         }
 
@@ -62,23 +62,6 @@ public class DiscordWebhookNotifier {
                 exception.getMessage() != null ? exception.getMessage() : "(no message)"
         );
 
-        Map<String, Object> embed = Map.of(
-                "title", "🚨 에러 로그",
-                "description", description,
-                "color", 15158332
-        );
-
-        Map<String, Object> body = Map.of("embeds", List.of(embed));
-
-        webClient.post()
-                .uri(webhookUrl)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(body)
-                .retrieve()
-                .toBodilessEntity()
-                .subscribe(
-                        response -> log.info("Discord 알림 전송 완료"),
-                        error -> log.warn("Discord 알림 전송 실패: {}", error.getMessage())
-                );
+        webhookClient.send(properties.errorWebhookUrl(), new DiscordEmbed("🚨 에러 로그", description, EmbedColor.ERROR));
     }
 }
