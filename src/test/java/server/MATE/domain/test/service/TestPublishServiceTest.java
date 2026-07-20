@@ -97,15 +97,12 @@ class TestPublishServiceTest {
         Payment payment = Payment.builder()
                 .draftId(10L)
                 .makerId(1L)
-                .orderNo("order-no")
+                .orderId("order-no")
                 .goalPpl(100)
                 .reward(300)
                 .amount(30000)
-                .paidAmount(30000)
                 .payStatus(PayStatus.PAY_SUCCEEDED)
                 .payMethod(PayMethod.IN_APP_PURCHASE)
-                .transactionId("tx-1")
-                .isTestPayment(true)
                 .approvedAt(LocalDateTime.parse("2026-05-25T12:00:00"))
                 .build();
 
