@@ -1,6 +1,7 @@
 package server.MATE.toss.gateway;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 
 import java.time.LocalDateTime;
@@ -98,5 +99,14 @@ class TossHttpIapGatewayTest {
         IapOrderStatusResult result = gateway.getOrderStatus(777L, "order-1");
 
         assertThat(result.statusDeterminedAt()).isNotNull();
+    }
+
+    @Test
+    void throwsIllegalStateExceptionWhenStatusIsNull() {
+        given(tossIapApiClient.getOrderStatus(777L, "order-1"))
+                .willReturn(new IapOrderStatusResponse("order-1", "sku", "2025-09-12T16:57:12", null, null));
+
+        assertThatThrownBy(() -> gateway.getOrderStatus(777L, "order-1"))
+                .isInstanceOf(IllegalStateException.class);
     }
 }

@@ -35,6 +35,9 @@ public class TossHttpIapGateway implements TossIapGateway {
     }
 
     private IapOrderState toGatewayState(IapOrderStatus status) {
+        if (status == null) {
+            throw new IllegalStateException("Toss IAP order status is null.");
+        }
         return switch (status) {
             case PURCHASED -> IapOrderState.PURCHASED;
             case PAYMENT_COMPLETED -> IapOrderState.PAYMENT_COMPLETED;
