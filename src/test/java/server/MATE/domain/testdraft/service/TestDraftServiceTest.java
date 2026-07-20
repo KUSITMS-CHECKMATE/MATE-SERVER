@@ -26,6 +26,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class TestDraftServiceTest {
@@ -72,8 +73,7 @@ class TestDraftServiceTest {
 
         testDraftService.publishCheck(DRAFT_ID, MAKER_ID);
 
-        // testDraftValidator.validateForPublish(draft)가 예외 없이 호출됐는지는
-        // Mockito 기본 동작(스텁 없으면 null 반환)으로 충분히 검증됨 — 별도 verify 불필요.
+        verify(testDraftValidator).validateForPublish(draft);
     }
 
     @Test
