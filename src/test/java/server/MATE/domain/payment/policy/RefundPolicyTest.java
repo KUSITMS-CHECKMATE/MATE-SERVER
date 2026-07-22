@@ -14,7 +14,7 @@ class RefundPolicyTest {
     private final RefundPolicy refundPolicy = new RefundPolicy();
 
     @Test
-    @DisplayName("달성률 20% 미만이고 수동종료/환불포기/데이터열람 없으면 환불 대상이다")
+    @DisplayName("달성률 20% 미만이고 수동종료/환불포기 없으면 환불 대상이다")
     void eligibleWhenUnder20PercentAndNoBlockingConditions() {
         server.MATE.domain.test.entity.Test test = testWith(100, 10);
 
@@ -59,24 +59,6 @@ class RefundPolicyTest {
     void ineligibleWhenRefundWaived() {
         server.MATE.domain.test.entity.Test test = testWith(100, 5);
         test.waiveRefund();
-
-        assertThat(refundPolicy.isEligibleForRefund(test)).isFalse();
-    }
-
-    @Test
-    @DisplayName("PDF/Excel 다운로드된 경우 환불 불가이다")
-    void ineligibleWhenFileDownloaded() {
-        server.MATE.domain.test.entity.Test test = testWith(100, 5);
-        test.savePdfKey("some-pdf-key");
-
-        assertThat(refundPolicy.isEligibleForRefund(test)).isFalse();
-    }
-
-    @Test
-    @DisplayName("리포트 화면 열람된 경우 환불 불가이다")
-    void ineligibleWhenResultViewed() {
-        server.MATE.domain.test.entity.Test test = testWith(100, 5);
-        test.markResultViewed();
 
         assertThat(refundPolicy.isEligibleForRefund(test)).isFalse();
     }
