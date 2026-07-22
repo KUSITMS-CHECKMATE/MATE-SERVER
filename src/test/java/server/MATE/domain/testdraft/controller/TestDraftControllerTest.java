@@ -20,7 +20,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import server.MATE.domain.auth.jwt.TokenType;
 import server.MATE.domain.testdraft.dto.response.MyTestDraftItem;
 import server.MATE.domain.testdraft.dto.response.MyTestDraftResponse;
-import server.MATE.domain.testdraft.dto.response.PaymentAmountResponse;
 import server.MATE.domain.testdraft.dto.response.TestDraftResponse;
 import server.MATE.domain.testdraft.entity.TestDraftStatus;
 import server.MATE.domain.testdraft.service.TestDraftService;
@@ -94,11 +93,7 @@ class TestDraftControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("테스트 초안을 조회했습니다."))
                 .andExpect(jsonPath("$.data.draftId").value(10L))
-                .andExpect(jsonPath("$.data.questionsPayload.questions[0].type").value("OBJECTIVE"))
-                .andExpect(jsonPath("$.data.amountBreakdown.testerRewardAmount").value(30000))
-                .andExpect(jsonPath("$.data.amountBreakdown.feeAmount").value(20000))
-                .andExpect(jsonPath("$.data.amountBreakdown.vatAmount").value(5000))
-                .andExpect(jsonPath("$.data.amountBreakdown.totalAmount").value(55000));
+                .andExpect(jsonPath("$.data.questionsPayload.questions[0].type").value("OBJECTIVE"));
     }
 
     @Test
@@ -210,6 +205,28 @@ class TestDraftControllerTest {
         verify(testDraftService).deleteDraft(10L, 1L);
     }
 
+    @Test
+    @DisplayName("발행 가능한 초안이면 publish-check가 200을 반환한다")
+    void publishCheckReturnsOkWhenDraftIsPublishable() throws Exception {
+        mockMvc.perform(get("/api/v1/test-drafts/10/publish-check").with(authenticationPrincipal()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("결제를 진행해도 되는 상태입니다."));
+
+        verify(testDraftService).publishCheck(10L, 1L);
+    }
+
+    @Test
+    @DisplayName("발행 불가능한 초안이면 publish-check가 해당 에러코드로 400을 반환한다")
+    void publishCheckReturnsBadRequestWhenDraftIsNotPublishable() throws Exception {
+        org.mockito.Mockito.doThrow(new server.MATE.global.common.exception.BaseException(
+                        server.MATE.global.common.exception.BaseErrorCode.DRAFT_007))
+                .when(testDraftService).publishCheck(10L, 1L);
+
+        mockMvc.perform(get("/api/v1/test-drafts/10/publish-check").with(authenticationPrincipal()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("DRAFT_007"));
+    }
+
     private TestDraftResponse sampleDraftResponse() {
         return sampleDraftResponse("초안 제목");
     }
@@ -238,8 +255,7 @@ class TestDraftControllerTest {
                 TestDraftStatus.DRAFT,
                 null,
                 LocalDateTime.parse("2026-05-25T11:00:00"),
-                LocalDateTime.parse("2026-05-25T12:00:00"),
-                new PaymentAmountResponse(30000, 20000, 5000, 55000)
+                LocalDateTime.parse("2026-05-25T12:00:00")
         );
     }
 

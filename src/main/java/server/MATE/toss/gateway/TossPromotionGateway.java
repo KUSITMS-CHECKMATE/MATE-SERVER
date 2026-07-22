@@ -1,17 +1,10 @@
 package server.MATE.toss.gateway;
 
-import server.MATE.toss.dto.request.TossPromotionExecuteRequest;
-import server.MATE.toss.dto.request.TossPromotionGetKeyRequest;
-import server.MATE.toss.dto.request.TossPromotionResultRequest;
-import server.MATE.toss.dto.response.TossPromotionExecuteResponse;
-import server.MATE.toss.dto.response.TossPromotionKeyResponse;
-import server.MATE.toss.dto.response.TossPromotionResultResponse;
-
 public interface TossPromotionGateway {
 
-    TossPromotionKeyResponse getKey(TossPromotionGetKeyRequest request);
+    String issueKey(Long tossUserKey);
 
-    TossPromotionExecuteResponse executePromotion(TossPromotionExecuteRequest request);
+    void execute(Long tossUserKey, String promotionCode, String rewardKey, Integer rewardAmount);
 
-    TossPromotionResultResponse getExecutionResult(TossPromotionResultRequest request);
+    PromotionGatewayExecutionStatus getExecutionStatus(Long tossUserKey, String promotionCode, String rewardKey);
 }

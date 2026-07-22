@@ -43,4 +43,8 @@ public class TossApiException extends BaseException {
         this.error = null;
         this.responseBody = responseBody;
     }
+
+    public boolean isAlreadyUsedPromotionKey() {
+        return getErrorCode() == TossErrorCode.TOSS_015;
+    }
 }

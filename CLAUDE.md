@@ -24,38 +24,27 @@ gh auth login
 
 ---
 
-## GitHub Issue 생성
+## GitHub Issue / PR 생성
 
-별도 명령어 없이 자연어로 말하면 돼:
-
-> "로그인 시 500 에러 발생하는 버그 이슈 만들어줘"
-> "Excel 다운로드 기능 추가 feature 이슈 만들어줘"
-
-Claude가 자동으로 이슈 템플릿에 맞게 생성해줘.
-
-### ⚠️ 필수 규칙: 이슈 생성 전 반드시 템플릿 파일을 읽어야 한다
-
-이슈를 생성하기 전에 **반드시** 아래 파일을 Read 도구로 읽고, 그 구조를 그대로 body에 사용해야 한다. 절대로 기억이나 추측으로 템플릿을 작성하지 않는다.
-
-| 유형 | 템플릿 파일 | 라벨 | 제목 prefix |
-|------|------------|------|-------------|
-| 버그 | `.github/ISSUE_TEMPLATE/bug_report.md` | `fix` | `fix: ` |
-| 기능 | `.github/ISSUE_TEMPLATE/feature_request.md` | `feat` | `feat: ` |
-| 작업 | `.github/ISSUE_TEMPLATE/task.md` | - | `chore:` / `refactor:` 등 |
+이슈는 /issue, PR은 /pr 커맨드를 사용한다.
+상세 규칙은 .claude/commands/issue.md, pr.md 참조.
 
 ---
 
-## PR 생성 요청
+## 커밋 메시지 컨벤션
 
-**기능 브랜치에서 작업 완료 후 Claude에게 PR 생성을 요청할 수 있습니다.**
+```
+<type>: <한글 설명> (#이슈번호)
+```
 
-> "현재 브랜치 기준으로 dev 브랜치로의 PR 생성해줘"
+타입은 브랜치·이슈·PR과 동일한 체계를 사용한다: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`
 
-- base 브랜치: `dev`
+예시
 
-### ⚠️ 필수 규칙: PR 생성 전 반드시 템플릿 파일을 읽어야 한다
-
-PR을 생성하기 전에 **반드시** `.github/pull_request_template.md` 파일을 Read 도구로 읽고, 그 구조를 그대로 body에 사용해야 한다. 절대로 기억이나 추측으로 템플릿을 작성하지 않는다.
+```
+feat: 토스 unlink 처리 시 프로모션 리워드와 사용자 식별정보 익명화 연동 (#255)
+fix: unlink 시 프로모션 리워드 벌크 쿼리로 인한 사용자/계정 익명화 유실 수정 (#255)
+```
 
 ---
 

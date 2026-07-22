@@ -15,6 +15,7 @@ import server.MATE.domain.payment.entity.Payment;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.service.QuestionService;
+import server.MATE.domain.test.event.TestCreatedEvent;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.domain.testdraft.entity.TestDraft;
 import server.MATE.domain.testdraft.entity.TestDraftStatus;
@@ -96,15 +97,12 @@ class TestPublishServiceTest {
         Payment payment = Payment.builder()
                 .draftId(10L)
                 .makerId(1L)
-                .orderNo("order-no")
+                .orderId("order-no")
                 .goalPpl(100)
                 .reward(300)
                 .amount(30000)
-                .paidAmount(30000)
                 .payStatus(PayStatus.PAY_SUCCEEDED)
                 .payMethod(PayMethod.IN_APP_PURCHASE)
-                .transactionId("tx-1")
-                .isTestPayment(true)
                 .approvedAt(LocalDateTime.parse("2026-05-25T12:00:00"))
                 .build();
 
@@ -117,6 +115,7 @@ class TestPublishServiceTest {
         given(testRepository.save(any(server.MATE.domain.test.entity.Test.class))).willAnswer(invocation -> {
             server.MATE.domain.test.entity.Test saved = invocation.getArgument(0);
             ReflectionTestUtils.setField(saved, "id", 99L);
+            ReflectionTestUtils.setField(saved, "createdAt", LocalDateTime.now());
             return saved;
         });
 
@@ -138,6 +137,14 @@ class TestPublishServiceTest {
 
         verify(questionService).createQuestions(any(Long.class), any(Long.class), any(QuestionCreateRequest.class));
         verify(testDraftRepository).delete(draft);
+
+        ArgumentCaptor<TestCreatedEvent> eventCaptor = ArgumentCaptor.forClass(TestCreatedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        TestCreatedEvent publishedEvent = eventCaptor.getValue();
+        assertThat(publishedEvent.testId()).isEqualTo(99L);
+        assertThat(publishedEvent.title()).isEqualTo("테스트 제목");
+        assertThat(publishedEvent.reward()).isEqualTo(300);
+        assertThat(publishedEvent.createdAt()).isNotNull();
     }
 
     @Test
