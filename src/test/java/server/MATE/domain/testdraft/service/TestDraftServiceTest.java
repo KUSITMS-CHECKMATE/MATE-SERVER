@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import server.MATE.domain.payment.policy.IapProductTierCatalog;
+import server.MATE.domain.testdraft.dto.request.TestDraftUpdateRequest;
 import server.MATE.domain.testdraft.dto.response.TestDraftResponse;
 import server.MATE.domain.testdraft.entity.TestDraft;
 import server.MATE.domain.testdraft.entity.TestDraftStatus;
@@ -26,6 +27,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -112,6 +115,76 @@ class TestDraftServiceTest {
                 .isInstanceOf(BaseException.class)
                 .extracting(e -> ((BaseException) e).getErrorCode())
                 .isEqualTo(BaseErrorCode.DRAFT_002);
+    }
+
+    @Test
+    @DisplayName("updateDraft: goalPpl/reward가 병합된 후 티어와 일치하면 예외 없이 통과한다")
+    void updateDraftPassesWhenMergedTierMatches() {
+        TestDraft draft = draftWith(30, 200, LocalDateTime.parse("2099-06-30T23:59:59"));
+        given(testDraftRepository.findById(DRAFT_ID)).willReturn(Optional.of(draft));
+        given(iapProductTierCatalog.find(30, 200))
+                .willReturn(Optional.of(new TossIapProperties.Tier(30, 200, "sku_30_200", 11000)));
+
+        TestDraftUpdateRequest request = new TestDraftUpdateRequest(
+                null, null, null, null, null, null, 30, 200, null, null
+        );
+
+        TestDraftResponse response = testDraftService.updateDraft(DRAFT_ID, MAKER_ID, request);
+
+        assertThat(response.goalPpl()).isEqualTo(30);
+        assertThat(response.reward()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("updateDraft: goalPpl/reward가 병합된 후 티어와 불일치하면 DRAFT_007 예외를 던진다")
+    void updateDraftThrowsDraft007WhenMergedTierNotFound() {
+        TestDraft draft = draftWith(13, 520, LocalDateTime.parse("2099-06-30T23:59:59"));
+        given(testDraftRepository.findById(DRAFT_ID)).willReturn(Optional.of(draft));
+        given(iapProductTierCatalog.find(13, 520)).willReturn(Optional.empty());
+
+        TestDraftUpdateRequest request = new TestDraftUpdateRequest(
+                null, null, null, null, null, null, 13, 520, null, null
+        );
+
+        assertThatThrownBy(() -> testDraftService.updateDraft(DRAFT_ID, MAKER_ID, request))
+                .isInstanceOf(BaseException.class)
+                .extracting(e -> ((BaseException) e).getErrorCode())
+                .isEqualTo(BaseErrorCode.DRAFT_007);
+    }
+
+    @Test
+    @DisplayName("updateDraft: 이번 요청에 reward만 있어도 DB에 저장된 goalPpl과 병합해서 티어를 검증한다")
+    void updateDraftValidatesMergedGoalPplWhenOnlyRewardInRequest() {
+        TestDraft draft = draftWith(30, 100, LocalDateTime.parse("2099-06-30T23:59:59"));
+        given(testDraftRepository.findById(DRAFT_ID)).willReturn(Optional.of(draft));
+        given(iapProductTierCatalog.find(30, 200))
+                .willReturn(Optional.of(new TossIapProperties.Tier(30, 200, "sku_30_200", 11000)));
+
+        TestDraftUpdateRequest request = new TestDraftUpdateRequest(
+                null, null, null, null, null, null, null, 200, null, null
+        );
+
+        testDraftService.updateDraft(DRAFT_ID, MAKER_ID, request);
+
+        verify(iapProductTierCatalog).find(30, 200);
+    }
+
+    @Test
+    @DisplayName("updateDraft: goalPpl/reward가 병합 후에도 하나라도 null이면 티어 검증을 생략한다")
+    void updateDraftSkipsTierValidationWhenEitherFieldStillNull() {
+        TestDraft draft = TestDraft.builder()
+                .makerId(MAKER_ID)
+                .build();
+        ReflectionTestUtils.setField(draft, "id", DRAFT_ID);
+        given(testDraftRepository.findById(DRAFT_ID)).willReturn(Optional.of(draft));
+
+        TestDraftUpdateRequest request = new TestDraftUpdateRequest(
+                "수정된 제목", null, null, null, null, null, null, null, null, null
+        );
+
+        testDraftService.updateDraft(DRAFT_ID, MAKER_ID, request);
+
+        verify(iapProductTierCatalog, never()).find(anyInt(), anyInt());
     }
 
     private TestDraft draftWith(int goalPpl, int reward, LocalDateTime closedAt) {
