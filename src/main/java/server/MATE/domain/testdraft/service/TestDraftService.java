@@ -67,6 +67,7 @@ public class TestDraftService {
                 parseClosedAt(request.closedAt()),
                 toMap(request.questionsPayload())
         );
+        testDraftRepository.saveAndFlush(draft);
         return TestDraftResponse.from(draft, toJsonNode(draft.getQuestionsPayload()));
     }
 
