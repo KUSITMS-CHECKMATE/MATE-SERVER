@@ -33,6 +33,7 @@ import server.MATE.domain.auth.dto.response.TossLoginResponse;
 import server.MATE.domain.auth.jwt.JwtProvider;
 import server.MATE.domain.auth.jwt.TokenType;
 import server.MATE.domain.auth.store.UserRefreshTokenStore;
+import server.MATE.domain.promotion.repository.PromotionRewardRepository;
 import server.MATE.domain.users.entity.Role;
 import server.MATE.domain.users.entity.TossAccount;
 import server.MATE.domain.users.entity.TossUnlinkReferrer;
@@ -77,6 +78,9 @@ class TossLoginServiceTest {
     @Mock
     private TossLoginSessionService tossLoginSessionService;
 
+    @Mock
+    private PromotionRewardRepository promotionRewardRepository;
+
     private TossLoginService tossLoginService;
     private final Clock fixedClock = Clock.fixed(Instant.parse("2026-05-15T00:00:00Z"), ZoneId.of("Asia/Seoul"));
 
@@ -91,6 +95,7 @@ class TossLoginServiceTest {
                 userRefreshTokenStore,
                 tokenEncryptor,
                 tossLoginSessionService,
+                promotionRewardRepository,
                 fixedClock
         );
         ReflectionTestUtils.setField(tossLoginService, "callbackBasicAuthHeader", "callback-secret");
@@ -267,7 +272,11 @@ class TossLoginServiceTest {
             verify(tossLoginApiClient).removeByAccessToken("valid-access");
             verify(tossLoginSessionService).clearLoginTokens(1L);
             verify(userRefreshTokenStore).delete(1L);
+            verify(promotionRewardRepository).clearTossUserKeyByTesterId(1L);
             assertThat(tossAccount.isLinked()).isFalse();
+            assertThat(tossAccount.getTossUserKey()).isNull();
+            assertThat(tossAccount.getScope()).isNull();
+            assertThat(tossAccount.getUser().getCi()).isNull();
             assertThat(tossAccount.getUnlinkReferrer()).isEqualTo(TossUnlinkReferrer.UNLINK);
             assertThat(tossAccount.getUnlinkedAt()).isEqualTo(LocalDateTime.now(fixedClock));
         }
@@ -354,7 +363,9 @@ class TossLoginServiceTest {
 
             verify(tossLoginSessionService, never()).clearLoginTokens(1L);
             verify(userRefreshTokenStore, never()).delete(1L);
+            verify(promotionRewardRepository, never()).clearTossUserKeyByTesterId(any());
             assertThat(tossAccount.isLinked()).isTrue();
+            assertThat(tossAccount.getUser().getCi()).isEqualTo("ci-1");
         }
 
         @Test
@@ -383,7 +394,11 @@ class TossLoginServiceTest {
             verify(tossLoginApiClient).removeByUserKey(777L);
             verify(tossLoginSessionService).clearLoginTokens(1L);
             verify(userRefreshTokenStore).delete(1L);
+            verify(promotionRewardRepository).clearTossUserKeyByTesterId(1L);
             assertThat(tossAccount.isLinked()).isFalse();
+            assertThat(tossAccount.getTossUserKey()).isNull();
+            assertThat(tossAccount.getScope()).isNull();
+            assertThat(tossAccount.getUser().getCi()).isNull();
             assertThat(tossAccount.getUnlinkReferrer()).isEqualTo(TossUnlinkReferrer.UNLINK);
         }
 
@@ -422,7 +437,11 @@ class TossLoginServiceTest {
 
             verify(tossLoginSessionService).clearLoginTokens(1L);
             verify(userRefreshTokenStore).delete(1L);
+            verify(promotionRewardRepository).clearTossUserKeyByTesterId(1L);
             assertThat(tossAccount.isLinked()).isFalse();
+            assertThat(tossAccount.getTossUserKey()).isNull();
+            assertThat(tossAccount.getScope()).isNull();
+            assertThat(tossAccount.getUser().getCi()).isNull();
             assertThat(tossAccount.getUnlinkReferrer()).isEqualTo(TossUnlinkReferrer.WITHDRAWAL_TOSS);
             assertThat(tossAccount.getUnlinkedAt()).isEqualTo(LocalDateTime.now(fixedClock));
         }

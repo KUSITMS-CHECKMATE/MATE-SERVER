@@ -54,6 +54,7 @@ public enum BaseErrorCode implements ErrorCode {
     DRAFT_004(HttpStatus.BAD_REQUEST, "DRAFT_004", "게시할 수 없는 테스트 초안입니다."),
     DRAFT_005(HttpStatus.BAD_REQUEST, "DRAFT_005", "결제 금액 산정에 필요한 정보가 부족합니다."),
     DRAFT_006(HttpStatus.BAD_REQUEST, "DRAFT_006", "게시에 필요한 필수 정보가 부족합니다."),
+    DRAFT_007(HttpStatus.BAD_REQUEST, "DRAFT_007", "선택한 인원/리워드 조합은 판매 중인 상품이 아닙니다."),
 
     // Question
     QUESTION_001(HttpStatus.BAD_REQUEST, "QUESTION_001", "최소 선택 개수는 1 이상이어야 합니다."),

@@ -4,6 +4,7 @@
  */
 import http from "k6/http";
 import { check, sleep } from "k6";
+import { vu } from "k6/execution";
 import { Trend, Counter } from "k6/metrics";
 import { BASE_URL, authHeaders, getMakerTokenByIndex } from "../../config.js";
 
@@ -28,8 +29,8 @@ export const options = {
 };
 
 export default function () {
-  const testId = testIds[__VU - 1] || testIds[0];
-  const makerIndex = __VU - 1;
+  const testId = testIds[vu.idInTest - 1] || testIds[0];
+  const makerIndex = vu.idInTest - 1;
 
   const res = http.get(
     `${BASE_URL}/api/v1/tests/${testId}/report/excel`,
@@ -50,9 +51,9 @@ export default function () {
 
   if (!ok) {
     failed.add(1);
-    console.error(`VU=${__VU} FAIL status=${res.status} duration=${res.timings.duration}ms`);
+    console.error(`VU=${vu.idInTest} FAIL status=${res.status} duration=${res.timings.duration}ms`);
   } else {
-    console.log(`VU=${__VU} OK duration=${res.timings.duration}ms size=${res.body.byteLength}B`);
+    console.log(`VU=${vu.idInTest} OK duration=${res.timings.duration}ms size=${res.body.byteLength}B`);
   }
 
   sleep(1);

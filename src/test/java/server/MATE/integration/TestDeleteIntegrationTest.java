@@ -296,12 +296,11 @@ class TestDeleteIntegrationTest {
                     .draftId(999L)
                     .testId(test.getId())
                     .makerId(maker.getId())
-                    .orderNo("order-" + System.nanoTime())
+                    .orderId("order-" + System.nanoTime())
                     .payStatus(PayStatus.PAY_SUCCEEDED)
                     .goalPpl(10)
                     .reward(300)
                     .amount(3000)
-                    .isTestPayment(true)
                     .build());
 
             promotionRewardRepository.save(PromotionReward.builder()

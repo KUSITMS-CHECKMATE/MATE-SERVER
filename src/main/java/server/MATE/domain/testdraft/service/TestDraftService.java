@@ -5,15 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import server.MATE.domain.payment.policy.PaymentAmountCalculator;
+import server.MATE.domain.payment.policy.IapProductTierCatalog;
 import server.MATE.domain.testdraft.dto.request.TestDraftClosedAtParser;
 import server.MATE.domain.testdraft.dto.request.TestDraftUpdateRequest;
 import server.MATE.domain.testdraft.dto.response.MyTestDraftItem;
 import server.MATE.domain.testdraft.dto.response.MyTestDraftResponse;
-import server.MATE.domain.testdraft.dto.response.PaymentAmountResponse;
 import server.MATE.domain.testdraft.dto.response.TestDraftResponse;
 import server.MATE.domain.testdraft.entity.TestDraft;
 import server.MATE.domain.testdraft.repository.TestDraftRepository;
+import server.MATE.domain.testdraft.validator.TestDraftValidator;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
@@ -28,19 +28,20 @@ public class TestDraftService {
 
     private final TestDraftRepository testDraftRepository;
     private final ObjectMapper objectMapper;
-    private final PaymentAmountCalculator paymentAmountCalculator;
+    private final IapProductTierCatalog iapProductTierCatalog;
+    private final TestDraftValidator testDraftValidator;
 
     public TestDraftResponse createDraft(Long makerId) {
         TestDraft draft = testDraftRepository.save(TestDraft.builder()
                 .makerId(makerId)
                 .build());
-        return TestDraftResponse.from(draft, null, null);
+        return TestDraftResponse.from(draft, null);
     }
 
     @Transactional(readOnly = true)
     public TestDraftResponse getDraft(Long draftId, Long makerId) {
         TestDraft draft = getOwnedDraft(draftId, makerId);
-        return TestDraftResponse.from(draft, toJsonNode(draft.getQuestionsPayload()), computeAmountBreakdown(draft));
+        return TestDraftResponse.from(draft, toJsonNode(draft.getQuestionsPayload()));
     }
 
     @Transactional(readOnly = true)
@@ -66,12 +67,30 @@ public class TestDraftService {
                 parseClosedAt(request.closedAt()),
                 toMap(request.questionsPayload())
         );
-        return TestDraftResponse.from(draft, toJsonNode(draft.getQuestionsPayload()), computeAmountBreakdown(draft));
+        if (draft.getGoalPpl() != null && draft.getReward() != null) {
+            validateTierExists(draft.getGoalPpl(), draft.getReward());
+        }
+        testDraftRepository.saveAndFlush(draft);
+        return TestDraftResponse.from(draft, toJsonNode(draft.getQuestionsPayload()));
     }
 
     public void deleteDraft(Long draftId, Long makerId) {
         TestDraft draft = getOwnedDraft(draftId, makerId);
         testDraftRepository.delete(draft);
+    }
+
+    @Transactional(readOnly = true)
+    public void publishCheck(Long draftId, Long makerId) {
+        TestDraft draft = getOwnedDraft(draftId, makerId);
+        draft.validatePublishState();
+        draft.validateAmountFields();
+        validateTierExists(draft.getGoalPpl(), draft.getReward());
+        testDraftValidator.validateForPublish(draft);
+    }
+
+    private void validateTierExists(Integer goalPpl, Integer reward) {
+        iapProductTierCatalog.find(goalPpl, reward)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.DRAFT_007));
     }
 
     private TestDraft getOwnedDraft(Long draftId, Long makerId) {
@@ -99,12 +118,5 @@ public class TestDraftService {
         return payload == null || !payload.isObject()
                 ? null
                 : objectMapper.convertValue(payload, Map.class);
-    }
-
-    private PaymentAmountResponse computeAmountBreakdown(TestDraft draft) {
-        if (draft.getGoalPpl() == null || draft.getGoalPpl() <= 0) return null;
-        if (draft.getReward() == null || draft.getReward() <= 0) return null;
-        if (draft.getClosedAt() == null) return null;
-        return PaymentAmountResponse.from(paymentAmountCalculator.breakdown(draft.getGoalPpl(), draft.getReward()));
     }
 }
