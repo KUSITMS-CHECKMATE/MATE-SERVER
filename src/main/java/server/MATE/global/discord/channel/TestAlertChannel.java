@@ -2,6 +2,7 @@ package server.MATE.global.discord.channel;
 
 import java.time.format.DateTimeFormatter;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import server.MATE.domain.test.event.TestCreatedEvent;
@@ -17,13 +18,23 @@ public class TestAlertChannel {
 
     private final DiscordWebhookClient webhookClient;
     private final DiscordProperties properties;
+    private final String deployEnv;
 
-    public TestAlertChannel(DiscordWebhookClient webhookClient, DiscordProperties properties) {
+    public TestAlertChannel(
+            DiscordWebhookClient webhookClient,
+            DiscordProperties properties,
+            @Value("${deploy.env:local}") String deployEnv
+    ) {
         this.webhookClient = webhookClient;
         this.properties = properties;
+        this.deployEnv = deployEnv;
     }
 
     public void notifyCreated(TestCreatedEvent event) {
+        if ("local".equals(deployEnv)) {
+            return;
+        }
+
         String description = String.format(
                 "**ID** : `%d`\n" +
                 "**제목** : %s\n" +
