@@ -67,6 +67,9 @@ public class TestDraftService {
                 parseClosedAt(request.closedAt()),
                 toMap(request.questionsPayload())
         );
+        if (draft.getGoalPpl() != null && draft.getReward() != null) {
+            validateTierExists(draft.getGoalPpl(), draft.getReward());
+        }
         testDraftRepository.saveAndFlush(draft);
         return TestDraftResponse.from(draft, toJsonNode(draft.getQuestionsPayload()));
     }
@@ -76,19 +79,18 @@ public class TestDraftService {
         testDraftRepository.delete(draft);
     }
 
-    /**
-     * 결제(Toss 인앱결제) 실행 전에 프론트가 호출하는 사전검증.
-     * TestPublishService.publish()의 검증(발행 직전 최종 게이트)과 로직은 같지만,
-     * 시점(신뢰 경계)이 다르므로 별도로 호출된다.
-     */
     @Transactional(readOnly = true)
     public void publishCheck(Long draftId, Long makerId) {
         TestDraft draft = getOwnedDraft(draftId, makerId);
         draft.validatePublishState();
         draft.validateAmountFields();
-        iapProductTierCatalog.find(draft.getGoalPpl(), draft.getReward())
-                .orElseThrow(() -> new BaseException(BaseErrorCode.DRAFT_007));
+        validateTierExists(draft.getGoalPpl(), draft.getReward());
         testDraftValidator.validateForPublish(draft);
+    }
+
+    private void validateTierExists(Integer goalPpl, Integer reward) {
+        iapProductTierCatalog.find(goalPpl, reward)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.DRAFT_007));
     }
 
     private TestDraft getOwnedDraft(Long draftId, Long makerId) {
