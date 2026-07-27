@@ -42,6 +42,9 @@ public class Payment extends BaseEntity {
     @Column(name = "order_id", nullable = false, length = 50)
     private String orderId;
 
+    @Column(name = "order_no", nullable = false, length = 20, unique = true)
+    private String orderNo;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private PayStatus payStatus;
@@ -65,6 +68,9 @@ public class Payment extends BaseEntity {
     @Column(length = 200)
     private String refundReason;
 
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    private int retryCount;
+
     public void linkTest(Long testId) {
         this.testId = testId;
     }
@@ -78,11 +84,16 @@ public class Payment extends BaseEntity {
         this.payStatus = PayStatus.REFUNDED;
     }
 
+    public void incrementRetryCount() {
+        this.retryCount++;
+    }
+
     @Builder
     public Payment(Long draftId,
                    Long testId,
                    Long makerId,
                    String orderId,
+                   String orderNo,
                    PayStatus payStatus,
                    Integer goalPpl,
                    Integer reward,
@@ -93,6 +104,7 @@ public class Payment extends BaseEntity {
         this.testId = testId;
         this.makerId = makerId;
         this.orderId = orderId;
+        this.orderNo = orderNo;
         this.payStatus = payStatus;
         this.goalPpl = goalPpl;
         this.reward = reward;
