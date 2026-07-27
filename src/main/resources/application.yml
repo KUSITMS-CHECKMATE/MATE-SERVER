@@ -63,9 +63,3 @@ toss:
     timeout:
       connect: 5s
       read: 5s
-
-payment:
-  bank-maintenance:
-    enabled: false
-    start: "23:30"
-    end: "00:30"
