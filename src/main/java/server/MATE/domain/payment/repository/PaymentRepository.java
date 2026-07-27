@@ -21,6 +21,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findByTestId(Long testId);
 
+    List<Payment> findByMakerIdOrderByCreatedAtDesc(Long makerId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Payment p where p.testId = :testId")
     Optional<Payment> findByTestIdForUpdate(@Param("testId") Long testId);

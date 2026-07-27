@@ -23,6 +23,8 @@ import server.MATE.toss.gateway.IapOrderState;
 import server.MATE.toss.gateway.IapOrderStatusResult;
 import server.MATE.toss.gateway.TossIapGateway;
 
+import server.MATE.domain.payment.util.OrderNoGenerator;
+
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -125,27 +127,35 @@ public class IapService {
 
     private Payment savePaymentOrFallback(String orderId, Long draftId, Long makerId,
                                           TestDraft draft, int amount, LocalDateTime approvedAt) {
-        try {
-            return paymentCreateService.save(Payment.builder()
-                    .draftId(draftId)
-                    .makerId(makerId)
-                    .orderId(orderId)
-                    .goalPpl(draft.getGoalPpl())
-                    .reward(draft.getReward())
-                    .amount(amount)
-                    .payMethod(PayMethod.IN_APP_PURCHASE)
-                    .payStatus(PayStatus.PAY_SUCCEEDED)
-                    .approvedAt(approvedAt)
-                    .build());
-        } catch (DataIntegrityViolationException e) {
-            log.warn("Duplicate grant attempt for orderId={}, falling back to existing record", orderId);
-            Payment fallback = paymentRepository.findByOrderId(orderId)
-                    .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_001));
-            if (!fallback.getMakerId().equals(makerId)) {
-                throw new BaseException(BaseErrorCode.COMMON_009);
+        for (int attempt = 0; attempt < 3; attempt++) {
+            try {
+                return paymentCreateService.save(Payment.builder()
+                        .draftId(draftId)
+                        .makerId(makerId)
+                        .orderId(orderId)
+                        .orderNo(OrderNoGenerator.generate())
+                        .goalPpl(draft.getGoalPpl())
+                        .reward(draft.getReward())
+                        .amount(amount)
+                        .payMethod(PayMethod.IN_APP_PURCHASE)
+                        .payStatus(PayStatus.PAY_SUCCEEDED)
+                        .approvedAt(approvedAt)
+                        .build());
+            } catch (DataIntegrityViolationException e) {
+                // order_id 중복이면 기존 레코드로 fallback
+                Payment fallback = paymentRepository.findByOrderId(orderId).orElse(null);
+                if (fallback != null) {
+                    log.warn("Duplicate grant attempt for orderId={}, falling back to existing record", orderId);
+                    if (!fallback.getMakerId().equals(makerId)) {
+                        throw new BaseException(BaseErrorCode.COMMON_009);
+                    }
+                    return fallback;
+                }
+                // order_no 충돌이면 새 orderNo로 재시도
+                log.warn("orderNo collision on attempt {}, retrying", attempt + 1);
             }
-            return fallback;
         }
+        throw new BaseException(BaseErrorCode.COMMON_999);
     }
 
     public PaymentOrderStatusResponse getOrderStatus(String orderId, Long makerId) {
