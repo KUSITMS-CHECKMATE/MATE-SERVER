@@ -88,7 +88,11 @@ public enum BaseErrorCode implements ErrorCode {
     PAYMENT_005(HttpStatus.BAD_REQUEST, "PAYMENT_005", "토스 계정이 연결되어 있지 않아 결제를 처리할 수 없습니다."),
     PAYMENT_006(HttpStatus.BAD_REQUEST, "PAYMENT_006", "허용되지 않은 SKU입니다."),
     PAYMENT_007(HttpStatus.BAD_REQUEST, "PAYMENT_007", "환불 대기 상태가 아닌 결제입니다."),
-
+    TOSS_SERVER_VERIFICATION_FAILED(HttpStatus.BAD_GATEWAY, "PAYMENT_008", "메이트 서버에서 토스 결제 검증에 실패했습니다."),
+    PRODUCT_NOT_GRANTED_BY_PARTNER(HttpStatus.BAD_GATEWAY, "PAYMENT_009", "파트너 서버에서 상품 지급에 실패했습니다."),
+    APP_MARKET_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "PAYMENT_010", "앱 마켓에서 결제 검증에 실패했습니다."),
+    BANK_MAINTENANCE(HttpStatus.SERVICE_UNAVAILABLE, "PAYMENT_011", "은행 점검 시간대에는 결제를 처리할 수 없습니다."),
+    RETRY_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "PAYMENT_012", "지급 재시도 횟수를 초과했습니다."),
 
     // Report
     REPORT_001(HttpStatus.BAD_REQUEST, "REPORT_001", "엑셀 보고서는 질문 20개 이하 테스트만 지원합니다."),

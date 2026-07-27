@@ -22,6 +22,7 @@ import server.MATE.domain.participation.repository.ParticipationRepository;
 import server.MATE.domain.payment.entity.Payment;
 import server.MATE.domain.payment.entity.PayStatus;
 import server.MATE.domain.payment.repository.PaymentRepository;
+import server.MATE.domain.payment.util.OrderNoGenerator;
 import server.MATE.domain.promotion.entity.PromotionReward;
 import server.MATE.domain.promotion.repository.PromotionRewardRepository;
 import server.MATE.domain.question.entity.*;
@@ -297,6 +298,7 @@ class TestDeleteIntegrationTest {
                     .testId(test.getId())
                     .makerId(maker.getId())
                     .orderId("order-" + System.nanoTime())
+                    .orderNo(OrderNoGenerator.generate())
                     .payStatus(PayStatus.PAY_SUCCEEDED)
                     .goalPpl(10)
                     .reward(300)
