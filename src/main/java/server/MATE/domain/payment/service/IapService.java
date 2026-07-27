@@ -129,14 +129,14 @@ public class IapService {
             throw new BaseException(BaseErrorCode.TOSS_SERVER_VERIFICATION_FAILED);
         }
 
-        if (tier.sku() == null || !tier.sku().equals(result.sku())) {
-            throw new BaseException(BaseErrorCode.PAYMENT_006);
-        }
-
         if (result.status() == IapOrderState.FAILED
                 || result.status() == IapOrderState.ERROR
                 || result.status() == IapOrderState.MINIAPP_MISMATCH) {
             throw new BaseException(BaseErrorCode.APP_MARKET_VERIFICATION_FAILED);
+        }
+
+        if (tier.sku() == null || !tier.sku().equals(result.sku())) {
+            throw new BaseException(BaseErrorCode.PAYMENT_006);
         }
 
         if (result.status() != IapOrderState.PURCHASED
