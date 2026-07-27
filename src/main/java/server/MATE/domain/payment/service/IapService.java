@@ -66,15 +66,24 @@ public class IapService {
      * getPendingOrders 복원 플로우에서 호출.
      * Payment가 이미 있으면 orderId만으로 publish를 재시도한다.
      * Payment가 없으면 draftId를 사용해 결제 검증부터 수행한다.
-     * publish 실패 시 예외를 전파해서 클라이언트가 재시도를 판단한다.
+     * publish 실패 시 PRODUCT_NOT_GRANTED_BY_PARTNER를 던져서 클라이언트가 재시도를 판단한다.
      */
     public boolean restore(String orderId, Long draftId, Long makerId) {
         Payment payment = resolvePayment(orderId, draftId, makerId);
         if (payment == null) {
             return false;
         }
-
-        testPublishService.publish(payment.getId());
+        if (payment.getRetryCount() >= 4) {
+            throw new BaseException(BaseErrorCode.RETRY_LIMIT_EXCEEDED);
+        }
+        payment.incrementRetryCount();
+        paymentRepository.save(payment);
+        try {
+            testPublishService.publish(payment.getId());
+        } catch (Exception e) {
+            log.warn("Publish failed during restore for paymentId={}", payment.getId(), e);
+            throw new BaseException(BaseErrorCode.PRODUCT_NOT_GRANTED_BY_PARTNER);
+        }
         return true;
     }
 
@@ -111,7 +120,20 @@ public class IapService {
         TossAccount tossAccount = tossAccountRepository.findByUserId(makerId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_005));
 
-        IapOrderStatusResult result = tossIapGateway.getOrderStatus(tossAccount.getTossUserKey(), orderId);
+        IapOrderStatusResult result;
+        try {
+            result = tossIapGateway.getOrderStatus(tossAccount.getTossUserKey(), orderId);
+        } catch (Exception e) {
+            // TODO: Toss IAP가 은행 점검 에러를 별도 에러 코드로 내려줄 경우 BANK_MAINTENANCE로 분기 (Toss IAP API 문서 확인 필요)
+            log.warn("Toss IAP gateway error for orderId={}", orderId, e);
+            throw new BaseException(BaseErrorCode.TOSS_SERVER_VERIFICATION_FAILED);
+        }
+
+        if (result.status() == IapOrderState.FAILED
+                || result.status() == IapOrderState.ERROR
+                || result.status() == IapOrderState.MINIAPP_MISMATCH) {
+            throw new BaseException(BaseErrorCode.APP_MARKET_VERIFICATION_FAILED);
+        }
 
         if (tier.sku() == null || !tier.sku().equals(result.sku())) {
             throw new BaseException(BaseErrorCode.PAYMENT_006);
