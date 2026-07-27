@@ -34,6 +34,7 @@ class PromotionRewardRepositoryTest {
                 .testerId(100L)
                 .tossUserKey(777L)
                 .rewardAmount(1000)
+                .status(PromotionRewardStatus.SUCCEEDED)
                 .build());
         PromotionReward other = em.persistAndFlush(PromotionReward.builder()
                 .participationId(2L)
@@ -41,6 +42,7 @@ class PromotionRewardRepositoryTest {
                 .testerId(200L)
                 .tossUserKey(888L)
                 .rewardAmount(1000)
+                .status(PromotionRewardStatus.SUCCEEDED)
                 .build());
         em.clear();
 
@@ -52,8 +54,16 @@ class PromotionRewardRepositoryTest {
     }
 
     @Test
-    @DisplayName("clearTossUserKeyByTesterId: 진행중 상태(KEY_ISSUED/PENDING/EXECUTED)의 tossUserKey는 유지한다")
+    @DisplayName("clearTossUserKeyByTesterId: 진행중 상태(READY/KEY_ISSUED/PENDING/EXECUTED)의 tossUserKey는 유지한다")
     void keepsTossUserKeyForInFlightStatuses() {
+        PromotionReward ready = em.persistAndFlush(PromotionReward.builder()
+                .participationId(10L)
+                .testId(10L)
+                .testerId(300L)
+                .tossUserKey(555L)
+                .rewardAmount(1000)
+                .status(PromotionRewardStatus.READY)
+                .build());
         PromotionReward keyIssued = em.persistAndFlush(PromotionReward.builder()
                 .participationId(11L)
                 .testId(10L)
@@ -91,6 +101,7 @@ class PromotionRewardRepositoryTest {
         int updated = promotionRewardRepository.clearTossUserKeyByTesterId(300L);
 
         assertThat(updated).isEqualTo(1);
+        assertThat(promotionRewardRepository.findById(ready.getId()).orElseThrow().getTossUserKey()).isEqualTo(555L);
         assertThat(promotionRewardRepository.findById(keyIssued.getId()).orElseThrow().getTossUserKey()).isEqualTo(111L);
         assertThat(promotionRewardRepository.findById(pending.getId()).orElseThrow().getTossUserKey()).isEqualTo(222L);
         assertThat(promotionRewardRepository.findById(executed.getId()).orElseThrow().getTossUserKey()).isEqualTo(333L);
