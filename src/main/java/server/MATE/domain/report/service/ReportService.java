@@ -68,7 +68,9 @@ public class ReportService {
             }
         }
 
-        markResultViewedIfNeeded(test);
+        if (test.getMakerId().equals(userId)) {
+            markResultViewedIfNeeded(test);
+        }
 
         List<Report> aggregations = reportRepository.findAllByTestId(testId);
         List<QuestionSummaryItem> questionSummaries = questionRepository.findQuestionSummariesInTest(testId);
