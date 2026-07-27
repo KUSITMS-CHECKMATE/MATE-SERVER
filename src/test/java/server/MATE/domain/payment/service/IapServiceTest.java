@@ -224,7 +224,7 @@ class IapServiceTest {
             when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
             when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
-                    .thenReturn(new IapOrderStatusResult(IapOrderState.FAILED, "sku_10_500", "user_cancel", APPROVED_AT));
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.FAILED, null, "user_cancel", APPROVED_AT));
 
             assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
                     .isInstanceOf(BaseException.class)
@@ -243,7 +243,7 @@ class IapServiceTest {
             when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
             when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
-                    .thenReturn(new IapOrderStatusResult(IapOrderState.ERROR, "sku_10_500", null, APPROVED_AT));
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.ERROR, null, null, APPROVED_AT));
 
             assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
                     .isInstanceOf(BaseException.class)
@@ -259,7 +259,7 @@ class IapServiceTest {
             when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
             when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
             when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
-                    .thenReturn(new IapOrderStatusResult(IapOrderState.MINIAPP_MISMATCH, "sku_10_500", null, APPROVED_AT));
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.MINIAPP_MISMATCH, null, null, APPROVED_AT));
 
             assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
                     .isInstanceOf(BaseException.class)
