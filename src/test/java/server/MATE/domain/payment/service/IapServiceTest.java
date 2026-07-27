@@ -166,6 +166,22 @@ class IapServiceTest {
         }
 
         @Test
+        @DisplayName("Toss 게이트웨이 호출 중 예외가 발생하면 TOSS_SERVER_VERIFICATION_FAILED를 던진다")
+        void throwsTossServerVerificationFailedWhenGatewayThrows() {
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
+            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
+            when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenThrow(new RuntimeException("Toss server error"));
+
+            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.TOSS_SERVER_VERIFICATION_FAILED);
+        }
+
+        @Test
         @DisplayName("Toss가 반환한 sku가 이 draft에 기대되는 티어의 sku와 다르면 PAYMENT_006 예외를 던진다")
         void throwsPayment006WhenSkuDoesNotMatchExpectedTier() {
             when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
@@ -201,6 +217,57 @@ class IapServiceTest {
         }
 
         @Test
+        @DisplayName("Toss 상태가 FAILED이면 APP_MARKET_VERIFICATION_FAILED 예외를 던진다")
+        void throwsAppMarketVerificationFailedWhenStatusIsFailed() {
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
+            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
+            when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.FAILED, "sku_10_500", "user_cancel", APPROVED_AT));
+
+            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.APP_MARKET_VERIFICATION_FAILED);
+
+            verify(paymentCreateService, never()).save(any());
+            verify(testPublishService, never()).publish(any());
+        }
+
+        @Test
+        @DisplayName("Toss 상태가 ERROR이면 APP_MARKET_VERIFICATION_FAILED 예외를 던진다")
+        void throwsAppMarketVerificationFailedWhenStatusIsError() {
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
+            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
+            when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.ERROR, "sku_10_500", null, APPROVED_AT));
+
+            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.APP_MARKET_VERIFICATION_FAILED);
+        }
+
+        @Test
+        @DisplayName("Toss 상태가 MINIAPP_MISMATCH이면 APP_MARKET_VERIFICATION_FAILED 예외를 던진다")
+        void throwsAppMarketVerificationFailedWhenStatusIsMiniappMismatch() {
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
+            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
+            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
+            when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
+            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
+                    .thenReturn(new IapOrderStatusResult(IapOrderState.MINIAPP_MISMATCH, "sku_10_500", null, APPROVED_AT));
+
+            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.APP_MARKET_VERIFICATION_FAILED);
+        }
+
+        @Test
         @DisplayName("Toss 상태가 PURCHASED이면 결제를 티어 등록가로 저장하고 지급 후 true를 반환한다")
         void savesPaymentAndPublishesWhenStatusIsPurchased() {
             when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
@@ -224,23 +291,6 @@ class IapServiceTest {
             assertThat(captured.getPayMethod()).isEqualTo(PayMethod.IN_APP_PURCHASE);
             assertThat(captured.getAmount()).isEqualTo(5500);
             assertThat(captured.getApprovedAt()).isEqualTo(APPROVED_AT);
-        }
-
-        @Test
-        @DisplayName("Toss 상태가 FAILED이면 결제 저장 없이 false를 반환한다")
-        void returnsFalseWhenTossStatusIsFailed() {
-            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
-            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
-            when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
-            when(tossAccountRepository.findByUserId(MAKER_ID)).thenReturn(Optional.of(tossAccount()));
-            when(tossIapGateway.getOrderStatus(eq(777L), eq(ORDER_ID)))
-                    .thenReturn(new IapOrderStatusResult(IapOrderState.FAILED, "sku_10_500", "user_cancel", APPROVED_AT));
-
-            boolean result = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
-
-            assertThat(result).isFalse();
-            verify(paymentCreateService, never()).save(any());
-            verify(testPublishService, never()).publish(any());
         }
 
         @Test
@@ -282,13 +332,14 @@ class IapServiceTest {
             assertThat(result).isTrue();
             verify(paymentCreateService).save(any());
         }
+
     }
 
     @Nested
     class RestoreTest {
 
         @Test
-        @DisplayName("기존 Payment가 있으면 orderId만으로 publish를 재시도한다")
+        @DisplayName("기존 Payment가 있으면 orderId만으로 publish를 재시도하고 retryCount를 증가시킨다")
         void publishesWithOrderIdOnlyWhenPaymentExists() {
             Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
             when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
@@ -296,6 +347,8 @@ class IapServiceTest {
             boolean result = iapService.restore(ORDER_ID, null, MAKER_ID);
 
             assertThat(result).isTrue();
+            assertThat(existing.getRetryCount()).isEqualTo(1);
+            verify(paymentRepository).save(existing);
             verify(testPublishService).publish(100L);
             verify(tossIapGateway, never()).getOrderStatus(any(), any());
         }
@@ -331,15 +384,16 @@ class IapServiceTest {
         }
 
         @Test
-        @DisplayName("restore에서 publish가 실패하면 예외를 전파한다")
-        void propagatesExceptionWhenPublishFailsOnRestore() {
+        @DisplayName("restore에서 publish가 실패하면 PRODUCT_NOT_GRANTED_BY_PARTNER 예외를 던진다")
+        void throwsProductNotGrantedByPartnerWhenPublishFailsOnRestore() {
             Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
             when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
             doThrow(new RuntimeException("publish failed")).when(testPublishService).publish(100L);
 
             assertThatThrownBy(() -> iapService.restore(ORDER_ID, null, MAKER_ID))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessage("publish failed");
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.PRODUCT_NOT_GRANTED_BY_PARTNER);
         }
 
         @Test
@@ -352,6 +406,35 @@ class IapServiceTest {
                     .isInstanceOf(BaseException.class)
                     .extracting(e -> ((BaseException) e).getErrorCode())
                     .isEqualTo(BaseErrorCode.COMMON_009);
+        }
+
+        @Test
+        @DisplayName("retryCount가 4 이상이면 RETRY_LIMIT_EXCEEDED 예외를 던진다")
+        void throwsRetryLimitExceededWhenRetryCountAtLimit() {
+            Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
+            ReflectionTestUtils.setField(existing, "retryCount", 4);
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> iapService.restore(ORDER_ID, null, MAKER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.RETRY_LIMIT_EXCEEDED);
+
+            verify(testPublishService, never()).publish(any());
+        }
+
+        @Test
+        @DisplayName("retryCount가 3이면 4번째 시도를 허용한다")
+        void allowsFourthRestoreAttemptWhenRetryCountIsThree() {
+            Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
+            ReflectionTestUtils.setField(existing, "retryCount", 3);
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
+
+            boolean result = iapService.restore(ORDER_ID, null, MAKER_ID);
+
+            assertThat(result).isTrue();
+            assertThat(existing.getRetryCount()).isEqualTo(4);
+            verify(testPublishService).publish(100L);
         }
     }
 
