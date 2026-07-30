@@ -28,7 +28,7 @@ class TestAlertChannelTest {
     @Test
     @DisplayName("test-alert-webhook-url로 생성 알림 임베드를 전송하고 필수 정보를 포함한다")
     void notifyCreated_sendsEmbedWithTestInfo() {
-        DiscordProperties properties = new DiscordProperties("", "https://discord.test/alert", null);
+        DiscordProperties properties = new DiscordProperties("", "https://discord.test/alert", null, null);
         TestAlertChannel channel = new TestAlertChannel(webhookClient, properties, "prod");
         TestCreatedEvent event = new TestCreatedEvent(1L, "제목", 200, LocalDateTime.of(2026, 7, 20, 12, 0, 0));
 
@@ -48,7 +48,7 @@ class TestAlertChannelTest {
     @Test
     @DisplayName("local 환경이면 알림을 전송하지 않는다")
     void notifyCreated_skipsInLocalEnv() {
-        DiscordProperties properties = new DiscordProperties("", "https://discord.test/alert", null);
+        DiscordProperties properties = new DiscordProperties("", "https://discord.test/alert", null, null);
         TestAlertChannel channel = new TestAlertChannel(webhookClient, properties, "local");
         TestCreatedEvent event = new TestCreatedEvent(1L, "제목", 200, LocalDateTime.of(2026, 7, 20, 12, 0, 0));
 
