@@ -19,7 +19,7 @@ import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.exception.GlobalExceptionHandler;
-import server.MATE.global.discord.DiscordWebhookNotifier;
+import server.MATE.global.discord.channel.ErrorAlertChannel;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,7 +38,7 @@ class AdminTestControllerTest {
     private AdminTestService adminTestService;
 
     @Mock
-    private DiscordWebhookNotifier discordWebhookNotifier;
+    private ErrorAlertChannel errorAlertChannel;
 
     @InjectMocks
     private AdminTestController adminTestController;
@@ -49,7 +49,7 @@ class AdminTestControllerTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(adminTestController)
-                .setControllerAdvice(new GlobalExceptionHandler(discordWebhookNotifier))
+                .setControllerAdvice(new GlobalExceptionHandler(errorAlertChannel))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
     }
