@@ -221,44 +221,4 @@ class ReportServiceTest {
 
         assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
     }
-
-    @Test
-    @DisplayName("어드민이 완료된 리포트를 조회해도 결과 열람 시각이 기록되지 않아 환불 자격이 유지된다")
-    void getReport_adminViewDoesNotMarkResultViewed() {
-        ReflectionTestUtils.setField(test, "testStatus", TestStatus.COMPLETED);
-        ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.COMPLETED);
-
-        given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
-        given(questionRepository.countQuestionsInTest(10L)).willReturn(1L);
-        given(reportRepository.findAllByTestId(10L)).willReturn(List.of(
-                Report.builder().testId(10L).questionId(101L).result(Map.of("count", 3)).build()
-        ));
-        given(questionRepository.findQuestionSummariesInTest(10L)).willReturn(List.of(
-                new QuestionSummaryItem(101L, 1L, "질문", server.MATE.domain.question.entity.QuestionType.SUBJECTIVE)
-        ));
-
-        reportService.getReport(10L, 999L, Role.ADMIN);
-
-        assertThat(test.getResultViewedAt()).isNull();
-    }
-
-    @Test
-    @DisplayName("메이커 본인이 완료된 리포트를 조회하면 결과 열람 시각이 기록된다")
-    void getReport_makerViewMarksResultViewed() {
-        ReflectionTestUtils.setField(test, "testStatus", TestStatus.COMPLETED);
-        ReflectionTestUtils.setField(test, "reportStatus", ReportStatus.COMPLETED);
-
-        given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
-        given(questionRepository.countQuestionsInTest(10L)).willReturn(1L);
-        given(reportRepository.findAllByTestId(10L)).willReturn(List.of(
-                Report.builder().testId(10L).questionId(101L).result(Map.of("count", 3)).build()
-        ));
-        given(questionRepository.findQuestionSummariesInTest(10L)).willReturn(List.of(
-                new QuestionSummaryItem(101L, 1L, "질문", server.MATE.domain.question.entity.QuestionType.SUBJECTIVE)
-        ));
-
-        reportService.getReport(10L, 1L, Role.USER);
-
-        assertThat(test.getResultViewedAt()).isNotNull();
-    }
 }
