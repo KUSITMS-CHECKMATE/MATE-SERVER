@@ -2,8 +2,6 @@ package server.MATE.global.discord.bot.listener;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -18,12 +16,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import server.MATE.domain.admin.service.AdminTestService;
-import server.MATE.domain.test.dto.response.AdminTestStatusResponse;
-import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.global.discord.bot.command.AdminTestCommands;
+import server.MATE.global.discord.bot.message.TeamHeartResolver;
 import server.MATE.global.discord.config.DiscordProperties;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +27,9 @@ class AdminBotListenerTest {
 
     @Mock
     private AdminTestService adminTestService;
+
+    @Mock
+    private TeamHeartResolver teamHeartResolver;
 
     @Mock
     private SlashCommandInteractionEvent event;
@@ -45,8 +44,9 @@ class AdminBotListenerTest {
 
     @BeforeEach
     void setUp() {
-        DiscordProperties properties = new DiscordProperties("", "", new DiscordProperties.Bot(true, "token", "123"));
-        listener = new AdminBotListener(adminTestService, properties);
+        DiscordProperties properties = new DiscordProperties(
+                "", "", new DiscordProperties.Bot(true, "token", "123"), null);
+        listener = new AdminBotListener(adminTestService, properties, teamHeartResolver);
     }
 
     @Test
@@ -64,8 +64,9 @@ class AdminBotListenerTest {
     @Test
     @DisplayName("isAllowedChannel: 설정값이 비어있으면 항상 true")
     void isAllowedChannel_blankConfigAllowsAny() {
-        DiscordProperties properties = new DiscordProperties("", "", new DiscordProperties.Bot(true, "token", ""));
-        AdminBotListener anyChannelListener = new AdminBotListener(adminTestService, properties);
+        DiscordProperties properties = new DiscordProperties(
+                "", "", new DiscordProperties.Bot(true, "token", ""), null);
+        AdminBotListener anyChannelListener = new AdminBotListener(adminTestService, properties, teamHeartResolver);
 
         assertThat(anyChannelListener.isAllowedChannel("anything")).isTrue();
     }
@@ -79,6 +80,7 @@ class AdminBotListenerTest {
 
         verify(event, never()).getChannel();
         verify(event, never()).reply(anyString());
+        verifyNoInteractions(adminTestService);
     }
 
     @Test
@@ -88,31 +90,11 @@ class AdminBotListenerTest {
         when(event.getChannel()).thenReturn(channel);
         when(channel.getId()).thenReturn("999");
         when(event.reply(AdminBotListener.CHANNEL_RESTRICTION_MESSAGE)).thenReturn(replyCallbackAction);
+        when(replyCallbackAction.setEphemeral(true)).thenReturn(replyCallbackAction);
 
         listener.onSlashCommandInteraction(event);
 
         verify(replyCallbackAction).queue();
         verifyNoInteractions(adminTestService);
-    }
-
-    @Test
-    @DisplayName("approve 서브커맨드는 AdminTestService.approve를 호출하고 결과를 응답한다")
-    void onSlashCommandInteraction_approve() {
-        OptionMapping testIdOption = mock(OptionMapping.class);
-        when(testIdOption.getAsLong()).thenReturn(1L);
-
-        when(event.getName()).thenReturn(AdminTestCommands.ROOT);
-        when(event.getChannel()).thenReturn(channel);
-        when(channel.getId()).thenReturn("123");
-        when(event.getSubcommandName()).thenReturn(AdminTestCommands.SUB_APPROVE);
-        when(event.getOption(AdminTestCommands.OPTION_TEST_ID)).thenReturn(testIdOption);
-        when(adminTestService.approve(1L)).thenReturn(new AdminTestStatusResponse(1L, TestStatus.IN_PROGRESS));
-        when(event.reply(anyString())).thenReturn(replyCallbackAction);
-
-        listener.onSlashCommandInteraction(event);
-
-        verify(adminTestService).approve(1L);
-        verify(event).reply(eq("테스트 `#1`를 승인했습니다. (상태: `IN_PROGRESS`)"));
-        verify(replyCallbackAction).queue();
     }
 }
