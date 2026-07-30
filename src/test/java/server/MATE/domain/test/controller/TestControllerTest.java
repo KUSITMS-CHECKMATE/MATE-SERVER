@@ -23,7 +23,7 @@ import server.MATE.domain.test.service.TestDeleteService;
 import server.MATE.domain.test.service.TestService;
 import server.MATE.domain.users.entity.Role;
 import server.MATE.global.common.exception.GlobalExceptionHandler;
-import server.MATE.global.discord.DiscordWebhookNotifier;
+import server.MATE.global.discord.channel.ErrorAlertChannel;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
 import static org.mockito.Mockito.verify;
@@ -41,7 +41,7 @@ class TestControllerTest {
     private TestDeleteService testDeleteService;
 
     @Mock
-    private DiscordWebhookNotifier discordWebhookNotifier;
+    private ErrorAlertChannel errorAlertChannel;
 
     @InjectMocks
     private TestController testController;
@@ -52,7 +52,7 @@ class TestControllerTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(testController)
-                .setControllerAdvice(new GlobalExceptionHandler(discordWebhookNotifier))
+                .setControllerAdvice(new GlobalExceptionHandler(errorAlertChannel))
                 .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
