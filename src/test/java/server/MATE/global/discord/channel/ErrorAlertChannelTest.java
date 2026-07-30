@@ -34,7 +34,7 @@ class ErrorAlertChannelTest {
 
     @BeforeEach
     void setUp() {
-        properties = new DiscordProperties("https://discord.test/error", "", null);
+        properties = new DiscordProperties("https://discord.test/error", "", null, null);
     }
 
     @Test
