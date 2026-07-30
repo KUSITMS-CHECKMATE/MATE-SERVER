@@ -26,6 +26,7 @@ import server.MATE.domain.auth.dto.response.TossLoginResponse;
 import server.MATE.domain.auth.store.TossTokenStore;
 import server.MATE.domain.auth.store.UserRefreshTokenStore;
 import server.MATE.domain.promotion.entity.PromotionReward;
+import server.MATE.domain.promotion.entity.PromotionRewardStatus;
 import server.MATE.domain.promotion.repository.PromotionRewardRepository;
 import server.MATE.domain.users.entity.TossAccount;
 import server.MATE.domain.users.entity.TossUnlinkReferrer;
@@ -194,6 +195,7 @@ class TossLoginIntegrationTest {
                 .testerId(user.getId())
                 .tossUserKey(777L)
                 .rewardAmount(1000)
+                .status(PromotionRewardStatus.SUCCEEDED)
                 .build());
 
         when(tossTokenStore.findAccessToken(user.getId())).thenReturn(Optional.of("cached-access"));
@@ -240,6 +242,7 @@ class TossLoginIntegrationTest {
                 .testerId(user.getId())
                 .tossUserKey(777L)
                 .rewardAmount(1000)
+                .status(PromotionRewardStatus.SUCCEEDED)
                 .build());
 
         tossLoginService.handleUnlinkCallback(777L, TossUnlinkReferrer.WITHDRAWAL_TOSS);

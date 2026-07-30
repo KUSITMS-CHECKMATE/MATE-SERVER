@@ -68,8 +68,6 @@ public class ReportService {
             }
         }
 
-        markResultViewedIfNeeded(test);
-
         List<Report> aggregations = reportRepository.findAllByTestId(testId);
         List<QuestionSummaryItem> questionSummaries = questionRepository.findQuestionSummariesInTest(testId);
 
@@ -113,11 +111,5 @@ public class ReportService {
                 test.getPplCount(),
                 reports
         );
-    }
-
-    private void markResultViewedIfNeeded(Test test) {
-        if (test.getResultViewedAt() == null) {
-            test.markResultViewed();
-        }
     }
 }

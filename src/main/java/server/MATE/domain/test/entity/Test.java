@@ -77,8 +77,6 @@ public class Test extends BaseEntity {
 
     private LocalDateTime deletedAt;
 
-    private LocalDateTime resultViewedAt;
-
     @Column
     private String pdfKey;
 
@@ -156,18 +154,6 @@ public class Test extends BaseEntity {
 
     public boolean isRefundWaived() {
         return Boolean.TRUE.equals(this.refundWaived);
-    }
-
-    public boolean isDataViewed() {
-        return this.resultViewedAt != null
-                || this.pdfKey != null
-                || this.excelKey != null;
-    }
-
-    public void markResultViewed() {
-        if (this.resultViewedAt == null) {
-            this.resultViewedAt = LocalDateTime.now();
-        }
     }
 
     public double getAchievementRate() {

@@ -27,7 +27,7 @@ import server.MATE.domain.users.dto.response.MeResponse;
 import server.MATE.domain.users.entity.Role;
 import server.MATE.domain.users.entity.TossUnlinkReferrer;
 import server.MATE.global.common.exception.GlobalExceptionHandler;
-import server.MATE.global.discord.DiscordWebhookNotifier;
+import server.MATE.global.discord.channel.ErrorAlertChannel;
 import server.MATE.global.security.principal.AuthenticatedUser;
 import server.MATE.toss.service.TossLoginService;
 
@@ -54,7 +54,7 @@ class AuthControllerTest {
     private TossLoginService tossLoginService;
 
     @Mock
-    private DiscordWebhookNotifier discordWebhookNotifier;
+    private ErrorAlertChannel errorAlertChannel;
 
     @InjectMocks
     private AuthController authController;
@@ -66,7 +66,7 @@ class AuthControllerTest {
     void setUp() {
         ReflectionTestUtils.setField(authController, "tossLoginServiceProvider", tossLoginServiceProvider);
         mockMvc = MockMvcBuilders.standaloneSetup(authController)
-                .setControllerAdvice(new GlobalExceptionHandler(discordWebhookNotifier))
+                .setControllerAdvice(new GlobalExceptionHandler(errorAlertChannel))
                 .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
