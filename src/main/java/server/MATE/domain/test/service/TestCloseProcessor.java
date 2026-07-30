@@ -57,7 +57,6 @@ public class TestCloseProcessor {
     private String describeRefundBlockReason(Test test) {
         if (test.isClosedByMaker()) return "수동 종료";
         if (test.isRefundWaived()) return "진행 의사 선택";
-        if (test.isDataViewed()) return "결과 데이터 열람";
         return "기타";
     }
 }
