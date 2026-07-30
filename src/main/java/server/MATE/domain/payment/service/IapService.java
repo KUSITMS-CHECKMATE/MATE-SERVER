@@ -23,6 +23,8 @@ import server.MATE.toss.gateway.IapOrderState;
 import server.MATE.toss.gateway.IapOrderStatusResult;
 import server.MATE.toss.gateway.TossIapGateway;
 
+import server.MATE.domain.payment.util.OrderNoGenerator;
+
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -64,15 +66,24 @@ public class IapService {
      * getPendingOrders 복원 플로우에서 호출.
      * Payment가 이미 있으면 orderId만으로 publish를 재시도한다.
      * Payment가 없으면 draftId를 사용해 결제 검증부터 수행한다.
-     * publish 실패 시 예외를 전파해서 클라이언트가 재시도를 판단한다.
+     * publish 실패 시 PRODUCT_NOT_GRANTED_BY_PARTNER를 던져서 클라이언트가 재시도를 판단한다.
      */
     public boolean restore(String orderId, Long draftId, Long makerId) {
         Payment payment = resolvePayment(orderId, draftId, makerId);
         if (payment == null) {
             return false;
         }
-
-        testPublishService.publish(payment.getId());
+        if (payment.getRetryCount() >= 4) {
+            throw new BaseException(BaseErrorCode.RETRY_LIMIT_EXCEEDED);
+        }
+        payment.incrementRetryCount();
+        paymentRepository.save(payment);
+        try {
+            testPublishService.publish(payment.getId());
+        } catch (Exception e) {
+            log.warn("Publish failed during restore for paymentId={}", payment.getId(), e);
+            throw new BaseException(BaseErrorCode.PRODUCT_NOT_GRANTED_BY_PARTNER);
+        }
         return true;
     }
 
@@ -109,7 +120,20 @@ public class IapService {
         TossAccount tossAccount = tossAccountRepository.findByUserId(makerId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_005));
 
-        IapOrderStatusResult result = tossIapGateway.getOrderStatus(tossAccount.getTossUserKey(), orderId);
+        IapOrderStatusResult result;
+        try {
+            result = tossIapGateway.getOrderStatus(tossAccount.getTossUserKey(), orderId);
+        } catch (Exception e) {
+            // TODO: Toss IAP가 은행 점검 에러를 별도 에러 코드로 내려줄 경우 BANK_MAINTENANCE로 분기 (Toss IAP API 문서 확인 필요)
+            log.warn("Toss IAP gateway error for orderId={}", orderId, e);
+            throw new BaseException(BaseErrorCode.TOSS_SERVER_VERIFICATION_FAILED);
+        }
+
+        if (result.status() == IapOrderState.FAILED
+                || result.status() == IapOrderState.ERROR
+                || result.status() == IapOrderState.MINIAPP_MISMATCH) {
+            throw new BaseException(BaseErrorCode.APP_MARKET_VERIFICATION_FAILED);
+        }
 
         if (tier.sku() == null || !tier.sku().equals(result.sku())) {
             throw new BaseException(BaseErrorCode.PAYMENT_006);
@@ -125,27 +149,35 @@ public class IapService {
 
     private Payment savePaymentOrFallback(String orderId, Long draftId, Long makerId,
                                           TestDraft draft, int amount, LocalDateTime approvedAt) {
-        try {
-            return paymentCreateService.save(Payment.builder()
-                    .draftId(draftId)
-                    .makerId(makerId)
-                    .orderId(orderId)
-                    .goalPpl(draft.getGoalPpl())
-                    .reward(draft.getReward())
-                    .amount(amount)
-                    .payMethod(PayMethod.IN_APP_PURCHASE)
-                    .payStatus(PayStatus.PAY_SUCCEEDED)
-                    .approvedAt(approvedAt)
-                    .build());
-        } catch (DataIntegrityViolationException e) {
-            log.warn("Duplicate grant attempt for orderId={}, falling back to existing record", orderId);
-            Payment fallback = paymentRepository.findByOrderId(orderId)
-                    .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_001));
-            if (!fallback.getMakerId().equals(makerId)) {
-                throw new BaseException(BaseErrorCode.COMMON_009);
+        for (int attempt = 0; attempt < 3; attempt++) {
+            try {
+                return paymentCreateService.save(Payment.builder()
+                        .draftId(draftId)
+                        .makerId(makerId)
+                        .orderId(orderId)
+                        .orderNo(OrderNoGenerator.generate())
+                        .goalPpl(draft.getGoalPpl())
+                        .reward(draft.getReward())
+                        .amount(amount)
+                        .payMethod(PayMethod.IN_APP_PURCHASE)
+                        .payStatus(PayStatus.PAY_SUCCEEDED)
+                        .approvedAt(approvedAt)
+                        .build());
+            } catch (DataIntegrityViolationException e) {
+                // order_id 중복이면 기존 레코드로 fallback
+                Payment fallback = paymentRepository.findByOrderId(orderId).orElse(null);
+                if (fallback != null) {
+                    log.warn("Duplicate grant attempt for orderId={}, falling back to existing record", orderId);
+                    if (!fallback.getMakerId().equals(makerId)) {
+                        throw new BaseException(BaseErrorCode.COMMON_009);
+                    }
+                    return fallback;
+                }
+                // order_no 충돌이면 새 orderNo로 재시도
+                log.warn("orderNo collision on attempt {}, retrying", attempt + 1);
             }
-            return fallback;
         }
+        throw new BaseException(BaseErrorCode.COMMON_999);
     }
 
     public PaymentOrderStatusResponse getOrderStatus(String orderId, Long makerId) {

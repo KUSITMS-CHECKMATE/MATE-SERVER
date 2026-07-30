@@ -81,6 +81,11 @@ dependencies {
 	// excel
 	implementation 'org.apache.poi:poi-ooxml:5.4.1'
 
+	// discord bot (voice/audio 미사용이므로 opus-java 제외)
+	implementation('net.dv8tion:JDA:6.5.0') {
+		exclude module: 'opus-java'
+	}
+
 	// test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'

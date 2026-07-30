@@ -15,20 +15,20 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import server.MATE.global.common.response.ErrorResponse;
-import server.MATE.global.discord.DiscordWebhookNotifier;
+import server.MATE.global.discord.channel.ErrorAlertChannel;
 
 @Slf4j
 @RequiredArgsConstructor
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private final DiscordWebhookNotifier discordWebhookNotifier;
+    private final ErrorAlertChannel errorAlertChannel;
 
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<ErrorResponse> handleBaseException(BaseException e, HttpServletRequest request) {
         ErrorCode errorCode = e.getErrorCode();
         if (errorCode.getHttpStatus().is5xxServerError()) {
-            discordWebhookNotifier.notifyError(errorCode, errorCode.getHttpStatus(), e, request);
+            errorAlertChannel.notifyError(errorCode, errorCode.getHttpStatus(), e, request);
         }
         log.warn("BaseException: {}", e.getMessage());
         return ResponseEntity
@@ -117,7 +117,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e, HttpServletRequest request) {
         log.error("UnhandledException: {}", e.getMessage(), e);
-        discordWebhookNotifier.notifyError(BaseErrorCode.COMMON_999, HttpStatus.INTERNAL_SERVER_ERROR, e, request);
+        errorAlertChannel.notifyError(BaseErrorCode.COMMON_999, HttpStatus.INTERNAL_SERVER_ERROR, e, request);
         return ResponseEntity
                 .status(BaseErrorCode.COMMON_999.getHttpStatus())
                 .body(ErrorResponse.of(BaseErrorCode.COMMON_999));
