@@ -13,7 +13,7 @@ public class OversizedFileCleanupScheduler {
 
     private final OversizedFileCleanupService oversizedFileCleanupService;
 
-    @Scheduled(fixedDelay = 1_800_000)
+    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
     @SchedulerLock(name = "oversizedFileCleanupScheduler", lockAtMostFor = "PT10M")
     public void cleanupOversizedFiles() {
         log.info("업로드 용량 초과 파일 정리 스케줄러 실행");
