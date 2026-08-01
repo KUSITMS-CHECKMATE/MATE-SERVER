@@ -12,6 +12,7 @@ import server.MATE.domain.test.repository.TestRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,11 +31,11 @@ public class PaymentHistoryService {
                 .filter(id -> id != null)
                 .collect(Collectors.toSet());
 
-        Map<Long, String> testTitleMap = testRepository.findAllById(testIds).stream()
-                .collect(Collectors.toMap(Test::getId, Test::getTitle));
+        Map<Long, Test> testMap = testRepository.findAllById(testIds).stream()
+                .collect(Collectors.toMap(Test::getId, Function.identity()));
 
         return payments.stream()
-                .map(p -> PaymentHistoryResponse.of(p, testTitleMap.get(p.getTestId())))
+                .map(p -> PaymentHistoryResponse.of(p, testMap.get(p.getTestId())))
                 .toList();
     }
 }

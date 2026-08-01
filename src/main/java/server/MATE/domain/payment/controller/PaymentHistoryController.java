@@ -29,7 +29,8 @@ public class PaymentHistoryController {
             summary = "결제 내역 조회",
             description = """
                     로그인한 메이커의 결제 내역을 최신순으로 조회합니다.<br>
-                    응답: 결제일시, 테스트명, 결제금액, 결제상태, 주문번호
+                    응답: 결제일시, 테스트ID, 테스트명, 테스트 상태, 결제금액, 결제상태, 주문번호<br>
+                    테스트가 아직 발행되지 않은 결제 건은 testId/testTitle/testStatus가 null입니다.
                     """
     )
     @GetMapping("/me")
