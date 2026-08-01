@@ -26,8 +26,6 @@ public class FileController {
 
     private final FileStorageService fileStorageService;
 
-    private static final long MAX_FILE_SIZE_BYTES = 50L * 1024 * 1024;
-
     @Operation(summary = "파일 업로드 URL 발급", description = """
             파일 업로드용 Presigned URL을 발급합니다. 클라이언트는 서버를 경유하지 않고 Azure Blob Storage에 직접 업로드합니다.
 
@@ -59,7 +57,7 @@ public class FileController {
             @Parameter(description = "파일 크기 (bytes)", example = "1048576")
             @RequestParam long fileSizeBytes
     ) {
-        if (fileSizeBytes > MAX_FILE_SIZE_BYTES) {
+        if (fileSizeBytes > FileStorageService.MAX_UPLOAD_SIZE_BYTES) {
             throw new BaseException(BaseErrorCode.FILE_003);
         }
         String ext = extension.toLowerCase();

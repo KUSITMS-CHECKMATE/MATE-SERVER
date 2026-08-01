@@ -42,4 +42,9 @@ public class NoopFileStorageService implements FileStorageService {
     public byte[] download(String key) {
         return new byte[0];
     }
+
+    @Override
+    public List<String> findOversizedFiles(long maxSizeBytes) {
+        return List.of();
+    }
 }
