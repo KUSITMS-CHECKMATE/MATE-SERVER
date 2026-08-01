@@ -6,6 +6,7 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.azure.storage.blob.models.BlobHttpHeaders;
+import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.blob.options.BlobParallelUploadOptions;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
@@ -17,7 +18,9 @@ import server.MATE.global.config.properties.AzureBlobProperties;
 import server.MATE.global.storage.condition.AzureStorageConfiguredCondition;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Service
 @Conditional(AzureStorageConfiguredCondition.class)
@@ -96,6 +99,34 @@ public class AzureBlobFileStorageService implements FileStorageService {
     public byte[] download(String key) {
         BlobClient blobClient = getContainerClient(key).getBlobClient(key);
         return blobClient.downloadContent().toBytes();
+    }
+
+    @Override
+    public List<String> findOversizedFiles(long maxSizeBytes) {
+        List<String> oversizedKeys = new ArrayList<>();
+        collectOversizedFiles(publicContainerClient, maxSizeBytes, oversizedKeys);
+        collectOversizedFiles(privateContainerClient, maxSizeBytes, oversizedKeys);
+        return oversizedKeys;
+    }
+
+    private static final Pattern PROTECTED_REPORT_KEY_PATTERN =
+            Pattern.compile("^reports/(pdf/\\d+\\.pdf|excel/\\d+\\.xlsx)$");
+
+    private void collectOversizedFiles(BlobContainerClient containerClient, long maxSizeBytes, List<String> target) {
+        for (BlobItem blobItem : containerClient.listBlobs()) {
+            String key = blobItem.getName();
+            if (isProtectedReportKey(key)) {
+                continue;
+            }
+            Long contentLength = blobItem.getProperties().getContentLength();
+            if (contentLength != null && contentLength > maxSizeBytes) {
+                target.add(key);
+            }
+        }
+    }
+
+    private boolean isProtectedReportKey(String key) {
+        return PROTECTED_REPORT_KEY_PATTERN.matcher(key).matches();
     }
 
     private BlobContainerClient getContainerClient(String key) {
