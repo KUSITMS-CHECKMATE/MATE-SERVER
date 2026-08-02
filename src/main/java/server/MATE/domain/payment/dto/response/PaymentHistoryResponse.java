@@ -12,13 +12,14 @@ public record PaymentHistoryResponse(
         Long testId,
         String testTitle,
         TestStatus testStatus,
+        String thumbnailUrl,
         Integer amount,
         PayStatus payStatus,
         String orderNo
 ) {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd");
 
-    public static PaymentHistoryResponse of(Payment payment, Test test) {
+    public static PaymentHistoryResponse of(Payment payment, Test test, String thumbnailUrl) {
         String formattedDate = payment.getApprovedAt() != null
                 ? payment.getApprovedAt().format(FORMATTER)
                 : null;
@@ -27,6 +28,7 @@ public record PaymentHistoryResponse(
                 test != null ? test.getId() : null,
                 test != null ? test.getTitle() : null,
                 test != null ? test.getTestStatus() : null,
+                thumbnailUrl,
                 payment.getAmount(),
                 payment.getPayStatus(),
                 payment.getOrderNo()
