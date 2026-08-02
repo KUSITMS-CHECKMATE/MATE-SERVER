@@ -25,7 +25,7 @@ import server.MATE.domain.testdraft.entity.TestDraftStatus;
 import server.MATE.domain.testdraft.service.TestDraftService;
 import server.MATE.domain.users.entity.Role;
 import server.MATE.global.common.exception.GlobalExceptionHandler;
-import server.MATE.global.discord.DiscordWebhookNotifier;
+import server.MATE.global.discord.channel.ErrorAlertChannel;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
 import java.time.LocalDateTime;
@@ -50,7 +50,7 @@ class TestDraftControllerTest {
     private TestDraftService testDraftService;
 
     @Mock
-    private DiscordWebhookNotifier discordWebhookNotifier;
+    private ErrorAlertChannel errorAlertChannel;
 
     @InjectMocks
     private TestDraftController testDraftController;
@@ -61,7 +61,7 @@ class TestDraftControllerTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(testDraftController)
-                .setControllerAdvice(new GlobalExceptionHandler(discordWebhookNotifier))
+                .setControllerAdvice(new GlobalExceptionHandler(errorAlertChannel))
                 .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();

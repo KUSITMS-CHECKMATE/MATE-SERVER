@@ -26,8 +26,6 @@ public class FileController {
 
     private final FileStorageService fileStorageService;
 
-    private static final long MAX_FILE_SIZE_BYTES = 50L * 1024 * 1024;
-
     @Operation(summary = "파일 업로드 URL 발급", description = """
             파일 업로드용 Presigned URL을 발급합니다. 클라이언트는 서버를 경유하지 않고 Azure Blob Storage에 직접 업로드합니다.
 
@@ -59,7 +57,7 @@ public class FileController {
             @Parameter(description = "파일 크기 (bytes)", example = "1048576")
             @RequestParam long fileSizeBytes
     ) {
-        if (fileSizeBytes > MAX_FILE_SIZE_BYTES) {
+        if (fileSizeBytes > FileStorageService.MAX_UPLOAD_SIZE_BYTES) {
             throw new BaseException(BaseErrorCode.FILE_003);
         }
         String ext = extension.toLowerCase();
@@ -75,7 +73,8 @@ public class FileController {
     }
 
     @Operation(summary = "파일 다운로드 URL 발급", description = """
-            저장된 파일의 다운로드용 Presigned URL을 발급합니다.
+            저장된 공개 미디어 파일(media/ 접두사)의 다운로드용 Presigned URL을 발급합니다.
+            리포트(reports/) 등 비공개 파일은 이 API로 발급할 수 없으며, 해당 도메인의 전용 다운로드 API를 사용해야 합니다.
 
             **[URL 유효시간]** 30분
 
@@ -83,12 +82,16 @@ public class FileController {
             | 코드 | HTTP | 설명 |
             |------|------|------|
             | COMMON_004 | 400 | fileKey 파라미터 누락 |
+            | FILE_004 | 403 | media/ 접두사가 아닌 파일은 다운로드 URL 발급 대상이 아님 |
             """)
     @GetMapping("/presigned-url/download")
     public ResponseEntity<ApiResponse<DownloadUrlResponse>> generateDownloadUrl(
-            @Parameter(description = "업로드 시 발급받은 fileKey", example = "reports/uuid.pdf")
+            @Parameter(description = "업로드 시 발급받은 fileKey", example = "media/uuid.jpg")
             @RequestParam String fileKey
     ) {
+        if (!fileKey.startsWith("media/")) {
+            throw new BaseException(BaseErrorCode.FILE_004);
+        }
         String presignedUrl = fileStorageService.generateDownloadUrl(fileKey);
         return ResponseEntity.ok(ApiResponse.ok("다운로드 URL이 발급되었습니다.",
                 new DownloadUrlResponse(presignedUrl)));

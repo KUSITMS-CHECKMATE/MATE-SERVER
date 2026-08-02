@@ -39,6 +39,7 @@ public interface PromotionRewardRepository extends JpaRepository<PromotionReward
             set pr.tossUserKey = null
             where pr.testerId = :testerId
               and pr.status not in (
+                  server.MATE.domain.promotion.entity.PromotionRewardStatus.READY,
                   server.MATE.domain.promotion.entity.PromotionRewardStatus.KEY_ISSUED,
                   server.MATE.domain.promotion.entity.PromotionRewardStatus.PENDING,
                   server.MATE.domain.promotion.entity.PromotionRewardStatus.EXECUTED
