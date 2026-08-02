@@ -17,6 +17,7 @@ import server.MATE.domain.payment.entity.Payment;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
+import server.MATE.global.storage.FileStorageService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -29,6 +30,9 @@ class PaymentHistoryServiceTest {
 
     @Mock
     private TestRepository testRepository;
+
+    @Mock
+    private FileStorageService fileStorageService;
 
     @InjectMocks
     private PaymentHistoryService paymentHistoryService;
