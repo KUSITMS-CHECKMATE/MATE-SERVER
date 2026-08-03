@@ -8,7 +8,7 @@ import server.MATE.domain.payment.entity.Payment;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
-import server.MATE.global.storage.FileStorageService;
+import server.MATE.global.storage.service.FileStorageService;
 
 import java.util.List;
 import java.util.Map;
