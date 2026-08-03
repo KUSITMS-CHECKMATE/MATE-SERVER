@@ -36,20 +36,21 @@ public class PaymentController {
             description = """
                     Toss 인앱결제 SDK의 processProductGrant 콜백에서 호출하는 엔드포인트입니다.<br>
                     orderId로 Toss 결제 상태를 검증(PURCHASED 또는 PAYMENT_COMPLETED)한 뒤, 테스트를 게시하고 결제 내역을 저장합니다.<br>
-                    지급 성공 시 true, 실패 시 false를 반환합니다.
+                    지급에 성공하면 200을 반환하고, 실패하면 원인별 에러 코드와 함께 4xx/5xx를 반환합니다.<br>
+                    PAYMENT_013(409, 결제 진행 중)은 잠시 후 재시도하면 성공할 수 있는 케이스입니다.
                     """
     )
     @PostMapping("/grant")
-    public ResponseEntity<ApiResponse<Boolean>> grant(
+    public ResponseEntity<ApiResponse<Void>> grant(
             @RequestBody @Valid PaymentGrantRequest request,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        boolean granted = iapService.grant(
+        iapService.grant(
                 request.orderId(),
                 request.draftId(),
                 authenticatedUser.getId()
         );
-        return ResponseEntity.ok(ApiResponse.ok("상품 지급 처리가 완료됐습니다.", granted));
+        return ResponseEntity.ok(ApiResponse.ok("상품 지급 처리가 완료됐습니다."));
     }
 
     @Operation(
@@ -57,20 +58,21 @@ public class PaymentController {
             description = """
                     getPendingOrders로 조회된 미결 주문의 상품 지급을 재시도합니다.<br>
                     이전 grant 호출에서 Payment가 저장됐으면 orderId만으로 publish를 재시도합니다.<br>
-                    Payment가 없으면 draftId를 함께 전달해야 합니다.
+                    Payment가 없으면 draftId를 함께 전달해야 합니다.<br>
+                    복원에 성공하면 200을 반환하고, 실패하면 원인별 에러 코드와 함께 4xx/5xx를 반환합니다.
                     """
     )
     @PostMapping("/restore")
-    public ResponseEntity<ApiResponse<Boolean>> restore(
+    public ResponseEntity<ApiResponse<Void>> restore(
             @RequestBody @Valid PaymentRestoreRequest request,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
     ) {
-        boolean restored = iapService.restore(
+        iapService.restore(
                 request.orderId(),
                 request.draftId(),
                 authenticatedUser.getId()
         );
-        return ResponseEntity.ok(ApiResponse.ok("상품 지급 복원이 완료됐습니다.", restored));
+        return ResponseEntity.ok(ApiResponse.ok("상품 지급 복원이 완료됐습니다."));
     }
 
     @Operation(
