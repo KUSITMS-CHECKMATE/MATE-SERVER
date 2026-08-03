@@ -20,10 +20,9 @@ public class AdminPaymentController {
     private final RefundService refundService;
 
     @Operation(
-            summary = "환불 완료 처리",
+            summary = "🔒 환불 완료 처리",
             description = """
-                    Toss 파트너 콘솔에서 환불 처리 완료 후 호출합니다.<br>
-                    REFUND_PENDING 상태인 결제를 REFUNDED로 전환합니다.
+                    Toss 파트너 콘솔에서 환불 처리 완료 후 호출합니다. REFUND_PENDING 상태인 결제를 REFUNDED로 전환합니다.
                     """
     )
     @PostMapping("/{paymentId}/complete-refund")
