@@ -18,7 +18,7 @@ import server.MATE.domain.report.service.excel.support.ReportExcelExportSupport;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.storage.FileStorageService;
+import server.MATE.global.storage.service.FileStorageService;
 
 @Service
 public class TestReportPdfService {

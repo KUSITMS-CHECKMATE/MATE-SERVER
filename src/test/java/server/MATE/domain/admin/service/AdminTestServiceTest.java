@@ -15,7 +15,7 @@ import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.domain.test.service.TestCloseScheduler;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.storage.FileStorageService;
+import server.MATE.global.storage.service.FileStorageService;
 
 import java.time.LocalDateTime;
 import java.util.List;

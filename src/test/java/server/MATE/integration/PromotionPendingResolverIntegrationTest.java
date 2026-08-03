@@ -14,7 +14,7 @@ import server.MATE.domain.promotion.entity.PromotionReward;
 import server.MATE.domain.promotion.entity.PromotionRewardStatus;
 import server.MATE.domain.promotion.repository.PromotionRewardRepository;
 import server.MATE.domain.promotion.service.PromotionPendingResolverService;
-import server.MATE.global.storage.FileStorageService;
+import server.MATE.global.storage.service.FileStorageService;
 import server.MATE.toss.gateway.PromotionGatewayExecutionStatus;
 import server.MATE.toss.gateway.TossPromotionGateway;
 

@@ -24,8 +24,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import server.MATE.domain.auth.crypto.TokenEncryptionProperties;
 import server.MATE.domain.auth.crypto.TokenEncryptor;
-import server.MATE.global.storage.FileStorageService;
-import server.MATE.global.storage.NoopFileStorageService;
+import server.MATE.global.storage.service.FileStorageService;
+import server.MATE.global.storage.service.NoopFileStorageService;
 
 @SpringBootTest(classes = RedisTokenStoreContextTest.TestConfig.class)
 @ActiveProfiles("test")

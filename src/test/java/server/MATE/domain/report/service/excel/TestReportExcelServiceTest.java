@@ -10,7 +10,7 @@ import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.service.excel.support.ReportExcelExportSupport;
 import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.TestStatus;
-import server.MATE.global.storage.FileStorageService;
+import server.MATE.global.storage.service.FileStorageService;
 
 import java.time.LocalDateTime;
 

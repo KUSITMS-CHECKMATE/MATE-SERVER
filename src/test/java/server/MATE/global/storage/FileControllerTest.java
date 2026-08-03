@@ -13,6 +13,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import server.MATE.global.common.exception.GlobalExceptionHandler;
 import server.MATE.global.discord.channel.ErrorAlertChannel;
+import server.MATE.global.storage.controller.FileController;
+import server.MATE.global.storage.service.FileStorageService;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;

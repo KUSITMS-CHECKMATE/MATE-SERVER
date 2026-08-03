@@ -1,4 +1,4 @@
-package server.MATE.global.storage;
+package server.MATE.global.storage.service;
 
 import java.util.List;
 

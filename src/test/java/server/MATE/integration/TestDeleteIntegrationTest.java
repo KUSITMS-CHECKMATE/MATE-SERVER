@@ -36,7 +36,7 @@ import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.domain.users.entity.Role;
 import server.MATE.domain.users.entity.Users;
 import server.MATE.domain.users.repository.UsersRepository;
-import server.MATE.global.storage.FileStorageService;
+import server.MATE.global.storage.service.FileStorageService;
 
 import java.time.LocalDateTime;
 import java.util.List;
