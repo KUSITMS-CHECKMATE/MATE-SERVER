@@ -117,7 +117,7 @@ class TestDeleteIntegrationTest {
     void softDeleteMarksActiveDataOnly() throws Exception {
         DeleteFixture fixture = createDeleteFixture();
 
-        mockMvc.perform(delete("/api/v1/tests/{testId}", fixture.test.getId())
+        mockMvc.perform(delete("/api/v1/admin/tests/{testId}", fixture.test.getId())
                         .header("Authorization", fixture.adminToken)
                         .queryParam("mode", "SOFT"))
                 .andExpect(status().isOk());
@@ -151,12 +151,12 @@ class TestDeleteIntegrationTest {
     void hardDeletePurgesSoftDeletedTest() throws Exception {
         DeleteFixture fixture = createDeleteFixture();
 
-        mockMvc.perform(delete("/api/v1/tests/{testId}", fixture.test.getId())
+        mockMvc.perform(delete("/api/v1/admin/tests/{testId}", fixture.test.getId())
                         .header("Authorization", fixture.adminToken)
                         .queryParam("mode", "SOFT"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(delete("/api/v1/tests/{testId}", fixture.test.getId())
+        mockMvc.perform(delete("/api/v1/admin/tests/{testId}", fixture.test.getId())
                         .header("Authorization", fixture.adminToken)
                         .header("X-MATE-Hard-Delete-Key", "test-hard-delete-key")
                         .queryParam("mode", "HARD"))
