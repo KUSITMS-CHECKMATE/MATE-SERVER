@@ -1,4 +1,4 @@
-package server.MATE.domain.admin.controller;
+package server.MATE.domain.test.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -6,7 +6,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import server.MATE.domain.admin.service.AdminTestService;
+import server.MATE.domain.test.service.AdminTestService;
 import server.MATE.domain.test.dto.request.RejectTestRequest;
 import server.MATE.domain.test.dto.response.AdminTestDetailResponse;
 import server.MATE.domain.test.dto.response.AdminTestListResponse;

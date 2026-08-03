@@ -1,4 +1,4 @@
-package server.MATE.domain.admin.service;
+package server.MATE.domain.test.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,7 +12,6 @@ import server.MATE.domain.test.dto.response.AdminTestListResponse;
 import server.MATE.domain.test.dto.response.AdminTestStatusResponse;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
-import server.MATE.domain.test.service.TestCloseScheduler;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.storage.service.FileStorageService;
