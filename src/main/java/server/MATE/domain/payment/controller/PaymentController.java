@@ -32,7 +32,7 @@ public class PaymentController {
     private final IapService iapService;
 
     @Operation(
-            summary = "인앱결제 상품 지급 처리",
+            summary = "✅ 인앱결제 상품 지급 처리",
             description = """
                     Toss 인앱결제 SDK의 processProductGrant 콜백에서 호출하는 엔드포인트입니다.<br>
                     orderId로 Toss 결제 상태를 검증(PURCHASED 또는 PAYMENT_COMPLETED)한 뒤, 테스트를 게시하고 결제 내역을 저장합니다.<br>
@@ -54,7 +54,7 @@ public class PaymentController {
     }
 
     @Operation(
-            summary = "미결 주문 복원 (상품 지급 재시도)",
+            summary = "✅ 미결 주문 복원 (상품 지급 재시도)",
             description = """
                     getPendingOrders로 조회된 미결 주문의 상품 지급을 재시도합니다.<br>
                     이전 grant 호출에서 Payment가 저장됐으면 orderId만으로 publish를 재시도합니다.<br>
@@ -76,7 +76,7 @@ public class PaymentController {
     }
 
     @Operation(
-            summary = "인앱결제 주문 상태 조회",
+            summary = "✅ 인앱결제 주문 상태 조회",
             description = """
                     Toss IAP 주문 상태를 직접 조회합니다.<br>
                     네트워크 오류, 콜백 미수신 등 예외 상황에서 결제 상태를 확인할 때 사용합니다.<br>
