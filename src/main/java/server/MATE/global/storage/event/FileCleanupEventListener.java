@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-import server.MATE.global.storage.FileStorageService;
+import server.MATE.global.storage.service.FileStorageService;
 
 @Component
 @RequiredArgsConstructor

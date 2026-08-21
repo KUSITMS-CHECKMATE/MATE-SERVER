@@ -101,6 +101,20 @@ toss:
         reward: 500
         sku: ${TOSS_IAP_SKU_300_500}
         display-amount: 275000
+
+      # 제휴 단체 전용가
+      - goal-ppl: 100
+        reward: 100
+        sku: ${TOSS_IAP_SKU_100_100}
+        display-amount: 16940
+      - goal-ppl: 200
+        reward: 100
+        sku: ${TOSS_IAP_SKU_200_100}
+        display-amount: 33990
+      - goal-ppl: 300
+        reward: 100
+        sku: ${TOSS_IAP_SKU_300_100}
+        display-amount: 50930
   promotion:
     provider: ${TOSS_PROMOTION_PROVIDER:mock}
     answer:

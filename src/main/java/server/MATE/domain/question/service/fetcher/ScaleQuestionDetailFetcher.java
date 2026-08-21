@@ -8,7 +8,7 @@ import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Scale;
 import server.MATE.domain.question.repository.ScaleRepository;
-import server.MATE.global.storage.FileStorageService;
+import server.MATE.global.storage.service.FileStorageService;
 
 import java.util.List;
 import java.util.Map;

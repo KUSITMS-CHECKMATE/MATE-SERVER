@@ -13,6 +13,10 @@ public record ApiResponse<T>(
         return of(HttpStatus.OK, message, data);
     }
 
+    public static ApiResponse<Void> ok(String message) {
+        return of(HttpStatus.OK, message, null);
+    }
+
     public static <T> ApiResponse<T> created(String message, T data) {
         return of(HttpStatus.CREATED, message, data);
     }
