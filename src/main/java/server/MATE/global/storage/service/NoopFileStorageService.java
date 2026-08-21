@@ -1,4 +1,4 @@
-package server.MATE.global.storage;
+package server.MATE.global.storage.service;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Service;

@@ -41,17 +41,9 @@ public class IapService {
     private final TestDraftRepository testDraftRepository;
     private final TestPublishService testPublishService;
 
-    /**
-     * processProductGrant 콜백에서 호출.
-     * Payment 저장 후 publish를 best-effort로 시도하되,
-     * publish 실패해도 true를 반환해서 30초 타임아웃을 지킨다.
-     * publish가 안 된 건은 restore로 재시도.
-     */
-    public boolean grant(String orderId, Long draftId, Long makerId) {
+    // 결제 검증 후 테스트 publish 수행
+    public void grant(String orderId, Long draftId, Long makerId) {
         Payment payment = resolvePayment(orderId, draftId, makerId);
-        if (payment == null) {
-            return false;
-        }
 
         try {
             testPublishService.publish(payment.getId());
@@ -59,20 +51,11 @@ public class IapService {
             log.warn("Publish failed after grant for paymentId={}, will be retried via restore",
                     payment.getId(), e);
         }
-        return true;
     }
 
-    /**
-     * getPendingOrders 복원 플로우에서 호출.
-     * Payment가 이미 있으면 orderId만으로 publish를 재시도한다.
-     * Payment가 없으면 draftId를 사용해 결제 검증부터 수행한다.
-     * publish 실패 시 PRODUCT_NOT_GRANTED_BY_PARTNER를 던져서 클라이언트가 재시도를 판단한다.
-     */
-    public boolean restore(String orderId, Long draftId, Long makerId) {
+    // 결제 후 테스트 publish 실패를 복원
+    public void restore(String orderId, Long draftId, Long makerId) {
         Payment payment = resolvePayment(orderId, draftId, makerId);
-        if (payment == null) {
-            return false;
-        }
         if (payment.getRetryCount() >= 4) {
             throw new BaseException(BaseErrorCode.RETRY_LIMIT_EXCEEDED);
         }
@@ -84,13 +67,9 @@ public class IapService {
             log.warn("Publish failed during restore for paymentId={}", payment.getId(), e);
             throw new BaseException(BaseErrorCode.PRODUCT_NOT_GRANTED_BY_PARTNER);
         }
-        return true;
     }
 
-    /**
-     * orderId로 기존 Payment를 찾거나, 없으면 티어 카탈로그 + Toss API를 검증해서 새로 저장한다.
-     * @return 지급 가능한 Payment, 또는 null (Toss 상태가 결제 완료가 아닌 경우)
-     */
+    // 기존 Payment를 찾거나 없으면 Toss 주문 검증 후 새로 저장
     private Payment resolvePayment(String orderId, Long draftId, Long makerId) {
         Payment existing = paymentRepository.findByOrderId(orderId).orElse(null);
         if (existing != null) {
@@ -100,7 +79,8 @@ public class IapService {
             if (existing.getPayStatus() == PayStatus.PAY_SUCCEEDED) {
                 return existing;
             }
-            return null;
+            log.warn("Grant rejected: payment for orderId={} is in status={}", orderId, existing.getPayStatus());
+            throw new BaseException(BaseErrorCode.PAYMENT_003);
         }
 
         if (draftId == null) {
@@ -129,22 +109,35 @@ public class IapService {
             throw new BaseException(BaseErrorCode.TOSS_SERVER_VERIFICATION_FAILED);
         }
 
-        if (result.status() == IapOrderState.FAILED
-                || result.status() == IapOrderState.ERROR
-                || result.status() == IapOrderState.MINIAPP_MISMATCH) {
-            throw new BaseException(BaseErrorCode.APP_MARKET_VERIFICATION_FAILED);
-        }
+        verifyOrderState(orderId, result);
 
         if (tier.sku() == null || !tier.sku().equals(result.sku())) {
+            log.warn("Grant rejected: SKU mismatch for orderId={}, expected={}, actual={}",
+                    orderId, tier.sku(), result.sku());
             throw new BaseException(BaseErrorCode.PAYMENT_006);
         }
 
-        if (result.status() != IapOrderState.PURCHASED
-                && result.status() != IapOrderState.PAYMENT_COMPLETED) {
-            return null;
+        return savePaymentOrFallback(orderId, draftId, makerId, draft, tier.displayAmount(), result.statusDeterminedAt());
+    }
+
+    // 지급 가능 상태 (PURCHASED, PAYMENT_COMPLETED)가 아니면 상태별 에러 코드 반환
+    private void verifyOrderState(String orderId, IapOrderStatusResult result) {
+        if (result.status() == IapOrderState.PURCHASED
+                || result.status() == IapOrderState.PAYMENT_COMPLETED) {
+            return;
         }
 
-        return savePaymentOrFallback(orderId, draftId, makerId, draft, tier.displayAmount(), result.statusDeterminedAt());
+        log.warn("Grant rejected: Toss order status={} for orderId={}, reason={}",
+                result.status(), orderId, result.reason());
+
+        throw switch (result.status()) {
+            case ORDER_IN_PROGRESS -> new BaseException(BaseErrorCode.ORDER_IN_PROGRESS);
+            case NOT_FOUND -> new BaseException(BaseErrorCode.ORDER_NOT_FOUND);
+            case REFUNDED -> new BaseException(BaseErrorCode.ORDER_ALREADY_REFUNDED);
+            case FAILED, ERROR, MINIAPP_MISMATCH ->
+                    new BaseException(BaseErrorCode.APP_MARKET_VERIFICATION_FAILED);
+            default -> new BaseException(BaseErrorCode.PAYMENT_003);
+        };
     }
 
     private Payment savePaymentOrFallback(String orderId, Long draftId, Long makerId,
