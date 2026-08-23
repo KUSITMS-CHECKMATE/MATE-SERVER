@@ -21,7 +21,7 @@ public class ObjectiveOption extends BaseEntity {
     @JoinColumn(name = "objective_id", nullable = false)
     private Objective objective;
 
-    @Column(nullable = false, length = 17)
+    @Column(nullable = false)
     private String content;
 
     @Column(length = 255)

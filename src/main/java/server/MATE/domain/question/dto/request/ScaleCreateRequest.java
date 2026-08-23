@@ -11,7 +11,6 @@ import server.MATE.domain.question.entity.QuestionType;
 public record ScaleCreateRequest(
         @Schema(example = "전반적인 만족도를 평가해주세요.")
         @NotBlank
-        @Size(max = 34, message = "질문 제목은 최대 34자까지 입력 가능합니다.")
         String title,
 
         @Schema(example = "5점 척도로 응답해주세요.")
