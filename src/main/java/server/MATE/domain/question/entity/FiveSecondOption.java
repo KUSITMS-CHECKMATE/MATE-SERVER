@@ -21,7 +21,7 @@ public class FiveSecondOption extends BaseEntity {
     @JoinColumn(name = "five_second_id", nullable = false)
     private FiveSecond fiveSecond;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false)
     private String content;
 
     @Column(nullable = false)
