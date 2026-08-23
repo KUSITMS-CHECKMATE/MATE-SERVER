@@ -17,7 +17,6 @@ public record ObjectiveCreateRequest(
         String title,
 
         @Schema(example = "해당 서비스를 사용할 때 가장 자주 쓰는 기능을 골라주세요.")
-        @Size(max = 55, message = "질문 설명은 최대 55자까지 입력 가능합니다.")
         String description,
 
         @Schema(example = "false")
