@@ -49,6 +49,8 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod
+            - name: DISCORD_BOT_ENABLED
+              value: "true"
             - name: TOSS_MTLS_CERT_PATH
               value: /mnt/mtls/cert.pem
             - name: TOSS_MTLS_KEY_PATH
