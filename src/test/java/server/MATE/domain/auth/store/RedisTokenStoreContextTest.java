@@ -1,8 +1,6 @@
 package server.MATE.domain.auth.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,8 +22,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import server.MATE.domain.auth.crypto.TokenEncryptionProperties;
 import server.MATE.domain.auth.crypto.TokenEncryptor;
-import server.MATE.global.storage.FileStorageService;
-import server.MATE.global.storage.NoopFileStorageService;
+import server.MATE.global.storage.service.FileStorageService;
+import server.MATE.global.storage.service.NoopFileStorageService;
 
 @SpringBootTest(classes = RedisTokenStoreContextTest.TestConfig.class)
 @ActiveProfiles("test")

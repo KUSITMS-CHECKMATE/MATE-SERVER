@@ -44,7 +44,7 @@ public class AuthController {
     private final AuthService authService;
     private final ObjectProvider<TossLoginService> tossLoginServiceProvider;
 
-    @Operation(summary = "토스 로그인", description = "토스 authorization code를 사용해 Mate JWT를 발급합니다.")
+    @Operation(summary = "✅ 토스 로그인", description = "토스 authorization code를 사용해 Mate JWT를 발급합니다.")
     @PostMapping("/toss/login")
     public ResponseEntity<ApiResponse<TossLoginResponse>> loginWithToss(
             @RequestBody @Valid TossLoginRequest request
@@ -53,7 +53,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("토스 로그인이 완료되었습니다.", response));
     }
 
-    @Operation(summary = "로그아웃", description = "현재 인증된 사용자의 Mate 로그아웃 합니다. 별도 요청값 없이 헤더에 포함된 access 토큰으로 처리합니다.")
+    @Operation(summary = "✅ 로그아웃", description = "현재 인증된 사용자의 Mate 로그아웃 합니다. 별도 요청값 없이 헤더에 포함된 access 토큰으로 처리합니다.")
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
@@ -62,7 +62,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("로그아웃이 완료되었습니다.", null));
     }
 
-    @Operation(summary = "토큰 재발급", description = "refresh 토큰으로 요청하면 새 access 토큰과 refresh 토큰을 발급합니다.")
+    @Operation(summary = "✅ 토큰 재발급", description = "refresh 토큰으로 요청하면 새 access 토큰과 refresh 토큰을 발급합니다.")
     @PostMapping("/reissue")
     public ResponseEntity<ApiResponse<AuthReissueResponse>> reissue(
             @RequestBody @Valid AuthReissueRequest request
@@ -72,7 +72,7 @@ public class AuthController {
     }
 
     @Operation(
-            summary = "토스 연결 해제",
+            summary = "❓ 토스 연결 해제",
             description = "현재 사용자의 토스 로그인 연결을 해제합니다. 토스 앱에서 연결이 해제되면 서비스 세션도 종료되어 재로그인이 필요합니다."
     )
     @PostMapping("/toss/unlink")
@@ -98,7 +98,7 @@ public class AuthController {
     }
 
     @Operation(
-            summary = "토스 연동 상태 조회",
+            summary = "🙅🏻‍♀️ 토스 연동 상태 조회",
             description = """
                 현재 사용자의 토스 로그인 연동 상태를 서버 기준으로 조회합니다. 클라이언트 SDK 기준 연동 여부 확인용이고, 서버에 저장된 연동 상태 기준으로 응답합니다.
                 - `isLinked=true`: 현재 계정이 토스 로그인과 연동된 상태입니다.

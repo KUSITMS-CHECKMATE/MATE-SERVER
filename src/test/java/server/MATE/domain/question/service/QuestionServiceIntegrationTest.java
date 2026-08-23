@@ -47,7 +47,7 @@ import server.MATE.domain.question.service.handler.ScaleQuestionCreateHandler;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
-import server.MATE.global.storage.FileStorageService;
+import server.MATE.global.storage.service.FileStorageService;
 import server.MATE.support.TestEntityFixtures;
 
 import java.util.Comparator;

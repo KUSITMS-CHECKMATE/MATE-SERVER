@@ -93,6 +93,9 @@ public enum BaseErrorCode implements ErrorCode {
     APP_MARKET_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "PAYMENT_010", "앱 마켓에서 결제 검증에 실패했습니다."),
     BANK_MAINTENANCE(HttpStatus.SERVICE_UNAVAILABLE, "PAYMENT_011", "은행 점검 시간대에는 결제를 처리할 수 없습니다."),
     RETRY_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "PAYMENT_012", "지급 재시도 횟수를 초과했습니다."),
+    ORDER_IN_PROGRESS(HttpStatus.CONFLICT, "PAYMENT_013", "결제가 아직 진행 중입니다. 잠시 후 다시 시도해 주세요."),
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_014", "결제 주문을 찾을 수 없습니다."),
+    ORDER_ALREADY_REFUNDED(HttpStatus.BAD_REQUEST, "PAYMENT_015", "이미 환불된 주문입니다."),
 
     // Report
     REPORT_001(HttpStatus.BAD_REQUEST, "REPORT_001", "엑셀 보고서는 질문 20개 이하 테스트만 지원합니다."),

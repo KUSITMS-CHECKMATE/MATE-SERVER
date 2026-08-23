@@ -32,8 +32,7 @@ import server.MATE.domain.users.entity.TossAccount;
 import server.MATE.domain.users.entity.Users;
 import server.MATE.domain.users.repository.TossAccountRepository;
 import server.MATE.domain.users.repository.UsersRepository;
-import server.MATE.global.storage.FileStorageService;
-import server.MATE.support.TestEntityFixtures;
+import server.MATE.global.storage.service.FileStorageService;
 
 import java.util.List;
 

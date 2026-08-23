@@ -26,7 +26,7 @@ public class PaymentHistoryController {
     private final PaymentHistoryService paymentHistoryService;
 
     @Operation(
-            summary = "결제 내역 조회",
+            summary = "✅ 결제 내역 조회",
             description = """
                     로그인한 메이커의 결제 내역을 최신순으로 조회합니다.<br>
                     응답: 결제일시, 테스트ID, 테스트명, 테스트 상태, 대표 이미지 URL, 결제금액, 결제상태, 주문번호<br>

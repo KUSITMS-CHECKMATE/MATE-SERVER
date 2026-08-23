@@ -33,9 +33,9 @@ public class TestDraftController {
     private final TestDraftService testDraftService;
 
     @Operation(
-            summary = "테스트 초안 등록",
+            summary = "✅ 테스트 초안 등록",
             description = """
-                    빈 테스트 초안을 등록하고 draftId를 반환합니다. MKTT_01 화면에 해당하는 api 입니다. +버튼을 눌렀을 때 요청해주세요.
+                    빈 테스트 초안을 등록하고 draftId를 반환합니다. MKTT_01 화면에 해당하는 api 입니다. 임시저장 시작 시점에 요청해주세요.
                     """
     )
     @PostMapping
@@ -48,7 +48,7 @@ public class TestDraftController {
     }
 
     @Operation(
-            summary = "테스트 초안 상세 조회",
+            summary = "✅ 테스트 초안 상세 조회",
             description = """
                     현재 로그인한 사용자가 생성한 테스트 초안을 상세 조회합니다.
                     """
@@ -62,7 +62,7 @@ public class TestDraftController {
         return ResponseEntity.ok(ApiResponse.ok("테스트 초안을 조회했습니다.", response));
     }
 
-    @Operation(summary = "내 테스트 초안 목록 조회",
+    @Operation(summary = "✅ 내 테스트 초안 목록 조회",
             description = "현재 로그인한 사용자가 생성한 테스트 초안 목록을 최신 수정순으로 조회합니다.")
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<MyTestDraftResponse>> listMyDrafts(
@@ -73,7 +73,7 @@ public class TestDraftController {
     }
 
     @Operation(
-            summary = "테스트 초안 수정",
+            summary = "✅ 테스트 초안 수정",
             description = """
                     테스트 초안의 기본 정보, 질문 payload, 목표 인원, 리워드, 마감 기한을 수정합니다. MKTT_02, MKTT_03, 결제하기 화면에 해당하는 api 입니다.<br>
                     - **closedAt**: yyyy-MM-dd 형식으로 요청해주세요.
@@ -89,7 +89,7 @@ public class TestDraftController {
         return ResponseEntity.ok(ApiResponse.ok("테스트 초안을 수정했습니다.", response));
     }
 
-    @Operation(summary = "테스트 초안 삭제", description = "특정 테스트 초안을 hard delete 합니다.")
+    @Operation(summary = "❓ 테스트 초안 삭제", description = "해당 테스트 초안을 hard delete 합니다.")
     @DeleteMapping("/{draftId}")
     public ResponseEntity<ApiResponse<Void>> deleteDraft(
             @PathVariable Long draftId,
@@ -100,11 +100,11 @@ public class TestDraftController {
     }
 
     @Operation(
-            summary = "테스트 초안 발행 가능 여부 사전 검증",
+            summary = "✅ 테스트 초안 발행 가능 여부 사전 검증",
             description = """
-                    Toss 인앱결제 실행 직전에 호출하는 API입니다. 이 draft가 결제 후 정상적으로 발행 가능한 상태인지 확인합니다.<br>
-                    통과하면 200 OK를 반환하고, 실패하면 사유에 맞는 에러 코드(DRAFT_002/004/005/006/007)로 400을 반환합니다.<br>
-                    200을 받았을 때만 프론트에서 Toss IAP.createOneTimePurchaseOrder를 호출해주세요.
+                    Toss 인앱결제 실행 직전에 호출하는 API입니다. 해당 테스트 초안이 결제 후 정상적으로 발행 가능한지 확인합니다. 통과 시 Toss IAP.createOneTimePurchaseOrder를 호출해주세요.
+                    - 통과 시 200 OK를 반환.
+                    - 실패시 사유에 따라 400 에러 코드(DRAFT_002/004/005/006/007)를 반환
                     """
     )
     @GetMapping("/{draftId}/publish-check")

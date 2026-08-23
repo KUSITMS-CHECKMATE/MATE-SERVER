@@ -17,7 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
-import server.MATE.domain.admin.service.AdminTestService;
+import server.MATE.domain.test.service.AdminTestService;
 import server.MATE.global.discord.bot.command.AdminTestCommands;
 import server.MATE.global.discord.bot.message.TeamHeartResolver;
 import server.MATE.global.discord.config.DiscordProperties;
