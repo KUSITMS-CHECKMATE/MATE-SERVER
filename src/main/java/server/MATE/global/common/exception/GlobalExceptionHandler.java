@@ -29,6 +29,8 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = e.getErrorCode();
         if (errorCode.getHttpStatus().is5xxServerError()) {
             errorAlertChannel.notifyError(errorCode, errorCode.getHttpStatus(), e, request);
+        } else {
+            errorAlertChannel.notifyWarn(errorCode, errorCode.getHttpStatus(), e, request);
         }
         log.warn("BaseException: {}", e.getMessage());
         return ResponseEntity
