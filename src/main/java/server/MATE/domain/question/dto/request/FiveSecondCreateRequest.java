@@ -15,7 +15,6 @@ import java.util.List;
 public record FiveSecondCreateRequest(
         @Schema(example = "첫 화면에서 눈에 띄는 요소는 무엇인가요?")
         @NotBlank
-        @Size(max = 34, message = "질문 제목은 최대 34자까지 입력 가능합니다.")
         String title,
 
         @Schema(example = "이미지를 5초간 본 뒤 답변해주세요.")

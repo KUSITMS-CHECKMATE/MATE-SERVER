@@ -25,16 +25,16 @@ public class Test extends BaseEntity {
     @Column(nullable = false)
     private Long makerId;
 
-    @Column(nullable = false, length = 17)
+    @Column(nullable = false)
     private String title;
 
-    @Column(length = 60)
+    @Column
     private String description;
 
-    @Column(length = 17)
+    @Column
     private String serviceName;
 
-    @Column(length = 70)
+    @Column
     private String serviceDescription;
 
     @ElementCollection
