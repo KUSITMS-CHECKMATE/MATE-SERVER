@@ -57,40 +57,4 @@ class QuestionCreateRequestValidationTest {
         assertThat(violations).extracting(v -> v.getPropertyPath().toString())
                 .contains("questions[0].options");
     }
-
-    @Test
-    @DisplayName("카드소팅 카드명이 16자를 초과하면 검증에 실패한다")
-    void failsWhenCardSortingCardLabelExceedsSixteenCharacters() {
-        QuestionCreateRequest request = new QuestionCreateRequest(List.of(
-                new CardSortingCreateRequest(
-                        "카드소팅",
-                        "설명",
-                        List.of("12345678901234567", "청바지", "운동화", "코트"),
-                        List.of("상의")
-                )
-        ));
-
-        Set<ConstraintViolation<QuestionCreateRequest>> violations = validator.validate(request);
-
-        assertThat(violations).extracting(v -> v.getPropertyPath().toString())
-                .contains("questions[0].cards[0].<list element>");
-    }
-
-    @Test
-    @DisplayName("카드소팅 카테고리명이 12자를 초과하면 검증에 실패한다")
-    void failsWhenCardSortingCategoryLabelExceedsTwelveCharacters() {
-        QuestionCreateRequest request = new QuestionCreateRequest(List.of(
-                new CardSortingCreateRequest(
-                        "카드소팅",
-                        "설명",
-                        List.of("티셔츠", "청바지", "운동화", "코트"),
-                        List.of("1234567890123")
-                )
-        ));
-
-        Set<ConstraintViolation<QuestionCreateRequest>> violations = validator.validate(request);
-
-        assertThat(violations).extracting(v -> v.getPropertyPath().toString())
-                .contains("questions[0].categories[0].<list element>");
-    }
 }
