@@ -31,7 +31,7 @@ public class Test extends BaseEntity {
     @Column
     private String description;
 
-    @Column(length = 17)
+    @Column
     private String serviceName;
 
     @Column
