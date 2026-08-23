@@ -36,7 +36,7 @@ import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.domain.users.entity.Role;
 import server.MATE.domain.users.entity.Users;
 import server.MATE.domain.users.repository.UsersRepository;
-import server.MATE.global.storage.FileStorageService;
+import server.MATE.global.storage.service.FileStorageService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -117,7 +117,7 @@ class TestDeleteIntegrationTest {
     void softDeleteMarksActiveDataOnly() throws Exception {
         DeleteFixture fixture = createDeleteFixture();
 
-        mockMvc.perform(delete("/api/v1/tests/{testId}", fixture.test.getId())
+        mockMvc.perform(delete("/api/v1/admin/tests/{testId}", fixture.test.getId())
                         .header("Authorization", fixture.adminToken)
                         .queryParam("mode", "SOFT"))
                 .andExpect(status().isOk());
@@ -151,12 +151,12 @@ class TestDeleteIntegrationTest {
     void hardDeletePurgesSoftDeletedTest() throws Exception {
         DeleteFixture fixture = createDeleteFixture();
 
-        mockMvc.perform(delete("/api/v1/tests/{testId}", fixture.test.getId())
+        mockMvc.perform(delete("/api/v1/admin/tests/{testId}", fixture.test.getId())
                         .header("Authorization", fixture.adminToken)
                         .queryParam("mode", "SOFT"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(delete("/api/v1/tests/{testId}", fixture.test.getId())
+        mockMvc.perform(delete("/api/v1/admin/tests/{testId}", fixture.test.getId())
                         .header("Authorization", fixture.adminToken)
                         .header("X-MATE-Hard-Delete-Key", "test-hard-delete-key")
                         .queryParam("mode", "HARD"))

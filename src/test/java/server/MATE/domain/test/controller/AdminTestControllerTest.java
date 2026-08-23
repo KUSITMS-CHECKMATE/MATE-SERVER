@@ -1,6 +1,7 @@
-package server.MATE.domain.admin.controller;
+package server.MATE.domain.test.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,23 +10,34 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import server.MATE.domain.admin.service.AdminTestService;
+import server.MATE.domain.auth.jwt.TokenType;
+import server.MATE.domain.test.dto.request.TestDeleteMode;
 import server.MATE.domain.test.dto.response.AdminTestDetailResponse;
 import server.MATE.domain.test.dto.response.AdminTestListResponse;
 import server.MATE.domain.test.dto.response.AdminTestStatusResponse;
 import server.MATE.domain.test.entity.TestStatus;
+import server.MATE.domain.test.service.AdminTestService;
+import server.MATE.domain.test.service.TestDeleteService;
+import server.MATE.domain.users.entity.Role;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.exception.GlobalExceptionHandler;
 import server.MATE.global.discord.channel.ErrorAlertChannel;
+import server.MATE.global.security.principal.AuthenticatedUser;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -36,6 +48,9 @@ class AdminTestControllerTest {
 
     @Mock
     private AdminTestService adminTestService;
+
+    @Mock
+    private TestDeleteService testDeleteService;
 
     @Mock
     private ErrorAlertChannel errorAlertChannel;
@@ -50,8 +65,14 @@ class AdminTestControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(adminTestController)
                 .setControllerAdvice(new GlobalExceptionHandler(errorAlertChannel))
+                .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -141,5 +162,42 @@ class AdminTestControllerTest {
 
         mockMvc.perform(patch("/api/v1/admin/tests/999/approve"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("관리자 soft delete 요청을 정상 처리한다")
+    void deletesTestSoftSuccessfully() throws Exception {
+        mockMvc.perform(delete("/api/v1/admin/tests/10")
+                        .with(authenticationPrincipal(1L, Role.ADMIN))
+                        .queryParam("mode", "SOFT"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("테스트를 삭제했습니다."));
+
+        verify(testDeleteService).deleteTest(10L, Role.ADMIN, TestDeleteMode.SOFT, null);
+    }
+
+    @Test
+    @DisplayName("관리자 hard delete 요청에 검증 키를 전달한다")
+    void deletesTestHardSuccessfully() throws Exception {
+        mockMvc.perform(delete("/api/v1/admin/tests/10")
+                        .with(authenticationPrincipal(1L, Role.ADMIN))
+                        .queryParam("mode", "HARD")
+                        .header("X-MATE-Hard-Delete-Key", "hard-delete-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("테스트를 삭제했습니다."));
+
+        verify(testDeleteService).deleteTest(10L, Role.ADMIN, TestDeleteMode.HARD, "hard-delete-key");
+    }
+
+    private RequestPostProcessor authenticationPrincipal(Long userId, Role role) {
+        return request -> {
+            AuthenticatedUser principal = new AuthenticatedUser(userId, role, TokenType.ACCESS);
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(authentication);
+            SecurityContextHolder.setContext(context);
+            return request;
+        };
     }
 }

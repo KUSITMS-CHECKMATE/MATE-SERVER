@@ -37,7 +37,7 @@ public class ReportController {
     private final TestReportPdfService testReportPdfService;
 
     @Operation(
-            summary = "리포트 전체 조회",
+            summary = "✅ 리포트 전체 조회",
             description = """
                     메이커가 자신의 테스트에 대한 질문 유형별 응답 리포트를 조회합니다. MKST_02 화면에 해당하는 api 입니다.
                     - 테스트 소유자(메이커) 또는 관리자가 조회할 수 있습니다.
@@ -391,7 +391,7 @@ public class ReportController {
     }
 
     @Operation(
-            summary = "리포트 통계 xlsx 파일 다운로드",
+            summary = "✅ 리포트 통계 xlsx 파일 다운로드",
             description = """
                     테스트 전체 리포트 엑셀 파일을 binary로 반환합니다.
                     - 테스트 메이커만 다운로드할 수 있습니다.
@@ -418,7 +418,7 @@ public class ReportController {
     }
 
     @Operation(
-            summary = "리포트 통계 PDF 파일 다운로드",
+            summary = "✅ 리포트 통계 PDF 파일 다운로드",
             description = """
                     테스트 전체 리포트 PDF 파일을 binary로 반환합니다.
                     - 테스트 메이커만 다운로드할 수 있습니다.

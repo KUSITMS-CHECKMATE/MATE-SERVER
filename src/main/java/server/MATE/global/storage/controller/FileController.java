@@ -1,4 +1,4 @@
-package server.MATE.global.storage;
+package server.MATE.global.storage.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,6 +15,7 @@ import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.response.ApiResponse;
 import server.MATE.global.storage.dto.DownloadUrlResponse;
 import server.MATE.global.storage.dto.UploadUrlResponse;
+import server.MATE.global.storage.service.FileStorageService;
 
 import java.util.UUID;
 
@@ -26,7 +27,9 @@ public class FileController {
 
     private final FileStorageService fileStorageService;
 
-    @Operation(summary = "파일 업로드 URL 발급", description = """
+    private static final long MAX_FILE_SIZE_BYTES = 50L * 1024 * 1024;
+
+    @Operation(summary = "✅ 파일 업로드 URL 발급", description = """
             파일 업로드용 Presigned URL을 발급합니다. 클라이언트는 서버를 경유하지 않고 Azure Blob Storage에 직접 업로드합니다.
 
             **[허용 확장자]**
@@ -72,7 +75,7 @@ public class FileController {
                 new UploadUrlResponse(presignedUrl, fileKey)));
     }
 
-    @Operation(summary = "파일 다운로드 URL 발급", description = """
+    @Operation(summary = "✅ 파일 다운로드 URL 발급", description = """
             저장된 공개 미디어 파일(media/ 접두사)의 다운로드용 Presigned URL을 발급합니다.
             리포트(reports/) 등 비공개 파일은 이 API로 발급할 수 없으며, 해당 도메인의 전용 다운로드 API를 사용해야 합니다.
 

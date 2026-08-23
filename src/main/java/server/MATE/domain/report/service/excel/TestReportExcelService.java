@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import server.MATE.domain.report.dto.response.TestReportExcelDownload;
 import server.MATE.domain.report.service.excel.support.ReportExcelExportSupport;
 import server.MATE.domain.test.entity.Test;
-import server.MATE.global.storage.FileStorageService;
+import server.MATE.global.storage.service.FileStorageService;
 
 @Service
 @RequiredArgsConstructor

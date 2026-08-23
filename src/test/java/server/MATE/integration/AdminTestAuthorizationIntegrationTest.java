@@ -12,7 +12,7 @@ import server.MATE.domain.auth.jwt.TokenType;
 import server.MATE.domain.users.entity.Role;
 import server.MATE.domain.users.entity.Users;
 import server.MATE.domain.users.repository.UsersRepository;
-import server.MATE.global.storage.FileStorageService;
+import server.MATE.global.storage.service.FileStorageService;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
