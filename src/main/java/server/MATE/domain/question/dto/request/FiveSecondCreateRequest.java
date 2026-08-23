@@ -18,7 +18,6 @@ public record FiveSecondCreateRequest(
         String title,
 
         @Schema(example = "이미지를 5초간 본 뒤 답변해주세요.")
-        @Size(max = 50, message = "질문 설명은 최대 50자까지 입력 가능합니다.")
         String description,
 
         @Schema(example = "five-second-image-key")

@@ -32,7 +32,7 @@ public class Question extends BaseEntity {
     @Column(nullable = false)
     private String title;
 
-    @Column(length = 55)
+    @Column
     private String description;
 
     @Column(nullable = false)

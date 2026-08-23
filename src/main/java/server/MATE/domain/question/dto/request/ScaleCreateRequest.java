@@ -14,7 +14,6 @@ public record ScaleCreateRequest(
         String title,
 
         @Schema(example = "5점 척도로 응답해주세요.")
-        @Size(max = 50, message = "질문 설명은 최대 50자까지 입력 가능합니다.")
         String description,
 
         @Schema(example = "scale-image-key", nullable = true)
