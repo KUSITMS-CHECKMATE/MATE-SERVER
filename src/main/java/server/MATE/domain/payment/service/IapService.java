@@ -43,6 +43,7 @@ public class IapService {
 
     // 결제 검증 후 테스트 publish 수행
     public void grant(String orderId, Long draftId, Long makerId) {
+        log.info("grant 진입: orderId={}, draftId={}, makerId={}", orderId, draftId, makerId);
         Payment payment = resolvePayment(orderId, draftId, makerId);
 
         try {
@@ -55,6 +56,7 @@ public class IapService {
 
     // 결제 후 테스트 publish 실패를 복원
     public void restore(String orderId, Long draftId, Long makerId) {
+        log.info("restore 진입: orderId={}, draftId={}, makerId={}", orderId, draftId, makerId);
         Payment payment = resolvePayment(orderId, draftId, makerId);
         if (payment.getRetryCount() >= 4) {
             throw new BaseException(BaseErrorCode.RETRY_LIMIT_EXCEEDED);
@@ -87,8 +89,10 @@ public class IapService {
             throw new BaseException(BaseErrorCode.PAYMENT_001);
         }
 
-        TestDraft draft = testDraftRepository.findById(draftId)
-                .orElseThrow(() -> new BaseException(BaseErrorCode.DRAFT_001));
+        TestDraft draft = testDraftRepository.findById(draftId).orElse(null);
+        if (draft == null) {
+            return resolveAlreadyPublishedPayment(draftId, makerId);
+        }
         if (!draft.getMakerId().equals(makerId)) {
             throw new BaseException(BaseErrorCode.DRAFT_002);
         }
@@ -118,6 +122,18 @@ public class IapService {
         }
 
         return savePaymentOrFallback(orderId, draftId, makerId, draft, tier.displayAmount(), result.statusDeterminedAt());
+    }
+
+    // TestPublishService가 발행 성공 시 draft를 삭제하므로, 같은 draftId로 재시도가 들어오면
+    // draft가 없는 게 아니라 이미 다른 orderId로 성공 처리된 것일 수 있다. 그 경우 기존 결제를 반환한다.
+    private Payment resolveAlreadyPublishedPayment(Long draftId, Long makerId) {
+        Payment payment = paymentRepository
+                .findFirstByDraftIdAndPayStatusOrderByCreatedAtDesc(draftId, PayStatus.PAY_SUCCEEDED)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.DRAFT_001));
+        if (!payment.getMakerId().equals(makerId)) {
+            throw new BaseException(BaseErrorCode.COMMON_009);
+        }
+        return payment;
     }
 
     // 지급 가능 상태 (PURCHASED, PAYMENT_COMPLETED)가 아니면 상태별 에러 코드 반환
