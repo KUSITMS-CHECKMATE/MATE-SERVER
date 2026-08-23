@@ -113,15 +113,48 @@ class IapServiceTest {
         }
 
         @Test
-        @DisplayName("Draft가 없으면 DRAFT_001 예외를 던진다")
+        @DisplayName("Draft가 없고 해당 draftId로 성공한 결제도 없으면 DRAFT_001 예외를 던진다")
         void throwsDraft001WhenDraftNotFound() {
             when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.empty());
+            when(paymentRepository.findFirstByDraftIdAndPayStatusOrderByCreatedAtDesc(DRAFT_ID, PayStatus.PAY_SUCCEEDED))
+                    .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
                     .isInstanceOf(BaseException.class)
                     .extracting(e -> ((BaseException) e).getErrorCode())
                     .isEqualTo(BaseErrorCode.DRAFT_001);
+        }
+
+        @Test
+        @DisplayName("Draft가 이미 발행되어 삭제된 재시도면 기존 결제를 반환해 재지급한다")
+        void republishesExistingPaymentWhenDraftAlreadyPublishedByPriorGrant() {
+            // 새 orderId로 재시도됐지만 draftId는 이전에 이미 성공 처리되어 삭제된 경우
+            Payment alreadyPublished = existingPayment(300L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
+            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.empty());
+            when(paymentRepository.findFirstByDraftIdAndPayStatusOrderByCreatedAtDesc(DRAFT_ID, PayStatus.PAY_SUCCEEDED))
+                    .thenReturn(Optional.of(alreadyPublished));
+
+            iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
+
+            verify(testPublishService).publish(300L);
+            verify(tossIapGateway, never()).getOrderStatus(any(), any());
+        }
+
+        @Test
+        @DisplayName("Draft가 삭제됐고 기존 결제가 다른 makerId 소유면 COMMON_009 예외를 던진다")
+        void throwsCommon009WhenAlreadyPublishedPaymentBelongsToDifferentMaker() {
+            Payment alreadyPublished = existingPayment(300L, 999L, PayStatus.PAY_SUCCEEDED);
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
+            when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.empty());
+            when(paymentRepository.findFirstByDraftIdAndPayStatusOrderByCreatedAtDesc(DRAFT_ID, PayStatus.PAY_SUCCEEDED))
+                    .thenReturn(Optional.of(alreadyPublished));
+
+            assertThatThrownBy(() -> iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.COMMON_009);
         }
 
         @Test
