@@ -14,7 +14,6 @@ import java.util.List;
 public record ObjectiveCreateRequest(
         @Schema(example = "가장 자주 사용하는 기능은 무엇인가요?")
         @NotBlank
-        @Size(max = 34, message = "질문 제목은 최대 34자까지 입력 가능합니다.")
         String title,
 
         @Schema(example = "해당 서비스를 사용할 때 가장 자주 쓰는 기능을 골라주세요.")

@@ -21,7 +21,6 @@ public record CardSortingCreateRequest(
         @Size(min = 4, max = 12, message = "카드는 최소 4개, 최대 12개까지 입력할 수 있습니다.")
         List<
                 @NotBlank(message = "카드 이름은 비어 있을 수 없습니다.")
-                @Size(max = 16, message = "카드 이름은 최대 16자까지 입력할 수 있습니다.")
                 String> cards,
 
         @Schema(example = "[\"상의\", \"하의\", \"신발\"]")
@@ -29,7 +28,6 @@ public record CardSortingCreateRequest(
         @Size(min = 1, max = 3, message = "카테고리는 최소 1개, 최대 3개까지 입력할 수 있습니다.")
         List<
                 @NotBlank(message = "카테고리 이름은 비어 있을 수 없습니다.")
-                @Size(max = 12, message = "카테고리 이름은 최대 12자까지 입력할 수 있습니다.")
                 String> categories
 ) implements QuestionCreateItem {
     @Override
