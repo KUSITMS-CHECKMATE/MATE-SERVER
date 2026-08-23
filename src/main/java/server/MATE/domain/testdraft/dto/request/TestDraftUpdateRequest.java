@@ -13,7 +13,6 @@ public record TestDraftUpdateRequest(
 
         String description,
 
-        @Size(max = 17, message = "서비스 이름은 최대 17자까지 입력 가능합니다.")
         String serviceName,
 
         String serviceDescription,
