@@ -101,7 +101,7 @@ class ReportAggregateServiceTest {
         given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
         given(questionRepository.findQuestionsInTest(TEST_ID)).willReturn(List.of(question));
         given(answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(List.of(101L))).willReturn(List.of(answer));
-        given(reportHandler.compute(List.of(question), Map.of(101L, List.of(answer))))
+        given(reportHandler.compute(List.of(question), Map.of(101L, List.of(answer)), true))
                 .willReturn(Map.of(101L, Map.of("texts", List.of("응답"))));
         given(reportRepository.saveAll(any())).willAnswer(invocation -> invocation.getArgument(0));
 
@@ -112,7 +112,7 @@ class ReportAggregateServiceTest {
         assertThat(result.getFirst().getResult()).isEqualTo(Map.of("texts", List.of("응답")));
         assertThat(test.getReportStatus()).isEqualTo(ReportStatus.COMPLETED);
         verify(questionRepository).findQuestionsInTest(TEST_ID);
-        verify(reportHandler).compute(List.of(question), Map.of(101L, List.of(answer)));
+        verify(reportHandler).compute(List.of(question), Map.of(101L, List.of(answer)), true);
     }
 
     @Test

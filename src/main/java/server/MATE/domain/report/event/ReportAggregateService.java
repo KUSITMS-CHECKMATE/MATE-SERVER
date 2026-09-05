@@ -79,26 +79,7 @@ public class ReportAggregateService {
         }
 
         List<Question> questions = questionRepository.findQuestionsInTest(testId);
-        List<Long> questionIds = questions.stream().map(Question::getId).toList();
-        List<Answer> allAnswers = answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(questionIds);
-
-        // 질문별 집계 계산에 바로 쓸 수 있도록 응답을 questionId 기준으로 묶음
-        Map<Long, List<Answer>> answersByQuestionId = allAnswers.stream()
-                .collect(Collectors.groupingBy(Answer::getQuestionId));
-        Map<QuestionType, List<Question>> questionsByType = questions.stream()
-                .collect(Collectors.groupingBy(
-                        Question::getQuestionType,
-                        () -> new EnumMap<>(QuestionType.class),
-                        Collectors.toList()
-                ));
-
-        // 질문 유형별 핸들러로 부분 집계를 수행, questionId 기준으로 결과 맵 저
-        Map<Long, Map<String, Object>> resultByQuestionId = new LinkedHashMap<>();
-        for (Map.Entry<QuestionType, List<Question>> entry : questionsByType.entrySet()) {
-            ReportHandler handler = handlerMap.get(entry.getKey());
-            if (handler == null) throw new BaseException(BaseErrorCode.COMMON_002);
-            resultByQuestionId.putAll(handler.compute(entry.getValue(), answersByQuestionId));
-        }
+        Map<Long, Map<String, Object>> resultByQuestionId = computeResultByQuestionId(questions, true);
 
         List<Report> reports = questions.stream()
                 .map(q -> Report.builder()
@@ -113,6 +94,40 @@ public class ReportAggregateService {
         test.completeReportAggregation();
         testRepository.save(test);
         return saved;
+    }
+
+    /**
+     * 테스트 진행 중(50% 이상 응답 시점)에 결과 탭에서 호출되는 즉석 집계.
+     * Report 테이블에 저장하지 않고, 주관식 계열 핸들러는 AI 분석(Claude 호출) 없이 raw 텍스트만 반환함.
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, Map<String, Object>> computeLive(Long testId) {
+        List<Question> questions = questionRepository.findQuestionsInTest(testId);
+        return computeResultByQuestionId(questions, false);
+    }
+
+    private Map<Long, Map<String, Object>> computeResultByQuestionId(List<Question> questions, boolean includeAiAnalysis) {
+        List<Long> questionIds = questions.stream().map(Question::getId).toList();
+        List<Answer> allAnswers = answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(questionIds);
+
+        // 질문별 집계 계산에 바로 쓸 수 있도록 응답을 questionId 기준으로 묶음
+        Map<Long, List<Answer>> answersByQuestionId = allAnswers.stream()
+                .collect(Collectors.groupingBy(Answer::getQuestionId));
+        Map<QuestionType, List<Question>> questionsByType = questions.stream()
+                .collect(Collectors.groupingBy(
+                        Question::getQuestionType,
+                        () -> new EnumMap<>(QuestionType.class),
+                        Collectors.toList()
+                ));
+
+        // 질문 유형별 핸들러로 부분 집계를 수행, questionId 기준으로 결과 맵 저장
+        Map<Long, Map<String, Object>> resultByQuestionId = new LinkedHashMap<>();
+        for (Map.Entry<QuestionType, List<Question>> entry : questionsByType.entrySet()) {
+            ReportHandler handler = handlerMap.get(entry.getKey());
+            if (handler == null) throw new BaseException(BaseErrorCode.COMMON_002);
+            resultByQuestionId.putAll(handler.compute(entry.getValue(), answersByQuestionId, includeAiAnalysis));
+        }
+        return resultByQuestionId;
     }
 
     @Recover

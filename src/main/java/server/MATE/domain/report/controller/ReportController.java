@@ -41,9 +41,12 @@ public class ReportController {
             description = """
                     메이커가 자신의 테스트에 대한 질문 유형별 응답 리포트를 조회합니다. MKST_02 화면에 해당하는 api 입니다.
                     - 테스트 소유자(메이커) 또는 관리자가 조회할 수 있습니다.
-                    - `testStatus`가 `COMPLETED`가 아니면 `reports`는 빈 리스트를 반환합니다.
+                    - `testStatus`가 `WAITING` 또는 `REJECTED`이면 `reports`는 빈 리스트를 반환합니다.
+                    - `testStatus`가 `IN_PROGRESS`이고 응답률(참여 인원 / 목표 인원)이 50% 미만이면 `reports`는 빈 리스트를 반환합니다.
+                    - `testStatus`가 `IN_PROGRESS`이고 응답률이 50% 이상이면, 현재까지의 응답으로 즉석 집계한 `reports`를 반환합니다.
+                      이 경우 Report 테이블에 저장되지 않고 `reportStatus`는 계속 `PENDING`으로 유지되며, 주관식 계열(`aiSummary`/`clusters`)은 AI 분석을 수행하지 않아 항상 `null`/`[]`이고 `texts`/`otherTexts`는 응답 수와 무관하게 최대 15개 샘플로 반환됩니다.
                     - `testStatus`가 `COMPLETED`이고 `reportStatus`가 `IN_PROGRESS`이면 집계 중으로 `reports`는 빈 리스트입니다.
-                    - `reportStatus`가 `COMPLETED`이면 `reports`를 반환합니다.
+                    - `reportStatus`가 `COMPLETED`이면 테스트 종료 시 1회 집계된 최종 `reports`를 반환합니다.
                     - `reports[].result` 구조는 질문 유형(`type`)마다 다릅니다. 아래 예시 응답을 참고해주세요.
 
                     #### 주관식 응답 집계 필드(`aiSummary` / `clusters` / `texts` · `otherTexts`) 반환 규칙
