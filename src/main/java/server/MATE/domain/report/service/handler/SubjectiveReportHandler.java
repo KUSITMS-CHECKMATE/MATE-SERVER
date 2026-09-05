@@ -26,15 +26,20 @@ public class SubjectiveReportHandler implements ReportHandler {
 
     @Override
     public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId) {
+        return compute(questions, answersByQuestionId, true);
+    }
+
+    @Override
+    public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId, boolean includeAiAnalysis) {
         Map<Long, Map<String, Object>> result = new LinkedHashMap<>();
         for (Question question : questions) {
             List<Answer> answers = answersByQuestionId.getOrDefault(question.getId(), List.of());
-            result.put(question.getId(), computeForSubjective(answers));
+            result.put(question.getId(), computeForSubjective(answers, includeAiAnalysis));
         }
         return result;
     }
 
-    private Map<String, Object> computeForSubjective(List<Answer> answers) {
+    private Map<String, Object> computeForSubjective(List<Answer> answers, boolean includeAiAnalysis) {
         List<String> allTexts = answers.stream()
                 .sorted(Comparator.comparing(Answer::getCreatedAt))
                 .map(a -> (String) a.getAnswer().get("text"))
@@ -42,6 +47,13 @@ public class SubjectiveReportHandler implements ReportHandler {
                 .toList();
 
         Map<String, Object> result = new LinkedHashMap<>();
+
+        if (!includeAiAnalysis) {
+            result.put("aiSummary", null);
+            result.put("clusters", List.of());
+            result.put("texts", ReportHandlerUtils.sampleTexts(allTexts));
+            return result;
+        }
 
         if (allTexts.size() < aiService.getMinResponseThreshold()) {
             result.put("aiSummary", null);
