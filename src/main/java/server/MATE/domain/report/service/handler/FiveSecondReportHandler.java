@@ -32,6 +32,11 @@ public class FiveSecondReportHandler implements ReportHandler {
 
     @Override
     public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId) {
+        return compute(questions, answersByQuestionId, true);
+    }
+
+    @Override
+    public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId, boolean includeAiAnalysis) {
         List<Long> questionIds = questions.stream().map(Question::getId).toList();
         Map<Long, FiveSecond> fiveSecondMap = fiveSecondRepository.findAllByIdIn(questionIds).stream()
                 .collect(Collectors.toMap(FiveSecond::getId, f -> f));
@@ -41,13 +46,13 @@ public class FiveSecondReportHandler implements ReportHandler {
             FiveSecond fiveSecond = fiveSecondMap.get(question.getId());
             List<Answer> answers = answersByQuestionId.getOrDefault(question.getId(), List.of());
             result.put(question.getId(), fiveSecond.isObjective()
-                    ? computeObjective(fiveSecond, answers)
-                    : computeSubjective(answers));
+                    ? computeObjective(fiveSecond, answers, includeAiAnalysis)
+                    : computeSubjective(answers, includeAiAnalysis));
         }
         return result;
     }
 
-    private Map<String, Object> computeObjective(FiveSecond fiveSecond, List<Answer> answers) {
+    private Map<String, Object> computeObjective(FiveSecond fiveSecond, List<Answer> answers, boolean includeAiAnalysis) {
         Map<Long, Integer> countByOptionId = new LinkedHashMap<>();
         for (FiveSecondOption option : fiveSecond.getOptions()) {
             countByOptionId.put(option.getId(), 0);
@@ -79,12 +84,12 @@ public class FiveSecondReportHandler implements ReportHandler {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("options", options);
         if (Boolean.TRUE.equals(fiveSecond.getIsOther())) {
-            appendAiResult(result, otherTexts, "otherTexts");
+            appendAiResult(result, otherTexts, "otherTexts", includeAiAnalysis);
         }
         return result;
     }
 
-    private Map<String, Object> computeSubjective(List<Answer> answers) {
+    private Map<String, Object> computeSubjective(List<Answer> answers, boolean includeAiAnalysis) {
         List<String> allTexts = answers.stream()
                 .sorted(Comparator.comparing(Answer::getCreatedAt))
                 .map(a -> (String) a.getAnswer().get("text"))
@@ -92,11 +97,18 @@ public class FiveSecondReportHandler implements ReportHandler {
                 .toList();
 
         Map<String, Object> result = new LinkedHashMap<>();
-        appendAiResult(result, allTexts, "texts");
+        appendAiResult(result, allTexts, "texts", includeAiAnalysis);
         return result;
     }
 
-    private void appendAiResult(Map<String, Object> result, List<String> texts, String rawTextsKey) {
+    private void appendAiResult(Map<String, Object> result, List<String> texts, String rawTextsKey, boolean includeAiAnalysis) {
+        if (!includeAiAnalysis) {
+            result.put("aiSummary", null);
+            result.put("clusters", List.of());
+            result.put(rawTextsKey, ReportHandlerUtils.sampleTexts(texts));
+            return;
+        }
+
         if (texts.size() < aiService.getMinResponseThreshold()) {
             result.put("aiSummary", null);
             result.put("clusters", List.of());

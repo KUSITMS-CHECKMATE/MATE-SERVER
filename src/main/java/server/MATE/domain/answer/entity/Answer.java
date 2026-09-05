@@ -15,7 +15,9 @@ import java.util.Map;
 
 @Getter
 @Entity
-@Table(name = "answer", uniqueConstraints = @UniqueConstraint(columnNames = {"participation_id", "question_id"}))
+@Table(name = "answer",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"participation_id", "question_id"}),
+        indexes = @Index(name = "idx_answer_question_id", columnList = "question_id"))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Answer extends BaseEntity {
 

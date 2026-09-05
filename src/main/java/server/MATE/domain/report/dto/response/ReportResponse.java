@@ -23,7 +23,7 @@ public record ReportResponse(
         @Schema(description = "총 참여자 수", example = "12")
         Long participantCount,
 
-        @Schema(description = "질문별 집계 결과 (reportStatus가 COMPLETED일 때만 포함)")
+        @Schema(description = "질문별 집계 결과 (reportStatus가 COMPLETED이거나, testStatus가 IN_PROGRESS이고 응답률 50% 이상일 때 포함)")
         List<ReportItem> reports
 ) {
 }
