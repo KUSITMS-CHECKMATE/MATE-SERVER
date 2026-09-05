@@ -32,6 +32,11 @@ public class ObjectiveReportHandler implements ReportHandler {
 
     @Override
     public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId) {
+        return compute(questions, answersByQuestionId, true);
+    }
+
+    @Override
+    public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId, boolean includeAiAnalysis) {
         List<Long> questionIds = questions.stream().map(Question::getId).toList();
         Map<Long, Objective> objectiveMap = objectiveRepository.findAllByIdIn(questionIds).stream()
                 .collect(Collectors.toMap(Objective::getId, o -> o));
@@ -40,12 +45,12 @@ public class ObjectiveReportHandler implements ReportHandler {
         for (Question question : questions) {
             Objective objective = objectiveMap.get(question.getId());
             List<Answer> answers = answersByQuestionId.getOrDefault(question.getId(), List.of());
-            result.put(question.getId(), computeForObjective(objective, answers));
+            result.put(question.getId(), computeForObjective(objective, answers, includeAiAnalysis));
         }
         return result;
     }
 
-    private Map<String, Object> computeForObjective(Objective objective, List<Answer> answers) {
+    private Map<String, Object> computeForObjective(Objective objective, List<Answer> answers, boolean includeAiAnalysis) {
         Map<Long, Integer> countByOptionId = new LinkedHashMap<>();
         for (ObjectiveOption option : objective.getOptions()) {
             countByOptionId.put(option.getId(), 0);
@@ -77,12 +82,19 @@ public class ObjectiveReportHandler implements ReportHandler {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("options", options);
         if (objective.isOther()) {
-            appendAiResult(result, otherTexts);
+            appendAiResult(result, otherTexts, includeAiAnalysis);
         }
         return result;
     }
 
-    private void appendAiResult(Map<String, Object> result, List<String> texts) {
+    private void appendAiResult(Map<String, Object> result, List<String> texts, boolean includeAiAnalysis) {
+        if (!includeAiAnalysis) {
+            result.put("aiSummary", null);
+            result.put("clusters", List.of());
+            result.put("otherTexts", ReportHandlerUtils.sampleTexts(texts));
+            return;
+        }
+
         if (texts.size() < aiService.getMinResponseThreshold()) {
             result.put("aiSummary", null);
             result.put("clusters", List.of());
