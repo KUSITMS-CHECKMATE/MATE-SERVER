@@ -78,6 +78,7 @@ public class ReportAggregateService {
             return List.of();
         }
 
+        long startedAt = System.currentTimeMillis();
         List<Question> questions = questionRepository.findQuestionsInTest(testId);
         Map<Long, Map<String, Object>> resultByQuestionId = computeResultByQuestionId(questions, true);
 
@@ -93,6 +94,8 @@ public class ReportAggregateService {
         List<Report> saved = reportRepository.saveAll(reports);
         test.completeReportAggregation();
         testRepository.save(test);
+        log.info("테스트 {} 리포트 집계 완료: 문항 {}개, 소요시간 {}ms",
+                testId, questions.size(), System.currentTimeMillis() - startedAt);
         return saved;
     }
 
