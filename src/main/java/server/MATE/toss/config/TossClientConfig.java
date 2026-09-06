@@ -1,5 +1,7 @@
 package server.MATE.toss.config;
 
+import java.time.Duration;
+
 import io.netty.channel.ChannelOption;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.JdkSslContext;
@@ -14,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
 import server.MATE.domain.auth.crypto.TokenEncryptionProperties;
 import server.MATE.toss.crypto.TossCryptoProperties;
 
@@ -44,7 +47,11 @@ public class TossClientConfig {
             TossProperties properties,
             String baseUrl
     ) {
-        HttpClient httpClient = HttpClient.create()
+        ConnectionProvider connectionProvider = ConnectionProvider.builder("toss")
+                .maxIdleTime(Duration.ofSeconds(30))
+                .build();
+
+        HttpClient httpClient = HttpClient.create(connectionProvider)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(properties.timeout().connect().toMillis()))
                 .responseTimeout(properties.timeout().read());
 
