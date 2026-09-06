@@ -49,6 +49,7 @@ claude:
   api:
     model: claude-sonnet-4-6
     min-response-threshold: 20
+    analysis-concurrency: 5
 
 mate:
   admin:
