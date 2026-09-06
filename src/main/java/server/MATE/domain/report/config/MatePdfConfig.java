@@ -1,5 +1,7 @@
 package server.MATE.domain.report.config;
 
+import java.time.Duration;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -9,6 +11,7 @@ import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
 
 @Configuration
 @EnableConfigurationProperties(MatePdfProperties.class)
@@ -19,7 +22,11 @@ public class MatePdfConfig {
     @Bean
     @Qualifier("matePdfWebClient")
     public WebClient matePdfWebClient(WebClient.Builder builder, MatePdfProperties properties) {
-        HttpClient httpClient = HttpClient.create()
+        ConnectionProvider connectionProvider = ConnectionProvider.builder("mate-pdf")
+                .maxIdleTime(Duration.ofSeconds(30))
+                .build();
+
+        HttpClient httpClient = HttpClient.create(connectionProvider)
                 .responseTimeout(properties.timeout());
 
         ExchangeStrategies strategies = ExchangeStrategies.builder()
