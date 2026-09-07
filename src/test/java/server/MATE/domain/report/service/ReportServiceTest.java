@@ -80,6 +80,21 @@ class ReportServiceTest {
     }
 
     @Test
+    @DisplayName("응답에 목표 인원 대비 달성률이 포함된다")
+    void getReport_includesAchievementRate() {
+        ReflectionTestUtils.setField(test, "goalPpl", 50);
+        ReflectionTestUtils.setField(test, "pplCount", 12L);
+        ReflectionTestUtils.setField(test, "testStatus", TestStatus.WAITING);
+
+        given(testRepository.findActiveById(10L)).willReturn(Optional.of(test));
+        given(questionRepository.countQuestionsInTest(10L)).willReturn(0L);
+
+        ReportResponse response = reportService.getReport(10L, 1L, Role.USER);
+
+        assertThat(response.achievementRate()).isEqualTo(0.24);
+    }
+
+    @Test
     @DisplayName("반려된 테스트도 reportStatus를 덮어쓰지 않고 반환한다")
     void getReport_returnsCurrentReportStatusForRejectedTest() {
         ReflectionTestUtils.setField(test, "testStatus", TestStatus.REJECTED);
