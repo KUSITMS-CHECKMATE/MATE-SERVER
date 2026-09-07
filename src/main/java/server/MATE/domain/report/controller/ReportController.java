@@ -41,6 +41,7 @@ public class ReportController {
             description = """
                     메이커가 자신의 테스트에 대한 질문 유형별 응답 리포트를 조회합니다. MKST_02 화면에 해당하는 api 입니다.
                     - 테스트 소유자(메이커) 또는 관리자가 조회할 수 있습니다.
+                    - `achievementRate`는 목표 인원 대비 참여 인원 비율(0~1)이며, 아래 규칙에서 언급하는 응답률과 동일한 값입니다.
                     - `testStatus`가 `WAITING` 또는 `REJECTED`이면 `reports`는 빈 리스트를 반환합니다.
                     - `testStatus`가 `IN_PROGRESS`이고 응답률(참여 인원 / 목표 인원)이 50% 미만이면 `reports`는 빈 리스트를 반환합니다.
                     - `testStatus`가 `IN_PROGRESS`이고 응답률이 50% 이상이면, 현재까지의 응답으로 즉석 집계한 `reports`를 반환합니다.
@@ -75,10 +76,12 @@ public class ReportController {
                                               "code": "200",
                                               "message": "리포트를 조회했습니다.",
                                               "data": {
+                                                "title": "MATE 사용성 테스트",
                                                 "testStatus": "IN_PROGRESS",
                                                 "reportStatus": "PENDING",
                                                 "questionCount": 2,
                                                 "participantCount": 3,
+                                                "achievementRate": 0.3,
                                                 "reports": []
                                               }
                                             }
@@ -93,10 +96,12 @@ public class ReportController {
                                               "code": "200",
                                               "message": "리포트를 조회했습니다.",
                                               "data": {
+                                                "title": "MATE 사용성 테스트",
                                                 "testStatus": "COMPLETED",
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 5,
+                                                "achievementRate": 1.0,
                                                 "reports": [
                                                   {
                                                     "questionId": 1,
@@ -130,10 +135,12 @@ public class ReportController {
                                               "code": "200",
                                               "message": "리포트를 조회했습니다.",
                                               "data": {
+                                                "title": "MATE 사용성 테스트",
                                                 "testStatus": "COMPLETED",
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 10,
+                                                "achievementRate": 1.0,
                                                 "reports": [
                                                   {
                                                     "questionId": 2,
@@ -167,10 +174,12 @@ public class ReportController {
                                               "code": "200",
                                               "message": "리포트를 조회했습니다.",
                                               "data": {
+                                                "title": "MATE 사용성 테스트",
                                                 "testStatus": "COMPLETED",
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 4,
+                                                "achievementRate": 1.0,
                                                 "reports": [
                                                   {
                                                     "questionId": 3,
@@ -203,10 +212,12 @@ public class ReportController {
                                               "code": "200",
                                               "message": "리포트를 조회했습니다.",
                                               "data": {
+                                                "title": "MATE 사용성 테스트",
                                                 "testStatus": "COMPLETED",
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 6,
+                                                "achievementRate": 1.0,
                                                 "reports": [
                                                   {
                                                     "questionId": 4,
@@ -239,10 +250,12 @@ public class ReportController {
                                               "code": "200",
                                               "message": "리포트를 조회했습니다.",
                                               "data": {
+                                                "title": "MATE 사용성 테스트",
                                                 "testStatus": "COMPLETED",
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 5,
+                                                "achievementRate": 1.0,
                                                 "reports": [
                                                   {
                                                     "questionId": 5,
@@ -279,10 +292,12 @@ public class ReportController {
                                               "code": "200",
                                               "message": "리포트를 조회했습니다.",
                                               "data": {
+                                                "title": "MATE 사용성 테스트",
                                                 "testStatus": "COMPLETED",
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 8,
+                                                "achievementRate": 1.0,
                                                 "reports": [
                                                   {
                                                     "questionId": 6,
@@ -308,10 +323,12 @@ public class ReportController {
                                               "code": "200",
                                               "message": "리포트를 조회했습니다.",
                                               "data": {
+                                                "title": "MATE 사용성 테스트",
                                                 "testStatus": "COMPLETED",
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 4,
+                                                "achievementRate": 1.0,
                                                 "reports": [
                                                   {
                                                     "questionId": 7,
@@ -355,10 +372,12 @@ public class ReportController {
                                               "code": "200",
                                               "message": "리포트를 조회했습니다.",
                                               "data": {
+                                                "title": "MATE 사용성 테스트",
                                                 "testStatus": "COMPLETED",
                                                 "reportStatus": "COMPLETED",
                                                 "questionCount": 1,
                                                 "participantCount": 6,
+                                                "achievementRate": 1.0,
                                                 "reports": [
                                                   {
                                                     "questionId": 8,
