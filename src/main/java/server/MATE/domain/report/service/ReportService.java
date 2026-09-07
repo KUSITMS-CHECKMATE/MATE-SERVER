@@ -54,6 +54,7 @@ public class ReportService {
                         reportStatus,
                         questionCount,
                         test.getPplCount(),
+                        test.getAchievementRate(),
                         List.of()
                 );
             }
@@ -66,6 +67,7 @@ public class ReportService {
                             reportStatus,
                             questionCount,
                             test.getPplCount(),
+                            test.getAchievementRate(),
                             List.of()
                     );
                 }
@@ -81,6 +83,7 @@ public class ReportService {
                             reportStatus,
                             questionCount,
                             test.getPplCount(),
+                            test.getAchievementRate(),
                             buildReportItems(liveQuestionSummaries, liveResultByQuestionId)
                     );
                 } catch (Exception e) {
@@ -91,6 +94,7 @@ public class ReportService {
                             reportStatus,
                             questionCount,
                             test.getPplCount(),
+                            test.getAchievementRate(),
                             List.of()
                     );
                 }
@@ -104,6 +108,7 @@ public class ReportService {
                             reportStatus,
                             questionCount,
                             test.getPplCount(),
+                            test.getAchievementRate(),
                             List.of()
                     );
                 }
@@ -130,6 +135,7 @@ public class ReportService {
                     ReportStatus.FAILED,
                     questionCount,
                     test.getPplCount(),
+                    test.getAchievementRate(),
                     List.of()
             );
         }
@@ -140,6 +146,7 @@ public class ReportService {
                 ReportStatus.COMPLETED,
                 questionCount,
                 test.getPplCount(),
+                test.getAchievementRate(),
                 buildReportItems(questionSummaries, resultByQuestionId)
         );
     }
