@@ -115,6 +115,12 @@ toss:
         reward: 100
         sku: ${TOSS_IAP_SKU_300_100}
         display-amount: 50930
+
+      # 테스트
+      - goal-ppl: 2
+        reward: 10
+        sku: ${TOSS_IAP_SKU_TEST}
+        display-amount: 440
   promotion:
     provider: ${TOSS_PROMOTION_PROVIDER:mock}
     answer:
