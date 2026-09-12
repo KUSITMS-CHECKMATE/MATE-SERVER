@@ -14,15 +14,18 @@ public record LikedTestSummaryItem(
         @Schema(description = "테스트 한 줄 소개")
         String description,
         @Schema(description = "보상 금액(머니)", example = "600")
-        Integer reward
+        Integer reward,
+        @Schema(description = "현재 로그인한 사용자의 테스트 응답 여부. true면 참여 버튼 비활성화")
+        Boolean hasResponded
 ) {
-    public static LikedTestSummaryItem from(Test test, String thumbnailUrl) {
+    public static LikedTestSummaryItem from(Test test, String thumbnailUrl, boolean hasResponded) {
         return new LikedTestSummaryItem(
                 test.getId(),
                 thumbnailUrl,
                 test.getTitle(),
                 test.getDescription(),
-                test.getReward()
+                test.getReward(),
+                hasResponded
         );
     }
 }
