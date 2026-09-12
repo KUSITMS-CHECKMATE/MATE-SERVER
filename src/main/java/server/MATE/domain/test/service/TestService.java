@@ -63,8 +63,14 @@ public class TestService {
                 userId,
                 List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING, TestStatus.COMPLETED)
         );
+        List<Long> testIds = tests.stream().map(Test::getId).toList();
+        Set<Long> participatedTestIds = participationRepository.findParticipatedTestIds(testIds, userId);
         List<LikedTestSummaryItem> items = tests.stream()
-                .map(test -> LikedTestSummaryItem.from(test, toThumbnailUrl(test.getImageKeys())))
+                .map(test -> LikedTestSummaryItem.from(
+                        test,
+                        toThumbnailUrl(test.getImageKeys()),
+                        participatedTestIds.contains(test.getId())
+                ))
                 .toList();
         return LikedTestSummaryResponse.from(items);
     }
