@@ -9,7 +9,9 @@ import org.springframework.stereotype.Repository;
 import server.MATE.domain.answer.dto.response.MyAnswerItemView;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static server.MATE.domain.participation.entity.QParticipation.participation;
 import static server.MATE.domain.test.entity.QTest.test;
@@ -50,6 +52,21 @@ public class ParticipationQueryRepositoryImpl implements ParticipationQueryRepos
                 .fetchFirst();
 
         return found != null;
+    }
+
+    @Override
+    public Set<Long> findParticipatedTestIds(List<Long> testIds, Long testerId) {
+        if (testIds == null || testIds.isEmpty() || testerId == null) {
+            return Set.of();
+        }
+
+        List<Long> participatedTestIds = queryFactory
+                .select(participation.testId)
+                .from(participation)
+                .where(participation.testId.in(testIds), testerIdEq(testerId), participationNotDeleted())
+                .fetch();
+
+        return new HashSet<>(participatedTestIds);
     }
 
     @Override
