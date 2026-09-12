@@ -81,6 +81,7 @@ public class TestController {
                     - **title**: 테스트명
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
+                    - **hasResponded**: 현재 로그인한 사용자가 이미 응답했으면 true. true면 참여 버튼 비활성화
                     """
     )
     @GetMapping("/likes")
