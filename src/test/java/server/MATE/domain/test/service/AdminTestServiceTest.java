@@ -5,12 +5,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import server.MATE.domain.test.dto.response.AdminTestDetailResponse;
 import server.MATE.domain.test.dto.response.AdminTestListResponse;
 import server.MATE.domain.test.dto.response.AdminTestStatusResponse;
 import server.MATE.domain.test.entity.TestStatus;
+import server.MATE.domain.test.event.TestApprovedEvent;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
@@ -39,13 +41,16 @@ class AdminTestServiceTest {
     @Mock
     private TestCloseScheduler testCloseScheduler;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private AdminTestService adminTestService;
 
     private final Long TEST_ID = 10L;
 
     @BeforeEach
     void setUp() {
-        adminTestService = new AdminTestService(testRepository, fileStorageService, testCloseScheduler);
+        adminTestService = new AdminTestService(testRepository, fileStorageService, testCloseScheduler, eventPublisher);
         lenient().when(fileStorageService.generateDownloadUrl(anyString())).thenReturn("https://example.com/url");
     }
 
@@ -123,6 +128,7 @@ class AdminTestServiceTest {
             assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
             TransactionSynchronizationManager.getSynchronizations().forEach(sync -> sync.afterCommit());
             verify(testCloseScheduler).schedule(TEST_ID, test.getClosedAt());
+            verify(eventPublisher).publishEvent(new TestApprovedEvent(TEST_ID, test.getTitle()));
         } finally {
             TransactionSynchronizationManager.clearSynchronization();
         }

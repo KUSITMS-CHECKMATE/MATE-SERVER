@@ -1,6 +1,7 @@
 package server.MATE.domain.test.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -10,6 +11,7 @@ import server.MATE.domain.test.dto.response.AdminTestListResponse;
 import server.MATE.domain.test.dto.response.AdminTestStatusResponse;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestStatus;
+import server.MATE.domain.test.event.TestApprovedEvent;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
@@ -26,6 +28,7 @@ public class AdminTestService {
     private final TestRepository testRepository;
     private final FileStorageService fileStorageService;
     private final TestCloseScheduler testCloseScheduler;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public AdminTestListResponse listTests(TestStatus status, int page, int size) {
@@ -64,6 +67,8 @@ public class AdminTestService {
                 testCloseScheduler.schedule(approvedTestId, closedAt);
             }
         });
+
+        eventPublisher.publishEvent(new TestApprovedEvent(test.getId(), test.getTitle()));
 
         return new AdminTestStatusResponse(testId, test.getTestStatus());
     }
