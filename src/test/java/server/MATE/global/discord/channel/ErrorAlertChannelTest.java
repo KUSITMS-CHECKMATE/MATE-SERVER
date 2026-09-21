@@ -44,7 +44,7 @@ class ErrorAlertChannelTest {
 
         channel.notifyError(BaseErrorCode.COMMON_999, HttpStatus.INTERNAL_SERVER_ERROR, new RuntimeException("boom"), request);
 
-        verify(webhookClient, never()).send(anyString(), any());
+        verify(webhookClient, never()).send(anyString(), anyString(), any());
     }
 
     @Test
@@ -56,6 +56,6 @@ class ErrorAlertChannelTest {
 
         channel.notifyError(BaseErrorCode.COMMON_999, HttpStatus.INTERNAL_SERVER_ERROR, new RuntimeException("boom"), request);
 
-        verify(webhookClient).send(eq("https://discord.test/error"), any(DiscordEmbed.class));
+        verify(webhookClient).send(eq("error"), eq("https://discord.test/error"), any(DiscordEmbed.class));
     }
 }

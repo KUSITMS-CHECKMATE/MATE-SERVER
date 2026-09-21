@@ -20,7 +20,7 @@ public class DiscordWebhookClient {
         this.webClient = builder.build();
     }
 
-    public void send(String webhookUrl, DiscordEmbed embed) {
+    public void send(String channel, String webhookUrl, DiscordEmbed embed) {
         if (webhookUrl == null || webhookUrl.isBlank()) {
             return;
         }
@@ -34,8 +34,8 @@ public class DiscordWebhookClient {
                 .retrieve()
                 .toBodilessEntity()
                 .subscribe(
-                        response -> log.info("Discord 알림 전송 완료"),
-                        error -> log.warn("Discord 알림 전송 실패: {}", error.getMessage())
+                        response -> log.info("[DISCORD] 알림 전송 완료. channel={}, title={}", channel, embed.title()),
+                        error -> log.warn("[DISCORD] 알림 전송 실패. channel={}, title={}, error={}", channel, embed.title(), error.getMessage())
                 );
     }
 }

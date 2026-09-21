@@ -20,7 +20,7 @@ public class PaymentPendingResolverService {
 
     public void resolveAll() {
         List<Payment> pending = paymentRepository.findTop100ByPayStatusAndTestIdIsNull(PayStatus.PAY_SUCCEEDED);
-        log.info("PAYMENT PENDING 처리 대상: {}건", pending.size());
+        log.info("PAYMENT PENDING 처리 대상 {}건", pending.size());
 
         for (Payment payment : pending) {
             try {

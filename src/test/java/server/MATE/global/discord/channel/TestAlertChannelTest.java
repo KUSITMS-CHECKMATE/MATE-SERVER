@@ -35,7 +35,7 @@ class TestAlertChannelTest {
         channel.notifyCreated(event);
 
         ArgumentCaptor<DiscordEmbed> captor = ArgumentCaptor.forClass(DiscordEmbed.class);
-        verify(webhookClient).send(eq("https://discord.test/alert"), captor.capture());
+        verify(webhookClient).send(eq("test-alert"), eq("https://discord.test/alert"), captor.capture());
 
         DiscordEmbed embed = captor.getValue();
         assertThat(embed.description())

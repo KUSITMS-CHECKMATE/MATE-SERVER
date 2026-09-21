@@ -37,7 +37,7 @@ public class ErrorAlertChannel {
             return;
         }
         String description = buildDescription(errorCode, status, exception, request);
-        webhookClient.send(properties.errorWebhookUrl(), new DiscordEmbed("🚨 에러 로그", description, EmbedColor.ERROR));
+        webhookClient.send("error", properties.errorWebhookUrl(), new DiscordEmbed("🚨 에러 로그", description, EmbedColor.ERROR));
     }
 
     public void notifyWarn(ErrorCode errorCode, HttpStatus status, Exception exception, HttpServletRequest request) {
@@ -45,7 +45,7 @@ public class ErrorAlertChannel {
             return;
         }
         String description = buildDescription(errorCode, status, exception, request);
-        webhookClient.send(properties.errorWebhookUrl(), new DiscordEmbed("⚠️ 경고 로그", description, EmbedColor.WARN));
+        webhookClient.send("error", properties.errorWebhookUrl(), new DiscordEmbed("⚠️ 경고 로그", description, EmbedColor.WARN));
     }
 
     private String buildDescription(ErrorCode errorCode, HttpStatus status, Exception exception, HttpServletRequest request) {
