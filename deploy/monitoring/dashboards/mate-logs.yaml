@@ -8,695 +8,179 @@ metadata:
 data:
   mate-logs.json: |
     {
+      "id": null,
       "uid": "ad9xxvq",
-      "annotations": [
-        {
-          "kind": "AnnotationQuery",
-          "spec": {
-            "builtIn": true,
-            "enable": true,
-            "hide": true,
-            "iconColor": "rgba(0, 211, 255, 1)",
-            "name": "Annotations & Alerts",
-            "query": {
-              "datasource": {
-                "name": "-- Grafana --"
-              },
-              "group": "grafana",
-              "kind": "DataQuery",
-              "spec": {},
-              "version": "v0"
-            }
-          }
-        }
-      ],
-      "cursorSync": "Off",
+      "title": "MATE 서버 로그",
+      "tags": [],
       "editable": true,
-      "elements": {
-        "panel-1": {
-          "kind": "Panel",
-          "spec": {
-            "data": {
-              "kind": "QueryGroup",
-              "spec": {
-                "queries": [
-                  {
-                    "kind": "PanelQuery",
-                    "spec": {
-                      "hidden": false,
-                      "query": {
-                        "datasource": {
-                          "name": "P8E80F9AEF21F6940"
-                        },
-                        "group": "loki",
-                        "kind": "DataQuery",
-                        "spec": {
-                          "direction": "backward",
-                          "editorMode": "code",
-                          "expr": "sum by (namespace) (count_over_time({namespace=\"mate\"} | json | log_level=\"ERROR\" [1m]))",
-                          "queryType": "range"
-                        },
-                        "version": "v0"
-                      },
-                      "refId": "A"
-                    }
-                  }
-                ],
-                "queryOptions": {},
-                "transformations": []
-              }
-            },
-            "description": "",
-            "id": 1,
-            "links": [],
-            "title": "Error 로그 수 ",
-            "vizConfig": {
-              "group": "logs",
-              "kind": "VizConfig",
-              "spec": {
-                "fieldConfig": {
-                  "defaults": {},
-                  "overrides": []
-                },
-                "options": {
-                  "dedupStrategy": "none",
-                  "enableInfiniteScrolling": false,
-                  "enableLogDetails": true,
-                  "prettifyLogMessage": true,
-                  "showControls": false,
-                  "showFieldSelector": false,
-                  "showLevel": true,
-                  "showTime": false,
-                  "sortOrder": "Descending",
-                  "timestampResolution": "ms",
-                  "unwrappedColumns": false,
-                  "wrapLogMessage": false
-                }
-              },
-              "version": "13.0.1+security-01"
-            }
-          }
-        },
-        "panel-2": {
-          "kind": "Panel",
-          "spec": {
-            "data": {
-              "kind": "QueryGroup",
-              "spec": {
-                "queries": [
-                  {
-                    "kind": "PanelQuery",
-                    "spec": {
-                      "hidden": false,
-                      "query": {
-                        "datasource": {
-                          "name": "P8E80F9AEF21F6940"
-                        },
-                        "group": "loki",
-                        "kind": "DataQuery",
-                        "spec": {
-                          "direction": "backward",
-                          "editorMode": "code",
-                          "expr": "{namespace=\"mate\"} | json | __error__=\"\" | log_level=\"ERROR\"",
-                          "queryType": "range"
-                        },
-                        "version": "v0"
-                      },
-                      "refId": "A"
-                    }
-                  }
-                ],
-                "queryOptions": {},
-                "transformations": []
-              }
-            },
-            "description": "",
-            "id": 2,
-            "links": [],
-            "title": "로그 스트림",
-            "vizConfig": {
-              "group": "timeseries",
-              "kind": "VizConfig",
-              "spec": {
-                "fieldConfig": {
-                  "defaults": {
-                    "color": {
-                      "mode": "palette-classic"
-                    },
-                    "custom": {
-                      "axisBorderShow": false,
-                      "axisCenteredZero": false,
-                      "axisColorMode": "text",
-                      "axisLabel": "",
-                      "axisPlacement": "auto",
-                      "barAlignment": 0,
-                      "barWidthFactor": 0.6,
-                      "drawStyle": "line",
-                      "fillOpacity": 0,
-                      "gradientMode": "none",
-                      "hideFrom": {
-                        "legend": false,
-                        "tooltip": false,
-                        "viz": false
-                      },
-                      "insertNulls": false,
-                      "lineInterpolation": "linear",
-                      "lineWidth": 1,
-                      "pointSize": 5,
-                      "scaleDistribution": {
-                        "type": "linear"
-                      },
-                      "showPoints": "auto",
-                      "showValues": false,
-                      "spanNulls": false,
-                      "stacking": {
-                        "group": "A",
-                        "mode": "none"
-                      },
-                      "thresholdsStyle": {
-                        "mode": "off"
-                      }
-                    },
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        {
-                          "color": "green",
-                          "value": 0
-                        },
-                        {
-                          "color": "red",
-                          "value": 80
-                        }
-                      ]
-                    }
-                  },
-                  "overrides": []
-                },
-                "options": {
-                  "annotations": {
-                    "clustering": -1,
-                    "multiLane": false
-                  },
-                  "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                  },
-                  "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                  }
-                }
-              },
-              "version": "13.0.1+security-01"
-            }
-          }
-        },
-        "panel-3": {
-          "kind": "Panel",
-          "spec": {
-            "data": {
-              "kind": "QueryGroup",
-              "spec": {
-                "queries": [
-                  {
-                    "kind": "PanelQuery",
-                    "spec": {
-                      "hidden": false,
-                      "query": {
-                        "datasource": {
-                          "name": "P8E80F9AEF21F6940"
-                        },
-                        "group": "loki",
-                        "kind": "DataQuery",
-                        "spec": {
-                          "direction": "backward",
-                          "editorMode": "code",
-                          "expr": "{namespace=\"mate\"} |~ \"(?i)(exception|Exception)\" | json | line_format \"[{{.log_level}}] {{.message}}{{if .error_type}} type={{.error_type}}{{end}} logger={{.log_logger}}\"",
-                          "queryType": "range"
-                        },
-                        "version": "v0"
-                      },
-                      "refId": "A"
-                    }
-                  }
-                ],
-                "queryOptions": {},
-                "transformations": []
-              }
-            },
-            "description": "",
-            "id": 3,
-            "links": [],
-            "title": "Exception 발생 로그",
-            "vizConfig": {
-              "group": "logs",
-              "kind": "VizConfig",
-              "spec": {
-                "fieldConfig": {
-                  "defaults": {},
-                  "overrides": []
-                },
-                "options": {
-                  "dedupStrategy": "none",
-                  "enableInfiniteScrolling": false,
-                  "enableLogDetails": true,
-                  "prettifyLogMessage": true,
-                  "showControls": false,
-                  "showFieldSelector": false,
-                  "showLevel": true,
-                  "showTime": true,
-                  "sortOrder": "Descending",
-                  "timestampResolution": "ms",
-                  "unwrappedColumns": false,
-                  "wrapLogMessage": false
-                }
-              },
-              "version": "13.0.1+security-01"
-            }
-          }
-        },
-        "panel-4": {
-          "kind": "Panel",
-          "spec": {
-            "data": {
-              "kind": "QueryGroup",
-              "spec": {
-                "queries": [
-                  {
-                    "kind": "PanelQuery",
-                    "spec": {
-                      "hidden": false,
-                      "query": {
-                        "datasource": {
-                          "name": "P8E80F9AEF21F6940"
-                        },
-                        "group": "loki",
-                        "kind": "DataQuery",
-                        "spec": {
-                          "direction": "backward",
-                          "editorMode": "code",
-                          "expr": "{namespace=\"kube-system\"} |~ \"(?i)(error|failed|fatal|panic)\"",
-                          "queryType": "range"
-                        },
-                        "version": "v0"
-                      },
-                      "refId": "A"
-                    }
-                  }
-                ],
-                "queryOptions": {},
-                "transformations": []
-              }
-            },
-            "description": "",
-            "id": 4,
-            "links": [],
-            "title": "K8s 시스템 에러",
-            "vizConfig": {
-              "group": "logs",
-              "kind": "VizConfig",
-              "spec": {
-                "fieldConfig": {
-                  "defaults": {},
-                  "overrides": []
-                },
-                "options": {
-                  "dedupStrategy": "none",
-                  "enableInfiniteScrolling": false,
-                  "enableLogDetails": true,
-                  "prettifyLogMessage": true,
-                  "showControls": false,
-                  "showFieldSelector": false,
-                  "showLevel": true,
-                  "showTime": false,
-                  "sortOrder": "Descending",
-                  "timestampResolution": "ms",
-                  "unwrappedColumns": false,
-                  "wrapLogMessage": false
-                }
-              },
-              "version": "13.0.1+security-01"
-            }
-          }
-        },
-        "panel-5": {
-          "kind": "Panel",
-          "spec": {
-            "data": {
-              "kind": "QueryGroup",
-              "spec": {
-                "queries": [
-                  {
-                    "kind": "PanelQuery",
-                    "spec": {
-                      "hidden": false,
-                      "query": {
-                        "datasource": {
-                          "name": "P8E80F9AEF21F6940"
-                        },
-                        "group": "loki",
-                        "kind": "DataQuery",
-                        "spec": {
-                          "direction": "backward",
-                          "editorMode": "code",
-                          "expr": "sum by (log_level) (count_over_time({namespace=\"mate\"} | json | __error__=\"\" [1h]))",
-                          "queryType": "range"
-                        },
-                        "version": "v0"
-                      },
-                      "refId": "A"
-                    }
-                  }
-                ],
-                "queryOptions": {},
-                "transformations": []
-              }
-            },
-            "description": "",
-            "id": 5,
-            "links": [],
-            "title": "레벨별 로그 비율",
-            "vizConfig": {
-              "group": "gauge",
-              "kind": "VizConfig",
-              "spec": {
-                "fieldConfig": {
-                  "defaults": {
-                    "color": {
-                      "mode": "thresholds"
-                    },
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        {
-                          "color": "green",
-                          "value": 0
-                        },
-                        {
-                          "color": "red",
-                          "value": 80
-                        }
-                      ]
-                    }
-                  },
-                  "overrides": []
-                },
-                "options": {
-                  "barShape": "flat",
-                  "barWidthFactor": 0.5,
-                  "effects": {
-                    "barGlow": false,
-                    "centerGlow": false,
-                    "gradient": true
-                  },
-                  "endpointMarker": "point",
-                  "minVizHeight": 75,
-                  "minVizWidth": 75,
-                  "orientation": "auto",
-                  "reduceOptions": {
-                    "calcs": [
-                      "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                  },
-                  "segmentCount": 1,
-                  "segmentSpacing": 0.3,
-                  "shape": "gauge",
-                  "showThresholdLabels": false,
-                  "showThresholdMarkers": true,
-                  "sizing": "auto",
-                  "sparkline": true,
-                  "textMode": "auto"
-                }
-              },
-              "version": "13.0.1+security-01"
-            }
-          }
-        },
-        "panel-6": {
-          "kind": "Panel",
-          "spec": {
-            "data": {
-              "kind": "QueryGroup",
-              "spec": {
-                "queries": [
-                  {
-                    "kind": "PanelQuery",
-                    "spec": {
-                      "hidden": false,
-                      "query": {
-                        "datasource": {
-                          "name": "P8E80F9AEF21F6940"
-                        },
-                        "group": "loki",
-                        "kind": "DataQuery",
-                        "spec": {
-                          "direction": "backward",
-                          "editorMode": "code",
-                          "expr": "{namespace=\"mate\"} | json | log_logger=~ \"server.MATE.domain.payment.*\"",
-                          "queryType": "range"
-                        },
-                        "version": "v0"
-                      },
-                      "refId": "A"
-                    }
-                  }
-                ],
-                "queryOptions": {},
-                "transformations": []
-              }
-            },
-            "description": "",
-            "id": 6,
-            "links": [],
-            "title": "결제 로그",
-            "vizConfig": {
-              "group": "logs",
-              "kind": "VizConfig",
-              "spec": {
-                "fieldConfig": {
-                  "defaults": {},
-                  "overrides": []
-                },
-                "options": {
-                  "dedupStrategy": "none",
-                  "enableInfiniteScrolling": false,
-                  "enableLogDetails": true,
-                  "prettifyLogMessage": true,
-                  "showControls": false,
-                  "showFieldSelector": false,
-                  "showLevel": true,
-                  "showTime": true,
-                  "sortOrder": "Descending",
-                  "timestampResolution": "ms",
-                  "unwrappedColumns": false,
-                  "wrapLogMessage": false
-                }
-              },
-              "version": "13.0.1+security-01"
-            }
-          }
-        },
-        "panel-7": {
-          "kind": "Panel",
-          "spec": {
-            "data": {
-              "kind": "QueryGroup",
-              "spec": {
-                "queries": [
-                  {
-                    "kind": "PanelQuery",
-                    "spec": {
-                      "hidden": false,
-                      "query": {
-                        "datasource": {
-                          "name": "P8E80F9AEF21F6940"
-                        },
-                        "group": "loki",
-                        "kind": "DataQuery",
-                        "spec": {
-                          "direction": "backward",
-                          "editorMode": "code",
-                          "expr": "{namespace=\"mate\"} | json | log_logger=\"server.MATE.global.discord.webhook.DiscordWebhookClient\" | log_level=\"WARN\"",
-                          "queryType": "range"
-                        },
-                        "version": "v0"
-                      },
-                      "refId": "A"
-                    }
-                  }
-                ],
-                "queryOptions": {},
-                "transformations": []
-              }
-            },
-            "description": "",
-            "id": 7,
-            "links": [],
-            "title": "Discord 봇 미발송 로그",
-            "vizConfig": {
-              "group": "logs",
-              "kind": "VizConfig",
-              "spec": {
-                "fieldConfig": {
-                  "defaults": {},
-                  "overrides": []
-                },
-                "options": {
-                  "dedupStrategy": "none",
-                  "enableInfiniteScrolling": false,
-                  "enableLogDetails": true,
-                  "prettifyLogMessage": true,
-                  "showControls": false,
-                  "showFieldSelector": false,
-                  "showLevel": true,
-                  "showTime": true,
-                  "sortOrder": "Descending",
-                  "timestampResolution": "ms",
-                  "unwrappedColumns": false,
-                  "wrapLogMessage": false
-                }
-              },
-              "version": "13.0.1+security-01"
-            }
-          }
-        }
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "",
+      "time": {
+        "from": "now-90d",
+        "to": "now"
       },
-      "layout": {
-        "kind": "GridLayout",
-        "spec": {
-          "items": [
+      "timezone": "browser",
+      "templating": {
+        "list": []
+      },
+      "annotations": {
+        "list": []
+      },
+      "panels": [
+        {
+          "id": 3,
+          "title": "Exception 발생 로그",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 0, "w": 23, "h": 6 },
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "options": {
+            "showTime": true,
+            "showLabels": false,
+            "wrapLogMessage": false,
+            "prettifyLogMessage": true,
+            "sortOrder": "Descending",
+            "dedupStrategy": "none",
+            "enableLogDetails": true
+          },
+          "targets": [
             {
-              "kind": "GridLayoutItem",
-              "spec": {
-                "element": {
-                  "kind": "ElementReference",
-                  "name": "panel-3"
-                },
-                "height": 6,
-                "width": 23,
-                "x": 0,
-                "y": 0
-              }
-            },
+              "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+              "expr": "{namespace=\"mate\"} |~ \"(?i)(exception|Exception)\" | json | line_format \"[{{.log_level}}] {{.message}}{{if .error_type}} type={{.error_type}}{{end}} logger={{.log_logger}}\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "K8s 시스템 에러",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 6, "w": 23, "h": 6 },
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "options": {
+            "showTime": true,
+            "showLabels": false,
+            "wrapLogMessage": false,
+            "prettifyLogMessage": true,
+            "sortOrder": "Descending",
+            "dedupStrategy": "none",
+            "enableLogDetails": true
+          },
+          "targets": [
             {
-              "kind": "GridLayoutItem",
-              "spec": {
-                "element": {
-                  "kind": "ElementReference",
-                  "name": "panel-4"
-                },
-                "height": 6,
-                "width": 23,
-                "x": 0,
-                "y": 6
+              "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+              "expr": "{namespace=\"kube-system\"} |~ \"(?i)(error|failed|fatal|panic)\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "레벨별 로그 비율",
+          "type": "gauge",
+          "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": 0 },
+                  { "color": "red", "value": 80 }
+                ]
               }
-            },
+            }
+          },
+          "targets": [
             {
-              "kind": "GridLayoutItem",
-              "spec": {
-                "element": {
-                  "kind": "ElementReference",
-                  "name": "panel-5"
-                },
-                "height": 8,
-                "width": 12,
-                "x": 0,
-                "y": 12
-              }
-            },
+              "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+              "expr": "sum by (log_level) (count_over_time({namespace=\"mate\"} | json | __error__=\"\" [1h]))",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "title": "Error 로그 수 ",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 20, "w": 23, "h": 4 },
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "options": {
+            "showTime": false,
+            "showLabels": false,
+            "wrapLogMessage": false,
+            "prettifyLogMessage": true,
+            "sortOrder": "Descending",
+            "dedupStrategy": "none",
+            "enableLogDetails": true
+          },
+          "targets": [
             {
-              "kind": "GridLayoutItem",
-              "spec": {
-                "element": {
-                  "kind": "ElementReference",
-                  "name": "panel-1"
-                },
-                "height": 4,
-                "width": 23,
-                "x": 0,
-                "y": 20
-              }
-            },
+              "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+              "expr": "sum by (namespace) (count_over_time({namespace=\"mate\"} | json | log_level=\"ERROR\" [1m]))",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "로그 스트림",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 24, "w": 23, "h": 5 },
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "targets": [
             {
-              "kind": "GridLayoutItem",
-              "spec": {
-                "element": {
-                  "kind": "ElementReference",
-                  "name": "panel-2"
-                },
-                "height": 5,
-                "width": 23,
-                "x": 0,
-                "y": 24
-              }
-            },
+              "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+              "expr": "{namespace=\"mate\"} | json | __error__=\"\" | log_level=\"ERROR\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "결제 로그",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 29, "w": 23, "h": 6 },
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "options": {
+            "showTime": true,
+            "showLabels": false,
+            "wrapLogMessage": false,
+            "prettifyLogMessage": true,
+            "sortOrder": "Descending",
+            "dedupStrategy": "none",
+            "enableLogDetails": true
+          },
+          "targets": [
             {
-              "kind": "GridLayoutItem",
-              "spec": {
-                "element": {
-                  "kind": "ElementReference",
-                  "name": "panel-6"
-                },
-                "height": 6,
-                "width": 23,
-                "x": 0,
-                "y": 29
-              }
-            },
+              "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+              "expr": "{namespace=\"mate\"} | json | log_logger=~ \"server.MATE.domain.payment.*\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "title": "Discord 봇 미발송 로그",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 35, "w": 23, "h": 6 },
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "options": {
+            "showTime": true,
+            "showLabels": false,
+            "wrapLogMessage": false,
+            "prettifyLogMessage": true,
+            "sortOrder": "Descending",
+            "dedupStrategy": "none",
+            "enableLogDetails": true
+          },
+          "targets": [
             {
-              "kind": "GridLayoutItem",
-              "spec": {
-                "element": {
-                  "kind": "ElementReference",
-                  "name": "panel-7"
-                },
-                "height": 6,
-                "width": 23,
-                "x": 0,
-                "y": 35
-              }
+              "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+              "expr": "{namespace=\"mate\"} | json | log_logger=\"server.MATE.global.discord.webhook.DiscordWebhookClient\" | log_level=\"WARN\"",
+              "refId": "A"
             }
           ]
         }
-      },
-      "links": [],
-      "liveNow": false,
-      "preferences": {
-        "layout": {
-          "kind": "GridLayout",
-          "spec": {
-            "items": []
-          }
-        }
-      },
-      "preload": false,
-      "tags": [],
-      "timeSettings": {
-        "autoRefresh": "",
-        "autoRefreshIntervals": [
-          "5s",
-          "10s",
-          "30s",
-          "1m",
-          "5m",
-          "15m",
-          "30m",
-          "1h",
-          "2h",
-          "1d"
-        ],
-        "fiscalYearStartMonth": 0,
-        "from": "now-90d",
-        "hideTimepicker": false,
-        "timezone": "browser",
-        "to": "now"
-      },
-      "title": "MATE 서버 로그",
-      "variables": []
+      ]
     }
