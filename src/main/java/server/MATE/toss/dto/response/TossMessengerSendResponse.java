@@ -1,6 +1,6 @@
 package server.MATE.toss.dto.response;
 
-public record TossBulkSendMessageResponse(
+public record TossMessengerSendResponse(
         int msgCount,
         int sentPushCount,
         int sentAlimtalkCount,
