@@ -90,7 +90,7 @@ data:
           },
           "targets": [
             {
-              "expr": "{namespace=\"$namespace\"} | json | error_type != \"\"",
+              "expr": "{namespace=\"$namespace\"} | json | error_type != \"\" | line_format \"[{{.log_level}}] {{.message}}{{if .error_type}} type={{.error_type}}{{end}} logger={{.log_logger}}\"",
               "refId": "A"
             }
           ]
@@ -141,6 +141,42 @@ data:
           "targets": [
             {
               "expr": "{namespace=\"$namespace\"} | json | log_level=\"WARN\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "title": "결제 로그",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 47, "w": 24, "h": 10 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "options": {
+            "showTime": true,
+            "wrapLogMessage": true,
+            "sortOrder": "Descending"
+          },
+          "targets": [
+            {
+              "expr": "{namespace=\"$namespace\"} | json | log_logger=~ \"server.MATE.domain.payment.*\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "title": "Discord 봇 미발송 로그",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 57, "w": 24, "h": 10 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "options": {
+            "showTime": true,
+            "wrapLogMessage": true,
+            "sortOrder": "Descending"
+          },
+          "targets": [
+            {
+              "expr": "{namespace=\"$namespace\"} | json | log_logger=\"server.MATE.global.discord.webhook.DiscordWebhookClient\" | log_level=\"WARN\"",
               "refId": "A"
             }
           ]
