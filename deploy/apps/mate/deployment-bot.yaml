@@ -1,39 +1,31 @@
-# ACR: kubelet이 이미지 pull — 클러스터에 docker-registry Secret 필요
-# 앱 env: External Secrets가 KV → Secret(mate-app-secrets) 동기화 후 envFrom으로 주입
-# mTLS PEM: KV → Secret(mate-mtls-certs) → 볼륨 마운트, 경로는 Spring ssl.bundle.pem.toss 와 맞춤
+# mate와 동일한 이미지/시크릿을 쓰는 JDA Discord 봇 전용 단일 인스턴스.
+# mate(replicas:2)는 DISCORD_BOT_ENABLED=false로 두고, 봇 게이트웨이 연결은 이 Deployment(replicas:1) 하나에서만 맺는다.
+# 라벨을 app: mate가 아닌 app: mate-bot으로 분리해 mate Service(HTTP 트래픽)·PodDisruptionBudget 대상에서 제외한다.
+# strategy: Recreate — RollingUpdate였다면 배포 중 신/구 pod가 잠깐 공존해 같은 봇 토큰으로 두 번 연결되는
+# 문제(10062 Unknown interaction)가 배포할 때마다 재현되므로, 구 pod 종료 후 신 pod 기동을 강제한다.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mate
+  name: mate-bot
   labels:
-    app: mate
+    app: mate-bot
 spec:
-  replicas: 2
+  replicas: 1
   revisionHistoryLimit: 1
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 0
-      maxUnavailable: 1
+    type: Recreate
   selector:
     matchLabels:
-      app: mate
+      app: mate-bot
   template:
     metadata:
       labels:
-        app: mate
+        app: mate-bot
     spec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: mate
-              topologyKey: kubernetes.io/hostname
       imagePullSecrets:
         - name: acr-pull
       containers:
-        - name: mate
+        - name: mate-bot
           image: kusitmsmateacr.azurecr.io/mate
           imagePullPolicy: Always
           ports:
@@ -50,7 +42,7 @@ spec:
             - name: SPRING_PROFILES_ACTIVE
               value: prod
             - name: DISCORD_BOT_ENABLED
-              value: "false"
+              value: "true"
             - name: TOSS_MTLS_CERT_PATH
               value: /mnt/mtls/cert.pem
             - name: TOSS_MTLS_KEY_PATH
