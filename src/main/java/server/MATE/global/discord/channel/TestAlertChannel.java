@@ -47,6 +47,6 @@ public class TestAlertChannel {
                 event.createdAt().format(TIMESTAMP_FORMAT)
         );
 
-        webhookClient.send(properties.testAlertWebhookUrl(), new DiscordEmbed("🆕 새 테스트 생성", description, EmbedColor.INFO));
+        webhookClient.send("test-alert", properties.testAlertWebhookUrl(), new DiscordEmbed("🆕 새 테스트 생성", description, EmbedColor.INFO));
     }
 }
