@@ -15,6 +15,6 @@ resources:
 - service-pdf.yaml
 images:
 - name: kusitmsmateacr.azurecr.io/mate
-  newTag: gha-91
+  newTag: gha-92
 - name: kusitmsmateacr.azurecr.io/mate-pdf
   newTag: gha-58
