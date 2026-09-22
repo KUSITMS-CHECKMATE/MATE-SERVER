@@ -69,7 +69,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
-              "expr": "{namespace=\"kube-system\"} |~ \"(?i)(error|failed|fatal|panic)\"",
+              "expr": "{namespace=\"kube-system\"} |~ \"(?i)(error|failed|fatal|panic)\" | json | line_format \"{{if .msg}}[{{.level}}] {{.msg}}{{if .error}} error={{.error}}{{end}}{{if .caller}} caller={{.caller}}{{end}}{{else}}{{__line__}}{{end}}\"",
               "refId": "A"
             }
           ]
@@ -125,13 +125,22 @@ data:
         {
           "id": 2,
           "title": "로그 스트림",
-          "type": "timeseries",
+          "type": "logs",
           "gridPos": { "x": 0, "y": 24, "w": 23, "h": 5 },
           "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+          "options": {
+            "showTime": true,
+            "showLabels": false,
+            "wrapLogMessage": false,
+            "prettifyLogMessage": true,
+            "sortOrder": "Descending",
+            "dedupStrategy": "none",
+            "enableLogDetails": true
+          },
           "targets": [
             {
               "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
-              "expr": "{namespace=\"mate\"} | json | __error__=\"\" | log_level=\"ERROR\"",
+              "expr": "{namespace=\"mate\"} | json | __error__=\"\" | log_level=\"ERROR\" | line_format \"[{{.log_level}}] {{.message}} logger={{.log_logger}}\"",
               "refId": "A"
             }
           ]
@@ -154,7 +163,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
-              "expr": "{namespace=\"mate\"} | json | log_logger=~ \"server.MATE.domain.payment.*\"",
+              "expr": "{namespace=\"mate\"} | json | log_logger=~ \"server.MATE.domain.payment.*\" | line_format \"[{{.log_level}}] {{.message}} logger={{.log_logger}}\"",
               "refId": "A"
             }
           ]
@@ -177,7 +186,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
-              "expr": "{namespace=\"mate\"} | json | log_logger=\"server.MATE.global.discord.webhook.DiscordWebhookClient\" | log_level=\"WARN\"",
+              "expr": "{namespace=\"mate\"} | json | log_logger=\"server.MATE.global.discord.webhook.DiscordWebhookClient\" | log_level=\"WARN\" | line_format \"[{{.log_level}}] {{.message}} logger={{.log_logger}}\"",
               "refId": "A"
             }
           ]
