@@ -4,10 +4,13 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
@@ -24,6 +27,7 @@ import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.report.entity.Report;
 import server.MATE.domain.report.repository.ReportRepository;
 import server.MATE.domain.report.service.ReportHandler;
+import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
@@ -37,17 +41,20 @@ public class ReportAggregateService {
     private final AnswerRepository answerRepository;
     private final ReportRepository reportRepository;
     private final TestRepository testRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final Map<QuestionType, ReportHandler> handlerMap;
 
     public ReportAggregateService(QuestionRepository questionRepository,
                                   AnswerRepository answerRepository,
                                   ReportRepository reportRepository,
                                   TestRepository testRepository,
+                                  ApplicationEventPublisher eventPublisher,
                                   List<ReportHandler> handlers) {
         this.questionRepository = questionRepository;
         this.answerRepository = answerRepository;
         this.reportRepository = reportRepository;
         this.testRepository = testRepository;
+        this.eventPublisher = eventPublisher;
         this.handlerMap = buildHandlerMap(handlers);
     }
 
@@ -55,6 +62,8 @@ public class ReportAggregateService {
             noRetryFor = {BaseException.class, DataIntegrityViolationException.class})
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<Report> aggregate(Long testId) {
+        // 존재 검증 + 실패 분기(failReportAggregation)에만 쓰는 스냅샷. 완료 확정은 markCompletedAndNotify가
+        // 별도로 락을 잡고 다시 조회해 처리하므로, 이 test로 완료 상태를 직접 저장하지 않는다.
         Test test = testRepository.findActiveById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
@@ -64,8 +73,7 @@ public class ReportAggregateService {
         // 질문 수와 리포트 수가 같으면 이미 전체 집계가 끝난 상태로 처리
         // 질문과 리포트가 모두 0개인 경우를 포함함
         if (reportCount == questionCount) {
-            test.completeReportAggregation();
-            testRepository.save(test);
+            markCompletedAndNotify(testId);
             return reportRepository.findAllByTestId(testId);
         }
 
@@ -92,10 +100,9 @@ public class ReportAggregateService {
                 .toList();
 
         List<Report> saved = reportRepository.saveAll(reports);
-        test.completeReportAggregation();
-        testRepository.save(test);
         log.info("테스트 {} 리포트 집계 완료: 문항 {}개, 소요시간 {}ms",
                 testId, questions.size(), System.currentTimeMillis() - startedAt);
+        markCompletedAndNotify(testId);
         return saved;
     }
 
@@ -142,26 +149,43 @@ public class ReportAggregateService {
         if (e instanceof DataIntegrityViolationException || reportCount > 0) {
             if (reportCount == questionCount) {
                 log.info("테스트 {} 리포트가 이미 완전하게 존재합니다. 상태를 완료로 업데이트합니다.", testId);
-                updateReportStatus(testId, Test::completeReportAggregation);
+                markCompletedAndNotify(testId);
                 return reportRepository.findAllByTestId(testId);
             }
 
             log.error("테스트 {} recover 중 리포트 완전성 불일치 감지: questionCount={}, reportCount={}",
                     testId, questionCount, reportCount, e);
-            updateReportStatus(testId, Test::failReportAggregation);
+            updateReportStatus(testId, testRepository::findActiveById, Test::failReportAggregation);
             return List.of();
         }
 
         log.error("테스트 {} 집계 3회 실패", testId, e);
-        updateReportStatus(testId, Test::failReportAggregation);
+        updateReportStatus(testId, testRepository::findActiveById, Test::failReportAggregation);
         return List.of();
     }
 
-    private void updateReportStatus(Long testId, Consumer<Test> action) {
-        testRepository.findActiveById(testId).ifPresent(test -> {
-            action.accept(test);
-            testRepository.save(test);
-        });
+    private void updateReportStatus(Long testId, Function<Long, Optional<Test>> fetcher, Consumer<Test> action) {
+        fetcher.apply(testId).ifPresentOrElse(
+                test -> {
+                    action.accept(test);
+                    testRepository.save(test);
+                },
+                () -> log.warn("테스트 {} 상태 업데이트 대상을 찾을 수 없습니다. 삭제되었을 수 있습니다.", testId)
+        );
+    }
+
+    // 완료 확정 직전에만 짧게 락을 잡아 aggregate()/recover()의 동시 실행을 직렬화한다.
+    // AI 분석 등 느린 연산 중에는 락을 잡지 않아, 같은 테스트에 대한 응답 제출(AnswerService)과 경합하지 않는다.
+    private void markCompletedAndNotify(Long testId) {
+        updateReportStatus(testId, testRepository::findByIdForUpdate, this::completeAndPublishIfFirstTime);
+    }
+
+    private void completeAndPublishIfFirstTime(Test test) {
+        boolean alreadyCompleted = test.getReportStatus() == ReportStatus.COMPLETED;
+        test.completeReportAggregation();
+        if (!alreadyCompleted) {
+            eventPublisher.publishEvent(new ReportCompletedEvent(test.getId(), test.getMakerId(), test.getTitle()));
+        }
     }
 
     private Map<QuestionType, ReportHandler> buildHandlerMap(List<ReportHandler> handlers) {

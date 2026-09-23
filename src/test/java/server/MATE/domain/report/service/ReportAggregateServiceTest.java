@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 import server.MATE.domain.answer.entity.Answer;
@@ -15,6 +16,7 @@ import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.report.entity.Report;
 import server.MATE.domain.report.event.ReportAggregateService;
+import server.MATE.domain.report.event.ReportCompletedEvent;
 import server.MATE.domain.report.repository.ReportRepository;
 import server.MATE.domain.report.service.ReportHandler;
 import server.MATE.domain.test.entity.ReportStatus;
@@ -29,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class ReportAggregateServiceTest {
@@ -48,6 +51,9 @@ class ReportAggregateServiceTest {
     @Mock
     private ReportHandler reportHandler;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private ReportAggregateService reportAggregateService;
 
     private server.MATE.domain.test.entity.Test test;
@@ -62,6 +68,7 @@ class ReportAggregateServiceTest {
                 answerRepository,
                 reportRepository,
                 testRepository,
+                eventPublisher,
                 List.of(reportHandler)
         );
 
@@ -97,6 +104,7 @@ class ReportAggregateServiceTest {
                 .build();
 
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
         given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(1L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
         given(questionRepository.findQuestionsInTest(TEST_ID)).willReturn(List.of(question));
@@ -113,6 +121,54 @@ class ReportAggregateServiceTest {
         assertThat(test.getReportStatus()).isEqualTo(ReportStatus.COMPLETED);
         verify(questionRepository).findQuestionsInTest(TEST_ID);
         verify(reportHandler).compute(List.of(question), Map.of(101L, List.of(answer)), true);
+        verify(eventPublisher).publishEvent(new ReportCompletedEvent(TEST_ID, test.getMakerId(), test.getTitle()));
+    }
+
+    @Test
+    @DisplayName("질문이 0개인 테스트가 처음 완료되면 리포트 완료 이벤트를 발행한다")
+    void aggregate_whenZeroQuestions_publishesCompletedEvent() {
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(0L);
+        given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
+        given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of());
+
+        List<Report> result = reportAggregateService.aggregate(TEST_ID);
+
+        assertThat(result).isEmpty();
+        assertThat(test.getReportStatus()).isEqualTo(ReportStatus.COMPLETED);
+        verify(eventPublisher).publishEvent(new ReportCompletedEvent(TEST_ID, test.getMakerId(), test.getTitle()));
+    }
+
+    @Test
+    @DisplayName("완료 확정 직전에 테스트가 삭제되면 완료 처리와 알림을 건너뛴다")
+    void aggregate_whenTestDeletedRightBeforeCompletion_skipsWithoutThrowing() {
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.empty());
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(0L);
+        given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
+        given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of());
+
+        List<Report> result = reportAggregateService.aggregate(TEST_ID);
+
+        assertThat(result).isEmpty();
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    @DisplayName("이미 완료 처리된 테스트를 다시 집계해도 완료 이벤트를 재발행하지 않는다")
+    void aggregate_whenAlreadyCompleted_doesNotRepublishEvent() {
+        test.completeReportAggregation();
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(2L);
+        given(reportRepository.countByTestId(TEST_ID)).willReturn(2L);
+        given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report(101L), report(102L)));
+
+        List<Report> result = reportAggregateService.aggregate(TEST_ID);
+
+        assertThat(result).hasSize(2);
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
@@ -123,7 +179,7 @@ class ReportAggregateServiceTest {
 
         given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(2L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(2L);
-        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
         given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report1, report2));
 
         List<Report> recovered = reportAggregateService.recover(
@@ -131,6 +187,7 @@ class ReportAggregateServiceTest {
 
         assertThat(recovered).containsExactly(report1, report2);
         assertThat(test.getReportStatus()).isEqualTo(ReportStatus.COMPLETED);
+        verify(eventPublisher).publishEvent(new ReportCompletedEvent(TEST_ID, test.getMakerId(), test.getTitle()));
     }
 
     @Test
@@ -141,7 +198,7 @@ class ReportAggregateServiceTest {
 
         given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(2L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(2L);
-        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
         given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report1, report2));
 
         List<Report> recovered = reportAggregateService.recover(
@@ -149,6 +206,26 @@ class ReportAggregateServiceTest {
 
         assertThat(recovered).containsExactly(report1, report2);
         assertThat(test.getReportStatus()).isEqualTo(ReportStatus.COMPLETED);
+        verify(eventPublisher).publishEvent(new ReportCompletedEvent(TEST_ID, test.getMakerId(), test.getTitle()));
+    }
+
+    @Test
+    @DisplayName("recover 시점에 이미 완료 상태였다면 완료 이벤트를 재발행하지 않는다")
+    void recover_whenAlreadyCompleted_doesNotRepublishEvent() {
+        test.completeReportAggregation();
+        Report report1 = report(101L);
+        Report report2 = report(102L);
+
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(2L);
+        given(reportRepository.countByTestId(TEST_ID)).willReturn(2L);
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report1, report2));
+
+        List<Report> recovered = reportAggregateService.recover(
+                new DataIntegrityViolationException("duplicate key"), TEST_ID);
+
+        assertThat(recovered).containsExactly(report1, report2);
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
