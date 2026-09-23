@@ -14,6 +14,7 @@ import server.MATE.domain.payment.dto.response.PaymentOrderStatusResponse;
 import server.MATE.domain.payment.entity.PayMethod;
 import server.MATE.domain.payment.entity.PayStatus;
 import server.MATE.domain.payment.entity.Payment;
+import server.MATE.domain.payment.entity.PublishStatus;
 import server.MATE.domain.payment.policy.IapProductTierCatalog;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.test.service.TestPublishService;
@@ -51,6 +52,7 @@ class IapServiceTest {
     @Mock private TossAccountRepository tossAccountRepository;
     @Mock private PaymentRepository paymentRepository;
     @Mock private PaymentCreateService paymentCreateService;
+    @Mock private PaymentRestoreAttemptService paymentRestoreAttemptService;
     @Mock private TestDraftRepository testDraftRepository;
     @Mock private TestPublishService testPublishService;
 
@@ -68,7 +70,7 @@ class IapServiceTest {
         iapService = new IapService(
                 tossIapGateway, iapProductTierCatalog,
                 tossAccountRepository, paymentRepository, paymentCreateService,
-                testDraftRepository, testPublishService
+                paymentRestoreAttemptService, testDraftRepository, testPublishService
         );
     }
 
@@ -85,6 +87,42 @@ class IapServiceTest {
 
             verify(testPublishService).publish(100L);
             verify(tossIapGateway, never()).getOrderStatus(any(), any());
+        }
+
+        @Test
+        @DisplayName("publishStatus가 이미 FAILED(재시도 한도 초과)면 publish를 재시도하지 않고 FAILED를 반환한다")
+        void returnsFailedWithoutRetryingPublishWhenAlreadyFailed() {
+            Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED, PublishStatus.FAILED);
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
+
+            PublishStatus status = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
+
+            assertThat(status).isEqualTo(PublishStatus.FAILED);
+            verify(testPublishService, never()).publish(any());
+        }
+
+        @Test
+        @DisplayName("publishStatus가 이미 PUBLISHED면 재발행을 시도하지 않고 PUBLISHED를 반환한다")
+        void returnsPublishedWithoutRetryingPublishWhenAlreadyPublished() {
+            Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED, PublishStatus.PUBLISHED);
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
+
+            PublishStatus status = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
+
+            assertThat(status).isEqualTo(PublishStatus.PUBLISHED);
+            verify(testPublishService, never()).publish(any());
+        }
+
+        @Test
+        @DisplayName("stale 상태 체크 이후 publish()가 RETRY_LIMIT_EXCEEDED를 던지면 grant()도 FAILED를 반환한다")
+        void returnsFailedWhenPublishThrowsRetryLimitExceeded() {
+            Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED, PublishStatus.PUBLISH_PENDING);
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
+            doThrow(new BaseException(BaseErrorCode.RETRY_LIMIT_EXCEEDED)).when(testPublishService).publish(100L);
+
+            PublishStatus status = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
+
+            assertThat(status).isEqualTo(PublishStatus.FAILED);
         }
 
         @Test
@@ -379,14 +417,16 @@ class IapServiceTest {
             Payment saved = savedPayment(200L);
             when(paymentCreateService.save(any())).thenReturn(saved);
 
-            iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
+            PublishStatus status = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
 
+            assertThat(status).isEqualTo(PublishStatus.PUBLISHED);
             verify(testPublishService).publish(200L);
 
             ArgumentCaptor<Payment> captor = ArgumentCaptor.forClass(Payment.class);
             verify(paymentCreateService).save(captor.capture());
             Payment captured = captor.getValue();
             assertThat(captured.getPayStatus()).isEqualTo(PayStatus.PAY_SUCCEEDED);
+            assertThat(captured.getPublishStatus()).isEqualTo(PublishStatus.PUBLISH_PENDING);
             assertThat(captured.getPayMethod()).isEqualTo(PayMethod.IN_APP_PURCHASE);
             assertThat(captured.getAmount()).isEqualTo(5500);
             assertThat(captured.getApprovedAt()).isEqualTo(APPROVED_AT);
@@ -413,8 +453,8 @@ class IapServiceTest {
         }
 
         @Test
-        @DisplayName("publish가 실패해도 grant는 true를 반환한다")
-        void returnsTrueEvenWhenPublishFails() {
+        @DisplayName("publish가 실패해도 grant는 PUBLISH_PENDING을 반환한다")
+        void returnsPublishPendingWhenPublishFails() {
             when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
             when(testDraftRepository.findById(DRAFT_ID)).thenReturn(Optional.of(draftOf(MAKER_ID)));
             when(iapProductTierCatalog.find(10, 500)).thenReturn(Optional.of(TIER));
@@ -425,8 +465,9 @@ class IapServiceTest {
             when(paymentCreateService.save(any())).thenReturn(saved);
             doThrow(new RuntimeException("publish failed")).when(testPublishService).publish(200L);
 
-            iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
+            PublishStatus status = iapService.grant(ORDER_ID, DRAFT_ID, MAKER_ID);
 
+            assertThat(status).isEqualTo(PublishStatus.PUBLISH_PENDING);
             verify(paymentCreateService).save(any());
         }
 
@@ -436,17 +477,46 @@ class IapServiceTest {
     class RestoreTest {
 
         @Test
-        @DisplayName("기존 Payment가 있으면 orderId만으로 publish를 재시도하고 retryCount를 증가시킨다")
+        @DisplayName("기존 Payment가 있으면 orderId만으로 락을 통해 재시도를 등록하고 publish를 시도한다")
         void publishesWithOrderIdOnlyWhenPaymentExists() {
             Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
             when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
+            when(paymentRestoreAttemptService.registerRestoreAttempt(100L)).thenReturn(PublishStatus.PUBLISH_PENDING);
 
-            iapService.restore(ORDER_ID, null, MAKER_ID);
+            PublishStatus status = iapService.restore(ORDER_ID, null, MAKER_ID);
 
-            assertThat(existing.getRetryCount()).isEqualTo(1);
-            verify(paymentRepository).save(existing);
+            assertThat(status).isEqualTo(PublishStatus.PUBLISHED);
+            verify(paymentRestoreAttemptService).registerRestoreAttempt(100L);
             verify(testPublishService).publish(100L);
             verify(tossIapGateway, never()).getOrderStatus(any(), any());
+        }
+
+        @Test
+        @DisplayName("재시도 등록 결과가 PUBLISHED면 publish를 다시 시도하지 않고 바로 PUBLISHED를 반환한다")
+        void returnsPublishedWithoutRetryingWhenAttemptResultIsPublished() {
+            Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
+            when(paymentRestoreAttemptService.registerRestoreAttempt(100L)).thenReturn(PublishStatus.PUBLISHED);
+
+            PublishStatus status = iapService.restore(ORDER_ID, null, MAKER_ID);
+
+            assertThat(status).isEqualTo(PublishStatus.PUBLISHED);
+            verify(testPublishService, never()).publish(any());
+        }
+
+        @Test
+        @DisplayName("재시도 등록 결과가 FAILED면 publish를 시도하지 않고 RETRY_LIMIT_EXCEEDED 예외를 던진다")
+        void throwsRetryLimitExceededWhenAttemptResultIsFailed() {
+            Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
+            when(paymentRestoreAttemptService.registerRestoreAttempt(100L)).thenReturn(PublishStatus.FAILED);
+
+            assertThatThrownBy(() -> iapService.restore(ORDER_ID, null, MAKER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.RETRY_LIMIT_EXCEEDED);
+
+            verify(testPublishService, never()).publish(any());
         }
 
         @Test
@@ -471,6 +541,7 @@ class IapServiceTest {
                     .thenReturn(new IapOrderStatusResult(IapOrderState.PURCHASED, "sku_10_500", null, APPROVED_AT));
             Payment saved = savedPayment(200L);
             when(paymentCreateService.save(any())).thenReturn(saved);
+            when(paymentRestoreAttemptService.registerRestoreAttempt(200L)).thenReturn(PublishStatus.PUBLISH_PENDING);
 
             iapService.restore(ORDER_ID, DRAFT_ID, MAKER_ID);
 
@@ -483,12 +554,27 @@ class IapServiceTest {
         void throwsProductNotGrantedByPartnerWhenPublishFailsOnRestore() {
             Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
             when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
+            when(paymentRestoreAttemptService.registerRestoreAttempt(100L)).thenReturn(PublishStatus.PUBLISH_PENDING);
             doThrow(new RuntimeException("publish failed")).when(testPublishService).publish(100L);
 
             assertThatThrownBy(() -> iapService.restore(ORDER_ID, null, MAKER_ID))
                     .isInstanceOf(BaseException.class)
                     .extracting(e -> ((BaseException) e).getErrorCode())
                     .isEqualTo(BaseErrorCode.PRODUCT_NOT_GRANTED_BY_PARTNER);
+        }
+
+        @Test
+        @DisplayName("publish()가 RETRY_LIMIT_EXCEEDED를 던지면 PRODUCT_NOT_GRANTED_BY_PARTNER로 감싸지 않고 그대로 던진다")
+        void rethrowsRetryLimitExceededAsIsWhenPublishThrowsIt() {
+            Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
+            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
+            when(paymentRestoreAttemptService.registerRestoreAttempt(100L)).thenReturn(PublishStatus.PUBLISH_PENDING);
+            doThrow(new BaseException(BaseErrorCode.RETRY_LIMIT_EXCEEDED)).when(testPublishService).publish(100L);
+
+            assertThatThrownBy(() -> iapService.restore(ORDER_ID, null, MAKER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .extracting(e -> ((BaseException) e).getErrorCode())
+                    .isEqualTo(BaseErrorCode.RETRY_LIMIT_EXCEEDED);
         }
 
         @Test
@@ -501,34 +587,6 @@ class IapServiceTest {
                     .isInstanceOf(BaseException.class)
                     .extracting(e -> ((BaseException) e).getErrorCode())
                     .isEqualTo(BaseErrorCode.COMMON_009);
-        }
-
-        @Test
-        @DisplayName("retryCount가 4 이상이면 RETRY_LIMIT_EXCEEDED 예외를 던진다")
-        void throwsRetryLimitExceededWhenRetryCountAtLimit() {
-            Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
-            ReflectionTestUtils.setField(existing, "retryCount", 4);
-            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
-
-            assertThatThrownBy(() -> iapService.restore(ORDER_ID, null, MAKER_ID))
-                    .isInstanceOf(BaseException.class)
-                    .extracting(e -> ((BaseException) e).getErrorCode())
-                    .isEqualTo(BaseErrorCode.RETRY_LIMIT_EXCEEDED);
-
-            verify(testPublishService, never()).publish(any());
-        }
-
-        @Test
-        @DisplayName("retryCount가 3이면 4번째 시도를 허용한다")
-        void allowsFourthRestoreAttemptWhenRetryCountIsThree() {
-            Payment existing = existingPayment(100L, MAKER_ID, PayStatus.PAY_SUCCEEDED);
-            ReflectionTestUtils.setField(existing, "retryCount", 3);
-            when(paymentRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(existing));
-
-            iapService.restore(ORDER_ID, null, MAKER_ID);
-
-            assertThat(existing.getRetryCount()).isEqualTo(4);
-            verify(testPublishService).publish(100L);
         }
     }
 
@@ -590,6 +648,10 @@ class IapServiceTest {
     }
 
     private Payment existingPayment(Long id, Long makerId, PayStatus status) {
+        return existingPayment(id, makerId, status, null);
+    }
+
+    private Payment existingPayment(Long id, Long makerId, PayStatus status, PublishStatus publishStatus) {
         Payment payment = Payment.builder()
                 .draftId(DRAFT_ID)
                 .makerId(makerId)
@@ -599,6 +661,7 @@ class IapServiceTest {
                 .amount(5500)
                 .payMethod(PayMethod.IN_APP_PURCHASE)
                 .payStatus(status)
+                .publishStatus(publishStatus)
                 .approvedAt(LocalDateTime.now())
                 .build();
         ReflectionTestUtils.setField(payment, "id", id);
