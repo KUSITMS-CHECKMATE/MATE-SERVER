@@ -21,6 +21,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment extends BaseEntity {
 
+    public static final int MAX_RESTORE_RETRY_COUNT = 4;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -49,6 +51,10 @@ public class Payment extends BaseEntity {
     @Column(nullable = false, length = 30)
     private PayStatus payStatus;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20, columnDefinition = "varchar(20) default 'PUBLISH_PENDING'")
+    private PublishStatus publishStatus;
+
     @Column(nullable = false)
     private Integer goalPpl;
 
@@ -71,8 +77,13 @@ public class Payment extends BaseEntity {
     @Column(nullable = false, columnDefinition = "integer default 0")
     private int retryCount;
 
-    public void linkTest(Long testId) {
+    public void markPublished(Long testId) {
         this.testId = testId;
+        this.publishStatus = PublishStatus.PUBLISHED;
+    }
+
+    public void markPublishFailed() {
+        this.publishStatus = PublishStatus.FAILED;
     }
 
     public void requestRefund(String reason) {
@@ -95,6 +106,7 @@ public class Payment extends BaseEntity {
                    String orderId,
                    String orderNo,
                    PayStatus payStatus,
+                   PublishStatus publishStatus,
                    Integer goalPpl,
                    Integer reward,
                    Integer amount,
@@ -106,6 +118,7 @@ public class Payment extends BaseEntity {
         this.orderId = orderId;
         this.orderNo = orderNo;
         this.payStatus = payStatus;
+        this.publishStatus = publishStatus != null ? publishStatus : PublishStatus.PUBLISH_PENDING;
         this.goalPpl = goalPpl;
         this.reward = reward;
         this.amount = amount;
