@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import server.MATE.domain.payment.entity.PayStatus;
 import server.MATE.domain.payment.entity.Payment;
+import server.MATE.domain.payment.entity.PublishStatus;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.test.service.TestPublishService;
 
@@ -19,7 +20,8 @@ public class PaymentPendingResolverService {
     private final TestPublishService testPublishService;
 
     public void resolveAll() {
-        List<Payment> pending = paymentRepository.findTop100ByPayStatusAndTestIdIsNull(PayStatus.PAY_SUCCEEDED);
+        List<Payment> pending = paymentRepository.findTop100ByPayStatusAndTestIdIsNullAndPublishStatus(
+                PayStatus.PAY_SUCCEEDED, PublishStatus.PUBLISH_PENDING);
         log.info("PAYMENT PENDING 처리 대상 {}건", pending.size());
 
         for (Payment payment : pending) {

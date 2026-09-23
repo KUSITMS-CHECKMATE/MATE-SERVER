@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.payment.entity.PayStatus;
 import server.MATE.domain.payment.entity.Payment;
+import server.MATE.domain.payment.entity.PublishStatus;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.service.QuestionService;
@@ -38,7 +39,9 @@ public class TestPublishService {
     public Long publish(Long paymentId) {
         Payment payment = paymentRepository.findByIdForUpdate(paymentId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.PAYMENT_001));
+
         if (payment.getTestId() != null) {
+            payment.markPublished(payment.getTestId());
             return payment.getTestId();
         }
 
@@ -46,8 +49,14 @@ public class TestPublishService {
                 .orElseThrow(() -> new BaseException(BaseErrorCode.DRAFT_001));
 
         if (draft.getPublishedTestId() != null) {
-            payment.linkTest(draft.getPublishedTestId());
+            payment.markPublished(draft.getPublishedTestId());
             return draft.getPublishedTestId();
+        }
+
+        // 이미 발행된 케이스(위 두 분기)가 아닌데 FAILED로 표시돼 있으면, 호출부가 필터링을
+        // 누락했어도 여기서 최종적으로 막는다.
+        if (payment.getPublishStatus() == PublishStatus.FAILED) {
+            throw new BaseException(BaseErrorCode.RETRY_LIMIT_EXCEEDED);
         }
 
         if (payment.getPayStatus() != PayStatus.PAY_SUCCEEDED) {
@@ -79,7 +88,7 @@ public class TestPublishService {
 
         questionService.createQuestions(test.getId(), draft.getMakerId(), questionCreateRequest);
 
-        payment.linkTest(test.getId());
+        payment.markPublished(test.getId());
         draft.markPublished(test.getId());
         testDraftRepository.delete(draft);
 
