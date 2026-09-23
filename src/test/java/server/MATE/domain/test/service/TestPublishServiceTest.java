@@ -12,6 +12,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import server.MATE.domain.payment.entity.PayMethod;
 import server.MATE.domain.payment.entity.PayStatus;
 import server.MATE.domain.payment.entity.Payment;
+import server.MATE.domain.payment.entity.PublishStatus;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.question.dto.request.QuestionCreateRequest;
 import server.MATE.domain.question.service.QuestionService;
@@ -202,5 +203,61 @@ class TestPublishServiceTest {
         assertThatThrownBy(() -> testPublishService.publish(20L))
                 .isInstanceOf(BaseException.class)
                 .hasMessageContaining("게시에 필요한 필수 정보가 부족합니다.");
+    }
+
+    @Test
+    @DisplayName("publishStatus가 FAILED면 호출부의 필터링 없이도 RETRY_LIMIT_EXCEEDED를 던지고 재발행하지 않는다")
+    void throwsRetryLimitExceededWhenPublishStatusIsFailed() {
+        TestDraft draft = TestDraft.builder()
+                .makerId(1L)
+                .title("테스트 제목")
+                .goalPpl(100)
+                .reward(300)
+                .closedAt(LocalDateTime.parse("2099-05-31T23:59:59"))
+                .status(TestDraftStatus.DRAFT)
+                .build();
+        ReflectionTestUtils.setField(draft, "id", 10L);
+
+        Payment payment = Payment.builder()
+                .draftId(10L)
+                .makerId(1L)
+                .payStatus(PayStatus.PAY_SUCCEEDED)
+                .publishStatus(PublishStatus.FAILED)
+                .goalPpl(100)
+                .reward(300)
+                .amount(30000)
+                .build();
+        ReflectionTestUtils.setField(payment, "id", 20L);
+
+        given(paymentRepository.findByIdForUpdate(20L)).willReturn(Optional.of(payment));
+        given(testDraftRepository.findByIdForUpdate(10L)).willReturn(Optional.of(draft));
+
+        assertThatThrownBy(() -> testPublishService.publish(20L))
+                .isInstanceOf(BaseException.class)
+                .extracting(e -> ((BaseException) e).getErrorCode())
+                .isEqualTo(BaseErrorCode.RETRY_LIMIT_EXCEEDED);
+
+        verify(testDraftValidator, never()).validateForPublish(any(TestDraft.class));
+    }
+
+    @Test
+    @DisplayName("testId가 이미 있으면 publishStatus가 FAILED여도 기존 testId를 그대로 반환한다")
+    void returnsExistingTestIdEvenWhenPublishStatusIsFailed() {
+        Payment payment = Payment.builder()
+                .draftId(10L)
+                .testId(99L)
+                .makerId(1L)
+                .payStatus(PayStatus.PAY_SUCCEEDED)
+                .publishStatus(PublishStatus.FAILED)
+                .build();
+        ReflectionTestUtils.setField(payment, "id", 20L);
+
+        given(paymentRepository.findByIdForUpdate(20L)).willReturn(Optional.of(payment));
+
+        Long testId = testPublishService.publish(20L);
+
+        assertThat(testId).isEqualTo(99L);
+        assertThat(payment.getPublishStatus()).isEqualTo(PublishStatus.PUBLISHED);
+        verify(testDraftRepository, never()).findByIdForUpdate(any(Long.class));
     }
 }

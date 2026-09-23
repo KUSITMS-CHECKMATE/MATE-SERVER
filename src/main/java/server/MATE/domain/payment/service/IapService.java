@@ -9,6 +9,7 @@ import server.MATE.domain.payment.dto.response.PaymentOrderStatusResponse;
 import server.MATE.domain.payment.entity.PayMethod;
 import server.MATE.domain.payment.entity.PayStatus;
 import server.MATE.domain.payment.entity.Payment;
+import server.MATE.domain.payment.entity.PublishStatus;
 import server.MATE.domain.payment.policy.IapProductTierCatalog;
 import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.test.service.TestPublishService;
@@ -38,37 +39,66 @@ public class IapService {
     private final TossAccountRepository tossAccountRepository;
     private final PaymentRepository paymentRepository;
     private final PaymentCreateService paymentCreateService;
+    private final PaymentRestoreAttemptService paymentRestoreAttemptService;
     private final TestDraftRepository testDraftRepository;
     private final TestPublishService testPublishService;
 
     // 결제 검증 후 테스트 publish 수행
-    public void grant(String orderId, Long draftId, Long makerId) {
+    public PublishStatus grant(String orderId, Long draftId, Long makerId) {
         log.info("grant 진입: orderId={}, draftId={}, makerId={}", orderId, draftId, makerId);
         Payment payment = resolvePayment(orderId, draftId, makerId);
 
+        if (payment.getPublishStatus() == PublishStatus.PUBLISHED) {
+            return PublishStatus.PUBLISHED;
+        }
+        if (payment.getPublishStatus() == PublishStatus.FAILED) {
+            log.warn("Grant skipped publish retry: paymentId={} already reached restore retry limit", payment.getId());
+            return PublishStatus.FAILED;
+        }
+
         try {
             testPublishService.publish(payment.getId());
+            return PublishStatus.PUBLISHED;
         } catch (Exception e) {
+            if (isRetryLimitExceeded(e)) {
+                log.warn("Grant found payment already permanently failed: paymentId={}", payment.getId());
+                return PublishStatus.FAILED;
+            }
             log.warn("Publish failed after grant for paymentId={}, will be retried via restore",
                     payment.getId(), e);
+            return PublishStatus.PUBLISH_PENDING;
         }
     }
 
     // 결제 후 테스트 publish 실패를 복원
-    public void restore(String orderId, Long draftId, Long makerId) {
+    public PublishStatus restore(String orderId, Long draftId, Long makerId) {
         log.info("restore 진입: orderId={}, draftId={}, makerId={}", orderId, draftId, makerId);
         Payment payment = resolvePayment(orderId, draftId, makerId);
-        if (payment.getRetryCount() >= 4) {
+
+        PublishStatus attempt = paymentRestoreAttemptService.registerRestoreAttempt(payment.getId());
+        if (attempt == PublishStatus.PUBLISHED) {
+            return PublishStatus.PUBLISHED;
+        }
+        if (attempt == PublishStatus.FAILED) {
             throw new BaseException(BaseErrorCode.RETRY_LIMIT_EXCEEDED);
         }
-        payment.incrementRetryCount();
-        paymentRepository.save(payment);
+
         try {
             testPublishService.publish(payment.getId());
+            return PublishStatus.PUBLISHED;
         } catch (Exception e) {
+            if (isRetryLimitExceeded(e)) {
+                throw (BaseException) e;
+            }
             log.warn("Publish failed during restore for paymentId={}", payment.getId(), e);
             throw new BaseException(BaseErrorCode.PRODUCT_NOT_GRANTED_BY_PARTNER);
         }
+    }
+
+    // publish()가 던진 예외가 재시도 한도 초과(영구 실패)를 의미하는지 판별한다.
+    // grant()/restore() 모두 이 경우만 별도로 취급하고 나머지는 일반 발행 실패로 처리한다.
+    private boolean isRetryLimitExceeded(Exception e) {
+        return e instanceof BaseException be && be.getErrorCode() == BaseErrorCode.RETRY_LIMIT_EXCEEDED;
     }
 
     // 기존 Payment를 찾거나 없으면 Toss 주문 검증 후 새로 저장
@@ -170,6 +200,7 @@ public class IapService {
                         .amount(amount)
                         .payMethod(PayMethod.IN_APP_PURCHASE)
                         .payStatus(PayStatus.PAY_SUCCEEDED)
+                        .publishStatus(PublishStatus.PUBLISH_PENDING)
                         .approvedAt(approvedAt)
                         .build());
             } catch (DataIntegrityViolationException e) {
