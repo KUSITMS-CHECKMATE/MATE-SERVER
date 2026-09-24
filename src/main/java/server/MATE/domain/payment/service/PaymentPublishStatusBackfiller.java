@@ -6,6 +6,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.payment.entity.Payment;
 import server.MATE.domain.payment.entity.PublishStatus;
 import server.MATE.domain.payment.repository.PaymentRepository;
@@ -24,10 +25,12 @@ public class PaymentPublishStatusBackfiller implements ApplicationRunner {
     private final PaymentRepository paymentRepository;
 
     @Override
+    @Transactional
     public void run(ApplicationArguments args) {
-        // 배포 시점에 진행 중인 grant()/restore() 트랜잭션과 같은 row를 두고 락 경합이 날 수 있다.
-        // 백필은 언제든 다음 기동 때 다시 시도해도 안전(멱등)하므로, 실패해도 앱 기동 자체를
-        // 막지 않도록 여기서 흡수한다.
+        // ApplicationRunner#run()은 Spring이 트랜잭션을 열어주지 않으므로, @Modifying 쿼리가
+        // flush할 EntityManager 트랜잭션을 직접 열어줘야 한다. 배포 시점에 진행 중인 grant()/restore()
+        // 트랜잭션과 같은 row를 두고 락 경합이 날 수 있다. 백필은 언제든 다음 기동 때 다시 시도해도
+        // 안전(멱등)하므로, 실패해도 앱 기동 자체를 막지 않도록 여기서 흡수한다.
         try {
             int publishedUpdated = paymentRepository.backfillPublishedStatus(PublishStatus.PUBLISHED);
             int failedUpdated = paymentRepository.backfillFailedStatus(PublishStatus.FAILED, Payment.MAX_RESTORE_RETRY_COUNT);
