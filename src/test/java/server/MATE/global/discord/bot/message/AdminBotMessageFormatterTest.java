@@ -125,6 +125,22 @@ class AdminBotMessageFormatterTest {
                 .doesNotContain("사유:");
     }
 
+    @Test
+    @DisplayName("listItemLine: 목록 한 줄은 제목/카테고리/상대시각/리워드 형식이고 listEmbed와 같다")
+    void listItemLine() {
+        AdminTestListItemResponse item = new AdminTestListItemResponse(
+                14L, "봇승인테스트", 200, List.of("DAILY", "INFORMATION"), TestStatus.WAITING, CREATED);
+        long epoch = CREATED.atZone(java.time.ZoneId.of("Asia/Seoul")).toEpochSecond();
+
+        String line = AdminBotMessageFormatter.listItemLine(item);
+
+        assertThat(line).isEqualTo(
+                "**#14 봇승인테스트**\n🏷️ `DAILY`, `INFORMATION` · 🕒 <t:" + epoch + ":R> · 💰 `200`");
+        MessageEmbed embed = AdminBotMessageFormatter.listEmbed(
+                TestStatus.WAITING, new AdminTestListResponse(1, 5, 1, List.of(item)));
+        assertThat(embed.getDescription()).contains(line);
+    }
+
     private int rowSize(List<ActionRow> rows) {
         return rows.isEmpty() ? 0 : rows.get(0).getComponents().size();
     }

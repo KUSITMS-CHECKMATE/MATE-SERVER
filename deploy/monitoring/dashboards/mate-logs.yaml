@@ -186,7 +186,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
-              "expr": "{namespace=\"mate\"} | json | log_logger=\"server.MATE.global.discord.webhook.DiscordWebhookClient\" | log_level=\"WARN\" | line_format \"[{{.log_level}}] {{.message}} logger={{.log_logger}}\"",
+              "expr": "{namespace=\"mate\"} | json | log_logger=~\"server.MATE.global.discord.(webhook.DiscordWebhookClient|outbox.service.DiscordOutboxService|outbox.scheduler.DiscordOutboxRetryScheduler)\" | log_level=~\"WARN|ERROR\" | line_format \"[{{.log_level}}] {{.message}} logger={{.log_logger}}\"",
               "refId": "A"
             }
           ]
