@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Mono;
 import server.MATE.global.discord.webhook.embed.DiscordEmbed;
 
 @Slf4j
@@ -28,14 +30,7 @@ public class DiscordWebhookClient {
             return;
         }
 
-        Map<String, Object> body = Map.of("embeds", List.of(embed.toPayload()));
-
-        webClient.post()
-                .uri(webhookUrl)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(body)
-                .retrieve()
-                .toBodilessEntity()
+        post(webhookUrl, embed)
                 .subscribe(
                         response -> log.info("[DISCORD] 알림 전송 완료. channel={}, title={}", channel, embed.title()),
                         error -> log.warn("[DISCORD] 알림 전송 실패. channel={}, title={}, error={}", channel, embed.title(), error.getMessage())
@@ -49,20 +44,23 @@ public class DiscordWebhookClient {
             throw new IllegalStateException("Discord 웹훅 URL이 설정되지 않았습니다. channel=" + channel);
         }
 
-        Map<String, Object> body = Map.of("embeds", List.of(embed.toPayload()));
-
         try {
-            webClient.post()
-                    .uri(webhookUrl)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(body)
-                    .retrieve()
-                    .toBodilessEntity()
+            post(webhookUrl, embed)
                     .block(SEND_TIMEOUT);
             log.info("[DISCORD] 알림 전송 완료. channel={}, title={}", channel, embed.title());
         } catch (RuntimeException e) {
             log.warn("[DISCORD] 알림 전송 실패. channel={}, title={}, error={}", channel, embed.title(), e.getMessage());
             throw e;
         }
+    }
+
+    private Mono<ResponseEntity<Void>> post(String webhookUrl, DiscordEmbed embed) {
+        Map<String, Object> body = Map.of("embeds", List.of(embed.toPayload()));
+        return webClient.post()
+                .uri(webhookUrl)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(body)
+                .retrieve()
+                .toBodilessEntity();
     }
 }
