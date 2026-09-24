@@ -67,6 +67,13 @@ public final class AdminBotMessageFormatter {
         return String.join(", ", values.stream().map(v -> "`" + v + "`").toList());
     }
 
+    // 목록 한 줄 포맷. 관리자 봇 목록과 WAITING 요약 웹훅의 공통 포맷
+    public static String listItemLine(AdminTestListItemResponse item) {
+        return String.format("**#%d %s**\n🏷️ %s · 🕒 <t:%d:R> · 💰 `%d`",
+                item.testId(), item.title(), pills(item.categories()),
+                epoch(item.createdAt()), item.reward());
+    }
+
     // 목록
     public static MessageEmbed listEmbed(TestStatus status, AdminTestListResponse response) {
         EmbedBuilder eb = new EmbedBuilder()
@@ -81,10 +88,7 @@ public final class AdminBotMessageFormatter {
         StringBuilder sb = new StringBuilder(ZWSP).append("\n");
         List<AdminTestListItemResponse> items = response.tests();
         for (int i = 0; i < items.size(); i++) {
-            AdminTestListItemResponse item = items.get(i);
-            sb.append(String.format("**#%d %s**\n🏷️ %s · 🕒 <t:%d:R> · 💰 `%d`",
-                    item.testId(), item.title(), pills(item.categories()),
-                    epoch(item.createdAt()), item.reward()));
+            sb.append(listItemLine(items.get(i)));
             if (i < items.size() - 1) {
                 sb.append("\n\n");
             }
