@@ -19,7 +19,7 @@ public class PromotionPendingScheduler {
     @Scheduled(fixedDelay = 300_000)
     @SchedulerLock(name = "promotionPendingScheduler", lockAtMostFor = "PT4M")
     public void resolvePromotionPending() {
-        log.info("PROMOTION PENDING 재조회 스케줄러 실행");
+        log.debug("PROMOTION PENDING 재조회 스케줄러 실행");
         promotionPendingResolverService.resolveAll();
     }
 }
