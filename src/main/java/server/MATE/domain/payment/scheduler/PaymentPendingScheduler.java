@@ -19,7 +19,7 @@ public class PaymentPendingScheduler {
     @Scheduled(fixedDelay = 300_000)
     @SchedulerLock(name = "paymentPendingScheduler", lockAtMostFor = "PT4M")
     public void resolvePaymentPending() {
-        log.info("PAYMENT PENDING 재시도 스케줄러 실행");
+        log.debug("PAYMENT PENDING 재시도 스케줄러 실행");
         paymentPendingResolverService.resolveAll();
     }
 }
