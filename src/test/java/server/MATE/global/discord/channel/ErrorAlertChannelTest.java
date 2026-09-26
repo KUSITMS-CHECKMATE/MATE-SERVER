@@ -58,4 +58,16 @@ class ErrorAlertChannelTest {
 
         verify(webhookClient).send(eq("error"), eq("https://discord.test/error"), any(DiscordEmbed.class));
     }
+
+    @Test
+    @DisplayName("notifyBackground: local이면 전송하지 않고, 그 외에는 error-webhook-url로 임베드 전송")
+    void notifyBackground() {
+        DiscordEmbed embed = new DiscordEmbed("t", "d", 1);
+
+        new ErrorAlertChannel(webhookClient, properties, "local").notifyBackground(embed);
+        verify(webhookClient, never()).send(anyString(), anyString(), any());
+
+        new ErrorAlertChannel(webhookClient, properties, "prod").notifyBackground(embed);
+        verify(webhookClient).send("error", "https://discord.test/error", embed);
+    }
 }

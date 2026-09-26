@@ -14,7 +14,7 @@ public record DiscordProperties(
 
     public DiscordProperties {
         if (bot == null) {
-            bot = new Bot(false, "", "");
+            bot = new Bot(false, "", "", "");
         }
         if (members == null) {
             members = new Members(List.of(), List.of(), List.of(), List.of());
@@ -24,7 +24,8 @@ public record DiscordProperties(
     public record Bot(
             boolean enabled,
             String token,
-            String adminCommandChannelId
+            String adminCommandChannelId,
+            String reportChannelId
     ) {
     }
 

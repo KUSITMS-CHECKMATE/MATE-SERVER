@@ -19,6 +19,8 @@ import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.domain.users.entity.Role;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
+import server.MATE.global.discord.message.DiscordMessageRepository;
+import server.MATE.global.discord.message.DiscordMessageType;
 import server.MATE.global.security.config.AdminProperties;
 import server.MATE.global.storage.event.FileDeleteEvent;
 
@@ -50,6 +52,7 @@ public class TestDeleteService {
     private final FiveSecondRepository fiveSecondRepository;
     private final FiveSecondOptionRepository fiveSecondOptionRepository;
     private final TreeTestRepository treeTestRepository;
+    private final DiscordMessageRepository discordMessageRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final AdminProperties adminProperties;
     private final Clock clock;
@@ -104,6 +107,7 @@ public class TestDeleteService {
             answerRepository.deleteAllByQuestionIds(questionIds);
         }
         reportRepository.deleteAllByTestId(test.getId());
+        discordMessageRepository.deleteByTypeAndTargetId(DiscordMessageType.REPORT_AGGREGATION_FAILED, test.getId());
         testLikeRepository.deleteAllByTestId(test.getId());
 
         deleteQuestionDetails(questions, fileKeys);

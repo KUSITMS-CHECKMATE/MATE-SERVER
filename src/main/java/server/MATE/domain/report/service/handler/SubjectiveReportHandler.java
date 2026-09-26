@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.report.service.ReportHandler;
+import server.MATE.global.claude.AiAnalysisOutcome;
 import server.MATE.global.claude.SubjectiveAiService;
 
 import java.util.Comparator;
@@ -43,12 +43,18 @@ public class SubjectiveReportHandler implements ReportHandler {
 
     @Override
     public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId, boolean includeAiAnalysis) {
+        return compute(questions, answersByQuestionId, includeAiAnalysis, new AiFailureCollector());
+    }
+
+    @Override
+    public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId,
+                                                   boolean includeAiAnalysis, AiFailureCollector aiFailureCollector) {
         // 실시간 미리보기(computeLive)는 Claude 호출이 없는 경량 연산이라 전용 풀을 거치지 않고 동기 처리
         if (!includeAiAnalysis) {
             Map<Long, Map<String, Object>> result = new LinkedHashMap<>();
             for (Question question : questions) {
                 List<Answer> answers = answersByQuestionId.getOrDefault(question.getId(), List.of());
-                result.put(question.getId(), computeForSubjective(answers, false));
+                result.put(question.getId(), computeForSubjective(question.getId(), answers, false, aiFailureCollector));
             }
             return result;
         }
@@ -58,7 +64,7 @@ public class SubjectiveReportHandler implements ReportHandler {
         List<CompletableFuture<Map.Entry<Long, Map<String, Object>>>> futures = questions.stream()
                 .map(question -> CompletableFuture.supplyAsync(() -> {
                     List<Answer> answers = answersByQuestionId.getOrDefault(question.getId(), List.of());
-                    return Map.entry(question.getId(), computeForSubjective(answers, true));
+                    return Map.entry(question.getId(), computeForSubjective(question.getId(), answers, true, aiFailureCollector));
                 }, claudeAnalysisExecutor))
                 .toList();
 
@@ -75,7 +81,7 @@ public class SubjectiveReportHandler implements ReportHandler {
         return result;
     }
 
-    private Map<String, Object> computeForSubjective(List<Answer> answers, boolean includeAiAnalysis) {
+    private Map<String, Object> computeForSubjective(Long questionId, List<Answer> answers, boolean includeAiAnalysis, AiFailureCollector aiFailureCollector) {
         List<String> allTexts = answers.stream()
                 .sorted(Comparator.comparing(Answer::getCreatedAt))
                 .map(a -> (String) a.getAnswer().get("text"))
@@ -98,18 +104,16 @@ public class SubjectiveReportHandler implements ReportHandler {
             return result;
         }
 
-        aiService.analyze(allTexts).ifPresentOrElse(
-                aiResult -> {
-                    result.put("aiSummary", aiResult.aiSummary());
-                    result.put("clusters", aiResult.toClusterMaps());
-                    result.put("texts", ReportHandlerUtils.sampleTexts(allTexts));
-                },
-                () -> {
-                    result.put("aiSummary", null);
-                    result.put("clusters", ReportHandlerUtils.buildClusters(allTexts));
-                    result.put("texts", ReportHandlerUtils.sampleTexts(allTexts));
-                }
-        );
+        AiAnalysisOutcome outcome = aiService.analyze(allTexts);
+        aiFailureCollector.record(questionId, outcome);
+        if (outcome.isSuccess()) {
+            result.put("aiSummary", outcome.result().aiSummary());
+            result.put("clusters", outcome.result().toClusterMaps());
+        } else {
+            result.put("aiSummary", null);
+            result.put("clusters", ReportHandlerUtils.buildClusters(allTexts));
+        }
+        result.put("texts", ReportHandlerUtils.sampleTexts(allTexts));
         return result;
     }
 }

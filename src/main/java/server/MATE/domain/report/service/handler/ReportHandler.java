@@ -1,4 +1,4 @@
-package server.MATE.domain.report.service;
+package server.MATE.domain.report.service.handler;
 
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.question.entity.Question;
@@ -19,5 +19,14 @@ public interface ReportHandler {
      */
     default Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId, boolean includeAiAnalysis) {
         return compute(questions, answersByQuestionId);
+    }
+
+    /**
+     * 리포트 확정 집계용. AI를 쓰는 핸들러는 시도·실패를 수집함에 기록함.
+     * 기본 구현은 AI 미사용 핸들러를 위해 기존 compute를 그대로 위임함.
+     */
+    default Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId,
+                                                   boolean includeAiAnalysis, AiFailureCollector aiFailureCollector) {
+        return compute(questions, answersByQuestionId, includeAiAnalysis);
     }
 }

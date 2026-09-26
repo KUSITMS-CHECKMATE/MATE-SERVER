@@ -52,7 +52,7 @@ class AdminBotListenerTest {
     @BeforeEach
     void setUp() {
         DiscordProperties properties = new DiscordProperties(
-                "", "", new DiscordProperties.Bot(true, "token", "123"), null);
+                "", "", new DiscordProperties.Bot(true, "token", "123", ""), null);
         listener = new AdminBotListener(adminTestService, properties, teamHeartResolver);
     }
 
@@ -72,7 +72,7 @@ class AdminBotListenerTest {
     @DisplayName("isAllowedChannel: 설정값이 비어있으면 항상 true")
     void isAllowedChannel_blankConfigAllowsAny() {
         DiscordProperties properties = new DiscordProperties(
-                "", "", new DiscordProperties.Bot(true, "token", ""), null);
+                "", "", new DiscordProperties.Bot(true, "token", "", ""), null);
         AdminBotListener anyChannelListener = new AdminBotListener(adminTestService, properties, teamHeartResolver);
 
         assertThat(anyChannelListener.isAllowedChannel("anything")).isTrue();

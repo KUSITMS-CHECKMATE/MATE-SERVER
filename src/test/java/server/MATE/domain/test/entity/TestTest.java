@@ -105,6 +105,23 @@ class TestTest {
         assertThat(test.getReopenedAt()).isEqualTo(reopenedAt);
     }
 
+    @Test
+    @DisplayName("restartReportAggregation() 호출 시 파일 키를 비우고 IN_PROGRESS로 바꾼다")
+    void restartReportAggregation() {
+        server.MATE.domain.test.entity.Test test = buildTest(TestStatus.IN_PROGRESS);
+        test.complete();
+        test.startReportAggregation();
+        test.failReportAggregation();
+        test.savePdfKey("p");
+        test.saveExcelKey("e");
+
+        test.restartReportAggregation();
+
+        assertThat(test.getReportStatus()).isEqualTo(ReportStatus.IN_PROGRESS);
+        assertThat(test.getPdfKey()).isNull();
+        assertThat(test.getExcelKey()).isNull();
+    }
+
     private server.MATE.domain.test.entity.Test buildTest(TestStatus testStatus) {
         return server.MATE.domain.test.entity.Test.builder()
                 .makerId(1L)

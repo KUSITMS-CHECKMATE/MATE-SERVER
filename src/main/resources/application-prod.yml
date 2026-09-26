@@ -145,6 +145,7 @@ discord:
     enabled: ${DISCORD_BOT_ENABLED:false}
     token: ${DISCORD_BOT_TOKEN:}
     admin-command-channel-id: ${DISCORD_ADMIN_COMMAND_CHANNEL_ID:}
+    report-channel-id: ${DISCORD_REPORT_CHANNEL_ID:}
   members:
     backend: ${DISCORD_MEMBERS_BACKEND:}
     frontend: ${DISCORD_MEMBERS_FRONTEND:}
