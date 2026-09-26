@@ -67,7 +67,7 @@ public class AdminTestController {
     @Operation(
             summary = "🔒 테스트 재개",
             description = """
-                    COMPLETED 테스트를 새 마감 기한으로 IN_PROGRESS로 되돌립니다. closedAt(KST)은 필수이며 현재 이후여야 합니다.
+                    COMPLETED 테스트를 새 마감 기한으로 IN_PROGRESS로 되돌립니다. closedAt(yyyy-MM-dd, KST)은 필수이며 오늘 이후 날짜여야 합니다. 해당 날짜 23:59:59에 마감됩니다.
                     - 거절: 목표 인원 달성(TEST_012), 리포트 집계 중(TEST_013), 환불 요청·완료(TEST_014)
                     - 메이커 직접 종료 표시는 초기화하고, 환불 포기 표시는 유지합니다.
                     - 다시 마감되면 리포트를 새 응답 기준으로 다시 만듭니다.

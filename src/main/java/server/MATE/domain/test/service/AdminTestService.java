@@ -23,7 +23,9 @@ import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.storage.service.FileStorageService;
 
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -34,6 +36,7 @@ import java.util.List;
 public class AdminTestService {
 
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+    private static final LocalTime CLOSING_TIME = LocalTime.of(23, 59, 59);
 
     private final TestRepository testRepository;
     private final FileStorageService fileStorageService;
@@ -99,14 +102,14 @@ public class AdminTestService {
         return new AdminTestStatusResponse(testId, test.getTestStatus());
     }
 
-    public AdminTestStatusResponse reopen(Long testId, LocalDateTime closedAt) {
+    public AdminTestStatusResponse reopen(Long testId, LocalDate closedDate) {
         Test test = testRepository.findByIdForUpdate(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
         if (test.getTestStatus() != TestStatus.COMPLETED) {
             throw new BaseException(BaseErrorCode.TEST_007);
         }
-        if (!closedAt.isAfter(LocalDateTime.now(clock.withZone(KST)))) {
+        if (!closedDate.isAfter(LocalDate.now(clock.withZone(KST)))) {
             throw new BaseException(BaseErrorCode.TEST_011);
         }
         if (test.getPplCount() >= test.getGoalPpl().longValue()) {
@@ -118,6 +121,9 @@ public class AdminTestService {
         if (isRefundStarted(testId)) {
             throw new BaseException(BaseErrorCode.TEST_014);
         }
+
+        // 테스트 생성 시 마감 기한 규칙(해당 날짜 23:59:59)과 통일용
+        LocalDateTime closedAt = closedDate.atTime(CLOSING_TIME);
 
         // report.created_at(Auditing)과 같은 시계·정밀도로 기록해 재집계 판별 기준 일치용
         test.reopen(closedAt, LocalDateTime.now(clock).truncatedTo(ChronoUnit.MICROS));
