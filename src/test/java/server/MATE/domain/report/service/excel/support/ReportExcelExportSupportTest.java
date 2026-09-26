@@ -16,8 +16,10 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class ReportExcelExportSupportTest {
@@ -58,5 +60,39 @@ class ReportExcelExportSupportTest {
         assertThatThrownBy(() -> reportExcelExportSupport.requireExportReadyTest(10L, 1L))
                 .isInstanceOfSatisfying(BaseException.class, exception ->
                         assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.REPORT_007));
+    }
+
+    @Test
+    void savePdfKey는_조건부_갱신_리포지토리_메서드에_위임한다() {
+        given(testRepository.updatePdfKeyIfReportCompleted(10L, "reports/pdf/10.pdf")).willReturn(1);
+
+        reportExcelExportSupport.savePdfKey(10L, "reports/pdf/10.pdf");
+
+        verify(testRepository).updatePdfKeyIfReportCompleted(10L, "reports/pdf/10.pdf");
+    }
+
+    @Test
+    void savePdfKey는_갱신된_행이_없어도_예외를_던지지_않는다() {
+        given(testRepository.updatePdfKeyIfReportCompleted(10L, "reports/pdf/10.pdf")).willReturn(0);
+
+        assertThatCode(() -> reportExcelExportSupport.savePdfKey(10L, "reports/pdf/10.pdf"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void saveExcelKey는_조건부_갱신_리포지토리_메서드에_위임한다() {
+        given(testRepository.updateExcelKeyIfReportCompleted(10L, "reports/excel/10.xlsx")).willReturn(1);
+
+        reportExcelExportSupport.saveExcelKey(10L, "reports/excel/10.xlsx");
+
+        verify(testRepository).updateExcelKeyIfReportCompleted(10L, "reports/excel/10.xlsx");
+    }
+
+    @Test
+    void saveExcelKey는_갱신된_행이_없어도_예외를_던지지_않는다() {
+        given(testRepository.updateExcelKeyIfReportCompleted(10L, "reports/excel/10.xlsx")).willReturn(0);
+
+        assertThatCode(() -> reportExcelExportSupport.saveExcelKey(10L, "reports/excel/10.xlsx"))
+                .doesNotThrowAnyException();
     }
 }

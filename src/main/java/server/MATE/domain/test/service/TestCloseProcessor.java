@@ -14,20 +14,37 @@ import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class TestCloseProcessor {
 
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+    // 예약 작업이 마감 시각보다 ms 단위로 일찍 실행돼도 정상 마감되도록 두는 여유
+    private static final Duration EARLY_FIRE_TOLERANCE = Duration.ofMinutes(1);
+
     private final TestRepository testRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final RefundPolicy refundPolicy;
     private final RefundService refundService;
+    private final Clock clock;
 
     @Transactional
     public void process(Long testId) {
         Test test = testRepository.findByIdForUpdate(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        // 재개 전에 걸어둔 옛 예약이 새 마감보다 먼저 닫는 것 방지
+        LocalDateTime now = LocalDateTime.now(clock.withZone(KST));
+        if (now.plus(EARLY_FIRE_TOLERANCE).isBefore(test.getClosedAt())) {
+            log.info("테스트 {} 마감 전 예약 실행 스킵 - closedAt={}, now={}", testId, test.getClosedAt(), now);
+            return;
+        }
         processClose(test);
     }
 

@@ -32,11 +32,13 @@ import server.MATE.global.common.exception.GlobalExceptionHandler;
 import server.MATE.global.discord.channel.ErrorAlertChannel;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -153,6 +155,44 @@ class AdminTestControllerTest {
                 .andExpect(jsonPath("$.data.testStatus").value("REJECTED"));
 
         verify(adminTestService).reject(10L, null);
+    }
+
+    @Test
+    @DisplayName("재개: closedAt과 함께 reopen 엔드포인트를 호출한다")
+    void reopen_callsServiceWithClosedAt() throws Exception {
+        LocalDate closedAt = LocalDate.of(2026, 10, 20);
+        given(adminTestService.reopen(10L, closedAt))
+                .willReturn(new AdminTestStatusResponse(10L, TestStatus.IN_PROGRESS));
+
+        mockMvc.perform(patch("/api/v1/admin/tests/10/reopen")
+                        .contentType("application/json")
+                        .content("{\"closedAt\":\"2026-10-20\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.testStatus").value("IN_PROGRESS"));
+
+        verify(adminTestService).reopen(10L, closedAt);
+    }
+
+    @Test
+    @DisplayName("재개: closedAt 없이 호출하면 400을 반환한다")
+    void reopen_withoutClosedAt_returns400() throws Exception {
+        mockMvc.perform(patch("/api/v1/admin/tests/10/reopen")
+                        .contentType("application/json")
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(adminTestService);
+    }
+
+    @Test
+    @DisplayName("재개: closedAt에 날짜+시간을 보내면 400을 반환한다")
+    void reopen_withDateTime_returns400() throws Exception {
+        mockMvc.perform(patch("/api/v1/admin/tests/10/reopen")
+                        .contentType("application/json")
+                        .content("{\"closedAt\":\"2026-10-20T23:59:59\"}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(adminTestService);
     }
 
     @Test
