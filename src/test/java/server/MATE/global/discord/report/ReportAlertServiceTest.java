@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -82,6 +83,29 @@ class ReportAlertServiceTest {
         verify(errorAlertChannel).notifyBackground(any(DiscordEmbed.class));
         verify(botRestClient).startThread("777", "555", ReportAlertMessageFormatter.THREAD_NAME);
         verify(botRestClient).createMessage(eq("555"), argThat(body -> body.containsKey("embeds") && !body.containsKey("components")));
+        ArgumentCaptor<DiscordMessage> saved = ArgumentCaptor.forClass(DiscordMessage.class);
+        verify(discordMessageRepository).save(saved.capture());
+        assertThat(saved.getValue().getMessageId()).isEqualTo("555");
+
+        InOrder inOrder = inOrder(botRestClient, discordMessageRepository);
+        inOrder.verify(botRestClient).createMessage(eq("777"), anyMap());
+        inOrder.verify(discordMessageRepository).save(any());
+        inOrder.verify(botRestClient).startThread(eq("777"), eq("555"), any());
+    }
+
+    @Test
+    @DisplayName("첫 실패: 스레드 생성이 실패해도 위치는 저장됨")
+    void notifyAggregationFailed_threadFailure_stillSavesMessage() {
+        given(testRepository.findById(TEST_ID)).willReturn(Optional.of(test));
+        given(botRestClient.isConfigured()).willReturn(true);
+        given(discordMessageRepository.findByTypeAndTargetId(DiscordMessageType.REPORT_AGGREGATION_FAILED, TEST_ID))
+                .willReturn(Optional.empty());
+        given(botRestClient.createMessage(eq("777"), anyMap())).willReturn("555");
+        doThrow(new IllegalStateException("403")).when(botRestClient).startThread(any(), any(), any());
+
+        assertThatCode(() -> service("prod", "777").notifyAggregationFailed(failed())).doesNotThrowAnyException();
+
+        verify(errorAlertChannel).notifyBackground(any(DiscordEmbed.class));
         ArgumentCaptor<DiscordMessage> saved = ArgumentCaptor.forClass(DiscordMessage.class);
         verify(discordMessageRepository).save(saved.capture());
         assertThat(saved.getValue().getMessageId()).isEqualTo("555");

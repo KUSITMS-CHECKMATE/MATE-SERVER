@@ -74,8 +74,9 @@ public class ReportAlertService {
                 botRestClient.editMessage(existing.get().getChannelId(), messageId, body);
             } else {
                 messageId = botRestClient.createMessage(channelId, body);
-                botRestClient.startThread(channelId, messageId, ReportAlertMessageFormatter.THREAD_NAME);
+                // 스레드 생성이 실패해도 상태 카드는 추적되도록 위치를 먼저 저장함
                 discordMessageRepository.save(DiscordMessage.create(TYPE, event.testId(), channelId, messageId));
+                botRestClient.startThread(channelId, messageId, ReportAlertMessageFormatter.THREAD_NAME);
             }
             // 메시지에서 만든 스레드 ID는 메시지 ID와 같음
             botRestClient.createMessage(messageId, ReportAlertMessageFormatter.threadEmbedBody(errorEmbed));
