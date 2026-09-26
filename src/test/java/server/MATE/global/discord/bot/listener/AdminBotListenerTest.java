@@ -2,12 +2,15 @@ package server.MATE.global.discord.bot.listener;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,12 +22,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.requests.restaction.interactions.MessageEditCallbackAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
+import server.MATE.domain.test.dto.response.AdminTestListResponse;
 import server.MATE.domain.test.dto.response.AdminTestProgressResponse;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.service.AdminTestService;
 import server.MATE.global.discord.bot.command.AdminTestCommands;
+import server.MATE.global.discord.bot.interaction.AdminBotCustomIds;
 import server.MATE.global.discord.bot.message.AdminBotMessageFormatter;
 import server.MATE.global.discord.bot.message.TeamHeartResolver;
 import server.MATE.global.discord.config.DiscordProperties;
@@ -124,5 +131,44 @@ class AdminBotListenerTest {
 
         verify(adminTestService).getProgress(12L);
         verify(replyCallbackAction).queue();
+    }
+
+    @Test
+    @DisplayName("/tests list: 1페이지를 목록 크기 5로 조회")
+    void onSlashCommandInteraction_list_firstPageWithFixedSize() {
+        when(event.getName()).thenReturn(AdminTestCommands.ROOT);
+        when(event.getChannel()).thenReturn(channel);
+        when(channel.getId()).thenReturn("123");
+        when(event.getSubcommandName()).thenReturn(AdminTestCommands.SUB_LIST);
+        when(event.getOption(AdminTestCommands.OPTION_STATUS)).thenReturn(null);
+        when(adminTestService.listTests(null, 1, 5))
+                .thenReturn(new AdminTestListResponse(1, 5, 0, List.of()));
+        when(event.reply(AdminBotMessageFormatter.HEADER_LIST)).thenReturn(replyCallbackAction);
+        when(replyCallbackAction.addEmbeds(any(MessageEmbed.class))).thenReturn(replyCallbackAction);
+        when(replyCallbackAction.addComponents(anyCollection())).thenReturn(replyCallbackAction);
+
+        listener.onSlashCommandInteraction(event);
+
+        verify(adminTestService).listTests(null, 1, 5);
+        verify(replyCallbackAction).queue();
+    }
+
+    @Test
+    @DisplayName("목록 이동 버튼: 명령 목록과 같은 크기 5로 대상 페이지 조회")
+    void onButtonInteraction_listPage_usesSameFixedSize() {
+        ButtonInteractionEvent buttonEvent = mock(ButtonInteractionEvent.class);
+        MessageEditCallbackAction editAction = mock(MessageEditCallbackAction.class);
+        when(buttonEvent.getComponentId()).thenReturn(AdminBotCustomIds.list(TestStatus.REJECTED, 2));
+        when(buttonEvent.getChannel()).thenReturn(channel);
+        when(channel.getId()).thenReturn("123");
+        when(adminTestService.listTests(TestStatus.REJECTED, 2, 5))
+                .thenReturn(new AdminTestListResponse(2, 5, 10, List.of()));
+        when(buttonEvent.editMessageEmbeds(any(MessageEmbed.class))).thenReturn(editAction);
+        when(editAction.setComponents(anyCollection())).thenReturn(editAction);
+
+        listener.onButtonInteraction(buttonEvent);
+
+        verify(adminTestService).listTests(TestStatus.REJECTED, 2, 5);
+        verify(editAction).queue();
     }
 }
