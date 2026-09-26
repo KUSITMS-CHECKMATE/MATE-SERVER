@@ -24,6 +24,7 @@ import net.dv8tion.jda.api.modals.Modal;
 import net.dv8tion.jda.api.utils.FileUpload;
 import server.MATE.domain.test.dto.response.AdminTestDetailResponse;
 import server.MATE.domain.test.dto.response.AdminTestListResponse;
+import server.MATE.domain.test.dto.response.AdminTestProgressResponse;
 import server.MATE.domain.test.dto.response.AdminTestStatusResponse;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.service.AdminTestService;
@@ -77,6 +78,7 @@ public class AdminBotListener extends ListenerAdapter {
             case AdminTestCommands.SUB_DETAIL -> handleDetail(event);
             case AdminTestCommands.SUB_APPROVE -> handleApproveCommand(event);
             case AdminTestCommands.SUB_REJECT -> handleRejectCommand(event);
+            case AdminTestCommands.SUB_PROGRESS -> handleProgress(event);
             default -> event.reply("알 수 없는 명령어입니다.").setEphemeral(true).queue();
         }
     }
@@ -102,6 +104,15 @@ public class AdminBotListener extends ListenerAdapter {
                 .addEmbeds(AdminBotMessageFormatter.detailEmbed(detail))
                 .addComponents(AdminBotMessageFormatter.actionButtons(testId, detail.testStatus()))
                 .queue(hook -> hook.retrieveOriginal().queue(msg -> attachImageThread(msg, detail)));
+    }
+
+    private void handleProgress(SlashCommandInteractionEvent event) {
+        long testId = event.getOption(AdminTestCommands.OPTION_TEST_ID).getAsLong();
+        AdminTestProgressResponse progress = adminTestService.getProgress(testId);
+
+        event.reply(AdminBotMessageFormatter.HEADER_PROGRESS)
+                .addEmbeds(AdminBotMessageFormatter.progressEmbed(progress))
+                .queue();
     }
 
     private void handleApproveCommand(SlashCommandInteractionEvent event) {

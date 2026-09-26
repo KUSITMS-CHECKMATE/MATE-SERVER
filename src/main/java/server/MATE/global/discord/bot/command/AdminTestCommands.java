@@ -15,6 +15,7 @@ public final class AdminTestCommands {
     public static final String SUB_DETAIL = "detail";
     public static final String SUB_APPROVE = "approve";
     public static final String SUB_REJECT = "reject";
+    public static final String SUB_PROGRESS = "progress";
 
     public static final String OPTION_STATUS = "status";
     public static final String OPTION_PAGE = "page";
@@ -45,7 +46,9 @@ public final class AdminTestCommands {
                                         .addOption(OptionType.INTEGER, OPTION_TEST_ID, "테스트 ID", true),
                                 new SubcommandData(SUB_REJECT, "테스트 반려")
                                         .addOption(OptionType.INTEGER, OPTION_TEST_ID, "테스트 ID", true)
-                                        .addOption(OptionType.STRING, OPTION_REASON, "반려 사유", false)
+                                        .addOption(OptionType.STRING, OPTION_REASON, "반려 사유", false),
+                                new SubcommandData(SUB_PROGRESS, "테스트 참여 현황 조회")
+                                        .addOption(OptionType.INTEGER, OPTION_TEST_ID, "테스트 ID", true)
                         )
         );
     }
