@@ -83,6 +83,9 @@ public class Test extends BaseEntity {
     @Column
     private String excelKey;
 
+    @Column
+    private LocalDateTime reopenedAt;
+
     @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
     @BatchSize(size = 100)
     private List<TestCategory> categories = new ArrayList<>();
@@ -169,6 +172,17 @@ public class Test extends BaseEntity {
     public void reject(String reason) {
         this.testStatus = TestStatus.REJECTED;
         this.rejectionReason = normalizeRejectionReason(reason);
+    }
+
+    // 완료 테스트 재개용. 환불 포기 의사(refundWaived)는 재개로 취소되지 않아 유지함
+    public void reopen(LocalDateTime closedAt, LocalDateTime reopenedAt) {
+        this.testStatus = TestStatus.IN_PROGRESS;
+        this.closedAt = closedAt;
+        this.reportStatus = ReportStatus.PENDING;
+        this.pdfKey = null;
+        this.excelKey = null;
+        this.closedByMaker = false;
+        this.reopenedAt = reopenedAt;
     }
 
     private static String normalizeRejectionReason(String reason) {
