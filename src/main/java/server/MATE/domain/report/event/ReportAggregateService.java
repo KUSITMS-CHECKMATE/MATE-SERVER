@@ -67,6 +67,11 @@ public class ReportAggregateService {
         Test test = testRepository.findActiveById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
+        // 재개 전에 만든 리포트가 남아 있으면 새 응답 기준 재집계
+        if (hasReportsBeforeReopen(test)) {
+            return regenerate(testId);
+        }
+
         long questionCount = questionRepository.countQuestionsInTest(testId);
         long reportCount = reportRepository.countByTestId(testId);
 
@@ -88,9 +93,35 @@ public class ReportAggregateService {
 
         long startedAt = System.currentTimeMillis();
         List<Question> questions = questionRepository.findQuestionsInTest(testId);
-        Map<Long, Map<String, Object>> resultByQuestionId = computeResultByQuestionId(questions, true);
+        List<Report> saved = reportRepository.saveAll(buildReports(testId, questions));
+        log.info("테스트 {} 리포트 집계 완료: 문항 {}개, 소요시간 {}ms",
+                testId, questions.size(), System.currentTimeMillis() - startedAt);
+        markCompletedAndNotify(testId);
+        return saved;
+    }
 
-        List<Report> reports = questions.stream()
+    private boolean hasReportsBeforeReopen(Test test) {
+        return test.getReopenedAt() != null
+                && reportRepository.existsByTestIdAndCreatedAtBefore(test.getId(), test.getReopenedAt());
+    }
+
+    // aggregate의 REQUIRES_NEW 트랜잭션 안에서만 호출. 저장 실패 시 삭제까지 롤백되어 옛 리포트 보존
+    private List<Report> regenerate(Long testId) {
+        long startedAt = System.currentTimeMillis();
+        List<Question> questions = questionRepository.findQuestionsInTest(testId);
+        // 계산 실패 시 옛 리포트 보존을 위해 계산 완료 후 삭제함
+        List<Report> reports = buildReports(testId, questions);
+        int deletedCount = reportRepository.deleteAllByTestId(testId);
+        List<Report> saved = reportRepository.saveAll(reports);
+        log.info("테스트 {} 재개 후 리포트 재집계 완료: 기존 {}개 교체, 문항 {}개, 소요시간 {}ms",
+                testId, deletedCount, questions.size(), System.currentTimeMillis() - startedAt);
+        markCompletedAndNotify(testId);
+        return saved;
+    }
+
+    private List<Report> buildReports(Long testId, List<Question> questions) {
+        Map<Long, Map<String, Object>> resultByQuestionId = computeResultByQuestionId(questions, true);
+        return questions.stream()
                 .map(q -> Report.builder()
                         .testId(testId)
                         .questionId(q.getId())
@@ -98,12 +129,6 @@ public class ReportAggregateService {
                         .result(resultByQuestionId.get(q.getId()))
                         .build())
                 .toList();
-
-        List<Report> saved = reportRepository.saveAll(reports);
-        log.info("테스트 {} 리포트 집계 완료: 문항 {}개, 소요시간 {}ms",
-                testId, questions.size(), System.currentTimeMillis() - startedAt);
-        markCompletedAndNotify(testId);
-        return saved;
     }
 
     /**

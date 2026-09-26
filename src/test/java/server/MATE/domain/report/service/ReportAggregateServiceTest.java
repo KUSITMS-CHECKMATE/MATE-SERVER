@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,8 +29,12 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -254,6 +259,102 @@ class ReportAggregateServiceTest {
 
         assertThat(recovered).isEmpty();
         assertThat(test.getReportStatus()).isEqualTo(ReportStatus.FAILED);
+    }
+
+    @Test
+    @DisplayName("재개 전에 만든 리포트가 있으면 새로 계산한 뒤 옛 리포트를 지우고 교체한다")
+    void aggregate_whenReportsBeforeReopen_regeneratesAfterComputing() {
+        LocalDateTime reopenedAt = LocalDateTime.of(2026, 9, 27, 1, 0);
+        ReflectionTestUtils.setField(test, "reopenedAt", reopenedAt);
+        test.startReportAggregation();
+        Question question = subjectiveQuestion(101L);
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(reportRepository.existsByTestIdAndCreatedAtBefore(TEST_ID, reopenedAt)).willReturn(true);
+        given(questionRepository.findQuestionsInTest(TEST_ID)).willReturn(List.of(question));
+        given(answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(List.of(101L))).willReturn(List.of());
+        given(reportHandler.compute(List.of(question), Map.of(), true))
+                .willReturn(Map.of(101L, Map.of("texts", List.of("새 응답"))));
+        given(reportRepository.saveAll(any())).willAnswer(invocation -> invocation.getArgument(0));
+
+        List<Report> result = reportAggregateService.aggregate(TEST_ID);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().getResult()).isEqualTo(Map.of("texts", List.of("새 응답")));
+        InOrder inOrder = inOrder(reportHandler, reportRepository);
+        inOrder.verify(reportHandler).compute(List.of(question), Map.of(), true);
+        inOrder.verify(reportRepository).deleteAllByTestId(TEST_ID);
+        inOrder.verify(reportRepository).saveAll(any());
+        assertThat(test.getReportStatus()).isEqualTo(ReportStatus.COMPLETED);
+        verify(eventPublisher).publishEvent(new ReportCompletedEvent(TEST_ID, test.getMakerId(), test.getTitle()));
+        verify(reportRepository, never()).countByTestId(TEST_ID);
+    }
+
+    @Test
+    @DisplayName("재개 뒤에 만든 리포트만 있으면 재집계하지 않고 기존 완료 분기를 따른다")
+    void aggregate_whenReportsCreatedAfterReopen_skipsRegeneration() {
+        LocalDateTime reopenedAt = LocalDateTime.of(2026, 9, 27, 1, 0);
+        ReflectionTestUtils.setField(test, "reopenedAt", reopenedAt);
+        test.completeReportAggregation();
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(reportRepository.existsByTestIdAndCreatedAtBefore(TEST_ID, reopenedAt)).willReturn(false);
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(2L);
+        given(reportRepository.countByTestId(TEST_ID)).willReturn(2L);
+        given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report(101L), report(102L)));
+
+        List<Report> result = reportAggregateService.aggregate(TEST_ID);
+
+        assertThat(result).hasSize(2);
+        verify(reportRepository, never()).deleteAllByTestId(any());
+        verify(reportHandler, never()).compute(any(), any(), anyBoolean());
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    @DisplayName("재집계 계산이 실패하면 옛 리포트를 지우지 않는다")
+    void aggregate_whenRegenerationComputeFails_keepsOldReports() {
+        LocalDateTime reopenedAt = LocalDateTime.of(2026, 9, 27, 1, 0);
+        ReflectionTestUtils.setField(test, "reopenedAt", reopenedAt);
+        Question question = subjectiveQuestion(101L);
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(reportRepository.existsByTestIdAndCreatedAtBefore(TEST_ID, reopenedAt)).willReturn(true);
+        given(questionRepository.findQuestionsInTest(TEST_ID)).willReturn(List.of(question));
+        given(answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(List.of(101L))).willReturn(List.of());
+        given(reportHandler.compute(List.of(question), Map.of(), true))
+                .willThrow(new IllegalStateException("AI 호출 실패"));
+
+        assertThatThrownBy(() -> reportAggregateService.aggregate(TEST_ID))
+                .isInstanceOf(IllegalStateException.class);
+
+        verify(reportRepository, never()).deleteAllByTestId(any());
+        verify(reportRepository, never()).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("재개한 적 없는 테스트는 옛 리포트 여부를 조회하지 않는다")
+    void aggregate_whenNeverReopened_doesNotCheckReportsBeforeReopen() {
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(0L);
+        given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
+        given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of());
+
+        reportAggregateService.aggregate(TEST_ID);
+
+        verify(reportRepository, never()).existsByTestIdAndCreatedAtBefore(any(), any());
+    }
+
+    private Question subjectiveQuestion(Long id) {
+        Question question = Question.builder()
+                .testId(TEST_ID)
+                .questionType(QuestionType.SUBJECTIVE)
+                .title("주관식 질문")
+                .description("설명")
+                .sequence(1L)
+                .build();
+        ReflectionTestUtils.setField(question, "id", id);
+        return question;
     }
 
     private Report report(Long questionId) {
