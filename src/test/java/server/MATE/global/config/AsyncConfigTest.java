@@ -25,6 +25,18 @@ class AsyncConfigTest {
         }
     }
 
+    @Test
+    @DisplayName("리포트 집계 풀: 일꾼 2, 대기 100, 넘치면 호출 스레드 실행, 종료 시 25초 대기")
+    void reportAggregateExecutor_settings() {
+        ThreadPoolTaskExecutor executor = asyncConfig.reportAggregateExecutor();
+        executor.initialize();
+        try {
+            assertPool(executor, 2, 100, "report-aggregate-");
+        } finally {
+            executor.shutdown();
+        }
+    }
+
     static void assertPool(ThreadPoolTaskExecutor executor, int poolSize, int queueCapacity, String prefix) {
         assertThat(executor.getCorePoolSize()).isEqualTo(poolSize);
         assertThat(executor.getMaxPoolSize()).isEqualTo(poolSize);

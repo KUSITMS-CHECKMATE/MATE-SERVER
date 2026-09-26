@@ -22,6 +22,12 @@ public class AsyncConfig implements AsyncConfigurer {
         return createExecutor(3, 500, "async-");
     }
 
+    // 리포트 집계 전용(AI 분석 대기로 수 분 소요, 알림·리워드 지연 방지)
+    @Bean
+    public ThreadPoolTaskExecutor reportAggregateExecutor() {
+        return createExecutor(2, 100, "report-aggregate-");
+    }
+
     // @Async 기본 실행기 명시, 실행기 빈 증가 시 상한 없는 기본 실행기 폴백 방지
     @Override
     public Executor getAsyncExecutor() {
