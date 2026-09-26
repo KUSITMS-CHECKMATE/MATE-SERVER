@@ -26,7 +26,8 @@ import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.report.entity.Report;
 import server.MATE.domain.report.repository.ReportRepository;
-import server.MATE.domain.report.service.ReportHandler;
+import server.MATE.domain.report.service.handler.AiFailureCollector;
+import server.MATE.domain.report.service.handler.ReportHandler;
 import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.repository.TestRepository;
@@ -67,6 +68,11 @@ public class ReportAggregateService {
         Test test = testRepository.findActiveById(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
 
+        // 재개 전에 만든 리포트가 남아 있으면 새 응답 기준 재집계
+        if (hasReportsBeforeReopen(test)) {
+            return regenerate(testId);
+        }
+
         long questionCount = questionRepository.countQuestionsInTest(testId);
         long reportCount = reportRepository.countByTestId(testId);
 
@@ -83,14 +89,45 @@ public class ReportAggregateService {
                     testId, questionCount, reportCount);
             test.failReportAggregation();
             testRepository.save(test);
+            eventPublisher.publishEvent(ReportAggregationFailedEvent.mismatch(testId, questionCount, reportCount));
             return List.of();
         }
 
         long startedAt = System.currentTimeMillis();
         List<Question> questions = questionRepository.findQuestionsInTest(testId);
-        Map<Long, Map<String, Object>> resultByQuestionId = computeResultByQuestionId(questions, true);
+        AiFailureCollector aiFailureCollector = new AiFailureCollector();
+        List<Report> saved = reportRepository.saveAll(buildReports(testId, questions, aiFailureCollector));
+        log.info("테스트 {} 리포트 집계 완료: 문항 {}개, 소요시간 {}ms",
+                testId, questions.size(), System.currentTimeMillis() - startedAt);
+        publishAiDegradedIfNeeded(testId, aiFailureCollector);
+        markCompletedAndNotify(testId);
+        return saved;
+    }
 
-        List<Report> reports = questions.stream()
+    private boolean hasReportsBeforeReopen(Test test) {
+        return test.getReopenedAt() != null
+                && reportRepository.existsByTestIdAndCreatedAtBefore(test.getId(), test.getReopenedAt());
+    }
+
+    // aggregate의 REQUIRES_NEW 트랜잭션 안에서만 호출. 저장 실패 시 삭제까지 롤백되어 옛 리포트 보존
+    private List<Report> regenerate(Long testId) {
+        long startedAt = System.currentTimeMillis();
+        List<Question> questions = questionRepository.findQuestionsInTest(testId);
+        AiFailureCollector aiFailureCollector = new AiFailureCollector();
+        // 계산 실패 시 옛 리포트 보존을 위해 계산 완료 후 삭제함
+        List<Report> reports = buildReports(testId, questions, aiFailureCollector);
+        int deletedCount = reportRepository.deleteAllByTestId(testId);
+        List<Report> saved = reportRepository.saveAll(reports);
+        log.info("테스트 {} 재개 후 리포트 재집계 완료: 기존 {}개 교체, 문항 {}개, 소요시간 {}ms",
+                testId, deletedCount, questions.size(), System.currentTimeMillis() - startedAt);
+        publishAiDegradedIfNeeded(testId, aiFailureCollector);
+        markCompletedAndNotify(testId);
+        return saved;
+    }
+
+    private List<Report> buildReports(Long testId, List<Question> questions, AiFailureCollector aiFailureCollector) {
+        Map<Long, Map<String, Object>> resultByQuestionId = computeResultByQuestionId(questions, true, aiFailureCollector);
+        return questions.stream()
                 .map(q -> Report.builder()
                         .testId(testId)
                         .questionId(q.getId())
@@ -98,12 +135,6 @@ public class ReportAggregateService {
                         .result(resultByQuestionId.get(q.getId()))
                         .build())
                 .toList();
-
-        List<Report> saved = reportRepository.saveAll(reports);
-        log.info("테스트 {} 리포트 집계 완료: 문항 {}개, 소요시간 {}ms",
-                testId, questions.size(), System.currentTimeMillis() - startedAt);
-        markCompletedAndNotify(testId);
-        return saved;
     }
 
     /**
@@ -113,10 +144,10 @@ public class ReportAggregateService {
     @Transactional(readOnly = true)
     public Map<Long, Map<String, Object>> computeLive(Long testId) {
         List<Question> questions = questionRepository.findQuestionsInTest(testId);
-        return computeResultByQuestionId(questions, false);
+        return computeResultByQuestionId(questions, false, new AiFailureCollector());
     }
 
-    private Map<Long, Map<String, Object>> computeResultByQuestionId(List<Question> questions, boolean includeAiAnalysis) {
+    private Map<Long, Map<String, Object>> computeResultByQuestionId(List<Question> questions, boolean includeAiAnalysis, AiFailureCollector aiFailureCollector) {
         List<Long> questionIds = questions.stream().map(Question::getId).toList();
         List<Answer> allAnswers = answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(questionIds);
 
@@ -135,7 +166,7 @@ public class ReportAggregateService {
         for (Map.Entry<QuestionType, List<Question>> entry : questionsByType.entrySet()) {
             ReportHandler handler = handlerMap.get(entry.getKey());
             if (handler == null) throw new BaseException(BaseErrorCode.COMMON_002);
-            resultByQuestionId.putAll(handler.compute(entry.getValue(), answersByQuestionId, includeAiAnalysis));
+            resultByQuestionId.putAll(handler.compute(entry.getValue(), answersByQuestionId, includeAiAnalysis, aiFailureCollector));
         }
         return resultByQuestionId;
     }
@@ -143,6 +174,15 @@ public class ReportAggregateService {
     @Recover
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<Report> recover(Exception e, Long testId) {
+        Optional<Test> activeTest = testRepository.findActiveById(testId);
+        // 재개 전 리포트만 남은 경우 새 응답이 빠진 옛 결과라 완료 확정 대신 실패 처리함
+        if (activeTest.isPresent() && hasReportsBeforeReopen(activeTest.get())) {
+            log.error("테스트 {} 재개 후 재집계 3회 실패, 재개 전 리포트만 남아 완료 확정 대신 실패 처리합니다", testId, e);
+            failAndNotify(testId, id -> activeTest,
+                    ReportAggregationFailedEvent.of(testId, ReportAggregationFailedEvent.STALE_AFTER_REOPEN, e));
+            return List.of();
+        }
+
         long questionCount = questionRepository.countQuestionsInTest(testId);
         long reportCount = reportRepository.countByTestId(testId);
 
@@ -155,12 +195,16 @@ public class ReportAggregateService {
 
             log.error("테스트 {} recover 중 리포트 완전성 불일치 감지: questionCount={}, reportCount={}",
                     testId, questionCount, reportCount, e);
-            updateReportStatus(testId, testRepository::findActiveById, Test::failReportAggregation);
+            failAndNotify(testId, testRepository::findActiveById,
+                    ReportAggregationFailedEvent.mismatch(testId, questionCount, reportCount, e));
             return List.of();
         }
 
         log.error("테스트 {} 집계 3회 실패", testId, e);
-        updateReportStatus(testId, testRepository::findActiveById, Test::failReportAggregation);
+        String cause = e instanceof BaseException
+                ? ReportAggregationFailedEvent.NON_RETRYABLE
+                : ReportAggregationFailedEvent.RETRY_EXHAUSTED;
+        failAndNotify(testId, testRepository::findActiveById, ReportAggregationFailedEvent.of(testId, cause, e));
         return List.of();
     }
 
@@ -172,6 +216,21 @@ public class ReportAggregateService {
                 },
                 () -> log.warn("테스트 {} 상태 업데이트 대상을 찾을 수 없습니다. 삭제되었을 수 있습니다.", testId)
         );
+    }
+
+    // FAILED 저장과 같은 트랜잭션에서 이벤트 발행. 커밋 뒤 알림 리스너가 받음
+    private void failAndNotify(Long testId, Function<Long, Optional<Test>> fetcher, ReportAggregationFailedEvent event) {
+        updateReportStatus(testId, fetcher, test -> {
+            test.failReportAggregation();
+            eventPublisher.publishEvent(event);
+        });
+    }
+
+    private void publishAiDegradedIfNeeded(Long testId, AiFailureCollector aiFailureCollector) {
+        if (aiFailureCollector.hasFailures()) {
+            eventPublisher.publishEvent(new ReportAiDegradedEvent(
+                    testId, aiFailureCollector.attemptCount(), aiFailureCollector.failures()));
+        }
     }
 
     // 완료 확정 직전에만 짧게 락을 잡아 aggregate()/recover()의 동시 실행을 직렬화한다.

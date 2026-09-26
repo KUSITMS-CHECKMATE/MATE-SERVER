@@ -46,6 +46,10 @@ public enum BaseErrorCode implements ErrorCode {
     TEST_008(HttpStatus.BAD_REQUEST, "TEST_008", "테스트 마감 기한은 필수입니다."),
     TEST_009(HttpStatus.BAD_REQUEST, "TEST_009", "하드 삭제 검증 키가 필요합니다."),
     TEST_010(HttpStatus.FORBIDDEN, "TEST_010", "하드 삭제 검증 키가 올바르지 않습니다."),
+    TEST_011(HttpStatus.BAD_REQUEST, "TEST_011", "재개 마감 기한은 오늘 이후 날짜여야 합니다."),
+    TEST_012(HttpStatus.BAD_REQUEST, "TEST_012", "목표 인원을 달성한 테스트는 재개할 수 없습니다."),
+    TEST_013(HttpStatus.BAD_REQUEST, "TEST_013", "리포트 집계 중인 테스트는 재개할 수 없습니다. 잠시 후 다시 시도해주세요."),
+    TEST_014(HttpStatus.BAD_REQUEST, "TEST_014", "환불이 요청되었거나 완료된 테스트는 재개할 수 없습니다."),
 
     // Test Draft
     DRAFT_001(HttpStatus.NOT_FOUND, "DRAFT_001", "테스트 초안을 찾을 수 없습니다."),
@@ -110,6 +114,7 @@ public enum BaseErrorCode implements ErrorCode {
     REPORT_010(HttpStatus.BAD_REQUEST, "REPORT_010", "질문별 리포트 집계 결과가 없습니다."),
     REPORT_011(HttpStatus.BAD_REQUEST, "REPORT_011", "리포트 집계 데이터 형식이 올바르지 않습니다."),
     REPORT_012(HttpStatus.INTERNAL_SERVER_ERROR, "REPORT_012", "PDF 보고서 생성에 실패했습니다."),
+    REPORT_013(HttpStatus.BAD_REQUEST, "REPORT_013", "재집계는 집계에 실패한 리포트만 가능합니다."),
 
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),

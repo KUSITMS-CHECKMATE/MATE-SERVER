@@ -2,8 +2,11 @@ package server.MATE.global.discord.bot.message;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -178,6 +181,20 @@ class AdminBotMessageFormatterTest {
                 .contains("💚 **이선호** 님이 승인")
                 .contains("`WAITING → IN_PROGRESS`")
                 .doesNotContain("사유:");
+    }
+
+    @Test
+    @DisplayName("processLog: 처리 시각은 실제 현재 시각")
+    void processLog_timestampIsNow() {
+        long before = Instant.now().getEpochSecond();
+
+        String log = AdminBotMessageFormatter.processLog(
+                "💚", "이선호", TestStatus.WAITING, TestStatus.IN_PROGRESS, null);
+
+        long after = Instant.now().getEpochSecond();
+        Matcher matcher = Pattern.compile("<t:(\\d+):f>").matcher(log);
+        assertThat(matcher.find()).isTrue();
+        assertThat(Long.parseLong(matcher.group(1))).isBetween(before, after);
     }
 
     @Test

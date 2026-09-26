@@ -83,6 +83,9 @@ public class Test extends BaseEntity {
     @Column
     private String excelKey;
 
+    @Column
+    private LocalDateTime reopenedAt;
+
     @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
     @BatchSize(size = 100)
     private List<TestCategory> categories = new ArrayList<>();
@@ -171,6 +174,17 @@ public class Test extends BaseEntity {
         this.rejectionReason = normalizeRejectionReason(reason);
     }
 
+    // 완료 테스트 재개용. 환불 포기 의사(refundWaived)는 재개로 취소되지 않아 유지함
+    public void reopen(LocalDateTime closedAt, LocalDateTime reopenedAt) {
+        this.testStatus = TestStatus.IN_PROGRESS;
+        this.closedAt = closedAt;
+        this.reportStatus = ReportStatus.PENDING;
+        this.pdfKey = null;
+        this.excelKey = null;
+        this.closedByMaker = false;
+        this.reopenedAt = reopenedAt;
+    }
+
     private static String normalizeRejectionReason(String reason) {
         if (reason == null) {
             return null;
@@ -189,6 +203,13 @@ public class Test extends BaseEntity {
 
     public void failReportAggregation() {
         this.reportStatus = ReportStatus.FAILED;
+    }
+
+    // 재집계용. 옛 파일 재사용 방지를 위해 키도 함께 초기화함
+    public void restartReportAggregation() {
+        this.pdfKey = null;
+        this.excelKey = null;
+        this.reportStatus = ReportStatus.IN_PROGRESS;
     }
 
     public void savePdfKey(String pdfKey) {
