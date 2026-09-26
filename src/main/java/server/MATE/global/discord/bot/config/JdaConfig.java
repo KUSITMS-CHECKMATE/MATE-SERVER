@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import server.MATE.global.discord.bot.command.AdminTestCommands;
 import server.MATE.global.discord.bot.listener.AdminBotListener;
+import server.MATE.global.discord.bot.listener.ReportBotListener;
 import server.MATE.global.discord.config.DiscordProperties;
 
 @Configuration
@@ -15,9 +16,9 @@ public class JdaConfig {
 
     @Bean
     @ConditionalOnProperty(prefix = "discord.bot", name = "enabled", havingValue = "true")
-    public JDA jda(DiscordProperties properties, AdminBotListener adminBotListener) {
+    public JDA jda(DiscordProperties properties, AdminBotListener adminBotListener, ReportBotListener reportBotListener) {
         JDA jda = JDABuilder.createLight(properties.bot().token())
-                .addEventListeners(adminBotListener)
+                .addEventListeners(adminBotListener, reportBotListener)
                 .build();
         jda.updateCommands().addCommands(AdminTestCommands.definitions()).queue();
         return jda;
