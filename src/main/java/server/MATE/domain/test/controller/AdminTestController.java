@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import server.MATE.domain.test.dto.request.RejectTestRequest;
+import server.MATE.domain.test.dto.request.ReopenTestRequest;
 import server.MATE.domain.test.dto.request.TestDeleteMode;
 import server.MATE.domain.test.dto.response.AdminTestDetailResponse;
 import server.MATE.domain.test.dto.response.AdminTestListResponse;
@@ -61,6 +62,24 @@ public class AdminTestController {
     ) {
         AdminTestStatusResponse data = adminTestService.reject(testId, request == null ? null : request.reason());
         return ResponseEntity.ok(ApiResponse.ok("테스트를 반려했습니다.", data));
+    }
+
+    @Operation(
+            summary = "🔒 테스트 재개",
+            description = """
+                    COMPLETED 테스트를 새 마감 기한으로 IN_PROGRESS로 되돌립니다. closedAt(KST)은 필수이며 현재 이후여야 합니다.
+                    - 거절: 목표 인원 달성(TEST_012), 리포트 집계 중(TEST_013), 환불 요청·완료(TEST_014)
+                    - 메이커 직접 종료 표시는 초기화하고, 환불 포기 표시는 유지합니다.
+                    - 다시 마감되면 리포트를 새 응답 기준으로 다시 만듭니다.
+                    """
+    )
+    @PatchMapping("/{testId}/reopen")
+    public ResponseEntity<ApiResponse<AdminTestStatusResponse>> reopen(
+            @PathVariable Long testId,
+            @RequestBody @Valid ReopenTestRequest request
+    ) {
+        AdminTestStatusResponse data = adminTestService.reopen(testId, request.closedAt());
+        return ResponseEntity.ok(ApiResponse.ok("테스트를 재개했습니다.", data));
     }
 
     @Operation(

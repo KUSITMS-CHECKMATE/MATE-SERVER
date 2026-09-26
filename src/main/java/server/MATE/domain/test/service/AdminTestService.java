@@ -6,10 +6,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import server.MATE.domain.payment.entity.PayStatus;
+import server.MATE.domain.payment.entity.Payment;
+import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.test.dto.response.AdminTestDetailResponse;
 import server.MATE.domain.test.dto.response.AdminTestListResponse;
 import server.MATE.domain.test.dto.response.AdminTestProgressResponse;
 import server.MATE.domain.test.dto.response.AdminTestStatusResponse;
+import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.event.TestApprovedEvent;
@@ -18,7 +22,10 @@ import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.storage.service.FileStorageService;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -26,10 +33,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminTestService {
 
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+
     private final TestRepository testRepository;
     private final FileStorageService fileStorageService;
     private final TestCloseScheduler testCloseScheduler;
     private final ApplicationEventPublisher eventPublisher;
+    private final PaymentRepository paymentRepository;
+    private final Clock clock;
 
     @Transactional(readOnly = true)
     public AdminTestListResponse listTests(TestStatus status, int page, int size) {
@@ -69,14 +80,7 @@ public class AdminTestService {
 
         test.approve();
 
-        Long approvedTestId = test.getId();
-        LocalDateTime closedAt = test.getClosedAt();
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                testCloseScheduler.schedule(approvedTestId, closedAt);
-            }
-        });
+        scheduleCloseAfterCommit(test.getId(), test.getClosedAt());
 
         eventPublisher.publishEvent(new TestApprovedEvent(test.getId(), test.getTitle()));
 
@@ -93,6 +97,48 @@ public class AdminTestService {
 
         test.reject(reason);
         return new AdminTestStatusResponse(testId, test.getTestStatus());
+    }
+
+    public AdminTestStatusResponse reopen(Long testId, LocalDateTime closedAt) {
+        Test test = testRepository.findByIdForUpdate(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+
+        if (test.getTestStatus() != TestStatus.COMPLETED) {
+            throw new BaseException(BaseErrorCode.TEST_007);
+        }
+        if (!closedAt.isAfter(LocalDateTime.now(clock.withZone(KST)))) {
+            throw new BaseException(BaseErrorCode.TEST_011);
+        }
+        if (test.getPplCount() >= test.getGoalPpl().longValue()) {
+            throw new BaseException(BaseErrorCode.TEST_012);
+        }
+        if (test.getReportStatus() == ReportStatus.IN_PROGRESS) {
+            throw new BaseException(BaseErrorCode.TEST_013);
+        }
+        if (isRefundStarted(testId)) {
+            throw new BaseException(BaseErrorCode.TEST_014);
+        }
+
+        // report.created_at(Auditing)과 같은 시계·정밀도로 기록해 재집계 판별 기준 일치용
+        test.reopen(closedAt, LocalDateTime.now(clock).truncatedTo(ChronoUnit.MICROS));
+        scheduleCloseAfterCommit(testId, closedAt);
+        return new AdminTestStatusResponse(testId, test.getTestStatus());
+    }
+
+    private boolean isRefundStarted(Long testId) {
+        return paymentRepository.findByTestId(testId)
+                .map(Payment::getPayStatus)
+                .filter(status -> status == PayStatus.REFUND_PENDING || status == PayStatus.REFUNDED)
+                .isPresent();
+    }
+
+    private void scheduleCloseAfterCommit(Long testId, LocalDateTime closedAt) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                testCloseScheduler.schedule(testId, closedAt);
+            }
+        });
     }
 
     private List<String> toImageUrls(List<String> keys) {
