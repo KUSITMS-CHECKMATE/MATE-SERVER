@@ -4,10 +4,15 @@
 --      (\i 경로가 상대경로이므로 반드시 저장소 루트에서 실행)
 -- 기대 출력(2026-09-27 실제 운영 스키마 덤프로 검증한 기준): 테이블 22개, 컬럼 55개 이동
 --      test.reopened_at 존재 시 컬럼 +1, discord_message 존재 시 테이블 +1·컬럼 +2
+-- 금지: psql -1(단일 트랜잭션 자동커밋)·GUI 툴(pgAdmin 등) 사용 금지
+--      -1이나 자동커밋 모드에서는 수동 COMMIT 전 결과 확인 단계가 사라짐
 -- 마무리: 출력 확인 후 COMMIT; 이상 시 ROLLBACK;
 --        (COMMIT 없이 psql 종료 시 전부 롤백)
 -- 성공 판정: COMMIT; 입력 후 psql 응답이 COMMIT이어야 함
 --          ROLLBACK으로 응답하면 이미 에러로 중단된 트랜잭션이라 아무것도 반영되지 않은 상태임
+-- 사전 점검 실패 안내:
+--   '다른 접속 존재' 에러: 앱 파드가 아직 붙어 있다는 뜻(파드 0개 재확인 후 재실행)
+--   '이미 KST 데이터로 보임' 에러: 대상 DB가 잘못됐거나 이미 이관된 상태(대상 DB 재확인)
 \set ON_ERROR_STOP on
 
 BEGIN;
@@ -44,10 +49,57 @@ DECLARE
     updated_rows bigint;
     total_tables integer := 0;
     total_columns integer := 0;
+    other_sessions text;
+    created_at_tables text[];
+    max_created_at timestamp;
+    utc_now timestamp;
 BEGIN
     -- 두 번 실행 방지(+18시간 방지)
     IF EXISTS (SELECT 1 FROM public.tz_migration_log WHERE name = migration_name) THEN
         RAISE EXCEPTION '이미 실행된 이관: %', migration_name;
+    END IF;
+
+    -- 다른 접속 세션 존재 시 중단(앱 파드 잔존 의심): HikariCP 등 잔존 연결이 있으면 이관 중 데이터 변경 경합 위험
+    SELECT string_agg(format('%s / %s / %s ×%s', usename, application_name, client_addr, cnt), ', ')
+      INTO other_sessions
+      FROM (
+            SELECT usename, application_name, client_addr, count(*) AS cnt
+              FROM pg_stat_activity
+             WHERE datname = current_database()
+               AND pid <> pg_backend_pid()
+               AND backend_type = 'client backend'
+             GROUP BY usename, application_name, client_addr
+           ) s;
+    IF other_sessions IS NOT NULL THEN
+        RAISE EXCEPTION '다른 접속 존재(앱 파드 잔존 의심): %', other_sessions;
+    END IF;
+
+    -- 이미 KST로 이관된 데이터로 보이면 중단(잘못된 대상 DB 실행 방지)
+    SELECT array_agg(DISTINCT c.relname)
+      INTO created_at_tables
+      FROM pg_catalog.pg_attribute a
+      JOIN pg_catalog.pg_class c ON c.oid = a.attrelid
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+     WHERE n.nspname = 'public'
+       AND c.relkind IN ('r', 'p')
+       AND a.attnum > 0
+       AND NOT a.attisdropped
+       AND c.relname <> 'tz_migration_log'
+       AND a.attname = 'created_at'
+       AND a.atttypid = 'timestamp'::regtype;
+
+    IF created_at_tables IS NOT NULL THEN
+        EXECUTE (
+            SELECT 'SELECT max(x) FROM (' ||
+                   string_agg(format('SELECT max(created_at) AS x FROM public.%I', t), ' UNION ALL ') ||
+                   ') s'
+              FROM unnest(created_at_tables) AS t
+        ) INTO max_created_at;
+    END IF;
+
+    utc_now := now() AT TIME ZONE 'UTC';
+    IF max_created_at IS NOT NULL AND max_created_at > utc_now + interval '10 minutes' THEN
+        RAISE EXCEPTION '최신 created_at(%)이 현재 UTC(%)보다 늦음 — 이미 KST 데이터로 보임', max_created_at, utc_now;
     END IF;
 
     -- 분류되지 않은 시각 컬럼 존재 시 중단(조용한 누락 방지)
