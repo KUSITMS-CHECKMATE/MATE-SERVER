@@ -9,7 +9,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.report.service.AiFailureCollector;
 import server.MATE.global.claude.AiAnalysisOutcome;
 import server.MATE.global.claude.AiAnalysisResult;
 import server.MATE.global.claude.SubjectiveAiService;

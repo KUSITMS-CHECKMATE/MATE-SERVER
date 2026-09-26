@@ -1,4 +1,4 @@
-package server.MATE.domain.report.service;
+package server.MATE.domain.report.service.handler;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

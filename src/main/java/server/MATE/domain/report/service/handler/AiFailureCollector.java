@@ -1,4 +1,4 @@
-package server.MATE.domain.report.service;
+package server.MATE.domain.report.service.handler;
 
 import server.MATE.global.claude.AiAnalysisOutcome;
 

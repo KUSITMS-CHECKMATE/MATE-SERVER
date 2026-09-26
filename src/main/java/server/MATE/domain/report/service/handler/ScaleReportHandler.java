@@ -7,7 +7,6 @@ import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.entity.Scale;
 import server.MATE.domain.question.repository.ScaleRepository;
-import server.MATE.domain.report.service.ReportHandler;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
