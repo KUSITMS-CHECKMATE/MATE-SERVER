@@ -43,6 +43,7 @@ public class AdminBotListener extends ListenerAdapter {
     static final String CHANNEL_RESTRICTION_MESSAGE = "이 명령어는 관리자 커맨드 채널에서만 사용할 수 있습니다.";
     static final String THREAD_IMAGES = "이미지 첨부";
     static final String THREAD_RECORD = "처리 기록";
+    private static final int LIST_PAGE_SIZE = 5; // 목록 명령·이동 버튼 공용 크기
     private static final int MAX_IMAGES = 10;
     private static final int THREAD_IMAGE_MIN = 2; // 2장 이상일 때만 스레드 생성
 
@@ -85,11 +86,9 @@ public class AdminBotListener extends ListenerAdapter {
 
     private void handleList(SlashCommandInteractionEvent event) {
         TestStatus status = resolveStatus(event.getOption(AdminTestCommands.OPTION_STATUS));
-        int page = resolveInt(event.getOption(AdminTestCommands.OPTION_PAGE), 1);
-        int size = resolveInt(event.getOption(AdminTestCommands.OPTION_SIZE), 5);
         TestStatus effective = status == null ? TestStatus.WAITING : status;
 
-        AdminTestListResponse response = adminTestService.listTests(status, page, size);
+        AdminTestListResponse response = adminTestService.listTests(status, 1, LIST_PAGE_SIZE);
         event.reply(AdminBotMessageFormatter.HEADER_LIST)
                 .addEmbeds(AdminBotMessageFormatter.listEmbed(effective, response))
                 .addComponents(AdminBotMessageFormatter.pageButtons(effective, response))
@@ -151,7 +150,7 @@ public class AdminBotListener extends ListenerAdapter {
     }
 
     private void handlePage(ButtonInteractionEvent event, TestStatus status, int targetPage) {
-        AdminTestListResponse response = adminTestService.listTests(status, targetPage, 5);
+        AdminTestListResponse response = adminTestService.listTests(status, targetPage, LIST_PAGE_SIZE);
         event.editMessageEmbeds(AdminBotMessageFormatter.listEmbed(status, response))
                 .setComponents(AdminBotMessageFormatter.pageButtons(status, response))
                 .queue();
@@ -271,10 +270,6 @@ public class AdminBotListener extends ListenerAdapter {
 
     private TestStatus resolveStatus(net.dv8tion.jda.api.interactions.commands.OptionMapping option) {
         return option == null ? null : TestStatus.valueOf(option.getAsString());
-    }
-
-    private int resolveInt(net.dv8tion.jda.api.interactions.commands.OptionMapping option, int defaultValue) {
-        return option == null ? defaultValue : option.getAsInt();
     }
 
     private String value(ModalInteractionEvent event, String id) {
