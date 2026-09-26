@@ -6,8 +6,6 @@ import org.springframework.stereotype.Component;
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
-import server.MATE.domain.report.service.AiFailureCollector;
-import server.MATE.domain.report.service.ReportHandler;
 import server.MATE.global.claude.AiAnalysisOutcome;
 import server.MATE.global.claude.SubjectiveAiService;
 

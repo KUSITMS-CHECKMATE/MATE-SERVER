@@ -19,7 +19,7 @@ import server.MATE.domain.report.entity.Report;
 import server.MATE.domain.report.event.ReportAggregateService;
 import server.MATE.domain.report.event.ReportCompletedEvent;
 import server.MATE.domain.report.repository.ReportRepository;
-import server.MATE.domain.report.service.ReportHandler;
+import server.MATE.domain.report.service.handler.ReportHandler;
 import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.repository.TestRepository;
 

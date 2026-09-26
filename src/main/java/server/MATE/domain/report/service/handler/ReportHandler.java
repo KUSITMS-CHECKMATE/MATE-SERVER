@@ -1,4 +1,4 @@
-package server.MATE.domain.report.service;
+package server.MATE.domain.report.service.handler;
 
 import server.MATE.domain.answer.entity.Answer;
 import server.MATE.domain.question.entity.Question;
