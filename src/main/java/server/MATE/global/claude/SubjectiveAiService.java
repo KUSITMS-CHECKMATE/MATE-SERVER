@@ -7,12 +7,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import server.MATE.global.common.util.ExceptionTexts;
 
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -47,13 +47,14 @@ public class SubjectiveAiService {
         return properties.minResponseThreshold();
     }
 
-    public Optional<AiAnalysisResult> analyze(List<String> texts) {
+    public AiAnalysisOutcome analyze(List<String> texts) {
         try {
             String rawJson = callClaude(texts);
-            return Optional.of(parseAndValidate(rawJson, texts));
+            return AiAnalysisOutcome.success(parseAndValidate(rawJson, texts));
         } catch (Exception e) {
-            log.warn("Claude AI 분석 실패, 폴백 처리: {}", e.getMessage());
-            return Optional.empty();
+            String reason = ExceptionTexts.describe(e);
+            log.warn("Claude AI 분석 실패, 폴백 처리: {}", reason);
+            return AiAnalysisOutcome.failure(reason);
         }
     }
 

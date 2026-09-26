@@ -27,6 +27,8 @@ import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.domain.users.entity.Role;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
+import server.MATE.global.discord.message.DiscordMessageRepository;
+import server.MATE.global.discord.message.DiscordMessageType;
 import server.MATE.global.security.config.AdminProperties;
 import server.MATE.global.storage.event.FileDeleteEvent;
 
@@ -89,6 +91,8 @@ class TestDeleteServiceTest {
     private AdminProperties adminProperties;
     @Mock
     private Clock clock;
+    @Mock
+    private DiscordMessageRepository discordMessageRepository;
 
     @InjectMocks
     private TestDeleteService testDeleteService;
@@ -129,6 +133,7 @@ class TestDeleteServiceTest {
         verify(questionRepository).softDeleteByTestId(eq(TEST_ID), any(LocalDateTime.class));
         verify(testCategoryRepository, never()).softDeleteAllByTestId(anyLong(), any(LocalDateTime.class));
         verify(testRepository).softDeleteById(eq(TEST_ID), any(LocalDateTime.class));
+        verifyNoInteractions(discordMessageRepository);
     }
 
     @Test
@@ -148,6 +153,7 @@ class TestDeleteServiceTest {
         verify(promotionRewardRepository).deleteAllByTestId(TEST_ID);
         verify(answerRepository).deleteAllByQuestionIds(List.of(101L));
         verify(reportRepository).deleteAllByTestId(TEST_ID);
+        verify(discordMessageRepository).deleteByTypeAndTargetId(DiscordMessageType.REPORT_AGGREGATION_FAILED, TEST_ID);
         verify(testLikeRepository).deleteAllByTestId(TEST_ID);
         verify(subjectiveRepository).deleteAllInBatch(anyList());
         verify(questionRepository).deleteAllInBatch(anyList());

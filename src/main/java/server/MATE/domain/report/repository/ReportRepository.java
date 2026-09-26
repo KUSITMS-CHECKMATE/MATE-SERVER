@@ -28,6 +28,9 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
             """)
     long countByTestId(@Param("testId") Long testId);
 
+    // 재개 전에 만든 옛 리포트 판별용. 소프트 삭제 행도 유니크 제약 대상이라 포함함
+    boolean existsByTestIdAndCreatedAtBefore(Long testId, LocalDateTime before);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
             update Report r

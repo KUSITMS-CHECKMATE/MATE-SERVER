@@ -3,15 +3,21 @@ package server.MATE.domain.test.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import server.MATE.domain.payment.entity.PayStatus;
+import server.MATE.domain.payment.entity.Payment;
+import server.MATE.domain.payment.repository.PaymentRepository;
 import server.MATE.domain.test.dto.response.AdminTestDetailResponse;
 import server.MATE.domain.test.dto.response.AdminTestListResponse;
 import server.MATE.domain.test.dto.response.AdminTestProgressResponse;
 import server.MATE.domain.test.dto.response.AdminTestStatusResponse;
+import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.event.TestApprovedEvent;
 import server.MATE.domain.test.repository.TestRepository;
@@ -19,7 +25,11 @@ import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.storage.service.FileStorageService;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,13 +57,22 @@ class AdminTestServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private PaymentRepository paymentRepository;
+
+    // KST 2026-09-27 10:00:00
+    private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-09-27T01:00:00Z"), ZoneId.of("UTC"));
+    private static final LocalDate NEW_CLOSED_DATE = LocalDate.of(2026, 10, 20);
+    private static final LocalDateTime NEW_CLOSED_AT = LocalDateTime.of(2026, 10, 20, 23, 59, 59);
+
     private AdminTestService adminTestService;
 
     private final Long TEST_ID = 10L;
 
     @BeforeEach
     void setUp() {
-        adminTestService = new AdminTestService(testRepository, fileStorageService, testCloseScheduler, eventPublisher);
+        adminTestService = new AdminTestService(
+                testRepository, fileStorageService, testCloseScheduler, eventPublisher, paymentRepository, CLOCK);
         lenient().when(fileStorageService.generateDownloadUrl(anyString())).thenReturn("https://example.com/url");
     }
 
@@ -256,5 +276,181 @@ class AdminTestServiceTest {
                 () -> adminTestService.reject(TEST_ID, null));
 
         assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.TEST_007);
+    }
+
+    @Test
+    void 완료_테스트를_재개하면_진행_중으로_돌아가고_커밋_후_마감을_예약한다() {
+        server.MATE.domain.test.entity.Test test = completedTest(5L);
+        test.markClosedByMaker();
+        test.waiveRefund();
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(paymentRepository.findByTestId(TEST_ID)).willReturn(Optional.empty());
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            AdminTestStatusResponse response = adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE);
+
+            assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+            assertThat(test.getClosedAt()).isEqualTo(NEW_CLOSED_AT);
+            assertThat(test.isClosedByMaker()).isFalse();
+            assertThat(test.isRefundWaived()).isTrue();
+            assertThat(test.getReopenedAt()).isEqualTo(LocalDateTime.of(2026, 9, 27, 1, 0));
+            TransactionSynchronizationManager.getSynchronizations().forEach(sync -> sync.afterCommit());
+            verify(testCloseScheduler).schedule(TEST_ID, NEW_CLOSED_AT);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    void 존재하지_않는_테스트_재개시_TEST_004() {
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.empty());
+
+        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE));
+
+        assertThat(e.getErrorCode()).isEqualTo(BaseErrorCode.TEST_004);
+    }
+
+    @Test
+    void 완료가_아닌_테스트_재개시_TEST_007() {
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(buildTest(TestStatus.IN_PROGRESS)));
+
+        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE));
+
+        assertThat(e.getErrorCode()).isEqualTo(BaseErrorCode.TEST_007);
+    }
+
+    @Test
+    void reopen_closedDateToday_throwsTest011() {
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(completedTest(5L)));
+
+        BaseException e = assertThrows(BaseException.class,
+                () -> adminTestService.reopen(TEST_ID, LocalDate.of(2026, 9, 27)));
+
+        assertThat(e.getErrorCode()).isEqualTo(BaseErrorCode.TEST_011);
+    }
+
+    @Test
+    void reopen_closedDateTomorrow_succeeds() {
+        server.MATE.domain.test.entity.Test test = completedTest(5L);
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(paymentRepository.findByTestId(TEST_ID)).willReturn(Optional.empty());
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            AdminTestStatusResponse response = adminTestService.reopen(TEST_ID, LocalDate.of(2026, 9, 28));
+
+            assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+            assertThat(test.getClosedAt()).isEqualTo(LocalDateTime.of(2026, 9, 28, 23, 59, 59));
+            TransactionSynchronizationManager.getSynchronizations().forEach(sync -> sync.afterCommit());
+            verify(testCloseScheduler).schedule(TEST_ID, LocalDateTime.of(2026, 9, 28, 23, 59, 59));
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    void reopen_usesKstToday() {
+        // UTC 2026-09-26 16:00 = KST 2026-09-27 01:00, KST 기준 오늘 날짜 판단용
+        Clock kstBoundaryClock = Clock.fixed(Instant.parse("2026-09-26T16:00:00Z"), ZoneId.of("UTC"));
+        AdminTestService service = new AdminTestService(
+                testRepository, fileStorageService, testCloseScheduler, eventPublisher, paymentRepository, kstBoundaryClock);
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(completedTest(5L)));
+
+        BaseException e = assertThrows(BaseException.class,
+                () -> service.reopen(TEST_ID, LocalDate.of(2026, 9, 27)));
+
+        assertThat(e.getErrorCode()).isEqualTo(BaseErrorCode.TEST_011);
+    }
+
+    @Test
+    void 목표_인원을_채운_테스트_재개시_TEST_012() {
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(completedTest(10L)));
+
+        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE));
+
+        assertThat(e.getErrorCode()).isEqualTo(BaseErrorCode.TEST_012);
+    }
+
+    @Test
+    void 리포트_집계_중인_테스트_재개시_TEST_013() {
+        server.MATE.domain.test.entity.Test test = completedTest(5L);
+        test.startReportAggregation();
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
+
+        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE));
+
+        assertThat(e.getErrorCode()).isEqualTo(BaseErrorCode.TEST_013);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = PayStatus.class, names = {"REFUND_PENDING", "REFUNDED"})
+    void 환불이_시작된_테스트_재개시_TEST_014(PayStatus payStatus) {
+        Payment payment = payment(payStatus);
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(completedTest(1L)));
+        given(paymentRepository.findByTestId(TEST_ID)).willReturn(Optional.of(payment));
+
+        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE));
+
+        assertThat(e.getErrorCode()).isEqualTo(BaseErrorCode.TEST_014);
+    }
+
+    @Test
+    void reopen_withoutPayment_succeeds() {
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(completedTest(1L)));
+        given(paymentRepository.findByTestId(TEST_ID)).willReturn(Optional.empty());
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            assertThat(adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE).testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    void reopen_refundRejectedPayment_succeeds() {
+        Payment payment = payment(PayStatus.REFUND_REJECTED);
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(completedTest(1L)));
+        given(paymentRepository.findByTestId(TEST_ID)).willReturn(Optional.of(payment));
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            assertThat(adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE).testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    void 리포트_집계에_실패한_테스트도_재개할_수_있다() {
+        server.MATE.domain.test.entity.Test test = completedTest(5L);
+        test.startReportAggregation();
+        test.failReportAggregation();
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(paymentRepository.findByTestId(TEST_ID)).willReturn(Optional.empty());
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE);
+
+            assertThat(test.getReportStatus()).isEqualTo(ReportStatus.PENDING);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    private server.MATE.domain.test.entity.Test completedTest(long pplCount) {
+        server.MATE.domain.test.entity.Test test = buildTest(TestStatus.IN_PROGRESS);
+        ReflectionTestUtils.setField(test, "pplCount", pplCount);
+        test.complete();
+        return test;
+    }
+
+    // 다른 given(...) 안에서 호출하면 UnfinishedStubbingException이 나므로 지역 변수로 먼저 생성해 사용함
+    private Payment payment(PayStatus payStatus) {
+        Payment payment = mock(Payment.class);
+        given(payment.getPayStatus()).willReturn(payStatus);
+        return payment;
     }
 }

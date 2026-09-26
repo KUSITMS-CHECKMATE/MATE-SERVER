@@ -3,21 +3,28 @@ package server.MATE.global.discord.webhook;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 import server.MATE.global.discord.webhook.embed.DiscordEmbed;
 
 @Slf4j
 @Component
 public class DiscordWebhookClient {
 
-    private static final Duration SEND_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration ATTEMPT_TIMEOUT = Duration.ofSeconds(3);
+    private static final int RETRY_MAX_ATTEMPTS = 2;
+    private static final Duration RETRY_MIN_BACKOFF = Duration.ofMillis(500);
+    // 최대 3회 시도(ATTEMPT_TIMEOUT * 3) + 백오프 지연 여유분
+    private static final Duration SEND_TIMEOUT = Duration.ofSeconds(12);
 
     private final WebClient webClient;
 
@@ -61,6 +68,16 @@ public class DiscordWebhookClient {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(body)
                 .retrieve()
-                .toBodilessEntity();
+                .toBodilessEntity()
+                .timeout(ATTEMPT_TIMEOUT)
+                .retryWhen(Retry.backoff(RETRY_MAX_ATTEMPTS, RETRY_MIN_BACKOFF)
+                        .filter(DiscordWebhookClient::isRetryable)
+                        .onRetryExhaustedThrow((spec, signal) -> signal.failure()));
+    }
+
+    // 연결/응답 타임아웃 등 네트워크 계층 실패만 재시도. 잘못된 웹훅 URL(4xx) 등은 재시도해도 성공할 수 없으므로 제외
+    private static boolean isRetryable(Throwable throwable) {
+        return throwable instanceof WebClientRequestException
+                || throwable instanceof TimeoutException;
     }
 }
