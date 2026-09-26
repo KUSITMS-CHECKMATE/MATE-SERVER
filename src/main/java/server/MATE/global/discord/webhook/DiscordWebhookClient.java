@@ -20,9 +20,11 @@ import server.MATE.global.discord.webhook.embed.DiscordEmbed;
 @Component
 public class DiscordWebhookClient {
 
-    private static final Duration SEND_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration ATTEMPT_TIMEOUT = Duration.ofSeconds(3);
     private static final int RETRY_MAX_ATTEMPTS = 2;
     private static final Duration RETRY_MIN_BACKOFF = Duration.ofMillis(500);
+    // 최대 3회 시도(ATTEMPT_TIMEOUT * 3) + 백오프 지연 여유분
+    private static final Duration SEND_TIMEOUT = Duration.ofSeconds(12);
 
     private final WebClient webClient;
 
@@ -67,6 +69,7 @@ public class DiscordWebhookClient {
                 .bodyValue(body)
                 .retrieve()
                 .toBodilessEntity()
+                .timeout(ATTEMPT_TIMEOUT)
                 .retryWhen(Retry.backoff(RETRY_MAX_ATTEMPTS, RETRY_MIN_BACKOFF)
                         .filter(DiscordWebhookClient::isRetryable)
                         .onRetryExhaustedThrow((spec, signal) -> signal.failure()));
