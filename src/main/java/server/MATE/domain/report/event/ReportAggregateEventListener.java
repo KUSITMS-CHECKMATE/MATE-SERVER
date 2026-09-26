@@ -17,7 +17,7 @@ public class ReportAggregateEventListener {
     private final ReportAggregateService reportAggregateService;
     private final ReportAlertService reportAlertService;
 
-    @Async
+    @Async("reportAggregateExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onTestCompleted(TestCompleteEvent event) {
         // answer 저장 -> testStatus, reportStatus 변경 보장
