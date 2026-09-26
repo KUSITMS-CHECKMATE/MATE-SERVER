@@ -48,6 +48,14 @@ public class ErrorAlertChannel {
         webhookClient.send("error", properties.errorWebhookUrl(), new DiscordEmbed("⚠️ 경고 로그", description, EmbedColor.WARN));
     }
 
+    // HTTP 요청 없는 비동기 작업 알림용
+    public void notifyBackground(DiscordEmbed embed) {
+        if ("local".equals(deployEnv)) {
+            return;
+        }
+        webhookClient.send("error", properties.errorWebhookUrl(), embed);
+    }
+
     private String buildDescription(ErrorCode errorCode, HttpStatus status, Exception exception, HttpServletRequest request) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
         String location = Arrays.stream(exception.getStackTrace())
