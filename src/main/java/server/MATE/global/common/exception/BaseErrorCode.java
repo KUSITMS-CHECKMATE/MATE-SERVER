@@ -114,6 +114,7 @@ public enum BaseErrorCode implements ErrorCode {
     REPORT_010(HttpStatus.BAD_REQUEST, "REPORT_010", "질문별 리포트 집계 결과가 없습니다."),
     REPORT_011(HttpStatus.BAD_REQUEST, "REPORT_011", "리포트 집계 데이터 형식이 올바르지 않습니다."),
     REPORT_012(HttpStatus.INTERNAL_SERVER_ERROR, "REPORT_012", "PDF 보고서 생성에 실패했습니다."),
+    REPORT_013(HttpStatus.BAD_REQUEST, "REPORT_013", "재집계는 집계에 실패한 리포트만 가능합니다."),
 
     // File
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),

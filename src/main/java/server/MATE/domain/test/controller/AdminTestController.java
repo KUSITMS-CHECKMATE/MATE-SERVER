@@ -11,13 +11,17 @@ import org.springframework.web.bind.annotation.*;
 import server.MATE.domain.test.dto.request.RejectTestRequest;
 import server.MATE.domain.test.dto.request.ReopenTestRequest;
 import server.MATE.domain.test.dto.request.TestDeleteMode;
+import server.MATE.domain.report.service.ReportReaggregateService;
+import server.MATE.domain.test.dto.response.AdminReportStatusResponse;
 import server.MATE.domain.test.dto.response.AdminTestDetailResponse;
 import server.MATE.domain.test.dto.response.AdminTestListResponse;
 import server.MATE.domain.test.dto.response.AdminTestStatusResponse;
+import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.service.AdminTestService;
 import server.MATE.domain.test.service.TestDeleteService;
 import server.MATE.global.common.response.ApiResponse;
+import server.MATE.global.discord.report.ReportAlertMessageFormatter;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
 @Tag(name = "[ADMIN] 테스트 관리 API", description = "관리자 테스트 승인/반려 API")
@@ -28,6 +32,7 @@ public class AdminTestController {
 
     private final AdminTestService adminTestService;
     private final TestDeleteService testDeleteService;
+    private final ReportReaggregateService reportReaggregateService;
 
     @Operation(summary = "🔒 관리자 테스트 목록 조회", description = "기본값: status=WAITING, page=1, size=20, createdAt desc 정렬")
     @GetMapping
@@ -62,6 +67,21 @@ public class AdminTestController {
     ) {
         AdminTestStatusResponse data = adminTestService.reject(testId, request == null ? null : request.reason());
         return ResponseEntity.ok(ApiResponse.ok("테스트를 반려했습니다.", data));
+    }
+
+    @Operation(
+            summary = "🔒 리포트 재집계",
+            description = """
+                    집계에 실패한(reportStatus=FAILED) 종료 테스트의 리포트를 다시 집계합니다.
+                    - 남아 있는 리포트 행을 모두 지우고 새로 집계합니다.
+                    - 원인을 고친 뒤 호출해 주세요. 원인이 그대로면 다시 실패합니다.
+                    - 거절: 테스트 없음(TEST_004), 종료 전(TEST_007), 실패한 리포트가 아님(REPORT_013)
+                    """
+    )
+    @PostMapping("/{testId}/report/reaggregate")
+    public ResponseEntity<ApiResponse<AdminReportStatusResponse>> reaggregateReport(@PathVariable Long testId) {
+        ReportStatus status = reportReaggregateService.reaggregate(testId, ReportAlertMessageFormatter.API_REQUESTER);
+        return ResponseEntity.ok(ApiResponse.ok("리포트 재집계를 시작했습니다.", new AdminReportStatusResponse(testId, status)));
     }
 
     @Operation(
