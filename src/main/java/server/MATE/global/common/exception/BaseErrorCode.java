@@ -46,7 +46,7 @@ public enum BaseErrorCode implements ErrorCode {
     TEST_008(HttpStatus.BAD_REQUEST, "TEST_008", "테스트 마감 기한은 필수입니다."),
     TEST_009(HttpStatus.BAD_REQUEST, "TEST_009", "하드 삭제 검증 키가 필요합니다."),
     TEST_010(HttpStatus.FORBIDDEN, "TEST_010", "하드 삭제 검증 키가 올바르지 않습니다."),
-    TEST_011(HttpStatus.BAD_REQUEST, "TEST_011", "재개 마감 기한은 현재 시각 이후여야 합니다."),
+    TEST_011(HttpStatus.BAD_REQUEST, "TEST_011", "재개 마감 기한은 오늘 이후 날짜여야 합니다."),
     TEST_012(HttpStatus.BAD_REQUEST, "TEST_012", "목표 인원을 달성한 테스트는 재개할 수 없습니다."),
     TEST_013(HttpStatus.BAD_REQUEST, "TEST_013", "리포트 집계 중인 테스트는 재개할 수 없습니다. 잠시 후 다시 시도해주세요."),
     TEST_014(HttpStatus.BAD_REQUEST, "TEST_014", "환불이 요청되었거나 완료된 테스트는 재개할 수 없습니다."),

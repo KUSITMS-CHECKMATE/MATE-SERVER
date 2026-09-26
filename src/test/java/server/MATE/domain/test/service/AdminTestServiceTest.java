@@ -27,6 +27,7 @@ import server.MATE.global.storage.service.FileStorageService;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -61,6 +62,7 @@ class AdminTestServiceTest {
 
     // KST 2026-09-27 10:00:00
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-09-27T01:00:00Z"), ZoneId.of("UTC"));
+    private static final LocalDate NEW_CLOSED_DATE = LocalDate.of(2026, 10, 20);
     private static final LocalDateTime NEW_CLOSED_AT = LocalDateTime.of(2026, 10, 20, 23, 59, 59);
 
     private AdminTestService adminTestService;
@@ -286,7 +288,7 @@ class AdminTestServiceTest {
 
         TransactionSynchronizationManager.initSynchronization();
         try {
-            AdminTestStatusResponse response = adminTestService.reopen(TEST_ID, NEW_CLOSED_AT);
+            AdminTestStatusResponse response = adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE);
 
             assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
             assertThat(test.getClosedAt()).isEqualTo(NEW_CLOSED_AT);
@@ -304,7 +306,7 @@ class AdminTestServiceTest {
     void 존재하지_않는_테스트_재개시_TEST_004() {
         given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.empty());
 
-        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_AT));
+        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE));
 
         assertThat(e.getErrorCode()).isEqualTo(BaseErrorCode.TEST_004);
     }
@@ -313,17 +315,46 @@ class AdminTestServiceTest {
     void 완료가_아닌_테스트_재개시_TEST_007() {
         given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(buildTest(TestStatus.IN_PROGRESS)));
 
-        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_AT));
+        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE));
 
         assertThat(e.getErrorCode()).isEqualTo(BaseErrorCode.TEST_007);
     }
 
     @Test
-    void reopen_closedAtEqualToNow_throwsTest011() {
+    void reopen_closedDateToday_throwsTest011() {
         given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(completedTest(5L)));
 
         BaseException e = assertThrows(BaseException.class,
-                () -> adminTestService.reopen(TEST_ID, LocalDateTime.of(2026, 9, 27, 10, 0)));
+                () -> adminTestService.reopen(TEST_ID, LocalDate.of(2026, 9, 27)));
+
+        assertThat(e.getErrorCode()).isEqualTo(BaseErrorCode.TEST_011);
+    }
+
+    @Test
+    void reopen_closedDateTomorrow_succeeds() {
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(completedTest(5L)));
+        given(paymentRepository.findByTestId(TEST_ID)).willReturn(Optional.empty());
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            AdminTestStatusResponse response = adminTestService.reopen(TEST_ID, LocalDate.of(2026, 9, 28));
+
+            assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    void reopen_usesKstToday() {
+        // UTC 2026-09-26 16:00 = KST 2026-09-27 01:00, KST 기준 오늘 날짜 판단용
+        Clock kstBoundaryClock = Clock.fixed(Instant.parse("2026-09-26T16:00:00Z"), ZoneId.of("UTC"));
+        AdminTestService service = new AdminTestService(
+                testRepository, fileStorageService, testCloseScheduler, eventPublisher, paymentRepository, kstBoundaryClock);
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(completedTest(5L)));
+
+        BaseException e = assertThrows(BaseException.class,
+                () -> service.reopen(TEST_ID, LocalDate.of(2026, 9, 27)));
 
         assertThat(e.getErrorCode()).isEqualTo(BaseErrorCode.TEST_011);
     }
@@ -332,7 +363,7 @@ class AdminTestServiceTest {
     void 목표_인원을_채운_테스트_재개시_TEST_012() {
         given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(completedTest(10L)));
 
-        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_AT));
+        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE));
 
         assertThat(e.getErrorCode()).isEqualTo(BaseErrorCode.TEST_012);
     }
@@ -343,7 +374,7 @@ class AdminTestServiceTest {
         test.startReportAggregation();
         given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
 
-        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_AT));
+        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE));
 
         assertThat(e.getErrorCode()).isEqualTo(BaseErrorCode.TEST_013);
     }
@@ -355,7 +386,7 @@ class AdminTestServiceTest {
         given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(completedTest(1L)));
         given(paymentRepository.findByTestId(TEST_ID)).willReturn(Optional.of(payment));
 
-        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_AT));
+        BaseException e = assertThrows(BaseException.class, () -> adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE));
 
         assertThat(e.getErrorCode()).isEqualTo(BaseErrorCode.TEST_014);
     }
@@ -367,7 +398,7 @@ class AdminTestServiceTest {
 
         TransactionSynchronizationManager.initSynchronization();
         try {
-            assertThat(adminTestService.reopen(TEST_ID, NEW_CLOSED_AT).testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+            assertThat(adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE).testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
         } finally {
             TransactionSynchronizationManager.clearSynchronization();
         }
@@ -381,7 +412,7 @@ class AdminTestServiceTest {
 
         TransactionSynchronizationManager.initSynchronization();
         try {
-            assertThat(adminTestService.reopen(TEST_ID, NEW_CLOSED_AT).testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+            assertThat(adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE).testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
         } finally {
             TransactionSynchronizationManager.clearSynchronization();
         }
@@ -397,7 +428,7 @@ class AdminTestServiceTest {
 
         TransactionSynchronizationManager.initSynchronization();
         try {
-            adminTestService.reopen(TEST_ID, NEW_CLOSED_AT);
+            adminTestService.reopen(TEST_ID, NEW_CLOSED_DATE);
 
             assertThat(test.getReportStatus()).isEqualTo(ReportStatus.PENDING);
         } finally {
