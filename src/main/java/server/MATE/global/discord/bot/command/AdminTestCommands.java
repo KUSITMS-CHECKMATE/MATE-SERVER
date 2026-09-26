@@ -18,8 +18,6 @@ public final class AdminTestCommands {
     public static final String SUB_PROGRESS = "progress";
 
     public static final String OPTION_STATUS = "status";
-    public static final String OPTION_PAGE = "page";
-    public static final String OPTION_SIZE = "size";
     public static final String OPTION_TEST_ID = "test_id";
     public static final String OPTION_REASON = "reason";
 
@@ -36,9 +34,7 @@ public final class AdminTestCommands {
                                                         .addChoice("WAITING", "WAITING")
                                                         .addChoice("IN_PROGRESS", "IN_PROGRESS")
                                                         .addChoice("REJECTED", "REJECTED")
-                                                        .addChoice("COMPLETED", "COMPLETED"),
-                                                new OptionData(OptionType.INTEGER, OPTION_PAGE, "페이지 번호 (기본값 1)"),
-                                                new OptionData(OptionType.INTEGER, OPTION_SIZE, "페이지 크기 (기본값 5, 최대 20)")
+                                                        .addChoice("COMPLETED", "COMPLETED")
                                         ),
                                 new SubcommandData(SUB_DETAIL, "테스트 상세 조회")
                                         .addOption(OptionType.INTEGER, OPTION_TEST_ID, "테스트 ID", true),
