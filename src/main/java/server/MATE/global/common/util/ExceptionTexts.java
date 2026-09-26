@@ -6,6 +6,8 @@ import java.util.Arrays;
 public final class ExceptionTexts {
 
     private static final String APP_PACKAGE = "server.MATE";
+    // Discord 임베드 설명 한도(4096자) 초과로 알림이 누락되는 것 방지용
+    private static final int MAX_MESSAGE_LENGTH = 1500;
 
     private ExceptionTexts() {
     }
@@ -13,7 +15,11 @@ public final class ExceptionTexts {
     public static String describe(Throwable e) {
         String name = e.getClass().getName();
         String shortName = name.substring(name.lastIndexOf('.') + 1);
-        return shortName + ": " + (e.getMessage() != null ? e.getMessage() : "(no message)");
+        String message = e.getMessage() != null ? e.getMessage() : "(no message)";
+        if (message.length() > MAX_MESSAGE_LENGTH) {
+            message = message.substring(0, MAX_MESSAGE_LENGTH) + "…";
+        }
+        return shortName + ": " + message;
     }
 
     public static String location(Throwable e) {

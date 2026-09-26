@@ -31,6 +31,16 @@ class ExceptionTextsTest {
     }
 
     @Test
+    @DisplayName("긴 메시지는 1500자로 자른다")
+    void describe_truncatesLongMessage() {
+        assertThat(ExceptionTexts.describe(new IllegalStateException("x".repeat(5000))))
+                .isEqualTo("IllegalStateException: " + "x".repeat(1500) + "…");
+
+        assertThat(ExceptionTexts.describe(new IllegalStateException("x".repeat(1500))))
+                .isEqualTo("IllegalStateException: " + "x".repeat(1500));
+    }
+
+    @Test
     @DisplayName("위치는 server.MATE로 시작하는 첫 스택 프레임, 없거나 null이면 N/A")
     void location() {
         assertThat(ExceptionTexts.location(new RuntimeException("x"))).startsWith("server.MATE.global.common.util.ExceptionTextsTest.location:");
