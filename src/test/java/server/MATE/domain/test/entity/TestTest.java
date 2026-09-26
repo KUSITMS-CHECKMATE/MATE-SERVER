@@ -79,6 +79,32 @@ class TestTest {
         assertThat(test.getRejectionReason()).isNull();
     }
 
+    @Test
+    @DisplayName("reopen() 호출 시 IN_PROGRESS로 돌아가고 마감·리포트·직접 종료 표시를 초기화하되 환불 포기는 유지한다")
+    void reopen_resetsCloseStateAndKeepsRefundWaived() {
+        server.MATE.domain.test.entity.Test test = buildTest(TestStatus.IN_PROGRESS);
+        test.waiveRefund();
+        test.markClosedByMaker();
+        test.complete();
+        test.startReportAggregation();
+        test.completeReportAggregation();
+        test.savePdfKey("reports/pdf/1.pdf");
+        test.saveExcelKey("reports/excel/1.xlsx");
+        LocalDateTime newClosedAt = LocalDateTime.of(2026, 10, 20, 23, 59, 59);
+        LocalDateTime reopenedAt = LocalDateTime.of(2026, 9, 27, 1, 0);
+
+        test.reopen(newClosedAt, reopenedAt);
+
+        assertThat(test.getTestStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+        assertThat(test.getClosedAt()).isEqualTo(newClosedAt);
+        assertThat(test.getReportStatus()).isEqualTo(ReportStatus.PENDING);
+        assertThat(test.getPdfKey()).isNull();
+        assertThat(test.getExcelKey()).isNull();
+        assertThat(test.isClosedByMaker()).isFalse();
+        assertThat(test.isRefundWaived()).isTrue();
+        assertThat(test.getReopenedAt()).isEqualTo(reopenedAt);
+    }
+
     private server.MATE.domain.test.entity.Test buildTest(TestStatus testStatus) {
         return server.MATE.domain.test.entity.Test.builder()
                 .makerId(1L)
