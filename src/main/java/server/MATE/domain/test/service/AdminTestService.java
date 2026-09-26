@@ -8,6 +8,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import server.MATE.domain.test.dto.response.AdminTestDetailResponse;
 import server.MATE.domain.test.dto.response.AdminTestListResponse;
+import server.MATE.domain.test.dto.response.AdminTestProgressResponse;
 import server.MATE.domain.test.dto.response.AdminTestStatusResponse;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestStatus;
@@ -47,6 +48,15 @@ public class AdminTestService {
         Test test = testRepository.findWithCategoriesByIdForAdmin(testId)
                 .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
         return AdminTestDetailResponse.from(test, toImageUrls(test.getImageKeys()));
+    }
+
+    @Transactional(readOnly = true)
+    public AdminTestProgressResponse getProgress(Long testId) {
+        Test test = testRepository.findWithCategoriesByIdForAdmin(testId)
+                .orElseThrow(() -> new BaseException(BaseErrorCode.TEST_004));
+        List<String> imageKeys = test.getImageKeys();
+        String thumbnailUrl = imageKeys.isEmpty() ? null : fileStorageService.generateDownloadUrl(imageKeys.get(0));
+        return AdminTestProgressResponse.from(test, thumbnailUrl);
     }
 
     public AdminTestStatusResponse approve(Long testId) {

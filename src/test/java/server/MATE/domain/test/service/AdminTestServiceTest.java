@@ -10,6 +10,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import server.MATE.domain.test.dto.response.AdminTestDetailResponse;
 import server.MATE.domain.test.dto.response.AdminTestListResponse;
+import server.MATE.domain.test.dto.response.AdminTestProgressResponse;
 import server.MATE.domain.test.dto.response.AdminTestStatusResponse;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.event.TestApprovedEvent;
@@ -19,6 +20,7 @@ import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.storage.service.FileStorageService;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -112,6 +114,69 @@ class AdminTestServiceTest {
 
         BaseException exception = assertThrows(BaseException.class,
                 () -> adminTestService.getTest(TEST_ID));
+
+        assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.TEST_004);
+    }
+
+    @Test
+    void 참여_현황_조회_시_목표_인원_참여_인원_달성률을_반환한다() {
+        server.MATE.domain.test.entity.Test test = buildTest(TestStatus.IN_PROGRESS);
+        ReflectionTestUtils.setField(test, "goalPpl", 100);
+        ReflectionTestUtils.setField(test, "pplCount", 29L);
+        given(testRepository.findWithCategoriesByIdForAdmin(TEST_ID)).willReturn(Optional.of(test));
+
+        AdminTestProgressResponse response = adminTestService.getProgress(TEST_ID);
+
+        assertThat(response.testId()).isEqualTo(TEST_ID);
+        assertThat(response.title()).isEqualTo("테스트");
+        assertThat(response.description()).isEqualTo("설명");
+        assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+        assertThat(response.goalPpl()).isEqualTo(100);
+        assertThat(response.pplCount()).isEqualTo(29L);
+        assertThat(response.achievementPercent()).isEqualTo(29);
+        assertThat(response.thumbnailUrl()).isEqualTo("https://example.com/url");
+    }
+
+    @Test
+    void 참여_현황_달성률은_소수점을_버린다() {
+        server.MATE.domain.test.entity.Test test = buildTest(TestStatus.IN_PROGRESS);
+        ReflectionTestUtils.setField(test, "goalPpl", 1000);
+        ReflectionTestUtils.setField(test, "pplCount", 996L);
+        given(testRepository.findWithCategoriesByIdForAdmin(TEST_ID)).willReturn(Optional.of(test));
+
+        AdminTestProgressResponse response = adminTestService.getProgress(TEST_ID);
+
+        assertThat(response.achievementPercent()).isEqualTo(99);
+    }
+
+    @Test
+    void 참여_현황_목표_인원이_0이면_달성률은_0이다() {
+        server.MATE.domain.test.entity.Test test = buildTest(TestStatus.IN_PROGRESS);
+        ReflectionTestUtils.setField(test, "goalPpl", 0);
+        given(testRepository.findWithCategoriesByIdForAdmin(TEST_ID)).willReturn(Optional.of(test));
+
+        AdminTestProgressResponse response = adminTestService.getProgress(TEST_ID);
+
+        assertThat(response.achievementPercent()).isZero();
+    }
+
+    @Test
+    void 참여_현황_이미지가_없으면_썸네일은_null이다() {
+        server.MATE.domain.test.entity.Test test = buildTest(TestStatus.IN_PROGRESS);
+        ReflectionTestUtils.setField(test, "imageKeys", new ArrayList<String>());
+        given(testRepository.findWithCategoriesByIdForAdmin(TEST_ID)).willReturn(Optional.of(test));
+
+        AdminTestProgressResponse response = adminTestService.getProgress(TEST_ID);
+
+        assertThat(response.thumbnailUrl()).isNull();
+    }
+
+    @Test
+    void 존재하지_않는_테스트_참여_현황_조회시_예외가_발생한다() {
+        given(testRepository.findWithCategoriesByIdForAdmin(TEST_ID)).willReturn(Optional.empty());
+
+        BaseException exception = assertThrows(BaseException.class,
+                () -> adminTestService.getProgress(TEST_ID));
 
         assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.TEST_004);
     }
