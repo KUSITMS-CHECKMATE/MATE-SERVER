@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import server.MATE.domain.test.dto.response.AdminTestDetailResponse;
 import server.MATE.domain.test.dto.response.AdminTestListItemResponse;
 import server.MATE.domain.test.dto.response.AdminTestListResponse;
+import server.MATE.domain.test.dto.response.AdminTestProgressResponse;
 import server.MATE.domain.test.entity.TestStatus;
 
 class AdminBotMessageFormatterTest {
@@ -92,6 +93,60 @@ class AdminBotMessageFormatterTest {
         assertThat(embed.getDescription())
                 .contains("🚫 사유 | `부적절한 내용`")
                 .contains("사용자 서비스에서 숨김 처리됩니다.");
+    }
+
+    @Test
+    @DisplayName("progressEmbed: 진행 중이면 설명 아래 빈 줄 뒤 목표/참여/달성률을 보여준다")
+    void progressEmbed_inProgress() {
+        AdminTestProgressResponse progress = new AdminTestProgressResponse(
+                12L, "앱 온보딩 테스트", "신규 가입 흐름 테스트입니다.", TestStatus.IN_PROGRESS,
+                100, 37L, 37, "https://img/1.jpg");
+
+        MessageEmbed embed = AdminBotMessageFormatter.progressEmbed(progress);
+
+        assertThat(embed.getTitle()).isEqualTo("진행 중 · #12 앱 온보딩 테스트");
+        assertThat(embed.getDescription()).isEqualTo(
+                "신규 가입 흐름 테스트입니다.\n\n"
+                        + "🎯 목표 인원 | `100명`\n"
+                        + "👥 참여 인원 | `37명`\n"
+                        + "📈 달성률 | `37%`");
+        assertThat(embed.getThumbnail().getUrl()).isEqualTo("https://img/1.jpg");
+    }
+
+    @Test
+    @DisplayName("progressEmbed: 종료된 테스트도 목표/참여/달성률을 보여준다")
+    void progressEmbed_completed() {
+        AdminTestProgressResponse progress = new AdminTestProgressResponse(
+                12L, "앱 온보딩 테스트", "설명", TestStatus.COMPLETED, 100, 100L, 100, null);
+
+        MessageEmbed embed = AdminBotMessageFormatter.progressEmbed(progress);
+
+        assertThat(embed.getTitle()).isEqualTo("종료 · #12 앱 온보딩 테스트");
+        assertThat(embed.getDescription()).endsWith("📈 달성률 | `100%`");
+    }
+
+    @Test
+    @DisplayName("progressEmbed: 검토 대기면 제목 아래 빈 줄 뒤 안내 문구만 보여준다")
+    void progressEmbed_waiting() {
+        AdminTestProgressResponse progress = new AdminTestProgressResponse(
+                12L, "앱 온보딩 테스트", "설명", TestStatus.WAITING, 100, 0L, 0, null);
+
+        MessageEmbed embed = AdminBotMessageFormatter.progressEmbed(progress);
+
+        assertThat(embed.getTitle()).isEqualTo("검토 대기 · #12 앱 온보딩 테스트");
+        assertThat(embed.getDescription()).isEqualTo("\u200B\n> 검토 대기 중입니다.");
+    }
+
+    @Test
+    @DisplayName("progressEmbed: 반려면 제목 아래 빈 줄 뒤 안내 문구만 보여준다")
+    void progressEmbed_rejected() {
+        AdminTestProgressResponse progress = new AdminTestProgressResponse(
+                12L, "앱 온보딩 테스트", "설명", TestStatus.REJECTED, 100, 0L, 0, null);
+
+        MessageEmbed embed = AdminBotMessageFormatter.progressEmbed(progress);
+
+        assertThat(embed.getTitle()).isEqualTo("반려됨 · #12 앱 온보딩 테스트");
+        assertThat(embed.getDescription()).isEqualTo("\u200B\n> 테스트가 반려되었습니다.");
     }
 
     @Test
