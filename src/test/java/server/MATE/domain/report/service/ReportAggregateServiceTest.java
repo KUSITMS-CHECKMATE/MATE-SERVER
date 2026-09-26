@@ -246,12 +246,13 @@ class ReportAggregateServiceTest {
         given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(3L);
         given(reportRepository.countByTestId(TEST_ID)).willReturn(1L);
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        DataIntegrityViolationException ex = new DataIntegrityViolationException("duplicate key");
 
-        List<Report> recovered = reportAggregateService.recover(
-                new DataIntegrityViolationException("duplicate key"), TEST_ID);
+        List<Report> recovered = reportAggregateService.recover(ex, TEST_ID);
 
         assertThat(recovered).isEmpty();
         assertThat(test.getReportStatus()).isEqualTo(ReportStatus.FAILED);
+        verify(eventPublisher).publishEvent(ReportAggregationFailedEvent.mismatch(TEST_ID, 3L, 1L, ex));
     }
 
     @Test
