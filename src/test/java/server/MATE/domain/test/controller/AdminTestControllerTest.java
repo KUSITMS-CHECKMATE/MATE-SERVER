@@ -22,14 +22,17 @@ import server.MATE.domain.test.dto.request.TestDeleteMode;
 import server.MATE.domain.test.dto.response.AdminTestDetailResponse;
 import server.MATE.domain.test.dto.response.AdminTestListResponse;
 import server.MATE.domain.test.dto.response.AdminTestStatusResponse;
+import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.service.AdminTestService;
 import server.MATE.domain.test.service.TestDeleteService;
+import server.MATE.domain.report.service.ReportReaggregateService;
 import server.MATE.domain.users.entity.Role;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.common.exception.GlobalExceptionHandler;
 import server.MATE.global.discord.channel.ErrorAlertChannel;
+import server.MATE.global.discord.report.ReportAlertMessageFormatter;
 import server.MATE.global.security.principal.AuthenticatedUser;
 
 import java.time.LocalDate;
@@ -42,6 +45,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -56,6 +60,9 @@ class AdminTestControllerTest {
 
     @Mock
     private ErrorAlertChannel errorAlertChannel;
+
+    @Mock
+    private ReportReaggregateService reportReaggregateService;
 
     @InjectMocks
     private AdminTestController adminTestController;
@@ -227,6 +234,28 @@ class AdminTestControllerTest {
                 .andExpect(jsonPath("$.message").value("테스트를 삭제했습니다."));
 
         verify(testDeleteService).deleteTest(10L, Role.ADMIN, TestDeleteMode.HARD, "hard-delete-key");
+    }
+
+    @Test
+    @DisplayName("리포트 재집계: 관리자 API 요청자로 서비스를 호출한다")
+    void reaggregateReport_callsService() throws Exception {
+        given(reportReaggregateService.reaggregate(10L, ReportAlertMessageFormatter.API_REQUESTER))
+                .willReturn(ReportStatus.IN_PROGRESS);
+
+        mockMvc.perform(post("/api/v1/admin/tests/10/report/reaggregate"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.testId").value(10))
+                .andExpect(jsonPath("$.data.reportStatus").value("IN_PROGRESS"));
+    }
+
+    @Test
+    @DisplayName("리포트 재집계: FAILED가 아니면 400")
+    void reaggregateReport_notFailed_returns400() throws Exception {
+        given(reportReaggregateService.reaggregate(10L, ReportAlertMessageFormatter.API_REQUESTER))
+                .willThrow(new BaseException(BaseErrorCode.REPORT_013));
+
+        mockMvc.perform(post("/api/v1/admin/tests/10/report/reaggregate"))
+                .andExpect(status().isBadRequest());
     }
 
     private RequestPostProcessor authenticationPrincipal(Long userId, Role role) {
