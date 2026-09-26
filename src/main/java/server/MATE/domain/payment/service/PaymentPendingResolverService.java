@@ -22,6 +22,10 @@ public class PaymentPendingResolverService {
     public void resolveAll() {
         List<Payment> pending = paymentRepository.findTop100ByPayStatusAndTestIdIsNullAndPublishStatus(
                 PayStatus.PAY_SUCCEEDED, PublishStatus.PUBLISH_PENDING);
+        if (pending.isEmpty()) {
+            log.debug("PAYMENT PENDING 처리 대상 없음");
+            return;
+        }
         log.info("PAYMENT PENDING 처리 대상 {}건", pending.size());
 
         for (Payment payment : pending) {
