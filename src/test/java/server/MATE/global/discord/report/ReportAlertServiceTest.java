@@ -9,6 +9,7 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import server.MATE.domain.report.event.ReportAggregationFailedEvent;
 import server.MATE.domain.report.event.ReportAiDegradedEvent;
 import server.MATE.domain.report.event.ReportReaggregationRequestedEvent;
@@ -128,6 +129,29 @@ class ReportAlertServiceTest {
     }
 
     @Test
+    @DisplayName("지워진 카드: editMessage 404면 위치를 지우고 새 카드로 대체함")
+    void notifyAggregationFailed_deletedCard_recreates() {
+        given(testRepository.findById(TEST_ID)).willReturn(Optional.of(test));
+        given(botRestClient.isConfigured()).willReturn(true);
+        DiscordMessage existing = DiscordMessage.create(DiscordMessageType.REPORT_AGGREGATION_FAILED, TEST_ID, "777", "555");
+        given(discordMessageRepository.findByTypeAndTargetId(DiscordMessageType.REPORT_AGGREGATION_FAILED, TEST_ID))
+                .willReturn(Optional.of(existing));
+        doThrow(WebClientResponseException.create(404, "Not Found", null, null, null))
+                .when(botRestClient).editMessage(eq("777"), eq("555"), anyMap());
+        given(botRestClient.createMessage(eq("777"), anyMap())).willReturn("666");
+
+        service("prod", "777").notifyAggregationFailed(failed());
+
+        verify(discordMessageRepository).delete(existing);
+        verify(botRestClient).createMessage(eq("777"), anyMap());
+        verify(botRestClient).startThread("777", "666", ReportAlertMessageFormatter.THREAD_NAME);
+        ArgumentCaptor<DiscordMessage> saved = ArgumentCaptor.forClass(DiscordMessage.class);
+        verify(discordMessageRepository).save(saved.capture());
+        assertThat(saved.getValue().getMessageId()).isEqualTo("666");
+        verify(botRestClient).createMessage(eq("666"), argThat(body -> body.containsKey("embeds") && !body.containsKey("components")));
+    }
+
+    @Test
     @DisplayName("리포트 채널 미설정: 에러 웹훅만 보냄")
     void notifyAggregationFailed_blankChannel_sendsWebhookOnly() {
         given(testRepository.findById(TEST_ID)).willReturn(Optional.of(test));
@@ -196,6 +220,23 @@ class ReportAlertServiceTest {
         service("prod", "777").notifyReportCompleted(TEST_ID);
 
         verify(botRestClient, never()).editMessage(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("지워진 카드: getMessage 404면 위치만 지우고 새 카드는 만들지 않음")
+    void notifyReportCompleted_deletedCard_clearsLocation() {
+        given(botRestClient.isConfigured()).willReturn(true);
+        DiscordMessage existing = DiscordMessage.create(DiscordMessageType.REPORT_AGGREGATION_FAILED, TEST_ID, "777", "555");
+        given(discordMessageRepository.findByTypeAndTargetId(DiscordMessageType.REPORT_AGGREGATION_FAILED, TEST_ID))
+                .willReturn(Optional.of(existing));
+        doThrow(WebClientResponseException.create(404, "Not Found", null, null, null))
+                .when(botRestClient).getMessage("777", "555");
+
+        service("prod", "777").notifyReportCompleted(TEST_ID);
+
+        verify(discordMessageRepository).delete(existing);
+        verify(botRestClient, never()).editMessage(any(), any(), any());
+        verify(botRestClient, never()).createMessage(any(), anyMap());
     }
 
     @Test

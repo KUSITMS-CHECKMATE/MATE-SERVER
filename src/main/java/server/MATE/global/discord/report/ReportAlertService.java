@@ -15,6 +15,7 @@ import server.MATE.global.discord.message.DiscordMessageRepository;
 import server.MATE.global.discord.message.DiscordMessageType;
 import server.MATE.global.discord.report.ReportAlertMessageFormatter.MessageState;
 import server.MATE.global.discord.webhook.embed.DiscordEmbed;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -70,19 +71,32 @@ public class ReportAlertService {
             Optional<DiscordMessage> existing = discordMessageRepository.findByTypeAndTargetId(TYPE, event.testId());
             String messageId;
             if (existing.isPresent()) {
-                messageId = existing.get().getMessageId();
-                botRestClient.editMessage(existing.get().getChannelId(), messageId, body);
+                try {
+                    messageId = existing.get().getMessageId();
+                    botRestClient.editMessage(existing.get().getChannelId(), messageId, body);
+                } catch (WebClientResponseException.NotFound notFound) {
+                    // Discord에서 카드가 지워진 경우 위치를 정리하고 새 카드로 대체함
+                    discordMessageRepository.delete(existing.get());
+                    log.info("[DISCORD] 리포트 실패 카드가 없어 새로 만듭니다. testId={}", event.testId());
+                    messageId = createStatusCard(channelId, event.testId(), body);
+                }
             } else {
-                messageId = botRestClient.createMessage(channelId, body);
-                // 스레드 생성이 실패해도 상태 카드는 추적되도록 위치를 먼저 저장함
-                discordMessageRepository.save(DiscordMessage.create(TYPE, event.testId(), channelId, messageId));
-                botRestClient.startThread(channelId, messageId, ReportAlertMessageFormatter.THREAD_NAME);
+                messageId = createStatusCard(channelId, event.testId(), body);
             }
             // 메시지에서 만든 스레드 ID는 메시지 ID와 같음
             botRestClient.createMessage(messageId, ReportAlertMessageFormatter.threadEmbedBody(errorEmbed));
         } catch (RuntimeException e) {
             log.warn("[DISCORD] 리포트 실패 메시지 전송 실패. testId={}, error={}", event.testId(), e.getMessage());
         }
+    }
+
+    // 새 상태 카드 생성 및 위치 저장, 스레드 생성
+    private String createStatusCard(String channelId, Long testId, Map<String, Object> body) {
+        String messageId = botRestClient.createMessage(channelId, body);
+        // 스레드 생성이 실패해도 상태 카드는 추적되도록 위치를 먼저 저장함
+        discordMessageRepository.save(DiscordMessage.create(TYPE, testId, channelId, messageId));
+        botRestClient.startThread(channelId, messageId, ReportAlertMessageFormatter.THREAD_NAME);
+        return messageId;
     }
 
     public void notifyAiDegraded(ReportAiDegradedEvent event) {
@@ -120,18 +134,23 @@ public class ReportAlertService {
         if (isLocal() || !botRestClient.isConfigured()) {
             return;
         }
+        DiscordMessage message = null;
         try {
             Optional<DiscordMessage> existing = discordMessageRepository.findByTypeAndTargetId(TYPE, testId);
             if (existing.isEmpty()) {
                 return;
             }
-            DiscordMessage message = existing.get();
+            message = existing.get();
             ReportAlertTarget target = loadTarget(testId);
             String cause = ReportAlertMessageFormatter.extractCause(
                     botRestClient.getMessage(message.getChannelId(), message.getMessageId()));
             botRestClient.editMessage(message.getChannelId(), message.getMessageId(),
                     ReportAlertMessageFormatter.statusMessageBody(target, cause, state));
             botRestClient.createMessage(message.getMessageId(), ReportAlertMessageFormatter.threadTextBody(threadLine));
+        } catch (WebClientResponseException.NotFound e) {
+            // Discord에서 카드가 지워진 경우 위치를 정리하고 새 카드로 대체함
+            discordMessageRepository.delete(message);
+            log.info("[DISCORD] 리포트 실패 카드가 없어 위치를 지웁니다. testId={}", testId);
         } catch (RuntimeException e) {
             log.warn("[DISCORD] 리포트 메시지 상태 갱신 실패. testId={}, state={}, error={}", testId, state, e.getMessage());
         }
