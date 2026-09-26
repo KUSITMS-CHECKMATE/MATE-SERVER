@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import server.MATE.domain.test.dto.response.AdminTestDetailResponse;
 import server.MATE.domain.test.dto.response.AdminTestListItemResponse;
 import server.MATE.domain.test.dto.response.AdminTestListResponse;
+import server.MATE.domain.test.dto.response.AdminTestProgressResponse;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.global.discord.bot.interaction.AdminBotCustomIds;
 
@@ -24,6 +25,7 @@ public final class AdminBotMessageFormatter {
     public static final String HEADER_DETAIL = "**🔍 테스트 상세 조회**";
     public static final String HEADER_APPROVE = "**✅ 테스트 승인**";
     public static final String HEADER_REJECT = "**❌ 테스트 반려**";
+    public static final String HEADER_PROGRESS = "**📊 테스트 참여 현황**";
     public static final String HEADER_CREATED = "**🆕 새로운 테스트 등록**";
 
     private static final Color COLOR_WAITING = new Color(0xD1A85E);
@@ -165,6 +167,28 @@ public final class AdminBotMessageFormatter {
 
     private static String firstImageOrNull(AdminTestDetailResponse d) {
         return (d.imageUrls() == null || d.imageUrls().isEmpty()) ? null : d.imageUrls().get(0);
+    }
+
+    // 참여 현황
+    public static MessageEmbed progressEmbed(AdminTestProgressResponse p) {
+        return new EmbedBuilder()
+                .setTitle(String.format("%s · #%d %s", statusLabel(p.testStatus()), p.testId(), p.title()))
+                .setColor(color(p.testStatus()))
+                .setThumbnail(p.thumbnailUrl())
+                .setDescription(progressBody(p))
+                .build();
+    }
+
+    // 검토 대기·반려는 수치 대신 안내만 표시. 설명 앞 개행은 Discord가 지우므로 ZWSP로 빈 줄 유지
+    private static String progressBody(AdminTestProgressResponse p) {
+        return switch (p.testStatus()) {
+            case WAITING -> ZWSP + "\n> 검토 대기 중입니다.";
+            case REJECTED -> ZWSP + "\n> 테스트가 반려되었습니다.";
+            case IN_PROGRESS, COMPLETED -> String.format(
+                    "%s\n\n🎯 목표 인원 | `%d명`\n👥 참여 인원 | `%d명`\n📈 달성률 | `%d%%`",
+                    p.description() == null ? "" : p.description(),
+                    p.goalPpl(), p.pplCount(), p.achievementPercent());
+        };
     }
 
     // 승인/반려/재승인 버튼
