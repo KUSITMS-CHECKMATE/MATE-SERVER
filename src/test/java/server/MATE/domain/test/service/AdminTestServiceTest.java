@@ -332,7 +332,8 @@ class AdminTestServiceTest {
 
     @Test
     void reopen_closedDateTomorrow_succeeds() {
-        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(completedTest(5L)));
+        server.MATE.domain.test.entity.Test test = completedTest(5L);
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
         given(paymentRepository.findByTestId(TEST_ID)).willReturn(Optional.empty());
 
         TransactionSynchronizationManager.initSynchronization();
@@ -340,6 +341,9 @@ class AdminTestServiceTest {
             AdminTestStatusResponse response = adminTestService.reopen(TEST_ID, LocalDate.of(2026, 9, 28));
 
             assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
+            assertThat(test.getClosedAt()).isEqualTo(LocalDateTime.of(2026, 9, 28, 23, 59, 59));
+            TransactionSynchronizationManager.getSynchronizations().forEach(sync -> sync.afterCommit());
+            verify(testCloseScheduler).schedule(TEST_ID, LocalDateTime.of(2026, 9, 28, 23, 59, 59));
         } finally {
             TransactionSynchronizationManager.clearSynchronization();
         }
