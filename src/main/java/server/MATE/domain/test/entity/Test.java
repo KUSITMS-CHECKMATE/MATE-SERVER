@@ -205,6 +205,13 @@ public class Test extends BaseEntity {
         this.reportStatus = ReportStatus.FAILED;
     }
 
+    // 재집계용. 옛 파일 재사용 방지를 위해 키도 함께 초기화함
+    public void restartReportAggregation() {
+        this.pdfKey = null;
+        this.excelKey = null;
+        this.reportStatus = ReportStatus.IN_PROGRESS;
+    }
+
     public void savePdfKey(String pdfKey) {
         this.pdfKey = pdfKey;
     }
