@@ -168,6 +168,14 @@ public class ReportAggregateService {
     @Recover
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<Report> recover(Exception e, Long testId) {
+        Optional<Test> activeTest = testRepository.findActiveById(testId);
+        // 재개 전 리포트만 남은 경우 새 응답이 빠진 옛 결과라 완료 확정 대신 실패 처리함
+        if (activeTest.isPresent() && hasReportsBeforeReopen(activeTest.get())) {
+            log.error("테스트 {} 재개 후 재집계 3회 실패, 재개 전 리포트만 남아 완료 확정 대신 실패 처리합니다", testId, e);
+            updateReportStatus(testId, id -> activeTest, Test::failReportAggregation);
+            return List.of();
+        }
+
         long questionCount = questionRepository.countQuestionsInTest(testId);
         long reportCount = reportRepository.countByTestId(testId);
 

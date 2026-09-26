@@ -345,6 +345,47 @@ class ReportAggregateServiceTest {
         verify(reportRepository, never()).existsByTestIdAndCreatedAtBefore(any(), any());
     }
 
+    @Test
+    @DisplayName("재개 전 리포트만 남은 채 재집계가 3회 실패하면 FAILED로 복구하고 완료 알림을 보내지 않는다")
+    void recover_whenOnlyReportsBeforeReopen_marksFailedWithoutNotification() {
+        LocalDateTime reopenedAt = LocalDateTime.of(2026, 9, 27, 1, 0);
+        ReflectionTestUtils.setField(test, "reopenedAt", reopenedAt);
+        test.startReportAggregation();
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(reportRepository.existsByTestIdAndCreatedAtBefore(TEST_ID, reopenedAt)).willReturn(true);
+
+        List<Report> recovered = reportAggregateService.recover(
+                new IllegalStateException("AI 호출 실패"), TEST_ID);
+
+        assertThat(recovered).isEmpty();
+        assertThat(test.getReportStatus()).isEqualTo(ReportStatus.FAILED);
+        verifyNoInteractions(eventPublisher);
+        verify(testRepository, never()).findByIdForUpdate(any());
+    }
+
+    @Test
+    @DisplayName("재개 뒤에 만든 리포트만 있으면 recover도 완료로 확정한다")
+    void recover_whenReportsCreatedAfterReopen_marksCompleted() {
+        LocalDateTime reopenedAt = LocalDateTime.of(2026, 9, 27, 1, 0);
+        ReflectionTestUtils.setField(test, "reopenedAt", reopenedAt);
+        test.startReportAggregation();
+        Report report1 = report(101L);
+        Report report2 = report(102L);
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(reportRepository.existsByTestIdAndCreatedAtBefore(TEST_ID, reopenedAt)).willReturn(false);
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(2L);
+        given(reportRepository.countByTestId(TEST_ID)).willReturn(2L);
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(reportRepository.findAllByTestId(TEST_ID)).willReturn(List.of(report1, report2));
+
+        List<Report> recovered = reportAggregateService.recover(
+                new DataIntegrityViolationException("duplicate key"), TEST_ID);
+
+        assertThat(recovered).containsExactly(report1, report2);
+        assertThat(test.getReportStatus()).isEqualTo(ReportStatus.COMPLETED);
+        verify(eventPublisher).publishEvent(new ReportCompletedEvent(TEST_ID, test.getMakerId(), test.getTitle()));
+    }
+
     private Question subjectiveQuestion(Long id) {
         Question question = Question.builder()
                 .testId(TEST_ID)
