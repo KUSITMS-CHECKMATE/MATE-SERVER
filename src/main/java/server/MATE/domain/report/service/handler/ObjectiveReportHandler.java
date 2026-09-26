@@ -8,7 +8,9 @@ import server.MATE.domain.question.entity.ObjectiveOption;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.ObjectiveRepository;
+import server.MATE.domain.report.service.AiFailureCollector;
 import server.MATE.domain.report.service.ReportHandler;
+import server.MATE.global.claude.AiAnalysisOutcome;
 import server.MATE.global.claude.SubjectiveAiService;
 
 import java.util.ArrayList;
@@ -37,6 +39,12 @@ public class ObjectiveReportHandler implements ReportHandler {
 
     @Override
     public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId, boolean includeAiAnalysis) {
+        return compute(questions, answersByQuestionId, includeAiAnalysis, new AiFailureCollector());
+    }
+
+    @Override
+    public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId,
+                                                   boolean includeAiAnalysis, AiFailureCollector aiFailureCollector) {
         List<Long> questionIds = questions.stream().map(Question::getId).toList();
         Map<Long, Objective> objectiveMap = objectiveRepository.findAllByIdIn(questionIds).stream()
                 .collect(Collectors.toMap(Objective::getId, o -> o));
@@ -45,12 +53,13 @@ public class ObjectiveReportHandler implements ReportHandler {
         for (Question question : questions) {
             Objective objective = objectiveMap.get(question.getId());
             List<Answer> answers = answersByQuestionId.getOrDefault(question.getId(), List.of());
-            result.put(question.getId(), computeForObjective(objective, answers, includeAiAnalysis));
+            result.put(question.getId(), computeForObjective(question.getId(), objective, answers, includeAiAnalysis, aiFailureCollector));
         }
         return result;
     }
 
-    private Map<String, Object> computeForObjective(Objective objective, List<Answer> answers, boolean includeAiAnalysis) {
+    private Map<String, Object> computeForObjective(Long questionId, Objective objective, List<Answer> answers,
+                                                      boolean includeAiAnalysis, AiFailureCollector aiFailureCollector) {
         Map<Long, Integer> countByOptionId = new LinkedHashMap<>();
         for (ObjectiveOption option : objective.getOptions()) {
             countByOptionId.put(option.getId(), 0);
@@ -82,12 +91,13 @@ public class ObjectiveReportHandler implements ReportHandler {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("options", options);
         if (objective.isOther()) {
-            appendAiResult(result, otherTexts, includeAiAnalysis);
+            appendAiResult(result, otherTexts, includeAiAnalysis, questionId, aiFailureCollector);
         }
         return result;
     }
 
-    private void appendAiResult(Map<String, Object> result, List<String> texts, boolean includeAiAnalysis) {
+    private void appendAiResult(Map<String, Object> result, List<String> texts, boolean includeAiAnalysis,
+                                 Long questionId, AiFailureCollector aiFailureCollector) {
         if (!includeAiAnalysis) {
             result.put("aiSummary", null);
             result.put("clusters", List.of());
@@ -102,18 +112,16 @@ public class ObjectiveReportHandler implements ReportHandler {
             return;
         }
 
-        aiService.analyze(texts).ifPresentOrElse(
-                aiResult -> {
-                    result.put("aiSummary", aiResult.aiSummary());
-                    result.put("clusters", aiResult.toClusterMaps());
-                    result.put("otherTexts", ReportHandlerUtils.sampleTexts(texts));
-                },
-                () -> {
-                    result.put("aiSummary", null);
-                    result.put("clusters", ReportHandlerUtils.buildClusters(texts));
-                    result.put("otherTexts", ReportHandlerUtils.sampleTexts(texts));
-                }
-        );
+        AiAnalysisOutcome outcome = aiService.analyze(texts);
+        aiFailureCollector.record(questionId, outcome);
+        if (outcome.isSuccess()) {
+            result.put("aiSummary", outcome.result().aiSummary());
+            result.put("clusters", outcome.result().toClusterMaps());
+        } else {
+            result.put("aiSummary", null);
+            result.put("clusters", ReportHandlerUtils.buildClusters(texts));
+        }
+        result.put("otherTexts", ReportHandlerUtils.sampleTexts(texts));
     }
 
 }
