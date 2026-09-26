@@ -8,7 +8,9 @@ import server.MATE.domain.question.entity.FiveSecondOption;
 import server.MATE.domain.question.entity.Question;
 import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.FiveSecondRepository;
+import server.MATE.domain.report.service.AiFailureCollector;
 import server.MATE.domain.report.service.ReportHandler;
+import server.MATE.global.claude.AiAnalysisOutcome;
 import server.MATE.global.claude.SubjectiveAiService;
 
 import java.util.ArrayList;
@@ -37,6 +39,12 @@ public class FiveSecondReportHandler implements ReportHandler {
 
     @Override
     public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId, boolean includeAiAnalysis) {
+        return compute(questions, answersByQuestionId, includeAiAnalysis, new AiFailureCollector());
+    }
+
+    @Override
+    public Map<Long, Map<String, Object>> compute(List<Question> questions, Map<Long, List<Answer>> answersByQuestionId,
+                                                   boolean includeAiAnalysis, AiFailureCollector aiFailureCollector) {
         List<Long> questionIds = questions.stream().map(Question::getId).toList();
         Map<Long, FiveSecond> fiveSecondMap = fiveSecondRepository.findAllByIdIn(questionIds).stream()
                 .collect(Collectors.toMap(FiveSecond::getId, f -> f));
@@ -46,13 +54,14 @@ public class FiveSecondReportHandler implements ReportHandler {
             FiveSecond fiveSecond = fiveSecondMap.get(question.getId());
             List<Answer> answers = answersByQuestionId.getOrDefault(question.getId(), List.of());
             result.put(question.getId(), fiveSecond.isObjective()
-                    ? computeObjective(fiveSecond, answers, includeAiAnalysis)
-                    : computeSubjective(answers, includeAiAnalysis));
+                    ? computeObjective(question.getId(), fiveSecond, answers, includeAiAnalysis, aiFailureCollector)
+                    : computeSubjective(question.getId(), answers, includeAiAnalysis, aiFailureCollector));
         }
         return result;
     }
 
-    private Map<String, Object> computeObjective(FiveSecond fiveSecond, List<Answer> answers, boolean includeAiAnalysis) {
+    private Map<String, Object> computeObjective(Long questionId, FiveSecond fiveSecond, List<Answer> answers,
+                                                   boolean includeAiAnalysis, AiFailureCollector aiFailureCollector) {
         Map<Long, Integer> countByOptionId = new LinkedHashMap<>();
         for (FiveSecondOption option : fiveSecond.getOptions()) {
             countByOptionId.put(option.getId(), 0);
@@ -84,12 +93,13 @@ public class FiveSecondReportHandler implements ReportHandler {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("options", options);
         if (Boolean.TRUE.equals(fiveSecond.getIsOther())) {
-            appendAiResult(result, otherTexts, "otherTexts", includeAiAnalysis);
+            appendAiResult(result, otherTexts, "otherTexts", includeAiAnalysis, questionId, aiFailureCollector);
         }
         return result;
     }
 
-    private Map<String, Object> computeSubjective(List<Answer> answers, boolean includeAiAnalysis) {
+    private Map<String, Object> computeSubjective(Long questionId, List<Answer> answers, boolean includeAiAnalysis,
+                                                    AiFailureCollector aiFailureCollector) {
         List<String> allTexts = answers.stream()
                 .sorted(Comparator.comparing(Answer::getCreatedAt))
                 .map(a -> (String) a.getAnswer().get("text"))
@@ -97,11 +107,12 @@ public class FiveSecondReportHandler implements ReportHandler {
                 .toList();
 
         Map<String, Object> result = new LinkedHashMap<>();
-        appendAiResult(result, allTexts, "texts", includeAiAnalysis);
+        appendAiResult(result, allTexts, "texts", includeAiAnalysis, questionId, aiFailureCollector);
         return result;
     }
 
-    private void appendAiResult(Map<String, Object> result, List<String> texts, String rawTextsKey, boolean includeAiAnalysis) {
+    private void appendAiResult(Map<String, Object> result, List<String> texts, String rawTextsKey, boolean includeAiAnalysis,
+                                 Long questionId, AiFailureCollector aiFailureCollector) {
         if (!includeAiAnalysis) {
             result.put("aiSummary", null);
             result.put("clusters", List.of());
@@ -116,17 +127,15 @@ public class FiveSecondReportHandler implements ReportHandler {
             return;
         }
 
-        aiService.analyze(texts).ifPresentOrElse(
-                aiResult -> {
-                    result.put("aiSummary", aiResult.aiSummary());
-                    result.put("clusters", aiResult.toClusterMaps());
-                    result.put(rawTextsKey, ReportHandlerUtils.sampleTexts(texts));
-                },
-                () -> {
-                    result.put("aiSummary", null);
-                    result.put("clusters", ReportHandlerUtils.buildClusters(texts));
-                    result.put(rawTextsKey, ReportHandlerUtils.sampleTexts(texts));
-                }
-        );
+        AiAnalysisOutcome outcome = aiService.analyze(texts);
+        aiFailureCollector.record(questionId, outcome);
+        if (outcome.isSuccess()) {
+            result.put("aiSummary", outcome.result().aiSummary());
+            result.put("clusters", outcome.result().toClusterMaps());
+        } else {
+            result.put("aiSummary", null);
+            result.put("clusters", ReportHandlerUtils.buildClusters(texts));
+        }
+        result.put(rawTextsKey, ReportHandlerUtils.sampleTexts(texts));
     }
 }
