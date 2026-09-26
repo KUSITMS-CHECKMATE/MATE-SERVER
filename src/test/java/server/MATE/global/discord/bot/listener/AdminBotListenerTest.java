@@ -1,7 +1,9 @@
 package server.MATE.global.discord.bot.listener;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -14,11 +16,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
+import server.MATE.domain.test.dto.response.AdminTestProgressResponse;
+import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.service.AdminTestService;
 import server.MATE.global.discord.bot.command.AdminTestCommands;
+import server.MATE.global.discord.bot.message.AdminBotMessageFormatter;
 import server.MATE.global.discord.bot.message.TeamHeartResolver;
 import server.MATE.global.discord.config.DiscordProperties;
 
@@ -96,5 +103,26 @@ class AdminBotListenerTest {
 
         verify(replyCallbackAction).queue();
         verifyNoInteractions(adminTestService);
+    }
+
+    @Test
+    @DisplayName("progress 명령이면 참여 현황을 조회해 헤더와 embed로 응답한다")
+    void onSlashCommandInteraction_progress() {
+        OptionMapping testIdOption = mock(OptionMapping.class);
+        when(event.getName()).thenReturn(AdminTestCommands.ROOT);
+        when(event.getChannel()).thenReturn(channel);
+        when(channel.getId()).thenReturn("123");
+        when(event.getSubcommandName()).thenReturn(AdminTestCommands.SUB_PROGRESS);
+        when(event.getOption(AdminTestCommands.OPTION_TEST_ID)).thenReturn(testIdOption);
+        when(testIdOption.getAsLong()).thenReturn(12L);
+        when(adminTestService.getProgress(12L)).thenReturn(new AdminTestProgressResponse(
+                12L, "앱 온보딩 테스트", "설명", TestStatus.IN_PROGRESS, 100, 37L, 37, null));
+        when(event.reply(AdminBotMessageFormatter.HEADER_PROGRESS)).thenReturn(replyCallbackAction);
+        when(replyCallbackAction.addEmbeds(any(MessageEmbed.class))).thenReturn(replyCallbackAction);
+
+        listener.onSlashCommandInteraction(event);
+
+        verify(adminTestService).getProgress(12L);
+        verify(replyCallbackAction).queue();
     }
 }
