@@ -110,6 +110,23 @@ class DiscordWebhookClientTest {
         assertThat(calls.get()).isEqualTo(3);
     }
 
+    @Test
+    @DisplayName("sendAndWait: 개별 요청이 응답 없이 지연되면 attempt timeout으로 재시도한다")
+    void sendAndWait_attemptTimeout_retries() {
+        AtomicInteger calls = new AtomicInteger();
+        WebClient.Builder builder = WebClient.builder().exchangeFunction(request -> {
+            if (calls.incrementAndGet() < 2) {
+                return Mono.never();
+            }
+            return Mono.just(ClientResponse.create(HttpStatus.NO_CONTENT).build());
+        });
+        DiscordWebhookClient client = new DiscordWebhookClient(builder);
+
+        assertThatCode(() -> client.sendAndWait("test-alert", "https://discord.test/hook", EMBED))
+                .doesNotThrowAnyException();
+        assertThat(calls.get()).isEqualTo(2);
+    }
+
     private static WebClientRequestException timeoutException() {
         return new WebClientRequestException(
                 new IOException("Operation timed out"),
