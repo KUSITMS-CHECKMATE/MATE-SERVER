@@ -20,6 +20,7 @@ import server.MATE.global.discord.report.ReportAlertMessageFormatter;
 public class ReportBotListener extends ListenerAdapter {
 
     static final String CHANNEL_RESTRICTION_MESSAGE = "이 버튼은 리포트 관리 채널에서만 사용할 수 있습니다.";
+    static final String UNEXPECTED_ERROR_MESSAGE = "오류: 재집계 요청 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.";
 
     private final ReportReaggregateService reportReaggregateService;
     private final DiscordProperties properties;
@@ -47,6 +48,9 @@ public class ReportBotListener extends ListenerAdapter {
             reportReaggregateService.reaggregate(testId, requester);
         } catch (BaseException e) {
             event.getHook().sendMessage("오류: " + e.getMessage()).setEphemeral(true).queue();
+        } catch (RuntimeException e) {
+            log.error("리포트 재집계 버튼 처리 실패. testId={}", testId, e);
+            event.getHook().sendMessage(UNEXPECTED_ERROR_MESSAGE).setEphemeral(true).queue();
         }
     }
 
