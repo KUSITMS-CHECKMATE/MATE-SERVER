@@ -19,6 +19,7 @@ import server.MATE.global.common.exception.BaseException;
 import server.MATE.global.discord.bot.message.TeamHeartResolver;
 import server.MATE.global.discord.config.DiscordProperties;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -107,6 +108,28 @@ class ReportBotListenerTest {
         listener.onButtonInteraction(event);
 
         verify(hook).sendMessage("오류: " + BaseErrorCode.REPORT_013.getMessage());
+        verify(hookAction).queue();
+    }
+
+    @Test
+    @DisplayName("예상 밖 오류가 발생해도 누른 사람에게 일반 오류 안내를 보여줌")
+    void unexpectedErrorShowsGenericEphemeralError() {
+        given(event.getComponentId()).willReturn("report:reaggregate:15");
+        given(event.getChannel()).willReturn(channel);
+        given(channel.getId()).willReturn("777");
+        given(event.getUser()).willReturn(user);
+        given(user.getIdLong()).willReturn(42L);
+        given(user.getEffectiveName()).willReturn("소윤");
+        given(teamHeartResolver.resolve(42L)).willReturn("💙");
+        given(event.deferEdit()).willReturn(deferAction);
+        given(reportReaggregateService.reaggregate(15L, "💙 **소윤** 님이")).willThrow(new IllegalStateException("db down"));
+        given(event.getHook()).willReturn(hook);
+        given(hook.sendMessage(anyString())).willReturn(hookAction);
+        given(hookAction.setEphemeral(true)).willReturn(hookAction);
+
+        assertThatCode(() -> listener.onButtonInteraction(event)).doesNotThrowAnyException();
+
+        verify(hook).sendMessage(ReportBotListener.UNEXPECTED_ERROR_MESSAGE);
         verify(hookAction).queue();
     }
 }
