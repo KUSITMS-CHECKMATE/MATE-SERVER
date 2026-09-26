@@ -17,11 +17,17 @@ import server.MATE.domain.question.entity.QuestionType;
 import server.MATE.domain.question.repository.QuestionRepository;
 import server.MATE.domain.report.entity.Report;
 import server.MATE.domain.report.event.ReportAggregateService;
+import server.MATE.domain.report.event.ReportAggregationFailedEvent;
+import server.MATE.domain.report.event.ReportAiDegradedEvent;
 import server.MATE.domain.report.event.ReportCompletedEvent;
 import server.MATE.domain.report.repository.ReportRepository;
+import server.MATE.domain.report.service.handler.AiFailureCollector;
 import server.MATE.domain.report.service.handler.ReportHandler;
 import server.MATE.domain.test.entity.ReportStatus;
 import server.MATE.domain.test.repository.TestRepository;
+import server.MATE.global.claude.AiAnalysisOutcome;
+import server.MATE.global.common.exception.BaseErrorCode;
+import server.MATE.global.common.exception.BaseException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -114,7 +121,7 @@ class ReportAggregateServiceTest {
         given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
         given(questionRepository.findQuestionsInTest(TEST_ID)).willReturn(List.of(question));
         given(answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(List.of(101L))).willReturn(List.of(answer));
-        given(reportHandler.compute(List.of(question), Map.of(101L, List.of(answer)), true))
+        given(reportHandler.compute(eq(List.of(question)), eq(Map.of(101L, List.of(answer))), eq(true), any(AiFailureCollector.class)))
                 .willReturn(Map.of(101L, Map.of("texts", List.of("응답"))));
         given(reportRepository.saveAll(any())).willAnswer(invocation -> invocation.getArgument(0));
 
@@ -125,7 +132,7 @@ class ReportAggregateServiceTest {
         assertThat(result.getFirst().getResult()).isEqualTo(Map.of("texts", List.of("응답")));
         assertThat(test.getReportStatus()).isEqualTo(ReportStatus.COMPLETED);
         verify(questionRepository).findQuestionsInTest(TEST_ID);
-        verify(reportHandler).compute(List.of(question), Map.of(101L, List.of(answer)), true);
+        verify(reportHandler).compute(eq(List.of(question)), eq(Map.of(101L, List.of(answer))), eq(true), any(AiFailureCollector.class));
         verify(eventPublisher).publishEvent(new ReportCompletedEvent(TEST_ID, test.getMakerId(), test.getTitle()));
     }
 
@@ -273,7 +280,7 @@ class ReportAggregateServiceTest {
         given(reportRepository.existsByTestIdAndCreatedAtBefore(TEST_ID, reopenedAt)).willReturn(true);
         given(questionRepository.findQuestionsInTest(TEST_ID)).willReturn(List.of(question));
         given(answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(List.of(101L))).willReturn(List.of());
-        given(reportHandler.compute(List.of(question), Map.of(), true))
+        given(reportHandler.compute(eq(List.of(question)), eq(Map.of()), eq(true), any(AiFailureCollector.class)))
                 .willReturn(Map.of(101L, Map.of("texts", List.of("새 응답"))));
         given(reportRepository.saveAll(any())).willAnswer(invocation -> invocation.getArgument(0));
 
@@ -282,7 +289,7 @@ class ReportAggregateServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().getResult()).isEqualTo(Map.of("texts", List.of("새 응답")));
         InOrder inOrder = inOrder(reportHandler, reportRepository);
-        inOrder.verify(reportHandler).compute(List.of(question), Map.of(), true);
+        inOrder.verify(reportHandler).compute(eq(List.of(question)), eq(Map.of()), eq(true), any(AiFailureCollector.class));
         inOrder.verify(reportRepository).deleteAllByTestId(TEST_ID);
         inOrder.verify(reportRepository).saveAll(any());
         assertThat(test.getReportStatus()).isEqualTo(ReportStatus.COMPLETED);
@@ -307,7 +314,7 @@ class ReportAggregateServiceTest {
 
         assertThat(result).hasSize(2);
         verify(reportRepository, never()).deleteAllByTestId(any());
-        verify(reportHandler, never()).compute(any(), any(), anyBoolean());
+        verify(reportHandler, never()).compute(any(), any(), anyBoolean(), any());
         verifyNoInteractions(eventPublisher);
     }
 
@@ -321,7 +328,7 @@ class ReportAggregateServiceTest {
         given(reportRepository.existsByTestIdAndCreatedAtBefore(TEST_ID, reopenedAt)).willReturn(true);
         given(questionRepository.findQuestionsInTest(TEST_ID)).willReturn(List.of(question));
         given(answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(List.of(101L))).willReturn(List.of());
-        given(reportHandler.compute(List.of(question), Map.of(), true))
+        given(reportHandler.compute(eq(List.of(question)), eq(Map.of()), eq(true), any(AiFailureCollector.class)))
                 .willThrow(new IllegalStateException("AI 호출 실패"));
 
         assertThatThrownBy(() -> reportAggregateService.aggregate(TEST_ID))
@@ -353,14 +360,16 @@ class ReportAggregateServiceTest {
         test.startReportAggregation();
         given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
         given(reportRepository.existsByTestIdAndCreatedAtBefore(TEST_ID, reopenedAt)).willReturn(true);
+        IllegalStateException exceptionUsedInThisTest = new IllegalStateException("AI 호출 실패");
 
-        List<Report> recovered = reportAggregateService.recover(
-                new IllegalStateException("AI 호출 실패"), TEST_ID);
+        List<Report> recovered = reportAggregateService.recover(exceptionUsedInThisTest, TEST_ID);
 
         assertThat(recovered).isEmpty();
         assertThat(test.getReportStatus()).isEqualTo(ReportStatus.FAILED);
-        verifyNoInteractions(eventPublisher);
         verify(testRepository, never()).findByIdForUpdate(any());
+        verify(eventPublisher, never()).publishEvent(any(ReportCompletedEvent.class));
+        verify(eventPublisher).publishEvent(ReportAggregationFailedEvent.of(
+                TEST_ID, ReportAggregationFailedEvent.STALE_AFTER_REOPEN, exceptionUsedInThisTest));
     }
 
     @Test
@@ -384,6 +393,78 @@ class ReportAggregateServiceTest {
         assertThat(recovered).containsExactly(report1, report2);
         assertThat(test.getReportStatus()).isEqualTo(ReportStatus.COMPLETED);
         verify(eventPublisher).publishEvent(new ReportCompletedEvent(TEST_ID, test.getMakerId(), test.getTitle()));
+    }
+
+    @Test
+    @DisplayName("일부만 남은 리포트로 FAILED가 되면 불일치 실패 이벤트를 발행한다")
+    void aggregate_partialReports_publishesMismatchEvent() {
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(5L);
+        given(reportRepository.countByTestId(TEST_ID)).willReturn(3L);
+
+        reportAggregateService.aggregate(TEST_ID);
+
+        assertThat(test.getReportStatus()).isEqualTo(ReportStatus.FAILED);
+        verify(eventPublisher).publishEvent(ReportAggregationFailedEvent.mismatch(TEST_ID, 5L, 3L));
+    }
+
+    @Test
+    @DisplayName("recover 일반 예외는 재시도 3회 실패, BaseException은 재시도 제외 오류로 발행한다")
+    void recover_generic_publishesCauseByExceptionType() {
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(2L);
+        given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        RuntimeException generic = new IllegalStateException("x");
+        BaseException nonRetryable = new BaseException(BaseErrorCode.COMMON_002);
+
+        reportAggregateService.recover(generic, TEST_ID);
+        reportAggregateService.recover(nonRetryable, TEST_ID);
+
+        verify(eventPublisher).publishEvent(ReportAggregationFailedEvent.of(TEST_ID, ReportAggregationFailedEvent.RETRY_EXHAUSTED, generic));
+        verify(eventPublisher).publishEvent(ReportAggregationFailedEvent.of(TEST_ID, ReportAggregationFailedEvent.NON_RETRYABLE, nonRetryable));
+    }
+
+    @Test
+    @DisplayName("집계 중 AI 실패가 있으면 COMPLETED와 함께 AI 이벤트를 발행한다")
+    void aggregate_aiFailure_publishesDegradedEvent() {
+        Question question = subjectiveQuestion(101L);
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(1L);
+        given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
+        given(questionRepository.findQuestionsInTest(TEST_ID)).willReturn(List.of(question));
+        given(answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(List.of(101L))).willReturn(List.of());
+        given(reportHandler.compute(eq(List.of(question)), eq(Map.of()), eq(true), any(AiFailureCollector.class)))
+                .willAnswer(invocation -> {
+                    AiFailureCollector collector = invocation.getArgument(3);
+                    collector.record(101L, AiAnalysisOutcome.failure("E: boom"));
+                    return Map.of(101L, Map.of("texts", List.of()));
+                });
+        given(reportRepository.saveAll(any())).willAnswer(invocation -> invocation.getArgument(0));
+
+        reportAggregateService.aggregate(TEST_ID);
+
+        verify(eventPublisher).publishEvent(new ReportAiDegradedEvent(
+                TEST_ID, 1, List.of(new AiFailureCollector.AiFailure(101L, "E: boom"))));
+    }
+
+    @Test
+    @DisplayName("AI 실패가 없으면 AI 이벤트를 발행하지 않는다")
+    void aggregate_noAiFailure_noDegradedEvent() {
+        Question question = subjectiveQuestion(101L);
+        given(testRepository.findActiveById(TEST_ID)).willReturn(Optional.of(test));
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(questionRepository.countQuestionsInTest(TEST_ID)).willReturn(1L);
+        given(reportRepository.countByTestId(TEST_ID)).willReturn(0L);
+        given(questionRepository.findQuestionsInTest(TEST_ID)).willReturn(List.of(question));
+        given(answerRepository.findAllByQuestionIdInAndDeletedAtIsNull(List.of(101L))).willReturn(List.of());
+        given(reportHandler.compute(eq(List.of(question)), eq(Map.of()), eq(true), any(AiFailureCollector.class)))
+                .willReturn(Map.of(101L, Map.of("texts", List.of())));
+        given(reportRepository.saveAll(any())).willAnswer(invocation -> invocation.getArgument(0));
+
+        reportAggregateService.aggregate(TEST_ID);
+
+        verify(eventPublisher, never()).publishEvent(any(ReportAiDegradedEvent.class));
     }
 
     private Question subjectiveQuestion(Long id) {
