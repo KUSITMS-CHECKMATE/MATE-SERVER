@@ -98,6 +98,8 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// 운영과 같은 KST 기본 시간대에서 테스트 실행
+	systemProperty 'user.timezone', 'Asia/Seoul'
 }
 
 tasks.named('bootJar') {

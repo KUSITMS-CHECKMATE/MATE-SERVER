@@ -55,6 +55,8 @@ spec:
               value: /mnt/mtls/cert.pem
             - name: TOSS_MTLS_KEY_PATH
               value: /mnt/mtls/key.pem
+            - name: JAVA_TOOL_OPTIONS
+              value: -Duser.timezone=Asia/Seoul
           envFrom:
             - secretRef:
                 name: mate-app-secrets
