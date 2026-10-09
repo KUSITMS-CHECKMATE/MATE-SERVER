@@ -129,33 +129,7 @@ body {
 /* ════════════════════════════════
    Horizontal Bar Chart (객관식)
    ════════════════════════════════ */
-.hbar-container {
-  display: flex;
-  gap: 12px;
-}
-.hbar-labels {
-  width: 133px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 19px;
-  padding: 12px 0;
-}
-.hbar-label {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  font-size: 11px;
-  color: rgba(0,12,30,0.8);
-  letter-spacing: -0.11px;
-  line-height: 1.55;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .hbar-chart-group {
-  flex: 1;
-  border-left: 1px solid #4e5968;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -164,7 +138,24 @@ body {
 .hbar-row {
   display: flex;
   align-items: center;
-  height: 24px;
+  gap: 12px;
+  min-height: 24px;
+}
+.hbar-label {
+  width: 133px;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: rgba(0,12,30,0.8);
+  letter-spacing: -0.11px;
+  line-height: 1.55;
+  text-align: right;
+  word-break: keep-all;
+}
+.hbar-bar-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  border-left: 1px solid #4e5968;
 }
 .hbar-bar {
   height: 24px;
@@ -239,7 +230,7 @@ body {
 .vbar-ratings { display: flex; }
 .vbar-rating-col {
   width: 74px;
-  height: 50px;
+  min-height: 50px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -259,7 +250,6 @@ body {
   letter-spacing: -0.11px;
   line-height: 1.4;
   text-align: center;
-  overflow: hidden;
 }
 /* Scale Table */
 .vtbl { padding-top: 12px; }
@@ -587,28 +577,24 @@ body {
   function renderHBar(options) {
     const maxRatio = Math.max(...options.map(o => o.ratio), 1);
 
-    const labels = options.map(o =>
-      `<div class="hbar-label">${esc(o.label)}</div>`
-    ).join('');
-
-    const bars = options.map((o, i) => {
+    const rows = options.map((o, i) => {
       const barW = Math.max(1, Math.round(o.ratio / maxRatio * MAX_BAR_PX));
       return `
         <div class="hbar-row">
-          <div class="hbar-bar ${i === 0 ? 'first' : 'other'}" style="width:${barW}px"></div>
-          <div class="hbar-caption">
-            <svg width="22" height="1" viewBox="0 0 22 1" style="display:block;overflow:visible;flex-shrink:0">
-              <line x1="0" y1="0.5" x2="22" y2="0.5" stroke="rgba(0,12,30,0.5)" stroke-width="1"/>
-            </svg>
-            <span class="hbar-val">응답 ${o.count} (${o.ratio}%)</span>
+          <div class="hbar-label">${esc(o.label)}</div>
+          <div class="hbar-bar-wrap">
+            <div class="hbar-bar ${i === 0 ? 'first' : 'other'}" style="width:${barW}px"></div>
+            <div class="hbar-caption">
+              <svg width="22" height="1" viewBox="0 0 22 1" style="display:block;overflow:visible;flex-shrink:0">
+                <line x1="0" y1="0.5" x2="22" y2="0.5" stroke="rgba(0,12,30,0.5)" stroke-width="1"/>
+              </svg>
+              <span class="hbar-val">응답 ${o.count} (${o.ratio}%)</span>
+            </div>
           </div>
         </div>`;
     }).join('');
 
-    return `<div class="hbar-container">
-      <div class="hbar-labels">${labels}</div>
-      <div class="hbar-chart-group">${bars}</div>
-    </div>`;
+    return `<div class="hbar-chart-group">${rows}</div>`;
   }
 
   // ─── 파이 차트 (OBJECTIVE 중복허용) ──────────────────────────────
@@ -671,8 +657,30 @@ body {
   // ─── 주관식 ───────────────────────────────────────────────────────
   function renderSubjective(result) {
     const hasAiSummary = result.aiSummary != null && result.aiSummary !== '';
-    const items = (result.clusters ?? []).flatMap(c => c.responses ?? [])
-                    .concat(result.texts ?? []).slice(0, 7);
+    const allItems = (result.clusters ?? []).flatMap(c => c.responses ?? [])
+                      .concat(result.texts ?? []);
+
+    // 페이지 body 가용 높이: 842 - header52 - top115 - footer52 - bodyPad24 = 599
+    const BODY_H = 595;
+    const LINE_H = 18.6; // 12px * line-height 1.55
+    const CPL = 36;      // chars per line (Korean 12px, ~515px 너비, 보수적)
+    const LIST_HEADER_H = 99; // sj-section padding + title + sub + list-wrap padding
+
+    let budget = BODY_H - LIST_HEADER_H;
+
+    if (hasAiSummary) {
+      const boxLines = Math.max(1, Math.ceil(result.aiSummary.length / CPL));
+      // ai section: padding24 + title31 + gap8 + sub22 + gap8 + aiBox(24+lines*LINE_H)
+      budget -= 93 + 24 + boxLines * LINE_H;
+    }
+
+    const items = [];
+    for (const text of allItems) {
+      const h = Math.max(1, Math.ceil(text.length / CPL)) * LINE_H + 24 + (items.length > 0 ? 8 : 0);
+      if (items.length > 0 && budget - h < 0) break;
+      items.push(text);
+      budget -= h;
+    }
 
     const aiSection = hasAiSummary ? `
       <div class="sj-section">
@@ -856,31 +864,27 @@ body {
     const ratios = cat.cards.map(c => Math.round(c.ratio * 100));
     const maxRatio = Math.max(...ratios, 1);
 
-    const labels = cat.cards.map(c =>
-      `<div class="hbar-label">${esc(c.cardName)}</div>`
-    ).join('');
-
     const rows = cat.cards.map((c, i) => {
       const pct = Math.round(c.ratio * 100);
       const barW = Math.max(1, Math.round(pct / maxRatio * MAX_BAR_PX));
       return `
         <div class="hbar-row">
-          <div class="hbar-bar ${i === 0 ? 'first' : 'other'}" style="width:${barW}px"></div>
-          <div class="hbar-caption">
-            <svg width="22" height="1" viewBox="0 0 22 1" style="display:block;overflow:visible;flex-shrink:0">
-              <line x1="0" y1="0.5" x2="22" y2="0.5" stroke="rgba(0,12,30,0.5)" stroke-width="1"/>
-            </svg>
-            <span class="hbar-val">응답 ${c.count} (${pct}%)</span>
+          <div class="hbar-label">${esc(c.cardName)}</div>
+          <div class="hbar-bar-wrap">
+            <div class="hbar-bar ${i === 0 ? 'first' : 'other'}" style="width:${barW}px"></div>
+            <div class="hbar-caption">
+              <svg width="22" height="1" viewBox="0 0 22 1" style="display:block;overflow:visible;flex-shrink:0">
+                <line x1="0" y1="0.5" x2="22" y2="0.5" stroke="rgba(0,12,30,0.5)" stroke-width="1"/>
+              </svg>
+              <span class="hbar-val">응답 ${c.count} (${pct}%)</span>
+            </div>
           </div>
         </div>`;
     }).join('');
 
     return `
       <div class="cat-badge-wrap"><div class="cat-badge">${esc(cat.category)} 카테고리</div></div>
-      <div class="hbar-container">
-        <div class="hbar-labels">${labels}</div>
-        <div class="hbar-chart-group">${rows}</div>
-      </div>`;
+      <div class="hbar-chart-group">${rows}</div>`;
   }
 
   // ─── 페이지 생성 ──────────────────────────────────────────────────
