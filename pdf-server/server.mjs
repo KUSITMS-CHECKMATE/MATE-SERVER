@@ -4,7 +4,6 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
-
 const PORT = 3001;
 const MATE_API_BASE_URL = (process.env.MATE_API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '');
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -119,7 +118,8 @@ const server = http.createServer(async (req, res) => {
         console.log('[pdf-server] 렌더링 완료 확인, PDF 생성 시작');
 
         const pdfBuffer = await page.pdf({
-          format: 'A4',
+          width: '595px',
+          height: '842px',
           printBackground: true,
           margin: { top: '0', right: '0', bottom: '0', left: '0' },
         });
