@@ -38,14 +38,16 @@ public class TestService {
     private final Clock clock;
 
     @Transactional(readOnly = true)
-    public TestSummaryListResponse listTests(Long userId) {
+    public TestSummaryListResponse listTests(Long userId, int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        int offset = (safePage - 1) * safeSize;
+        List<TestStatus> statuses = List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING);
         LocalDateTime threshold = LocalDate.now(clock.withZone(KST)).atStartOfDay();
-        List<Test> tests = testRepository.findAvailableTestsForUser(
-                List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING),
-                threshold,
-                userId
-        );
-        return TestSummaryListResponse.from(toSummaryResponses(userId, tests));
+
+        List<Test> tests = testRepository.findAvailableTestsForUser(statuses, threshold, userId, offset, safeSize);
+        long totalCount = testRepository.countAvailableTestsForUser(statuses, threshold, userId);
+        return TestSummaryListResponse.of(safePage, safeSize, totalCount, toSummaryResponses(userId, tests));
     }
 
     @Transactional(readOnly = true)

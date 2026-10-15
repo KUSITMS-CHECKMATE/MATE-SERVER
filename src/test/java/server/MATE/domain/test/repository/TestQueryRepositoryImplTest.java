@@ -164,7 +164,9 @@ class TestQueryRepositoryImplTest {
         List<server.MATE.domain.test.entity.Test> result = testRepository.findAvailableTestsForUser(
                 List.of(TestStatus.IN_PROGRESS),
                 LocalDateTime.now(),
-                10L
+                10L,
+                0,
+                10
         );
 
         assertThat(result).hasSize(1);
@@ -184,7 +186,9 @@ class TestQueryRepositoryImplTest {
         List<server.MATE.domain.test.entity.Test> result = testRepository.findAvailableTestsForUser(
                 List.of(TestStatus.IN_PROGRESS),
                 LocalDateTime.now(),
-                10L
+                10L,
+                0,
+                10
         );
 
         assertThat(result).isEmpty();
@@ -193,10 +197,10 @@ class TestQueryRepositoryImplTest {
     @Test
     @DisplayName("findAvailableTestsForUser: 필수 인자가 없으면 빈 리스트를 반환한다")
     void findAvailableTestsForUser_missingRequiredArgs_returnsEmpty() {
-        assertThat(testRepository.findAvailableTestsForUser(null, LocalDateTime.now(), 10L)).isEmpty();
-        assertThat(testRepository.findAvailableTestsForUser(List.of(), LocalDateTime.now(), 10L)).isEmpty();
-        assertThat(testRepository.findAvailableTestsForUser(List.of(TestStatus.IN_PROGRESS), null, 10L)).isEmpty();
-        assertThat(testRepository.findAvailableTestsForUser(List.of(TestStatus.IN_PROGRESS), LocalDateTime.now(), null)).isEmpty();
+        assertThat(testRepository.findAvailableTestsForUser(null, LocalDateTime.now(), 10L, 0, 10)).isEmpty();
+        assertThat(testRepository.findAvailableTestsForUser(List.of(), LocalDateTime.now(), 10L, 0, 10)).isEmpty();
+        assertThat(testRepository.findAvailableTestsForUser(List.of(TestStatus.IN_PROGRESS), null, 10L, 0, 10)).isEmpty();
+        assertThat(testRepository.findAvailableTestsForUser(List.of(TestStatus.IN_PROGRESS), LocalDateTime.now(), null, 0, 10)).isEmpty();
     }
 
     @Test
@@ -212,7 +216,9 @@ class TestQueryRepositoryImplTest {
         List<server.MATE.domain.test.entity.Test> result = testRepository.findAvailableTestsForUser(
                 List.of(TestStatus.IN_PROGRESS),
                 LocalDateTime.now(),
-                10L
+                10L,
+                0,
+                10
         );
 
         assertThat(result).isEmpty();
@@ -230,10 +236,88 @@ class TestQueryRepositoryImplTest {
         List<server.MATE.domain.test.entity.Test> result = testRepository.findAvailableTestsForUser(
                 List.of(TestStatus.IN_PROGRESS),
                 LocalDateTime.now(),
-                10L
+                10L,
+                0,
+                10
         );
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findAvailableTestsForUser: 진행 중 우선, 마감 임박순, 최신 등록순으로 정렬한다")
+    void findAvailableTestsForUser_sortsByInProgressFirstThenClosedAtThenCreatedAt() {
+        LocalDateTime base = LocalDateTime.now().plusDays(1).withNano(0);
+        persistListTest("검수중-임박", TestStatus.WAITING, base, base.minusDays(30));
+        persistListTest("진행중-여유", TestStatus.IN_PROGRESS, base.plusDays(10), base.minusDays(30));
+        persistListTest("진행중-임박-오래됨", TestStatus.IN_PROGRESS, base, base.minusDays(20));
+        persistListTest("진행중-임박-최신", TestStatus.IN_PROGRESS, base, base.minusDays(10));
+        em.getEntityManager()
+                .createQuery("update Test t set t.deletedAt = :now where t.id = :id")
+                .setParameter("now", LocalDateTime.now())
+                .setParameter("id", savedTest.getId())
+                .executeUpdate();
+        em.clear();
+
+        List<server.MATE.domain.test.entity.Test> result = testRepository.findAvailableTestsForUser(
+                List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING),
+                LocalDateTime.now(),
+                10L,
+                0,
+                10
+        );
+
+        assertThat(result).extracting("title")
+                .containsExactly("진행중-임박-최신", "진행중-임박-오래됨", "진행중-여유", "검수중-임박");
+    }
+
+    @Test
+    @DisplayName("findAvailableTestsForUser: offset/limit으로 페이지네이션하고 count는 전체 개수를 센다")
+    void findAvailableTestsForUser_paginatesAndCountsAll() {
+        LocalDateTime base = LocalDateTime.now().plusDays(1).withNano(0);
+        for (int i = 1; i <= 4; i++) {
+            persistListTest("테스트" + i, TestStatus.IN_PROGRESS, base.plusDays(i), base.minusDays(1));
+        }
+        em.clear();
+        List<TestStatus> statuses = List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING);
+
+        List<server.MATE.domain.test.entity.Test> secondPage =
+                testRepository.findAvailableTestsForUser(statuses, LocalDateTime.now(), 10L, 3, 3);
+        long count = testRepository.countAvailableTestsForUser(statuses, LocalDateTime.now(), 10L);
+
+        // setUp의 테스트(마감 7일 후)까지 총 5개: 테스트1~4(1~4일 후 마감) 다음에 위치
+        assertThat(secondPage).extracting("title").containsExactly("테스트4", "테스트 제목");
+        assertThat(count).isEqualTo(5L);
+    }
+
+    @Test
+    @DisplayName("countAvailableTestsForUser: 이미 응답한 테스트는 개수에 포함하지 않고, 필수 인자가 없으면 0을 반환한다")
+    void countAvailableTestsForUser_excludesParticipatedAndHandlesMissingArgs() {
+        em.persistAndFlush(Participation.builder()
+                .testId(savedTest.getId())
+                .testerId(10L)
+                .build());
+        em.clear();
+        List<TestStatus> statuses = List.of(TestStatus.IN_PROGRESS);
+
+        assertThat(testRepository.countAvailableTestsForUser(statuses, LocalDateTime.now(), 10L)).isZero();
+        assertThat(testRepository.countAvailableTestsForUser(statuses, LocalDateTime.now(), 20L)).isEqualTo(1L);
+        assertThat(testRepository.countAvailableTestsForUser(null, LocalDateTime.now(), 10L)).isZero();
+        assertThat(testRepository.countAvailableTestsForUser(statuses, null, 10L)).isZero();
+        assertThat(testRepository.countAvailableTestsForUser(statuses, LocalDateTime.now(), null)).isZero();
+    }
+
+    private void persistListTest(String title, TestStatus status, LocalDateTime closedAt, LocalDateTime createdAt) {
+        server.MATE.domain.test.entity.Test test = em.persistAndFlush(
+                server.MATE.domain.test.entity.Test.builder()
+                        .makerId(1L).title(title).testStatus(status)
+                        .goalPpl(10).reward(300).closedAt(closedAt).build()
+        );
+        em.getEntityManager()
+                .createQuery("update Test t set t.createdAt = :createdAt where t.id = :id")
+                .setParameter("createdAt", createdAt)
+                .setParameter("id", test.getId())
+                .executeUpdate();
     }
 
     @Test

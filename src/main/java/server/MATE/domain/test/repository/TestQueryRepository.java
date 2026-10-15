@@ -9,7 +9,10 @@ import java.util.Optional;
 
 public interface TestQueryRepository {
 
-    List<Test> findAvailableTestsForUser(List<TestStatus> statuses, LocalDateTime closedAt, Long userId);
+    List<Test> findAvailableTestsForUser(List<TestStatus> statuses, LocalDateTime closedAt, Long userId,
+                                         int offset, int limit);
+
+    long countAvailableTestsForUser(List<TestStatus> statuses, LocalDateTime closedAt, Long userId);
 
     List<Test> findByMakerId(Long makerId);
 

@@ -86,27 +86,66 @@ class TestServiceTest {
     }
 
     @Test
-    void 진행_중이거나_검수_중이고_마감일_이내인_테스트_목록을_조회한다() {
+    void 진행_중이거나_검수_중이고_마감일_이내인_테스트_목록을_페이지_단위로_조회한다() {
         server.MATE.domain.test.entity.Test inProgressTest = createListTest(10L, "진행 중 테스트", TestStatus.IN_PROGRESS);
-        ReflectionTestUtils.setField(inProgressTest, "createdAt", LocalDateTime.now().minusDays(10));
-
         server.MATE.domain.test.entity.Test waitingTest = createListTest(11L, "검수 중 테스트", TestStatus.WAITING);
-        ReflectionTestUtils.setField(waitingTest, "createdAt", LocalDateTime.now().minusDays(5));
 
         given(testRepository.findAvailableTestsForUser(
+                eq(List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING)),
                 any(),
-                any(),
-                any()
+                eq(MAKER_ID),
+                eq(0),
+                eq(3)
         )).willReturn(List.of(inProgressTest, waitingTest));
+        given(testRepository.countAvailableTestsForUser(
+                eq(List.of(TestStatus.IN_PROGRESS, TestStatus.WAITING)),
+                any(),
+                eq(MAKER_ID)
+        )).willReturn(2L);
         given(testLikeRepository.findLikedTestIds(MAKER_ID, List.of(10L, 11L)))
                 .willReturn(List.of());
 
-        TestSummaryListResponse response = testService.listTests(MAKER_ID);
+        TestSummaryListResponse response = testService.listTests(MAKER_ID, 1, 3);
 
-        assertThat(response.testCount()).isEqualTo(2);
-        assertThat(response.tests()).hasSize(2);
+        assertThat(response.testCount()).isEqualTo(2L);
+        assertThat(response.page()).isEqualTo(1);
+        assertThat(response.size()).isEqualTo(3);
+        assertThat(response.hasNext()).isFalse();
         assertThat(response.tests()).extracting("title")
                 .containsExactly("진행 중 테스트", "검수 중 테스트");
+    }
+
+    @Test
+    void 전체_개수가_현재_페이지까지의_개수보다_많으면_hasNext가_true다() {
+        List<server.MATE.domain.test.entity.Test> tests = List.of(
+                createListTest(10L, "테스트4", TestStatus.IN_PROGRESS),
+                createListTest(11L, "테스트5", TestStatus.IN_PROGRESS),
+                createListTest(12L, "테스트6", TestStatus.IN_PROGRESS)
+        );
+        given(testRepository.findAvailableTestsForUser(any(), any(), eq(MAKER_ID), eq(3), eq(3)))
+                .willReturn(tests);
+        given(testRepository.countAvailableTestsForUser(any(), any(), eq(MAKER_ID))).willReturn(7L);
+        given(testLikeRepository.findLikedTestIds(MAKER_ID, List.of(10L, 11L, 12L)))
+                .willReturn(List.of());
+
+        TestSummaryListResponse response = testService.listTests(MAKER_ID, 2, 3);
+
+        assertThat(response.testCount()).isEqualTo(7L);
+        assertThat(response.hasNext()).isTrue();
+    }
+
+    @Test
+    void 페이지와_크기가_범위를_벗어나면_보정해서_조회한다() {
+        given(testRepository.findAvailableTestsForUser(any(), any(), eq(MAKER_ID), eq(0), eq(100)))
+                .willReturn(List.of());
+        given(testRepository.countAvailableTestsForUser(any(), any(), eq(MAKER_ID))).willReturn(0L);
+
+        TestSummaryListResponse response = testService.listTests(MAKER_ID, 0, 1000);
+
+        assertThat(response.page()).isEqualTo(1);
+        assertThat(response.size()).isEqualTo(100);
+        assertThat(response.hasNext()).isFalse();
+        assertThat(response.tests()).isEmpty();
     }
 
     @Test
