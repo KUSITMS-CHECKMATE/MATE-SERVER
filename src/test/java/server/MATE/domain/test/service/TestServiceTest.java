@@ -152,6 +152,18 @@ class TestServiceTest {
     }
 
     @Test
+    void 페이지_번호가_너무_커서_offset이_int_범위를_넘으면_조회_없이_빈_페이지를_반환한다() {
+        given(testRepository.countAvailableTestsForUser(any(), any(), eq(MAKER_ID))).willReturn(5L);
+
+        TestSummaryListResponse response = testService.listTests(MAKER_ID, Integer.MAX_VALUE, 100);
+
+        assertThat(response.tests()).isEmpty();
+        assertThat(response.testCount()).isEqualTo(5L);
+        assertThat(response.hasNext()).isFalse();
+        verify(testRepository, never()).findAvailableTestsForUser(any(), any(), any(), anyInt(), anyInt());
+    }
+
+    @Test
     void 종료_테스트_첫_페이지_조회_시_size보다_많으면_잘라서_반환하고_다음_커서를_준다() {
         server.MATE.domain.test.entity.Test newest = createCompletedListTest(10L, "최근 종료", LocalDateTime.of(2026, 10, 3, 12, 0));
         server.MATE.domain.test.entity.Test middle = createCompletedListTest(11L, "중간 종료", LocalDateTime.of(2026, 10, 2, 12, 0));
