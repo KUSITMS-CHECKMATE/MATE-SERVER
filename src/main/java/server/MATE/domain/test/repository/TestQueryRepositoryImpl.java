@@ -1,6 +1,8 @@
 package server.MATE.domain.test.repository;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.LockModeType;
@@ -67,24 +69,72 @@ public class TestQueryRepositoryImpl implements TestQueryRepository {
         return participatedBy(userId).not();
     }
 
+    // 진행 중(IN_PROGRESS) 테스트를 검수 중(WAITING) 테스트보다 앞에 노출하기 위한 정렬 우선순위
+    private static NumberExpression<Integer> inProgressFirst() {
+        return new CaseBuilder()
+                .when(test.testStatus.eq(TestStatus.IN_PROGRESS)).then(0)
+                .otherwise(1);
+    }
+
+    // (completedAt desc, id desc) 정렬에서 커서 항목 다음에 오는 테스트만 거르는 조건. 첫 페이지면 조건 없음
+    private static BooleanExpression completedBefore(LocalDateTime cursorCompletedAt, Long cursorId) {
+        if (cursorCompletedAt == null || cursorId == null) {
+            return null;
+        }
+        return test.completedAt.lt(cursorCompletedAt)
+                .or(test.completedAt.eq(cursorCompletedAt).and(test.id.lt(cursorId)));
+    }
+
     // REJECTED 상태가 아닌 경우만 거르는 조건 (사용자-facing 조회에서 반려된 테스트 숨김)
     private static BooleanExpression statusNotRejected() {
         return test.testStatus.ne(TestStatus.REJECTED);
     }
 
 
+    // 컬렉션 fetch join은 offset/limit과 함께 쓰면 메모리 페이징이 되므로, categories는 @BatchSize로 지연 로딩함
     @Override
-    public List<Test> findAvailableTestsForUser(List<TestStatus> statuses, LocalDateTime closedAt, Long userId) {
+    public List<Test> findAvailableTestsForUser(List<TestStatus> statuses, LocalDateTime closedAt, Long userId,
+                                                int offset, int limit) {
         if (statuses == null || statuses.isEmpty() || closedAt == null || userId == null) {
             return List.of();
         }
 
         return queryFactory
                 .selectFrom(test)
-                .leftJoin(test.categories).fetchJoin()
                 .where(statusIn(statuses), notDeleted(), closedAtAfter(closedAt), notParticipatedBy(userId))
-                .orderBy(test.createdAt.desc())
-                .distinct()
+                .orderBy(inProgressFirst().asc(), test.closedAt.asc(), test.createdAt.desc(), test.id.desc())
+                .offset(offset)
+                .limit(limit)
+                .fetch();
+    }
+
+    @Override
+    public long countAvailableTestsForUser(List<TestStatus> statuses, LocalDateTime closedAt, Long userId) {
+        if (statuses == null || statuses.isEmpty() || closedAt == null || userId == null) {
+            return 0L;
+        }
+
+        Long count = queryFactory
+                .select(test.count())
+                .from(test)
+                .where(statusIn(statuses), notDeleted(), closedAtAfter(closedAt), notParticipatedBy(userId))
+                .fetchOne();
+        return count == null ? 0L : count;
+    }
+
+    // completedAt이 없는 종료 테스트는 정렬 기준이 없어 제외함 (기존 데이터는 배포 시 completedAt 보정 필요)
+    @Override
+    public List<Test> findCompletedTests(LocalDateTime cursorCompletedAt, Long cursorId, int limit) {
+        return queryFactory
+                .selectFrom(test)
+                .where(
+                        test.testStatus.eq(TestStatus.COMPLETED),
+                        notDeleted(),
+                        test.completedAt.isNotNull(),
+                        completedBefore(cursorCompletedAt, cursorId)
+                )
+                .orderBy(test.completedAt.desc(), test.id.desc())
+                .limit(limit)
                 .fetch();
     }
 

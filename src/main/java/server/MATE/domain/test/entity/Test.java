@@ -86,6 +86,10 @@ public class Test extends BaseEntity {
     @Column
     private LocalDateTime reopenedAt;
 
+    // 실제 종료 시각. 기간 만료, 메이커 수동 종료, 목표 인원 달성 모두 complete()에서 기록함
+    @Column
+    private LocalDateTime completedAt;
+
     @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
     @BatchSize(size = 100)
     private List<TestCategory> categories = new ArrayList<>();
@@ -139,8 +143,9 @@ public class Test extends BaseEntity {
         }
     }
 
-    public void complete() {
+    public void complete(LocalDateTime completedAt) {
         this.testStatus = TestStatus.COMPLETED;
+        this.completedAt = completedAt;
     }
 
     public void markClosedByMaker() {
@@ -183,6 +188,7 @@ public class Test extends BaseEntity {
         this.excelKey = null;
         this.closedByMaker = false;
         this.reopenedAt = reopenedAt;
+        this.completedAt = null;
     }
 
     private static String normalizeRejectionReason(String reason) {

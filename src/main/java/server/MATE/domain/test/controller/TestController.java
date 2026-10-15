@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import server.MATE.domain.test.dto.response.CompletedTestListResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
@@ -30,10 +31,14 @@ public class TestController {
     @Operation(
             summary = "✅ 테스트 목록 조회",
             description = """
-                    전체 테스트 요약 목록을 최신순으로 조회합니다. 발견 탭 HM_01 57 화면에 해당하는 api 입니다.
-                    추후 페이지네이션 적용하여 무한 스크롤 지원하도록 리팩토링이 필요합니다.
+                    발견 탭의 참여 가능 테스트 목록을 페이지 단위로 조회합니다. 발견 탭 HM_01 57 화면에 해당하는 api 입니다.<br>
+                    진행 중·검수 중이고 모집기간 내이며 아직 참여하지 않은 테스트를 반환합니다.<br>
+                    정렬: 진행 중 우선 → 마감 임박순 → 최신 등록순
 
+                    - **page**: 1부터 시작 (기본값 1)
+                    - **size**: 페이지 크기 (기본값 3, 최대 100). 더보기 1회당 3개씩 추가하려면 page를 1씩 늘려 요청
                     - **testCount**: 참여 가능한 전체 테스트 개수
+                    - **hasNext**: 다음 페이지 존재 여부. false면 더보기 버튼 미노출
                     - **thumbnailUrl**: 업로드된 이미지 중 첫 번째의 Public URL, 없으면 null을 반환
                     - **description**: 테스트 한 줄 소개
                     - **reward**: 보상 금액(머니)
@@ -42,10 +47,35 @@ public class TestController {
     )
     @GetMapping
     public ResponseEntity<ApiResponse<TestSummaryListResponse>> listTests(
-            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "3") int size
     ) {
-        TestSummaryListResponse data = testService.listTests(authenticatedUser.getId());
+        TestSummaryListResponse data = testService.listTests(authenticatedUser.getId(), page, size);
         return ResponseEntity.ok(ApiResponse.ok("테스트 목록을 조회했습니다.", data));
+    }
+
+    @Operation(
+            summary = "✅ 종료 테스트 목록 조회",
+            description = """
+                    발견 탭의 종료 테스트 목록을 최근 종료 순으로 조회합니다. 커서 기반 페이지네이션입니다.<br>
+                    발견 탭에서는 size=4로 첫 페이지만, 종료 테스트 전체보기 화면에서는 무한 스크롤로 사용합니다.
+
+                    - **cursor**: 첫 요청은 생략하고, 이후에는 직전 응답의 nextCursor를 그대로 전달 (형식이 잘못되면 COMMON_002)
+                    - **size**: 페이지 크기 (기본값 4, 최대 100)
+                    - **hasNext**: 다음 페이지 존재 여부. false면 더보기 버튼 미노출 및 무한 스크롤 종료
+                    - **nextCursor**: 다음 페이지 요청용 커서. 다음 페이지가 없으면 null
+                    - ui상 사용하지 않는 필드: reward, likeCount
+                    """
+    )
+    @GetMapping("/completed")
+    public ResponseEntity<ApiResponse<CompletedTestListResponse>> listCompletedTests(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "4") int size
+    ) {
+        CompletedTestListResponse data = testService.listCompletedTests(authenticatedUser.getId(), cursor, size);
+        return ResponseEntity.ok(ApiResponse.ok("종료 테스트 목록을 조회했습니다.", data));
     }
 
     @Operation(

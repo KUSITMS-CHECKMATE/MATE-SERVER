@@ -20,6 +20,7 @@ import server.MATE.support.time.MutableClock;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
@@ -1290,7 +1291,7 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
                 .build());
 
         server.MATE.domain.test.entity.Test test = testRepository.findById(actors.testId()).orElseThrow();
-        test.complete();
+        test.complete(LocalDateTime.now());
         test.completeReportAggregation();
         testRepository.save(test);
 
@@ -1330,14 +1331,14 @@ class ReportEndToEndIntegrationTest extends BaseQuestionAnswerEndToEndTest {
 
     private void completeTest(Long testId) {
         server.MATE.domain.test.entity.Test test = testRepository.findById(testId).orElseThrow();
-        test.complete();
+        test.complete(LocalDateTime.now());
         testRepository.save(test);
         reportAggregateService.aggregate(testId);
     }
 
     private void completeTestStatusOnly(Long testId) {
         server.MATE.domain.test.entity.Test test = testRepository.findById(testId).orElseThrow();
-        test.complete();
+        test.complete(LocalDateTime.now());
         test.startReportAggregation();
         testRepository.save(test);
     }
