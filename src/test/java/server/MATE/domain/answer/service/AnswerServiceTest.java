@@ -30,7 +30,10 @@ import server.MATE.domain.question.repository.TreeTestRepository;
 import server.MATE.domain.test.entity.TestStatus;
 import server.MATE.domain.test.repository.TestRepository;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,6 +54,8 @@ class AnswerServiceTest {
     private static final Long TESTER_ID = 20L;
     private static final Long QUESTION_ID = 201L;
     private static final Long PARTICIPATION_ID = 301L;
+    // KST 2026-10-11 00:00:00
+    private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-10T15:00:00Z"), ZoneId.of("Asia/Seoul"));
 
     @Mock
     private TestRepository testRepository;
@@ -108,7 +113,8 @@ class AnswerServiceTest {
                 treeTestRepository,
                 promotionRewardRepository,
                 eventPublisher,
-                List.of(subjectiveHandler)
+                List.of(subjectiveHandler),
+                CLOCK
         );
 
         test = server.MATE.domain.test.entity.Test.builder()
@@ -165,5 +171,40 @@ class AnswerServiceTest {
         verify(eventPublisher).publishEvent(eventCaptor.capture());
         assertThat(eventCaptor.getValue()).isInstanceOf(PromotionRewardRequestEvent.class);
         verify(eventPublisher, never()).publishEvent(any(server.MATE.domain.test.event.TestCompleteEvent.class));
+    }
+
+    @Test
+    @DisplayName("createAnswers로 목표 인원을 채우면 테스트를 종료하고 종료 시각을 기록한다")
+    void createAnswers_reachingGoalCompletesTestWithCompletedAt() {
+        ReflectionTestUtils.setField(test, "pplCount", 1L);
+        AnswerCreateRequest request = new AnswerCreateRequest(List.of(
+                new SubjectiveAnswerCreateRequest(QUESTION_ID, "응답 내용")
+        ));
+
+        Answer builtAnswer = Answer.builder()
+                .participationId(PARTICIPATION_ID)
+                .questionId(QUESTION_ID)
+                .questionType(QuestionType.SUBJECTIVE)
+                .answer(Map.of("text", "응답 내용"))
+                .build();
+
+        given(testRepository.findByIdForUpdate(TEST_ID)).willReturn(Optional.of(test));
+        given(participationRepository.existsActiveParticipation(TEST_ID, TESTER_ID)).willReturn(false);
+        given(questionRepository.findAnswerQuestionTypesInTest(TEST_ID)).willReturn(List.of(
+                new AnswerQuestionTypeView(QUESTION_ID, QuestionType.SUBJECTIVE)
+        ));
+        given(participationRepository.save(any(Participation.class))).willAnswer(invocation -> {
+            Participation participation = invocation.getArgument(0);
+            ReflectionTestUtils.setField(participation, "id", PARTICIPATION_ID);
+            return participation;
+        });
+        given(subjectiveHandler.build(anyLong(), any(), any())).willReturn(builtAnswer);
+        given(answerRepository.saveAll(anyList())).willReturn(List.of(builtAnswer));
+
+        answerService.createAnswers(TEST_ID, TESTER_ID, request);
+
+        assertThat(test.getTestStatus()).isEqualTo(TestStatus.COMPLETED);
+        assertThat(test.getCompletedAt()).isEqualTo(LocalDateTime.of(2026, 10, 11, 0, 0));
+        verify(eventPublisher).publishEvent(any(server.MATE.domain.test.event.TestCompleteEvent.class));
     }
 }
