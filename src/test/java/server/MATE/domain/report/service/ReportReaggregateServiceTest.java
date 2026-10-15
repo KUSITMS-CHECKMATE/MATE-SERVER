@@ -45,7 +45,7 @@ class ReportReaggregateServiceTest {
                 .makerId(1L).title("t").goalPpl(10).reward(300).testStatus(TestStatus.IN_PROGRESS)
                 .closedAt(LocalDateTime.of(2026, 9, 27, 23, 59, 59)).build();
         ReflectionTestUtils.setField(test, "id", TEST_ID);
-        test.complete();
+        test.complete(LocalDateTime.now());
         test.startReportAggregation();
         test.failReportAggregation();
     }

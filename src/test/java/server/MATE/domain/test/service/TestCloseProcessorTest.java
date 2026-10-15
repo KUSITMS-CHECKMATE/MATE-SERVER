@@ -62,6 +62,7 @@ class TestCloseProcessorTest {
             processor.process(TEST_ID);
 
             assertThat(test.getTestStatus()).isEqualTo(TestStatus.COMPLETED);
+            assertThat(test.getCompletedAt()).isEqualTo(LocalDateTime.of(2026, 10, 11, 0, 0));
             ArgumentCaptor<TestCompleteEvent> captor = ArgumentCaptor.forClass(TestCompleteEvent.class);
             verify(eventPublisher).publishEvent(captor.capture());
             verify(refundService, never()).requestRefund(any(), any());
@@ -99,7 +100,7 @@ class TestCloseProcessorTest {
         @DisplayName("이미 종료된 테스트는 스킵한다")
         void skipsAlreadyCompletedTest() {
             server.MATE.domain.test.entity.Test test = inProgressTest(100, 50);
-            test.complete();
+            test.complete(LocalDateTime.now());
             when(testRepository.findByIdForUpdate(TEST_ID)).thenReturn(Optional.of(test));
 
             processor.process(TEST_ID);
@@ -133,6 +134,7 @@ class TestCloseProcessorTest {
             processor.processClose(test);
 
             assertThat(test.getTestStatus()).isEqualTo(TestStatus.COMPLETED);
+            assertThat(test.getCompletedAt()).isEqualTo(LocalDateTime.of(2026, 10, 11, 0, 0));
             verify(refundService, never()).requestRefund(any(), any());
         }
 

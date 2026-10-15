@@ -35,6 +35,8 @@ import server.MATE.domain.test.repository.TestRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -54,6 +56,7 @@ public class AnswerService {
     private final PromotionRewardRepository promotionRewardRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final Map<QuestionType, AnswerCreateHandler> handlerMap;
+    private final Clock clock;
 
     public AnswerService(TestRepository testRepository,
                          ParticipationRepository participationRepository,
@@ -66,7 +69,8 @@ public class AnswerService {
                          TreeTestRepository treeTestRepository,
                          PromotionRewardRepository promotionRewardRepository,
                          ApplicationEventPublisher eventPublisher,
-                         List<AnswerCreateHandler> handlers) {
+                         List<AnswerCreateHandler> handlers,
+                         Clock clock) {
         this.testRepository = testRepository;
         this.participationRepository = participationRepository;
         this.questionRepository = questionRepository;
@@ -79,6 +83,7 @@ public class AnswerService {
         this.promotionRewardRepository = promotionRewardRepository;
         this.eventPublisher = eventPublisher;
         this.handlerMap = buildHandlerMap(handlers);
+        this.clock = clock;
     }
 
     public MyAnswerResponse listMyAnswers(Long testerId) {
@@ -168,7 +173,7 @@ public class AnswerService {
         ));
         test.incrementPplCount();
         if (test.getPplCount() >= test.getGoalPpl()) {
-            test.complete();
+            test.complete(LocalDateTime.now(clock));
             test.startReportAggregation();
             eventPublisher.publishEvent(new TestCompleteEvent(testId));
         }

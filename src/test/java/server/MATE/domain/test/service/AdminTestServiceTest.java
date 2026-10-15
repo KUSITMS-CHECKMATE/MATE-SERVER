@@ -443,7 +443,7 @@ class AdminTestServiceTest {
     private server.MATE.domain.test.entity.Test completedTest(long pplCount) {
         server.MATE.domain.test.entity.Test test = buildTest(TestStatus.IN_PROGRESS);
         ReflectionTestUtils.setField(test, "pplCount", pplCount);
-        test.complete();
+        test.complete(LocalDateTime.now());
         return test;
     }
 

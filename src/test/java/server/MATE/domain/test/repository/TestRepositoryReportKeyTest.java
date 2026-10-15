@@ -34,7 +34,7 @@ class TestRepositoryReportKeyTest {
                 .reward(300)
                 .closedAt(LocalDateTime.now().minusDays(1))
                 .build();
-        test.complete();
+        test.complete(LocalDateTime.now());
         return test;
     }
 

@@ -55,7 +55,7 @@ public class TestCloseProcessor {
         }
 
         long threshold = (long) Math.ceil(test.getGoalPpl() * 0.2);
-        test.complete();
+        test.complete(LocalDateTime.now(clock.withZone(KST)));
 
         if (test.getPplCount() >= threshold) {
             log.info("테스트 {} 리포트 집계 시작({}명 / 기준 {}명)", test.getId(), test.getPplCount(), threshold);

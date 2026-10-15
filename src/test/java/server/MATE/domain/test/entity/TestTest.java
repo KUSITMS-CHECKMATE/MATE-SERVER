@@ -85,7 +85,7 @@ class TestTest {
         server.MATE.domain.test.entity.Test test = buildTest(TestStatus.IN_PROGRESS);
         test.waiveRefund();
         test.markClosedByMaker();
-        test.complete();
+        test.complete(LocalDateTime.now());
         test.startReportAggregation();
         test.completeReportAggregation();
         test.savePdfKey("reports/pdf/1.pdf");
@@ -103,13 +103,28 @@ class TestTest {
         assertThat(test.isClosedByMaker()).isFalse();
         assertThat(test.isRefundWaived()).isTrue();
         assertThat(test.getReopenedAt()).isEqualTo(reopenedAt);
+        assertThat(test.getCompletedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("complete(completedAt) 호출 시 COMPLETED로 전환되고 종료 시각을 기록하며 마감 예정 시각은 유지한다")
+    void complete_setsCompletedAndRecordsCompletedAt() {
+        server.MATE.domain.test.entity.Test test = buildTest(TestStatus.IN_PROGRESS);
+        LocalDateTime closedAt = test.getClosedAt();
+        LocalDateTime completedAt = closedAt.minusDays(3);
+
+        test.complete(completedAt);
+
+        assertThat(test.getTestStatus()).isEqualTo(TestStatus.COMPLETED);
+        assertThat(test.getCompletedAt()).isEqualTo(completedAt);
+        assertThat(test.getClosedAt()).isEqualTo(closedAt);
     }
 
     @Test
     @DisplayName("restartReportAggregation() 호출 시 파일 키를 비우고 IN_PROGRESS로 바꾼다")
     void restartReportAggregation() {
         server.MATE.domain.test.entity.Test test = buildTest(TestStatus.IN_PROGRESS);
-        test.complete();
+        test.complete(LocalDateTime.now());
         test.startReportAggregation();
         test.failReportAggregation();
         test.savePdfKey("p");
