@@ -76,6 +76,15 @@ public class TestQueryRepositoryImpl implements TestQueryRepository {
                 .otherwise(1);
     }
 
+    // (completedAt desc, id desc) 정렬에서 커서 항목 다음에 오는 테스트만 거르는 조건. 첫 페이지면 조건 없음
+    private static BooleanExpression completedBefore(LocalDateTime cursorCompletedAt, Long cursorId) {
+        if (cursorCompletedAt == null || cursorId == null) {
+            return null;
+        }
+        return test.completedAt.lt(cursorCompletedAt)
+                .or(test.completedAt.eq(cursorCompletedAt).and(test.id.lt(cursorId)));
+    }
+
     // REJECTED 상태가 아닌 경우만 거르는 조건 (사용자-facing 조회에서 반려된 테스트 숨김)
     private static BooleanExpression statusNotRejected() {
         return test.testStatus.ne(TestStatus.REJECTED);
@@ -111,6 +120,22 @@ public class TestQueryRepositoryImpl implements TestQueryRepository {
                 .where(statusIn(statuses), notDeleted(), closedAtAfter(closedAt), notParticipatedBy(userId))
                 .fetchOne();
         return count == null ? 0L : count;
+    }
+
+    // completedAt이 없는 종료 테스트는 정렬 기준이 없어 제외함 (기존 데이터는 배포 시 completedAt 보정 필요)
+    @Override
+    public List<Test> findCompletedTests(LocalDateTime cursorCompletedAt, Long cursorId, int limit) {
+        return queryFactory
+                .selectFrom(test)
+                .where(
+                        test.testStatus.eq(TestStatus.COMPLETED),
+                        notDeleted(),
+                        test.completedAt.isNotNull(),
+                        completedBefore(cursorCompletedAt, cursorId)
+                )
+                .orderBy(test.completedAt.desc(), test.id.desc())
+                .limit(limit)
+                .fetch();
     }
 
     @Override

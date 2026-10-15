@@ -11,6 +11,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import server.MATE.domain.participation.repository.ParticipationRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
+import server.MATE.domain.test.dto.request.CompletedTestCursor;
+import server.MATE.domain.test.dto.response.CompletedTestListResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryItem;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
@@ -146,6 +149,47 @@ class TestServiceTest {
         assertThat(response.size()).isEqualTo(100);
         assertThat(response.hasNext()).isFalse();
         assertThat(response.tests()).isEmpty();
+    }
+
+    @Test
+    void 종료_테스트_첫_페이지_조회_시_size보다_많으면_잘라서_반환하고_다음_커서를_준다() {
+        server.MATE.domain.test.entity.Test newest = createCompletedListTest(10L, "최근 종료", LocalDateTime.of(2026, 10, 3, 12, 0));
+        server.MATE.domain.test.entity.Test middle = createCompletedListTest(11L, "중간 종료", LocalDateTime.of(2026, 10, 2, 12, 0));
+        server.MATE.domain.test.entity.Test oldest = createCompletedListTest(12L, "오래전 종료", LocalDateTime.of(2026, 10, 1, 12, 0));
+        given(testRepository.findCompletedTests(null, null, 3)).willReturn(List.of(newest, middle, oldest));
+        given(testLikeRepository.findLikedTestIds(MAKER_ID, List.of(10L, 11L))).willReturn(List.of());
+
+        CompletedTestListResponse response = testService.listCompletedTests(MAKER_ID, null, 2);
+
+        assertThat(response.hasNext()).isTrue();
+        assertThat(response.tests()).extracting("title").containsExactly("최근 종료", "중간 종료");
+        CompletedTestCursor nextCursor = CompletedTestCursor.decode(response.nextCursor());
+        assertThat(nextCursor.completedAt()).isEqualTo(LocalDateTime.of(2026, 10, 2, 12, 0));
+        assertThat(nextCursor.id()).isEqualTo(11L);
+    }
+
+    @Test
+    void 종료_테스트_커서로_조회_시_마지막_페이지면_hasNext가_false이고_다음_커서가_없다() {
+        LocalDateTime cursorCompletedAt = LocalDateTime.of(2026, 10, 2, 12, 0);
+        String cursor = new CompletedTestCursor(cursorCompletedAt, 11L).encode();
+        server.MATE.domain.test.entity.Test oldest = createCompletedListTest(12L, "오래전 종료", LocalDateTime.of(2026, 10, 1, 12, 0));
+        given(testRepository.findCompletedTests(cursorCompletedAt, 11L, 3)).willReturn(List.of(oldest));
+        given(testLikeRepository.findLikedTestIds(MAKER_ID, List.of(12L))).willReturn(List.of());
+
+        CompletedTestListResponse response = testService.listCompletedTests(MAKER_ID, cursor, 2);
+
+        assertThat(response.hasNext()).isFalse();
+        assertThat(response.nextCursor()).isNull();
+        assertThat(response.tests()).extracting("title").containsExactly("오래전 종료");
+    }
+
+    @Test
+    void 종료_테스트_조회_시_커서_형식이_잘못되면_COMMON_002_예외가_발생한다() {
+        assertThatThrownBy(() -> testService.listCompletedTests(MAKER_ID, "invalid-cursor", 4))
+                .isInstanceOf(BaseException.class)
+                .extracting(e -> ((BaseException) e).getErrorCode())
+                .isEqualTo(BaseErrorCode.COMMON_002);
+        verify(testRepository, never()).findCompletedTests(any(), any(), anyInt());
     }
 
     @Test
@@ -263,6 +307,12 @@ class TestServiceTest {
                 () -> testService.getTest(TEST_ID, MAKER_ID));
 
         assertThat(exception.getErrorCode()).isEqualTo(BaseErrorCode.TEST_004);
+    }
+
+    private server.MATE.domain.test.entity.Test createCompletedListTest(Long id, String title, LocalDateTime completedAt) {
+        server.MATE.domain.test.entity.Test listTest = createListTest(id, title, TestStatus.IN_PROGRESS);
+        listTest.complete(completedAt);
+        return listTest;
     }
 
     private server.MATE.domain.test.entity.Test createListTest(Long id, String title, TestStatus testStatus) {

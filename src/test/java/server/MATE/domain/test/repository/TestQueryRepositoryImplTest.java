@@ -307,6 +307,55 @@ class TestQueryRepositoryImplTest {
         assertThat(testRepository.countAvailableTestsForUser(statuses, LocalDateTime.now(), null)).isZero();
     }
 
+    @Test
+    @DisplayName("findCompletedTests: 종료 시각이 있는 종료 테스트만 최근 종료 순으로 반환한다")
+    void findCompletedTests_returnsCompletedTestsSortedByCompletedAtDesc() {
+        LocalDateTime base = LocalDateTime.of(2026, 10, 1, 12, 0);
+        persistCompletedTest("오래전 종료", base.minusDays(5));
+        persistCompletedTest("최근 종료", base);
+        persistCompletedTest("중간 종료", base.minusDays(1));
+        server.MATE.domain.test.entity.Test deleted = persistCompletedTest("삭제된 종료", base.plusDays(1));
+        em.getEntityManager()
+                .createQuery("update Test t set t.deletedAt = :now where t.id = :id")
+                .setParameter("now", LocalDateTime.now())
+                .setParameter("id", deleted.getId())
+                .executeUpdate();
+        em.persistAndFlush(
+                server.MATE.domain.test.entity.Test.builder()
+                        .makerId(1L).title("종료 시각 없는 종료").testStatus(TestStatus.COMPLETED)
+                        .goalPpl(10).reward(300).closedAt(base).build()
+        );
+        em.clear();
+
+        List<server.MATE.domain.test.entity.Test> result = testRepository.findCompletedTests(null, null, 10);
+
+        assertThat(result).extracting("title").containsExactly("최근 종료", "중간 종료", "오래전 종료");
+    }
+
+    @Test
+    @DisplayName("findCompletedTests: 커서 다음 항목부터 반환하고, 종료 시각이 같으면 id가 작은 항목을 이어서 반환한다")
+    void findCompletedTests_returnsItemsAfterCursor() {
+        LocalDateTime sameTime = LocalDateTime.of(2026, 10, 1, 12, 0);
+        server.MATE.domain.test.entity.Test first = persistCompletedTest("동시 종료1", sameTime);
+        server.MATE.domain.test.entity.Test second = persistCompletedTest("동시 종료2", sameTime);
+        persistCompletedTest("이전 종료", sameTime.minusHours(1));
+        em.clear();
+
+        List<server.MATE.domain.test.entity.Test> result =
+                testRepository.findCompletedTests(sameTime, second.getId(), 10);
+
+        assertThat(result).extracting("id").first().isEqualTo(first.getId());
+        assertThat(result).extracting("title").containsExactly("동시 종료1", "이전 종료");
+    }
+
+    private server.MATE.domain.test.entity.Test persistCompletedTest(String title, LocalDateTime completedAt) {
+        server.MATE.domain.test.entity.Test test = server.MATE.domain.test.entity.Test.builder()
+                .makerId(1L).title(title).testStatus(TestStatus.IN_PROGRESS)
+                .goalPpl(10).reward(300).closedAt(completedAt.plusDays(1)).build();
+        test.complete(completedAt);
+        return em.persistAndFlush(test);
+    }
+
     private void persistListTest(String title, TestStatus status, LocalDateTime closedAt, LocalDateTime createdAt) {
         server.MATE.domain.test.entity.Test test = em.persistAndFlush(
                 server.MATE.domain.test.entity.Test.builder()

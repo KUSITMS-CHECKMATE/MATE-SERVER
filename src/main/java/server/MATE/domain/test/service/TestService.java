@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.MATE.domain.participation.repository.ParticipationRepository;
+import server.MATE.domain.test.dto.request.CompletedTestCursor;
 import server.MATE.domain.test.dto.response.*;
 import server.MATE.domain.test.entity.Test;
 import server.MATE.domain.test.entity.TestLike;
@@ -48,6 +49,23 @@ public class TestService {
         List<Test> tests = testRepository.findAvailableTestsForUser(statuses, threshold, userId, offset, safeSize);
         long totalCount = testRepository.countAvailableTestsForUser(statuses, threshold, userId);
         return TestSummaryListResponse.of(safePage, safeSize, totalCount, toSummaryResponses(userId, tests));
+    }
+
+    @Transactional(readOnly = true)
+    public CompletedTestListResponse listCompletedTests(Long userId, String cursor, int size) {
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        CompletedTestCursor decoded = (cursor == null || cursor.isBlank()) ? null : CompletedTestCursor.decode(cursor);
+
+        // 다음 페이지 존재 여부 판단을 위해 1건 더 조회
+        List<Test> fetched = testRepository.findCompletedTests(
+                decoded == null ? null : decoded.completedAt(),
+                decoded == null ? null : decoded.id(),
+                safeSize + 1
+        );
+        boolean hasNext = fetched.size() > safeSize;
+        List<Test> tests = hasNext ? fetched.subList(0, safeSize) : fetched;
+        String nextCursor = hasNext ? CompletedTestCursor.from(tests.getLast()).encode() : null;
+        return new CompletedTestListResponse(hasNext, nextCursor, toSummaryResponses(userId, tests));
     }
 
     @Transactional(readOnly = true)

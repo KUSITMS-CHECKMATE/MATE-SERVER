@@ -14,6 +14,8 @@ public interface TestQueryRepository {
 
     long countAvailableTestsForUser(List<TestStatus> statuses, LocalDateTime closedAt, Long userId);
 
+    List<Test> findCompletedTests(LocalDateTime cursorCompletedAt, Long cursorId, int limit);
+
     List<Test> findByMakerId(Long makerId);
 
     List<Test> findLikedTests(Long userId, List<TestStatus> statuses);

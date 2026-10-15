@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import server.MATE.domain.test.dto.response.CompletedTestListResponse;
 import server.MATE.domain.test.dto.response.LikedTestSummaryResponse;
 import server.MATE.domain.test.dto.response.MyTestSummaryResponse;
 import server.MATE.domain.test.dto.response.TestDetailResponse;
@@ -52,6 +53,29 @@ public class TestController {
     ) {
         TestSummaryListResponse data = testService.listTests(authenticatedUser.getId(), page, size);
         return ResponseEntity.ok(ApiResponse.ok("테스트 목록을 조회했습니다.", data));
+    }
+
+    @Operation(
+            summary = "✅ 종료 테스트 목록 조회",
+            description = """
+                    발견 탭의 종료 테스트 목록을 최근 종료 순으로 조회합니다. 커서 기반 페이지네이션입니다.<br>
+                    발견 탭에서는 size=4로 첫 페이지만, 종료 테스트 전체보기 화면에서는 무한 스크롤로 사용합니다.
+
+                    - **cursor**: 첫 요청은 생략하고, 이후에는 직전 응답의 nextCursor를 그대로 전달 (형식이 잘못되면 COMMON_002)
+                    - **size**: 페이지 크기 (기본값 4, 최대 100)
+                    - **hasNext**: 다음 페이지 존재 여부. false면 더보기 버튼 미노출 및 무한 스크롤 종료
+                    - **nextCursor**: 다음 페이지 요청용 커서. 다음 페이지가 없으면 null
+                    - ui상 사용하지 않는 필드: reward, likeCount
+                    """
+    )
+    @GetMapping("/completed")
+    public ResponseEntity<ApiResponse<CompletedTestListResponse>> listCompletedTests(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "4") int size
+    ) {
+        CompletedTestListResponse data = testService.listCompletedTests(authenticatedUser.getId(), cursor, size);
+        return ResponseEntity.ok(ApiResponse.ok("종료 테스트 목록을 조회했습니다.", data));
     }
 
     @Operation(
