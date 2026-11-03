@@ -29,6 +29,7 @@ import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.toss.client.login.TossLoginApiClient;
 import server.MATE.domain.users.entity.TossUnlinkReferrer;
+import server.MATE.toss.crypto.TossCiHasher;
 import server.MATE.toss.crypto.TossUserInfoDecryptor;
 import server.MATE.toss.dto.response.TossDecryptedUserInfo;
 import server.MATE.toss.dto.response.TossLoginUserResponse;
@@ -53,6 +54,7 @@ public class TossLoginService {
     private final TokenEncryptor tokenEncryptor;
     private final TossLoginSessionService tossLoginSessionService;
     private final PromotionRewardRepository promotionRewardRepository;
+    private final TossCiHasher tossCiHasher;
     private final Clock clock;
 
     @Value("${toss.callback.basic-auth-header:}")
@@ -186,18 +188,34 @@ public class TossLoginService {
     }
 
     private UserLoginContext upsertUser(TossDecryptedUserInfo decryptedUserInfo) {
-        return usersRepository.findByCi(decryptedUserInfo.ci())
-                .map(existingUser -> {
-                    existingUser.updateName(decryptedUserInfo.name());
-                    return new UserLoginContext(existingUser, false);
-                })
-                .orElseGet(() -> new UserLoginContext(
-                        usersRepository.save(Users.builder()
-                                .ci(decryptedUserInfo.ci())
-                                .name(decryptedUserInfo.name())
-                                .build()),
-                        true
-                ));
+        String ciHash = tossCiHasher.hash(decryptedUserInfo.ci());
+
+        Optional<Users> linkedUser = usersRepository.findByCi(decryptedUserInfo.ci());
+        if (linkedUser.isPresent()) {
+            Users existingUser = linkedUser.get();
+            existingUser.assignCiHashIfAbsent(ciHash);
+            existingUser.updateName(decryptedUserInfo.name());
+            return new UserLoginContext(existingUser, false);
+        }
+
+        // unlink로 CI가 지워진 동일인은 새 계정 대신 기존 계정을 다시 연결해 테스트 중복 응답과 리워드 중복 수령을 막는다.
+        Optional<Users> unlinkedUser = usersRepository.findByCiHash(ciHash);
+        if (unlinkedUser.isPresent()) {
+            Users existingUser = unlinkedUser.get();
+            existingUser.relinkCi(decryptedUserInfo.ci());
+            existingUser.updateName(decryptedUserInfo.name());
+            log.info("TOSS_LOGIN relinked previously unlinked user. userId={}", existingUser.getId());
+            return new UserLoginContext(existingUser, false);
+        }
+
+        return new UserLoginContext(
+                usersRepository.save(Users.builder()
+                        .ci(decryptedUserInfo.ci())
+                        .ciHash(ciHash)
+                        .name(decryptedUserInfo.name())
+                        .build()),
+                true
+        );
     }
 
     private void syncTossAccount(
@@ -302,7 +320,13 @@ public class TossLoginService {
     private void revokeLinkedState(Users user, TossAccount tossAccount, TossUnlinkReferrer referrer) {
         tossLoginSessionService.clearLoginTokens(user.getId());
         userRefreshTokenStore.delete(user.getId());
-        user.anonymizeForTossUnlink();
+        // 탈퇴(약관 철회, 토스 탈퇴)는 식별값을 남기지 않고, 연결만 끊은 경우에만 재가입 식별용 해시를 남긴다.
+        boolean retainCiHash = referrer == TossUnlinkReferrer.UNLINK;
+        if (retainCiHash && user.getCi() != null) {
+            // ciHash 도입 전 가입자는 CI를 지우기 전에 해시를 채운다.
+            user.assignCiHashIfAbsent(tossCiHasher.hash(user.getCi()));
+        }
+        user.anonymizeForTossUnlink(retainCiHash);
         tossAccount.markUnlinked(referrer, LocalDateTime.now(clock));
         promotionRewardRepository.clearTossUserKeyByTesterId(user.getId());
     }

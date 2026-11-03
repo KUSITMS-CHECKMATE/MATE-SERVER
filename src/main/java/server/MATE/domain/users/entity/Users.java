@@ -27,6 +27,10 @@ public class Users extends BaseEntity {
     @Column(nullable = true, unique = true)
     private String ci;
 
+    // 연결 해제(UNLINK) 후에도 유지해 재가입한 동일인을 기존 계정으로 연결하는 데 쓴다.
+    @Column(nullable = true, unique = true, length = 64)
+    private String ciHash;
+
     @Column
     private String name;
 
@@ -35,8 +39,9 @@ public class Users extends BaseEntity {
     private Role role;
 
     @Builder
-    public Users(String ci, String name, Role role) {
+    public Users(String ci, String ciHash, String name, Role role) {
         this.ci = ci;
+        this.ciHash = ciHash;
         this.name = name;
         this.role = role == null ? Role.USER : role;
     }
@@ -48,7 +53,21 @@ public class Users extends BaseEntity {
         this.name = name;
     }
 
-    public void anonymizeForTossUnlink() {
+    public void assignCiHashIfAbsent(String ciHash) {
+        if (this.ciHash == null) {
+            this.ciHash = ciHash;
+        }
+    }
+
+    public void relinkCi(String ci) {
+        this.ci = ci;
+    }
+
+    // 연결만 끊은 경우 ciHash를 남겨 재가입 시 기존 계정으로 연결하고, 탈퇴는 ciHash까지 지워 완전히 익명화한다.
+    public void anonymizeForTossUnlink(boolean retainCiHash) {
         this.ci = null;
+        if (!retainCiHash) {
+            this.ciHash = null;
+        }
     }
 }
