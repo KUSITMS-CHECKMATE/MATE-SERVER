@@ -101,6 +101,11 @@ public enum BaseErrorCode implements ErrorCode {
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_014", "결제 주문을 찾을 수 없습니다."),
     ORDER_ALREADY_REFUNDED(HttpStatus.BAD_REQUEST, "PAYMENT_015", "이미 환불된 주문입니다."),
 
+    // Promotion
+    PROMOTION_001(HttpStatus.NOT_FOUND, "PROMOTION_001", "프로모션 리워드를 찾을 수 없습니다."),
+    PROMOTION_002(HttpStatus.BAD_REQUEST, "PROMOTION_002", "지급에 실패한 리워드만 재지급할 수 있습니다."),
+    PROMOTION_003(HttpStatus.BAD_REQUEST, "PROMOTION_003", "지급 여부가 불확실한 실패 사유라 재지급할 수 없습니다."),
+
     // Report
     REPORT_001(HttpStatus.BAD_REQUEST, "REPORT_001", "엑셀 보고서는 질문 20개 이하 테스트만 지원합니다."),
     REPORT_002(HttpStatus.BAD_REQUEST, "REPORT_002", "객관식 질문만 엑셀 통계를 다운로드할 수 있습니다."),
