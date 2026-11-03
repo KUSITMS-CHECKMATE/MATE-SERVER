@@ -28,6 +28,9 @@ claude:
 toss:
   api:
     enabled: false
+  messenger:
+    templates:
+      test-approved: mate-mate-test-approved
   promotion:
     answer:
       enabled: false

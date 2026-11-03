@@ -24,6 +24,7 @@ import server.MATE.toss.crypto.TossCryptoProperties;
 @EnableConfigurationProperties({
         TossProperties.class,
         TossPromotionProperties.class,
+        TossMessengerProperties.class,
         TossIapProperties.class,
         TossCryptoProperties.class,
         TokenEncryptionProperties.class

@@ -64,3 +64,6 @@ toss:
     timeout:
       connect: 5s
       read: 5s
+  messenger:
+    templates:
+      test-approved: mate-mate-test-approved
