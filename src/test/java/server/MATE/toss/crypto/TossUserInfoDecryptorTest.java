@@ -29,7 +29,7 @@ class TossUserInfoDecryptorTest {
     @Test
     @DisplayName("ci/name 복호화가 정상 동작한다")
     void decryptsCiAndNameSuccessfully() throws Exception {
-        TossUserInfoDecryptor decryptor = new TossUserInfoDecryptor(new TossCryptoProperties(VALID_BASE64_KEY, VALID_AAD));
+        TossUserInfoDecryptor decryptor = new TossUserInfoDecryptor(new TossCryptoProperties(VALID_BASE64_KEY, VALID_AAD, null));
         TossLoginUserResponse response = new TossLoginUserResponse(
                 777L,
                 "user_ci,name",
@@ -48,7 +48,7 @@ class TossUserInfoDecryptorTest {
     @Test
     @DisplayName("ci 복호화 결과가 비어 있으면 AUTH_008 예외를 던진다")
     void throwsWhenCiMissingAfterDecrypt() {
-        TossUserInfoDecryptor decryptor = new TossUserInfoDecryptor(new TossCryptoProperties(VALID_BASE64_KEY, VALID_AAD));
+        TossUserInfoDecryptor decryptor = new TossUserInfoDecryptor(new TossCryptoProperties(VALID_BASE64_KEY, VALID_AAD, null));
         TossLoginUserResponse response = new TossLoginUserResponse(777L, "user_ci", encryptQuietly("tester"), null);
 
         assertThatThrownBy(() -> decryptor.decrypt(response))
@@ -60,7 +60,7 @@ class TossUserInfoDecryptorTest {
     @Test
     @DisplayName("잘못된 암호문은 AUTH_007 예외를 던진다")
     void throwsWhenCipherTextInvalid() {
-        TossUserInfoDecryptor decryptor = new TossUserInfoDecryptor(new TossCryptoProperties(VALID_BASE64_KEY, VALID_AAD));
+        TossUserInfoDecryptor decryptor = new TossUserInfoDecryptor(new TossCryptoProperties(VALID_BASE64_KEY, VALID_AAD, null));
         TossLoginUserResponse response = new TossLoginUserResponse(777L, "user_ci", "not-base64", encryptQuietly("ci-value"));
 
         assertThatThrownBy(() -> decryptor.decrypt(response))
@@ -72,7 +72,7 @@ class TossUserInfoDecryptorTest {
     @Test
     @DisplayName("필수 암복호화 설정이 없으면 AUTH_006 예외를 던진다")
     void throwsWhenCryptoPropertiesMissing() {
-        assertThatThrownBy(() -> new TossUserInfoDecryptor(new TossCryptoProperties(null, null)))
+        assertThatThrownBy(() -> new TossUserInfoDecryptor(new TossCryptoProperties(null, null, null)))
                 .isInstanceOf(BaseException.class)
                 .extracting(exception -> ((BaseException) exception).getErrorCode())
                 .isEqualTo(BaseErrorCode.AUTH_006);
