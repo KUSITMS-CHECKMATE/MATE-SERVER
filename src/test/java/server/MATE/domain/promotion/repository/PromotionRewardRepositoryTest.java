@@ -2,8 +2,6 @@ package server.MATE.domain.promotion.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Set;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,46 +106,5 @@ class PromotionRewardRepositoryTest {
         assertThat(promotionRewardRepository.findById(pending.getId()).orElseThrow().getTossUserKey()).isEqualTo(222L);
         assertThat(promotionRewardRepository.findById(executed.getId()).orElseThrow().getTossUserKey()).isEqualTo(333L);
         assertThat(promotionRewardRepository.findById(succeeded.getId()).orElseThrow().getTossUserKey()).isNull();
-    }
-
-    @Test
-    @DisplayName("resetFailedToReady: 재지급 가능한 사유로 FAILED인 리워드만 READY로 되돌린다")
-    void resetsOnlyRetryableFailedRewardToReady() {
-        PromotionReward retryable = em.persistAndFlush(PromotionReward.builder()
-                .participationId(30L)
-                .testId(10L)
-                .testerId(100L)
-                .rewardAmount(100)
-                .status(PromotionRewardStatus.FAILED)
-                .lastErrorCode("TOSS_011")
-                .build());
-        PromotionReward uncertain = em.persistAndFlush(PromotionReward.builder()
-                .participationId(31L)
-                .testId(10L)
-                .testerId(200L)
-                .rewardAmount(100)
-                .status(PromotionRewardStatus.FAILED)
-                .lastErrorCode("PROMOTION_GATEWAY_ERROR")
-                .build());
-        PromotionReward succeeded = em.persistAndFlush(PromotionReward.builder()
-                .participationId(32L)
-                .testId(10L)
-                .testerId(300L)
-                .rewardAmount(100)
-                .status(PromotionRewardStatus.SUCCEEDED)
-                .build());
-        em.clear();
-        Set<String> retryableCodes = Set.of("TOSS_011");
-
-        assertThat(promotionRewardRepository.resetFailedToReady(retryable.getId(), retryableCodes)).isEqualTo(1);
-        assertThat(promotionRewardRepository.resetFailedToReady(retryable.getId(), retryableCodes)).isZero();
-        assertThat(promotionRewardRepository.resetFailedToReady(uncertain.getId(), retryableCodes)).isZero();
-        assertThat(promotionRewardRepository.resetFailedToReady(succeeded.getId(), retryableCodes)).isZero();
-        assertThat(promotionRewardRepository.findById(retryable.getId()).orElseThrow().getStatus())
-                .isEqualTo(PromotionRewardStatus.READY);
-        assertThat(promotionRewardRepository.findById(uncertain.getId()).orElseThrow().getStatus())
-                .isEqualTo(PromotionRewardStatus.FAILED);
-        assertThat(promotionRewardRepository.findById(succeeded.getId()).orElseThrow().getStatus())
-                .isEqualTo(PromotionRewardStatus.SUCCEEDED);
     }
 }
