@@ -43,6 +43,8 @@ import server.MATE.domain.users.repository.UsersRepository;
 import server.MATE.global.common.exception.BaseErrorCode;
 import server.MATE.global.common.exception.BaseException;
 import server.MATE.toss.client.login.TossLoginApiClient;
+import server.MATE.toss.crypto.TossCiHasher;
+import server.MATE.toss.crypto.TossCryptoProperties;
 import server.MATE.toss.crypto.TossUserInfoDecryptor;
 import server.MATE.toss.dto.request.TossTokenRequest;
 import server.MATE.toss.dto.response.TossDecryptedUserInfo;
@@ -81,6 +83,9 @@ class TossLoginServiceTest {
     @Mock
     private PromotionRewardRepository promotionRewardRepository;
 
+    private final TossCiHasher tossCiHasher = new TossCiHasher(
+            new TossCryptoProperties(null, null, "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="));
+
     private TossLoginService tossLoginService;
     private final Clock fixedClock = Clock.fixed(Instant.parse("2026-05-15T00:00:00Z"), ZoneId.of("Asia/Seoul"));
 
@@ -96,6 +101,7 @@ class TossLoginServiceTest {
                 tokenEncryptor,
                 tossLoginSessionService,
                 promotionRewardRepository,
+                tossCiHasher,
                 fixedClock
         );
         ReflectionTestUtils.setField(tossLoginService, "callbackBasicAuthHeader", "callback-secret");
@@ -131,6 +137,10 @@ class TossLoginServiceTest {
             assertThat(response.isNewUser()).isTrue();
             verify(tossLoginSessionService).persistLoginTokens(1L, tokenResponse);
             verify(userRefreshTokenStore).save(1L, "mate-refresh", 1_209_600_000L);
+
+            ArgumentCaptor<Users> userCaptor = ArgumentCaptor.forClass(Users.class);
+            verify(usersRepository).save(userCaptor.capture());
+            assertThat(userCaptor.getValue().getCiHash()).isEqualTo(tossCiHasher.hash("ci-1"));
 
             ArgumentCaptor<TossAccount> tossAccountCaptor = ArgumentCaptor.forClass(TossAccount.class);
             verify(tossAccountRepository).save(tossAccountCaptor.capture());
@@ -174,10 +184,49 @@ class TossLoginServiceTest {
 
             assertThat(response.isNewUser()).isFalse();
             assertThat(existingUser.getName()).isEqualTo("renamed-user");
+            assertThat(existingUser.getCiHash()).isEqualTo(tossCiHasher.hash("ci-1"));
             assertThat(existingAccount.getTossUserKey()).isEqualTo(777L);
             assertThat(existingAccount.isLinked()).isTrue();
             assertThat(existingAccount.getUnlinkReferrer()).isNull();
             assertThat(existingAccount.getUnlinkedAt()).isNull();
+            verify(usersRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("unlink로 CI가 지워진 사용자가 다시 로그인하면 새 계정을 만들지 않고 ciHash로 기존 계정을 다시 연결한다")
+        void relinksUnlinkedUserByCiHash() {
+            TossTokenResponse tokenResponse = new TossTokenResponse("Bearer", "toss-access", "toss-refresh", 3600L, "user_ci");
+            TossLoginUserResponse loginUserResponse = new TossLoginUserResponse(777L, "user_ci,name", "encrypted-name", "encrypted-ci");
+            TossDecryptedUserInfo decryptedUserInfo = new TossDecryptedUserInfo(777L, "user_ci,name", "ci-1", "same-user");
+            Users unlinkedUser = createUser(1L, null, "same-user");
+            unlinkedUser.assignCiHashIfAbsent(tossCiHasher.hash("ci-1"));
+            TossAccount unlinkedAccount = TossAccount.builder()
+                    .user(unlinkedUser)
+                    .isLinked(false)
+                    .unlinkReferrer(TossUnlinkReferrer.UNLINK)
+                    .unlinkedAt(LocalDateTime.of(2026, 5, 14, 10, 0))
+                    .lastLoginAt(LocalDateTime.of(2026, 5, 14, 10, 0))
+                    .lastTokenRefreshedAt(LocalDateTime.of(2026, 5, 14, 10, 0))
+                    .build();
+
+            when(tossLoginApiClient.generateToken(new TossTokenRequest("authorization-code", "APP"))).thenReturn(tokenResponse);
+            when(tossLoginApiClient.getLoginUserInfo("toss-access")).thenReturn(loginUserResponse);
+            when(tossUserInfoDecryptor.decrypt(loginUserResponse)).thenReturn(decryptedUserInfo);
+            when(usersRepository.findByCi("ci-1")).thenReturn(Optional.empty());
+            when(usersRepository.findByCiHash(tossCiHasher.hash("ci-1"))).thenReturn(Optional.of(unlinkedUser));
+            when(tokenEncryptor.encrypt("toss-refresh")).thenReturn("encrypted-refresh");
+            when(tossAccountRepository.findByUser(unlinkedUser)).thenReturn(Optional.of(unlinkedAccount));
+            when(jwtProvider.generateToken(1L, "USER", TokenType.ACCESS)).thenReturn("mate-access");
+            when(jwtProvider.generateToken(1L, "USER", TokenType.REFRESH)).thenReturn("mate-refresh");
+            when(jwtProvider.getExpiration(TokenType.REFRESH)).thenReturn(1_209_600_000L);
+
+            TossLoginResponse response = tossLoginService.login("authorization-code", "APP");
+
+            assertThat(response.isNewUser()).isFalse();
+            assertThat(response.meResponse().id()).isEqualTo(1L);
+            assertThat(unlinkedUser.getCi()).isEqualTo("ci-1");
+            assertThat(unlinkedAccount.isLinked()).isTrue();
+            assertThat(unlinkedAccount.getTossUserKey()).isEqualTo(777L);
             verify(usersRepository, never()).save(any());
         }
 
@@ -277,6 +326,7 @@ class TossLoginServiceTest {
             assertThat(tossAccount.getTossUserKey()).isNull();
             assertThat(tossAccount.getScope()).isNull();
             assertThat(tossAccount.getUser().getCi()).isNull();
+            assertThat(tossAccount.getUser().getCiHash()).isEqualTo(tossCiHasher.hash("ci-1"));
             assertThat(tossAccount.getUnlinkReferrer()).isEqualTo(TossUnlinkReferrer.UNLINK);
             assertThat(tossAccount.getUnlinkedAt()).isEqualTo(LocalDateTime.now(fixedClock));
         }
@@ -431,6 +481,7 @@ class TossLoginServiceTest {
         @DisplayName("callback 처리 시 unlink 상태와 refresh token 정리가 수행된다")
         void handlesUnlinkCallbackSuccessfully() {
             TossAccount tossAccount = createLinkedAccount(1L);
+            tossAccount.getUser().assignCiHashIfAbsent(tossCiHasher.hash("ci-1"));
             when(tossAccountRepository.findByTossUserKey(777L)).thenReturn(Optional.of(tossAccount));
 
             tossLoginService.handleUnlinkCallback(777L, TossUnlinkReferrer.WITHDRAWAL_TOSS);
@@ -442,6 +493,7 @@ class TossLoginServiceTest {
             assertThat(tossAccount.getTossUserKey()).isNull();
             assertThat(tossAccount.getScope()).isNull();
             assertThat(tossAccount.getUser().getCi()).isNull();
+            assertThat(tossAccount.getUser().getCiHash()).isNull();
             assertThat(tossAccount.getUnlinkReferrer()).isEqualTo(TossUnlinkReferrer.WITHDRAWAL_TOSS);
             assertThat(tossAccount.getUnlinkedAt()).isEqualTo(LocalDateTime.now(fixedClock));
         }
