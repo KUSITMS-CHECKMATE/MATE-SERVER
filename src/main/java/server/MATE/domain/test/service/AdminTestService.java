@@ -85,7 +85,7 @@ public class AdminTestService {
 
         scheduleCloseAfterCommit(test.getId(), test.getClosedAt());
 
-        eventPublisher.publishEvent(new TestApprovedEvent(test.getId(), test.getTitle()));
+        eventPublisher.publishEvent(new TestApprovedEvent(test.getId(), test.getMakerId(), test.getTitle()));
 
         return new AdminTestStatusResponse(testId, test.getTestStatus());
     }
