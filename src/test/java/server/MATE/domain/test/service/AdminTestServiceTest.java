@@ -213,7 +213,7 @@ class AdminTestServiceTest {
             assertThat(response.testStatus()).isEqualTo(TestStatus.IN_PROGRESS);
             TransactionSynchronizationManager.getSynchronizations().forEach(sync -> sync.afterCommit());
             verify(testCloseScheduler).schedule(TEST_ID, test.getClosedAt());
-            verify(eventPublisher).publishEvent(new TestApprovedEvent(TEST_ID, test.getTitle()));
+            verify(eventPublisher).publishEvent(new TestApprovedEvent(TEST_ID, test.getMakerId(), test.getTitle()));
         } finally {
             TransactionSynchronizationManager.clearSynchronization();
         }

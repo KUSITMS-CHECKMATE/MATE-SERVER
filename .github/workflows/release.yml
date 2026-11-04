@@ -1,0 +1,89 @@
+name: Release
+
+# main 커밋에 vX.Y.Z 태그를 push하면
+# 1) 그 커밋 기준 운영 이미지(kustomization newTag)에 같은 버전 태그를 붙이고
+# 2) GitHub Release를 자동 생성(릴리스 노트 자동 작성)한다.
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  ACR_NAME: kusitmsmateacr
+  KUSTOMIZATION: deploy/apps/mate/kustomization.yaml
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag points to main
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::${GITHUB_REF_NAME} 태그가 main에 없는 커밋을 가리킵니다. main 커밋에만 버전 태그를 붙여주세요."
+            exit 1
+          fi
+
+      - name: Resolve deployed image tags
+        id: images
+        run: |
+          # kustomization의 images 항목에서 name 다음 newTag 값을 읽는다.
+          read_tag() {
+            awk -v img="$1" '
+              $0 ~ "name: " img "$" { found=1; next }
+              found && /newTag:/ { print $2; exit }
+            ' "$KUSTOMIZATION"
+          }
+          MATE_TAG="$(read_tag "${ACR_NAME}.azurecr.io/mate")"
+          PDF_TAG="$(read_tag "${ACR_NAME}.azurecr.io/mate-pdf")"
+          if [ -z "$MATE_TAG" ] || [ -z "$PDF_TAG" ]; then
+            echo "::error::${KUSTOMIZATION}에서 이미지 태그를 찾지 못했습니다. (mate=${MATE_TAG}, mate-pdf=${PDF_TAG})"
+            exit 1
+          fi
+          echo "mate=${MATE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "pdf=${PDF_TAG}" >> "$GITHUB_OUTPUT"
+          echo "mate: ${MATE_TAG}, mate-pdf: ${PDF_TAG}"
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Tag images with release version
+        run: |
+          az acr login --name "$ACR_NAME"
+          REG="${ACR_NAME}.azurecr.io"
+          # 이미지를 다시 빌드하지 않고, 운영 중인 이미지 매니페스트에 버전 태그만 추가한다.
+          docker buildx imagetools create -t "${REG}/mate:${GITHUB_REF_NAME}" "${REG}/mate:${{ steps.images.outputs.mate }}"
+          docker buildx imagetools create -t "${REG}/mate-pdf:${GITHUB_REF_NAME}" "${REG}/mate-pdf:${{ steps.images.outputs.pdf }}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > release-notes-header.md <<NOTES
+          ## 배포 이미지
+          - \`mate\`: \`${{ steps.images.outputs.mate }}\` → \`${GITHUB_REF_NAME}\`
+          - \`mate-pdf\`: \`${{ steps.images.outputs.pdf }}\` → \`${GITHUB_REF_NAME}\`
+
+          롤백: \`${KUSTOMIZATION}\`의 \`newTag\`를 이 버전(또는 이전 버전) 태그로 바꿔 main에 반영한다.
+          NOTES
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file release-notes-header.md \
+            --generate-notes \
+            --verify-tag
