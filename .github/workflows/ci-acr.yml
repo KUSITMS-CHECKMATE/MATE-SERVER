@@ -1,10 +1,11 @@
 name: CI - build and push to ACR
 
+# 배포 브랜치에 push될 때만 이미지를 빌드·푸시하고 kustomization 이미지 태그를 커밋한다.
+# PR 테스트는 ci-test.yml이 담당한다.
+# main 전환 기간에는 feat/ci도 함께 유지하고, 전환 완료 후 feat/ci를 제거한다 (docs/cicd-main-migration.md).
 on:
   push:
-    branches: [feat/ci]
-  pull_request:
-    branches: [feat/ci]
+    branches: [main, feat/ci]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -152,7 +153,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # main 브랜치 보호 후에는 보호 규칙 우회 권한이 있는 토큰(CD_PUSH_TOKEN, GitHub App/deploy key)을 사용한다.
+          token: ${{ secrets.CD_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Install kustomize
         uses: imranismail/setup-kustomize@v2
