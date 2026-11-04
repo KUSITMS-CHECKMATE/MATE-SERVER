@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/KUSITMS-CHECKMATE/MATE-SERVER.git
-    targetRevision: feat/ci
+    targetRevision: main
     path: deploy/apps/mate
   destination:
     server: https://kubernetes.default.svc

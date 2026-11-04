@@ -2,10 +2,10 @@ name: CI - build and push to ACR
 
 # 배포 브랜치에 push될 때만 이미지를 빌드·푸시하고 kustomization 이미지 태그를 커밋한다.
 # PR 테스트는 ci-test.yml이 담당한다.
-# main 전환 기간에는 feat/ci도 함께 유지하고, 전환 완료 후 feat/ci를 제거한다 (docs/cicd-main-migration.md).
+# 배포 브랜치는 main 하나다 (2026-11 feat/ci에서 전환, docs/cicd-main-migration.md).
 on:
   push:
-    branches: [main, feat/ci]
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

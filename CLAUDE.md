@@ -52,4 +52,4 @@ fix: unlink 시 프로모션 리워드 벌크 쿼리로 인한 사용자/계정 
 
 - **GitHub**: `KUSITMS-CHECKMATE/MATE-SERVER`
 - **기본 브랜치**: `dev`
-- **배포 브랜치**: `feat/ci`
+- **배포 브랜치**: `main` (feat/ci는 2026-11 전환 후 폐기)

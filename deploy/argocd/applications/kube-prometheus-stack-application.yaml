@@ -18,7 +18,7 @@ spec:
         valueFiles:
           - $values/deploy/monitoring/helm/kube-prometheus-stack-values.yaml
     - repoURL: https://github.com/KUSITMS-CHECKMATE/MATE-SERVER.git
-      targetRevision: feat/ci
+      targetRevision: main
       ref: values
   destination:
     server: https://kubernetes.default.svc
